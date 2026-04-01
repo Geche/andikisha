@@ -1,0 +1,96 @@
+spring:
+  application:
+    name: analytics-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/andikisha_analytics
+    username: ${DB_USERNAME:andikisha}
+    password: ${DB_PASSWORD:andikisha}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          min-idle: 2
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000   # 5 minutes — analytics results are expensive to compute
+
+server:
+  port: 8091
+
+grpc:
+  server:
+    port: 9091
+    security:
+      enabled: false
+  # Pulls aggregated data from payroll, employee, and leave for report generation
+  client:
+    payroll-service:
+      address: static://localhost:9084
+      negotiation-type: plaintext
+    employee-service:
+      address: static://localhost:9082
+      negotiation-type: plaintext
+    leave-service:
+      address: static://localhost:9087
+      negotiation-type: plaintext
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.andikisha.analytics: INFO

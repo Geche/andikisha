@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/services" />
+            <option value="$PROJECT_DIR$/services/analytics-service" />
+            <option value="$PROJECT_DIR$/services/api-gateway" />
+            <option value="$PROJECT_DIR$/services/audit-service" />
+            <option value="$PROJECT_DIR$/services/auth-service" />
+            <option value="$PROJECT_DIR$/services/compliance-service" />
+            <option value="$PROJECT_DIR$/services/document-service" />
+            <option value="$PROJECT_DIR$/services/employee-service" />
+            <option value="$PROJECT_DIR$/services/integration-hub-service" />
+            <option value="$PROJECT_DIR$/services/leave-service" />
+            <option value="$PROJECT_DIR$/services/notification-service" />
+            <option value="$PROJECT_DIR$/services/payroll-service" />
+            <option value="$PROJECT_DIR$/services/tenant-service" />
+            <option value="$PROJECT_DIR$/services/time-attendance-service" />
+            <option value="$PROJECT_DIR$/shared" />
+            <option value="$PROJECT_DIR$/shared/andikisha-common" />
+            <option value="$PROJECT_DIR$/shared/andikisha-events" />
+            <option value="$PROJECT_DIR$/shared/andikisha-proto" />
+          </set>
+        </option>
+        <option name="myGradleHome" value="" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**/*.java)",
+      "Read(**/*.kt)",
+      "Read(**/*.gradle.kts)",
+      "Read(**/*.yml)",
+      "Read(**/*.yaml)",
+      "Read(**/*.proto)",
+      "Read(**/*.sql)",
+      "Read(**/*.md)",
+      "Read(**/*.properties)",
+      "Read(**/*.xml)",
+      "Read(**/*.json)",
+      "Read(**/Dockerfile*)",
+      "Read(**/docker-compose*)",
+      "Edit(services/**)",
+      "Edit(shared/**)",
+      "Edit(infrastructure/**)",
+      "Edit(docs/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(build.gradle.kts)",
+      "Edit(settings.gradle.kts)",
+      "Edit(gradle.properties)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/application-prod.yml)",
+      "Read(**/secrets/**)",
+      "Read(**/.claude/settings.local.json)",
+      "Read(**/build/**)",
+      "Read(**/.gradle/**)"
+    ]
+  },
+  "preferences": {
+    "codeStyle": "google-java-format",
+    "testFramework": "junit5",
+    "buildTool": "gradle"
+  }
+}

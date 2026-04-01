@@ -1,0 +1,130 @@
+spring:
+  application:
+    name: api-gateway
+
+  # Spring Cloud Gateway (reactive — no servlet, no datasource)
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=0
+
+        - id: employee-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/employees/**,/api/v1/departments/**
+          filters:
+            - StripPrefix=0
+
+        - id: tenant-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/tenants/**
+          filters:
+            - StripPrefix=0
+
+        - id: payroll-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/payroll/**,/api/v1/payslips/**
+          filters:
+            - StripPrefix=0
+
+        - id: compliance-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/compliance/**
+          filters:
+            - StripPrefix=0
+
+        - id: time-attendance-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/attendance/**
+          filters:
+            - StripPrefix=0
+
+        - id: leave-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/v1/leave/**
+          filters:
+            - StripPrefix=0
+
+        - id: document-service
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/v1/documents/**
+          filters:
+            - StripPrefix=0
+
+        - id: notification-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - StripPrefix=0
+
+        - id: integration-hub-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/v1/integrations/**,/api/v1/payments/**
+          filters:
+            - StripPrefix=0
+
+        - id: analytics-service
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/v1/analytics/**,/api/v1/reports/**
+          filters:
+            - StripPrefix=0
+
+  # OAuth2 resource server — validates JWTs issued by auth-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8081}
+          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8081/api/v1/auth/.well-known/jwks.json}
+
+  # Redis — rate limiting
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+server:
+  port: 8080
+
+# Resilience4j circuit breaker defaults
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    com.andikisha.gateway: INFO
+    org.springframework.cloud.gateway: INFO
