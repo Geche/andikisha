@@ -1,0 +1,28 @@
+syntax = "proto3";
+package attendance;
+
+option java_package = "com.andikisha.proto.attendance";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+service AttendanceService {
+  rpc GetMonthlyHours(GetMonthlyHoursRequest) returns (MonthlyHoursResponse);
+}
+
+message GetMonthlyHoursRequest {
+  string tenant_id = 1;
+  string employee_id = 2;
+  string period = 3;
+}
+
+message MonthlyHoursResponse {
+  string employee_id = 1;
+  string period = 2;
+  double regular_hours = 3;
+  double overtime_weekday = 4;
+  double overtime_weekend = 5;
+  double overtime_holiday = 6;
+  int32 days_present = 7;
+  int32 days_absent = 8;
+}

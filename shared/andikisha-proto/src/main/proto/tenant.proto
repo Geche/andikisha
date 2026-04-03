@@ -1,0 +1,32 @@
+syntax = "proto3";
+package tenant;
+
+option java_package = "com.andikisha.proto.tenant";
+option java_multiple_files = true;
+
+service TenantService {
+  rpc GetTenant(GetTenantRequest) returns (TenantResponse);
+  rpc VerifyTenantActive(VerifyTenantRequest) returns (VerifyTenantResponse);
+}
+
+message GetTenantRequest {
+  string tenant_id = 1;
+}
+
+message TenantResponse {
+  string id = 1;
+  string name = 2;
+  string plan = 3;
+  string status = 4;
+  string country = 5;
+  string currency = 6;
+}
+
+message VerifyTenantRequest {
+  string tenant_id = 1;
+}
+
+message VerifyTenantResponse {
+  bool active = 1;
+  string plan = 2;
+}

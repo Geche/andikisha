@@ -12,8 +12,9 @@ dependencies {
     api("io.grpc:grpc-stub:$grpcVersion")
     api("com.google.protobuf:protobuf-java:$protobufVersion")
 
-    // Required by generated stub code
+    // Required by generated stub code (grpc codegen uses javax.annotation.Generated)
     compileOnly("jakarta.annotation:jakarta.annotation-api:3.0.0")
+    compileOnly("javax.annotation:javax.annotation-api:1.3.2")
 }
 
 protobuf {

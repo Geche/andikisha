@@ -1,0 +1,50 @@
+syntax = "proto3";
+package auth;
+
+option java_package = "com.andikisha.proto.auth";
+option java_multiple_files = true;
+
+service AuthService {
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  rpc GetUserByEmployeeId(GetUserByEmployeeIdRequest) returns (UserResponse);
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  string tenant_id = 3;
+  string role = 4;
+  string email = 5;
+  string employee_id = 6;
+}
+
+message CheckPermissionRequest {
+  string user_id = 1;
+  string tenant_id = 2;
+  string resource = 3;
+  string action = 4;
+  string scope = 5;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+}
+
+message GetUserByEmployeeIdRequest {
+  string tenant_id = 1;
+  string employee_id = 2;
+}
+
+message UserResponse {
+  string user_id = 1;
+  string tenant_id = 2;
+  string email = 3;
+  string role = 4;
+  string employee_id = 5;
+  bool is_active = 6;
+}

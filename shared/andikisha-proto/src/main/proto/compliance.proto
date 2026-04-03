@@ -1,0 +1,45 @@
+syntax = "proto3";
+package compliance;
+
+option java_package = "com.andikisha.proto.compliance";
+option java_multiple_files = true;
+
+service ComplianceService {
+  rpc GetTaxRates(GetTaxRatesRequest) returns (TaxRatesResponse);
+  rpc GetStatutoryRates(GetStatutoryRatesRequest) returns (StatutoryRatesResponse);
+}
+
+message GetTaxRatesRequest {
+  string country = 1;
+  string effective_date = 2;
+}
+
+message TaxBracket {
+  double lower_bound = 1;
+  double upper_bound = 2;
+  double rate = 3;
+}
+
+message TaxRatesResponse {
+  string country = 1;
+  repeated TaxBracket brackets = 2;
+  double personal_relief = 3;
+  double insurance_relief_rate = 4;
+  double max_insurance_relief = 5;
+}
+
+message GetStatutoryRatesRequest {
+  string country = 1;
+  string effective_date = 2;
+}
+
+message StatutoryRatesResponse {
+  string country = 1;
+  double nssf_rate = 2;
+  double nssf_tier1_limit = 3;
+  double nssf_tier2_limit = 4;
+  double shif_rate = 5;
+  double housing_levy_employee_rate = 6;
+  double housing_levy_employer_rate = 7;
+  double nita_amount = 8;
+}

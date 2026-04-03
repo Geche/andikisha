@@ -1,0 +1,97 @@
+syntax = "proto3";
+package employee;
+
+option java_package = "com.andikisha.proto.employee";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+service EmployeeService {
+  rpc GetEmployee(GetEmployeeRequest) returns (EmployeeResponse);
+  rpc ListEmployees(ListEmployeesRequest) returns (ListEmployeesResponse);
+  rpc ListActiveByTenant(ListActiveByTenantRequest) returns (ListEmployeesResponse);
+  rpc GetSalaryStructure(GetSalaryRequest) returns (SalaryStructureResponse);
+  rpc GetDepartment(GetDepartmentRequest) returns (DepartmentResponse);
+}
+
+message GetEmployeeRequest {
+  string tenant_id = 1;
+  string employee_id = 2;
+}
+
+message ListEmployeesRequest {
+  string tenant_id = 1;
+  common.PaginationRequest pagination = 2;
+  optional string department_id = 3;
+  optional string status = 4;
+  optional string search = 5;
+}
+
+message ListActiveByTenantRequest {
+  string tenant_id = 1;
+}
+
+message EmployeeResponse {
+  string id = 1;
+  string tenant_id = 2;
+  string employee_number = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string email = 6;
+  string phone_number = 7;
+  string national_id = 8;
+  string kra_pin = 9;
+  string nhif_number = 10;
+  string nssf_number = 11;
+  EmploymentStatus status = 12;
+  google.protobuf.Timestamp hire_date = 13;
+  string department_id = 14;
+  string department_name = 15;
+  string position_id = 16;
+  string position_title = 17;
+  double basic_salary = 18;
+  string currency = 19;
+}
+
+message ListEmployeesResponse {
+  repeated EmployeeResponse employees = 1;
+  common.PaginationMeta pagination = 2;
+}
+
+message GetSalaryRequest {
+  string tenant_id = 1;
+  string employee_id = 2;
+}
+
+message SalaryStructureResponse {
+  string employee_id = 1;
+  double basic_salary = 2;
+  double housing_allowance = 3;
+  double transport_allowance = 4;
+  double medical_allowance = 5;
+  double other_allowances = 6;
+  string currency = 7;
+}
+
+message GetDepartmentRequest {
+  string tenant_id = 1;
+  string department_id = 2;
+}
+
+message DepartmentResponse {
+  string id = 1;
+  string tenant_id = 2;
+  string name = 3;
+  string parent_id = 4;
+  int32 employee_count = 5;
+}
+
+enum EmploymentStatus {
+  EMPLOYMENT_STATUS_UNSPECIFIED = 0;
+  ACTIVE = 1;
+  ON_PROBATION = 2;
+  ON_LEAVE = 3;
+  SUSPENDED = 4;
+  TERMINATED = 5;
+}
