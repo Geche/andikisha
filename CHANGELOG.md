@@ -4,6 +4,21 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-04-03
+
+### Shared Modules — Proto & Common Library
+
+#### Fixed
+- **`andikisha-proto` — Java 21 stub compilation failure** — The gRPC Java codegen emits `@javax.annotation.Generated` on all stub classes. On Java 9+, `javax.annotation` was removed from the JDK, causing `cannot find symbol` errors across all 7 generated `*ServiceGrpc.java` files. Fixed by adding `compileOnly("javax.annotation:javax.annotation-api:1.3.2")` to `shared/andikisha-proto/build.gradle.kts`.
+- **`andikisha-common` — missing `spring-data-jpa` dependency** — `BaseEntity` uses `AuditingEntityListener` from `org.springframework.data.jpa.domain.support`, which is in `spring-data-jpa`, not `spring-data-commons`. Added `api("org.springframework.data:spring-data-jpa")` to resolve compilation failure.
+- **`andikisha-common` — missing `spring-webmvc` dependency** — `TenantInterceptor` implements `HandlerInterceptor` from `org.springframework.web.servlet`, which lives in `spring-webmvc`, not `spring-web`. Added `api("org.springframework:spring-webmvc")` to resolve compilation failure.
+- **`andikisha-common` — duplicate dependency declarations** — `build.gradle.kts` had the same artifacts declared twice: once managed by the Spring Boot BOM and once with hardcoded version strings. Removed all duplicates; BOM-managed versions now apply consistently.
+
+#### Added
+- **`docs/architecture/implementation-order.md`** — Recommended phase-by-phase implementation order for all 13 services, from shared foundations through intelligence services and infrastructure.
+
+---
+
 ## [Unreleased] — 2026-04-01
 
 ### Frontend — pnpm Workspace Bootstrap

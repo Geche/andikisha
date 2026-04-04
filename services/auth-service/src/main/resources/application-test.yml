@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+grpc:
+  server:
+    port: 0
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3RzLW9ubHktMzItYnl0ZXMtbG9uZw==
+    expiration-ms: 3600000
+    refresh-expiration-ms: 604800000
