@@ -1,8 +1,10 @@
 package com.andikisha.auth.application.dto.request;
 
+import com.andikisha.auth.application.validation.PasswordsNotSame;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+@PasswordsNotSame
 public record ChangePasswordRequest(
         @NotBlank(message = "Current password is required")
         String currentPassword,

@@ -74,13 +74,14 @@ public class User extends BaseEntity {
     }
 
     public boolean isLocked() {
-        if (lockedUntil == null) return false;
-        if (LocalDateTime.now().isAfter(lockedUntil)) {
+        return lockedUntil != null && LocalDateTime.now().isBefore(lockedUntil);
+    }
+
+    public void clearLockIfExpired() {
+        if (lockedUntil != null && LocalDateTime.now().isAfter(lockedUntil)) {
             this.lockedUntil = null;
             this.failedLoginAttempts = 0;
-            return false;
         }
-        return true;
     }
 
     public void deactivate() {

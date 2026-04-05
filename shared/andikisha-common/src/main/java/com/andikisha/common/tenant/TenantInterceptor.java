@@ -11,11 +11,14 @@ public class TenantInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
-                             Object handler) {
+                             Object handler) throws Exception {
         String tenantId = request.getHeader(TENANT_HEADER);
-        if (tenantId != null && !tenantId.isBlank()) {
-            TenantContext.setTenantId(tenantId);
+        if (tenantId == null || tenantId.isBlank()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "Missing required header: " + TENANT_HEADER);
+            return false;
         }
+        TenantContext.setTenantId(tenantId);
         return true;
     }
 

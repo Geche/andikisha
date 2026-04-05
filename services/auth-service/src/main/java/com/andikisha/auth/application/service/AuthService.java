@@ -18,6 +18,7 @@ import com.andikisha.auth.domain.repository.RefreshTokenRepository;
 import com.andikisha.auth.domain.repository.RolePermissionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import io.jsonwebtoken.JwtException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.common.tenant.TenantContext;
@@ -27,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -75,12 +78,16 @@ public class AuthService {
         user = userRepository.save(user);
 
         final User savedUser = user;
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                eventPublisher.publishUserRegistered(savedUser);
-            }
-        });
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishUserRegistered(savedUser);
+                }
+            });
+        } else {
+            eventPublisher.publishUserRegistered(savedUser);
+        }
 
         return generateTokenResponse(user);
     }
@@ -97,10 +104,12 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
+        user.clearLockIfExpired();
         if (user.isLocked()) {
+            long minutes = ChronoUnit.MINUTES.between(LocalDateTime.now(), user.getLockedUntil()) + 1;
             throw new AccountLockedException(
-                    "Account is locked due to too many failed attempts. Try again after "
-                            + user.getLockedUntil());
+                    "Account is locked due to too many failed attempts. Try again in "
+                            + minutes + " minute(s).");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
@@ -121,6 +130,13 @@ public class AuthService {
     @Transactional
     public TokenResponse refresh(RefreshTokenRequest request) {
         String tenantId = TenantContext.requireTenantId();
+
+        try {
+            String type = jwtTokenProvider.getClaims(request.refreshToken()).get("type", String.class);
+            if (!"refresh".equals(type)) throw new TokenExpiredException();
+        } catch (JwtException e) {
+            throw new TokenExpiredException();
+        }
 
         RefreshToken storedToken = refreshTokenRepository
                 .findByTokenAndTenantId(request.refreshToken(), tenantId)
