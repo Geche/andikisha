@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tenants")
@@ -58,13 +59,18 @@ public class Tenant extends BaseEntity {
     @Column(name = "pay_day", nullable = false)
     private int payDay = 28;
 
+    @Column(name = "suspension_reason", length = 500)
+    private String suspensionReason;
+
     protected Tenant() {}
 
     public static Tenant create(String companyName, String country,
                                 String currency, String adminEmail,
                                 String adminPhone, Plan plan) {
+        UUID id = UUID.randomUUID();
         Tenant tenant = new Tenant();
-        // Tenant's own ID is its tenantId
+        tenant.setId(id);
+        tenant.setTenantId(id.toString());
         tenant.companyName = companyName;
         tenant.country = country.toUpperCase();
         tenant.currency = currency.toUpperCase();
@@ -84,9 +90,13 @@ public class Tenant extends BaseEntity {
 
     public void suspend(String reason) {
         if (this.status == TenantStatus.CANCELLED) {
-            throw new BusinessRuleException("Cannot suspend a cancelled tenant");
+            throw new BusinessRuleException("INVALID_STATE", "Cannot suspend a cancelled tenant");
+        }
+        if (this.status == TenantStatus.SUSPENDED) {
+            throw new BusinessRuleException("INVALID_STATE", "Tenant is already suspended");
         }
         this.status = TenantStatus.SUSPENDED;
+        this.suspensionReason = reason;
     }
 
     public void cancel() {
@@ -95,13 +105,26 @@ public class Tenant extends BaseEntity {
 
     public void reactivate() {
         if (this.status != TenantStatus.SUSPENDED) {
-            throw new BusinessRuleException("Can only reactivate a suspended tenant");
+            throw new BusinessRuleException("INVALID_STATE",
+                    "Can only reactivate a suspended tenant");
         }
         this.status = TenantStatus.ACTIVE;
+        this.suspensionReason = null;
     }
 
     public void changePlan(Plan newPlan) {
+        if (this.status == TenantStatus.CANCELLED) {
+            throw new BusinessRuleException("INVALID_STATE",
+                    "Cannot change plan for a cancelled tenant");
+        }
         this.plan = newPlan;
+    }
+
+    public void updateCompanyName(String companyName) {
+        if (companyName == null || companyName.isBlank()) {
+            throw new BusinessRuleException("INVALID_COMPANY_NAME", "Company name cannot be blank");
+        }
+        this.companyName = companyName.trim();
     }
 
     public void updateStatutoryRegistrations(String kraPin,
@@ -139,4 +162,5 @@ public class Tenant extends BaseEntity {
     public LocalDate getTrialEndsAt() { return trialEndsAt; }
     public String getPayFrequency() { return payFrequency; }
     public int getPayDay() { return payDay; }
+    public String getSuspensionReason() { return suspensionReason; }
 }

@@ -50,6 +50,10 @@ public abstract class BaseEntity {
         this.tenantId = tenantId;
     }
 
+    protected void setId(UUID id) {
+        this.id = id;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

@@ -4,7 +4,9 @@ import com.andikisha.common.domain.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
+@Getter
 @Entity
 @Table(name = "feature_flags")
 public class FeatureFlag extends BaseEntity {
@@ -33,7 +35,4 @@ public class FeatureFlag extends BaseEntity {
     public void enable() { this.enabled = true; }
     public void disable() { this.enabled = false; }
 
-    public String getFeatureKey() { return featureKey; }
-    public boolean isEnabled() { return enabled; }
-    public String getDescription() { return description; }
 }

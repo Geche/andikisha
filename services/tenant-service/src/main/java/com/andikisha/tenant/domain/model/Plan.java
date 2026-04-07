@@ -55,6 +55,30 @@ public class Plan extends BaseEntity {
 
     protected Plan() {}
 
+    /**
+     * Factory for creating plans. Plans are platform-level resources owned by the SYSTEM tenant.
+     */
+    public static Plan create(String name, PlanTier tier, Money monthlyPrice,
+                              int maxEmployees, int maxAdmins,
+                              boolean payrollEnabled, boolean leaveEnabled,
+                              boolean attendanceEnabled, boolean documentsEnabled,
+                              boolean analyticsEnabled) {
+        Plan plan = new Plan();
+        plan.setTenantId("SYSTEM");
+        plan.name = name;
+        plan.tier = tier;
+        plan.monthlyPrice = monthlyPrice;
+        plan.maxEmployees = maxEmployees;
+        plan.maxAdmins = maxAdmins;
+        plan.payrollEnabled = payrollEnabled;
+        plan.leaveEnabled = leaveEnabled;
+        plan.attendanceEnabled = attendanceEnabled;
+        plan.documentsEnabled = documentsEnabled;
+        plan.analyticsEnabled = analyticsEnabled;
+        plan.active = true;
+        return plan;
+    }
+
     public String getName() { return name; }
     public PlanTier getTier() { return tier; }
     public Money getMonthlyPrice() { return monthlyPrice; }
