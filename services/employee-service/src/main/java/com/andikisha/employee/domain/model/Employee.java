@@ -13,10 +13,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Getter
 @Entity
 @Table(name = "employees",
         uniqueConstraints = {
@@ -26,6 +28,7 @@ import java.util.UUID;
         })
 public class Employee extends BaseEntity {
 
+    // Getters
     @Column(name = "employee_number", nullable = false, length = 20)
     private String employeeNumber;
 
@@ -223,29 +226,4 @@ public class Employee extends BaseEntity {
         return firstName + " " + lastName;
     }
 
-    // Getters
-    public String getEmployeeNumber() { return employeeNumber; }
-    public String getFirstName() { return firstName; }
-    public String getLastName() { return lastName; }
-    public String getNationalId() { return nationalId; }
-    public String getPhoneNumber() { return phoneNumber; }
-    public String getEmail() { return email; }
-    public String getKraPin() { return kraPin; }
-    public String getNhifNumber() { return nhifNumber; }
-    public String getNssfNumber() { return nssfNumber; }
-    public LocalDate getDateOfBirth() { return dateOfBirth; }
-    public Gender getGender() { return gender; }
-    public Department getDepartment() { return department; }
-    public Position getPosition() { return position; }
-    public UUID getReportingTo() { return reportingTo; }
-    public EmploymentType getEmploymentType() { return employmentType; }
-    public EmploymentStatus getStatus() { return status; }
-    public SalaryStructure getSalaryStructure() { return salaryStructure; }
-    public LocalDate getHireDate() { return hireDate; }
-    public LocalDate getProbationEndDate() { return probationEndDate; }
-    public LocalDate getTerminationDate() { return terminationDate; }
-    public String getTerminationReason() { return terminationReason; }
-    public String getBankName() { return bankName; }
-    public String getBankAccountNumber() { return bankAccountNumber; }
-    public String getBankBranch() { return bankBranch; }
 }

@@ -6,7 +6,9 @@ import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Embedded;
+import lombok.Getter;
 
+@Getter
 @Embeddable
 public class SalaryStructure {
 
@@ -65,9 +67,4 @@ public class SalaryStructure {
                 .add(otherAllowances);
     }
 
-    public Money getBasicSalary()       { return basicSalary; }
-    public Money getHousingAllowance()  { return housingAllowance; }
-    public Money getTransportAllowance(){ return transportAllowance; }
-    public Money getMedicalAllowance()  { return medicalAllowance; }
-    public Money getOtherAllowances()   { return otherAllowances; }
 }

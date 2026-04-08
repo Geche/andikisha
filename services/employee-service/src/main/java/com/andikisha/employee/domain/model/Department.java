@@ -8,7 +8,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
 
+@Getter
 @Entity
 @Table(name = "departments",
         uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "name"}))
@@ -48,8 +50,4 @@ public class Department extends BaseEntity {
     public void deactivate() { this.active = false; }
     public void activate() { this.active = true; }
 
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public Department getParent() { return parent; }
-    public boolean isActive() { return active; }
 }

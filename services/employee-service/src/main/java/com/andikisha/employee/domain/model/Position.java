@@ -5,7 +5,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Getter;
 
+@Getter
 @Entity
 @Table(name = "positions",
         uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "title"}))
@@ -42,8 +44,4 @@ public class Position extends BaseEntity {
         if (gradeLevel != null) this.gradeLevel = gradeLevel;
     }
 
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getGradeLevel() { return gradeLevel; }
-    public boolean isActive() { return active; }
 }

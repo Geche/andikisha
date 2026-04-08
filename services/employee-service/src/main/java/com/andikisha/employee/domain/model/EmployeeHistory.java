@@ -5,10 +5,12 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Getter
 @Entity
 @Table(name = "employee_history")
 @AttributeOverride(name = "createdAt", column = @Column(name = "changed_at", nullable = false, updatable = false))
@@ -48,13 +50,6 @@ public class EmployeeHistory extends BaseEntity {
         h.changedBy = changedBy;
         return h;
     }
-
-    public UUID getEmployeeId() { return employeeId; }
-    public String getChangeType() { return changeType; }
-    public String getFieldName() { return fieldName; }
-    public String getOldValue() { return oldValue; }
-    public String getNewValue() { return newValue; }
-    public String getChangedBy() { return changedBy; }
 
     /** Alias for {@link #getCreatedAt()} — the timestamp when the change was recorded. */
     public LocalDateTime getChangedAt() { return getCreatedAt(); }
