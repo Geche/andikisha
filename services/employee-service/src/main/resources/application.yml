@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:andikisha_employee}
     username: ${DB_USERNAME:andikisha}
-    password: ${DB_PASSWORD}
+    password: ${DB_PASSWORD:changeme}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -28,7 +28,7 @@ spring:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:andikisha}
-    password: ${RABBITMQ_PASSWORD}
+    password: ${RABBITMQ_PASSWORD:changeme}
   jackson:
     default-property-inclusion: non_null
     serialization:

@@ -13,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -36,6 +38,10 @@ class EmployeeControllerTest {
     @MockBean EmployeeService employeeService;
     @MockBean EmployeeQueryService queryService;
 
+    // @EnableJpaAuditing on the application class requires jpaMappingContext,
+    // which is not loaded by @WebMvcTest. Mock it to allow the context to start.
+    @MockitoBean JpaMetamodelMappingContext jpaMetamodelMappingContext;
+
     private static final String TENANT_ID   = "e2e-tenant";
     private static final UUID   EMPLOYEE_ID = UUID.randomUUID();
 
@@ -53,7 +59,7 @@ class EmployeeControllerTest {
         mockMvc.perform(get("/api/v1/employees/{id}", EMPLOYEE_ID)
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+                .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
 
     @Test
@@ -89,7 +95,7 @@ class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidBody))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
     }
 
     @Test
@@ -117,7 +123,7 @@ class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validBody))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("DUPLICATE"));
+                .andExpect(jsonPath("$.error").value("DUPLICATE"));
     }
 
     @Test
@@ -138,7 +144,7 @@ class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\":\"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
     }
 
     private EmployeeDetailResponse minimalResponse() {

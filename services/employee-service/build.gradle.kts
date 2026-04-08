@@ -57,3 +57,15 @@ dependencies {
     testImplementation("org.testcontainers:rabbitmq:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
 }
+
+tasks.withType<Test> {
+    val rawSock = "${System.getProperty("user.home")}/Library/Containers/com.docker.docker/Data/docker.raw.sock"
+    val fallback = "/var/run/docker.sock"
+    val dockerSocket = if (file(rawSock).exists()) rawSock else fallback
+    val dockerHost = "unix://$dockerSocket"
+    environment("DOCKER_HOST", dockerHost)
+    environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", dockerSocket)
+    environment("DOCKER_API_VERSION", "1.41")
+    systemProperty("DOCKER_HOST", dockerHost)
+    systemProperty("docker.host", dockerHost)
+}
