@@ -50,7 +50,7 @@ message EmployeeResponse {
   string department_name = 15;
   string position_id = 16;
   string position_title = 17;
-  double basic_salary = 18;
+  string basic_salary = 18;
   string currency = 19;
 }
 
@@ -66,11 +66,11 @@ message GetSalaryRequest {
 
 message SalaryStructureResponse {
   string employee_id = 1;
-  double basic_salary = 2;
-  double housing_allowance = 3;
-  double transport_allowance = 4;
-  double medical_allowance = 5;
-  double other_allowances = 6;
+  string basic_salary = 2;
+  string housing_allowance = 3;
+  string transport_allowance = 4;
+  string medical_allowance = 5;
+  string other_allowances = 6;
   string currency = 7;
 }
 

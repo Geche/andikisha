@@ -1,0 +1,160 @@
+package com.andikisha.employee.e2e;
+
+import com.andikisha.common.exception.DuplicateResourceException;
+import com.andikisha.employee.application.dto.response.EmployeeDetailResponse;
+import com.andikisha.employee.application.service.EmployeeQueryService;
+import com.andikisha.employee.application.service.EmployeeService;
+import com.andikisha.employee.domain.exception.EmployeeNotFoundException;
+import com.andikisha.common.exception.GlobalExceptionHandler;
+import com.andikisha.employee.presentation.advice.EmployeeExceptionHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(com.andikisha.employee.presentation.controller.EmployeeController.class)
+@Import({EmployeeExceptionHandler.class, GlobalExceptionHandler.class})
+class EmployeeControllerTest {
+
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper objectMapper;
+
+    @MockBean EmployeeService employeeService;
+    @MockBean EmployeeQueryService queryService;
+
+    private static final String TENANT_ID   = "e2e-tenant";
+    private static final UUID   EMPLOYEE_ID = UUID.randomUUID();
+
+    @Test
+    void list_missingTenantHeader_returns400() throws Exception {
+        mockMvc.perform(get("/api/v1/employees"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getById_whenNotFound_returns404() throws Exception {
+        when(queryService.findById(EMPLOYEE_ID))
+                .thenThrow(new EmployeeNotFoundException(EMPLOYEE_ID));
+
+        mockMvc.perform(get("/api/v1/employees/{id}", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"));
+    }
+
+    @Test
+    void getById_whenFound_returns200WithFullDetails() throws Exception {
+        when(queryService.findById(EMPLOYEE_ID)).thenReturn(minimalResponse());
+
+        mockMvc.perform(get("/api/v1/employees/{id}", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(EMPLOYEE_ID.toString()))
+                .andExpect(jsonPath("$.nationalId").value("12345678"));
+    }
+
+    @Test
+    void create_withInvalidBody_returns400WithValidationErrors() throws Exception {
+        // Missing firstName (@NotBlank), negative basicSalary (@Positive)
+        String invalidBody = """
+                {
+                  "lastName": "Doe",
+                  "nationalId": "12345678",
+                  "phoneNumber": "+254700000001",
+                  "kraPin": "A123456789B",
+                  "nhifNumber": "1234567",
+                  "nssfNumber": "9876543",
+                  "employmentType": "PERMANENT",
+                  "basicSalary": -500
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void create_withDuplicateNationalId_returns409() throws Exception {
+        when(employeeService.create(any(), any()))
+                .thenThrow(new DuplicateResourceException("Employee", "nationalId", "12345678"));
+
+        String validBody = """
+                {
+                  "firstName": "Jane",
+                  "lastName": "Doe",
+                  "nationalId": "12345678",
+                  "phoneNumber": "+254700000001",
+                  "kraPin": "A123456789B",
+                  "nhifNumber": "1234567",
+                  "nssfNumber": "9876543",
+                  "employmentType": "PERMANENT",
+                  "basicSalary": 150000
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validBody))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("DUPLICATE"));
+    }
+
+    @Test
+    void terminate_withValidRequest_returns204() throws Exception {
+        mockMvc.perform(post("/api/v1/employees/{id}/terminate", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", "hr-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"Resigned\"}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void terminate_withMissingReason_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/employees/{id}/terminate", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", "hr-admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+    }
+
+    private EmployeeDetailResponse minimalResponse() {
+        return new EmployeeDetailResponse(
+                EMPLOYEE_ID, TENANT_ID, "EMP-0001",
+                "Jane", "Doe",
+                "12345678", "+254700000001", null,
+                "A123456789B", "1234567", "9876543",
+                null, null,
+                null, null, null, null,
+                "PERMANENT", "ACTIVE",
+                BigDecimal.valueOf(150_000), BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.valueOf(150_000), "KES",
+                LocalDate.now().minusMonths(1), null, null,
+                null, null, LocalDateTime.now()
+        );
+    }
+}
