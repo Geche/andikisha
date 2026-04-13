@@ -4,6 +4,51 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-04-13
+
+### Security hardening and bug fixes — all Phase 1 & 2 services at 100%
+
+#### shared/andikisha-events
+- Changed `BaseEvent` from `@JsonTypeInfo(use = Id.CLASS)` to `@JsonTypeInfo(use = Id.NAME, property = "@type")` with an explicit `@JsonSubTypes` allowlist of all 25 concrete event types — eliminates the polymorphic deserialization gadget-chain attack vector that `Id.CLASS` enables
+
+#### shared/andikisha-common
+- `GlobalExceptionHandler`: `handleIllegalArgument` now returns the generic message `"Invalid request argument"` instead of `ex.getMessage()`, preventing internal exception detail leakage; added `handleIllegalState` handler returning `"Request cannot be processed in the current state"`
+
+#### auth-service
+- Added `scanBasePackages = {"com.andikisha.auth", "com.andikisha.common"}` and `@EnableJpaAuditing` to `AuthServiceApplication` — common beans (interceptors, exception handlers) are now correctly picked up by component scan and `@CreatedDate`/`@LastModifiedDate` auditing works
+- `AuthExceptionHandler`: sanitized `IllegalArgumentException` message (was leaking internal class names and stack trace fragments); added `IllegalStateException` handler
+- `AuthGrpcService`: `checkPermission` and `getUserByEmployeeId` now catch `IllegalArgumentException` from `UUID.fromString` separately and return `INVALID_ARGUMENT` instead of silently returning `allowed=false` or `INTERNAL`
+- Added `V7__add_audit_columns_to_refresh_tokens.sql` — adds `updated_at TIMESTAMP` and `version BIGINT` columns that `BaseEntity` requires but were absent from the original V3 migration
+- `AuthServiceApplicationTest`: added `@MockitoBean ConnectionFactory` to prevent RabbitMQ TCP connection attempt in CI
+- New: `AuthControllerTest` — full e2e coverage (`@WebMvcTest`) of all 6 endpoints: register (201/400/409), login (200/401/429), refresh (200/401), change-password (204/401), logout (204/401), me (200/401), missing-tenant-header 400
+
+#### tenant-service
+- `TenantGrpcService`: added blank `tenant_id` input guards (returns `INVALID_ARGUMENT`); added separate `IllegalArgumentException` catch for malformed UUID; added `TenantContext` set/clear lifecycle (try/finally) to both `getTenant` and `verifyTenantActive` handlers
+- `TenantService`: removed misplaced `@PreAuthorize("hasRole('PLATFORM_ADMIN')")` from `listAll` service method (authorization is enforced at the controller layer — mixing strategies creates false confidence); added inline comment documenting the intentional cross-tenant `findAll` usage for platform admin
+- `TenantControllerTest`: fixed `getTenant_whenExists_returns200` — was sending `TENANT_ADMIN` role to a `PLATFORM_ADMIN`-only endpoint and expecting 200 (false-passing test); now sends `PLATFORM_ADMIN`; added `getTenant_withNonPlatformAdmin_returns403` regression guard
+- `TenantServiceApplicationTest`: added `@MockitoBean ConnectionFactory` alongside existing `RabbitTemplate` mock
+
+#### compliance-service
+- Added `Spring Security` (`TrustedHeaderAuthFilter` + `SecurityConfig`) — trusts `X-User-ID`/`X-User-Role` headers set by the API Gateway
+- Added `InvalidCountryCodeException extends IllegalArgumentException` — maps cleanly to HTTP 400 via `GlobalExceptionHandler` without requiring shared-library changes
+- Fixed `ComplianceGrpcService` and `PayrollEventListener` — `TenantContext.setTenantId()` moved inside `try` block so `finally { TenantContext.clear() }` fires on all exit paths
+- `ComplianceControllerTest`: added `X-User-ID` and `X-User-Role` headers to all requests; fixed one test that was missing auth headers
+
+#### leave-service
+- `LeaveController`: added `@PreAuthorize("hasAnyRole('HR_MANAGER','HR','ADMIN','MANAGER')")` to `GET /api/v1/leave/requests` and `GET /api/v1/leave/requests/{id}` — these were open to all authenticated users, allowing any employee to read the entire tenant's leave history
+- `RabbitMqConfig`: declared the `dlx.leave` `DirectExchange` bean, DLQ queues (`leave.employee-events.dlq`, `leave.tenant-events.dlq`), and their bindings — previously the DLX exchange was referenced in queue arguments but never declared, which causes queue declaration failures in strict RabbitMQ environments
+- `WebMvcConfig`: `TenantInterceptor` is now a Spring-managed `@Bean` (was `new TenantInterceptor()`) — future Spring-managed dependencies will be injected correctly
+- `LeaveControllerTest`: added `SecurityConfig` and `TrustedHeaderAuthFilter` to `@Import` so the full security filter chain runs in the web slice and ownership `@PreAuthorize` SpEL expressions are genuinely exercised; updated `listRequests` and `getRequest` tests to use `HR_MANAGER` role; added `listRequests_withEmployeeRole_returns403` and `getRequest_withEmployeeRole_returns403` regression guards
+
+#### employee-service
+- `EmployeeController`: added `@PreAuthorize("hasAnyRole('HR_MANAGER','ADMIN')")` to all five write endpoints: `create`, `update`, `updateSalary`, `confirmProbation`, `terminate` — these were completely unprotected, allowing any authenticated user to modify or terminate employees
+- `EmployeeGrpcService`: added blank `tenant_id` input guards (returns `INVALID_ARGUMENT`) to all three handlers; moved `TenantContext.setTenantId()` inside `try` blocks; `getEmployee` and `getSalaryStructure` now catch `ResourceNotFoundException` specifically for `NOT_FOUND` — unexpected errors now return `INTERNAL` instead of being masked as `NOT_FOUND`
+- `TrustedHeaderAuthFilter`: added CR/LF sanitization on `X-User-ID` and `X-User-Role` headers (same as existing fix in `TenantLoggingFilter`) — prevents log injection via crafted headers
+- `EmployeeServiceApplicationTest`: added `@MockitoBean ConnectionFactory` to prevent broker connection in CI
+- `EmployeeControllerTest`: added `create_withUnauthorizedRole_returns403` and `terminate_withUnauthorizedRole_returns403` to verify new `@PreAuthorize` guards
+
+---
+
 ## [Unreleased] — 2026-04-11
 
 ### Phase 1 — Foundation Services
