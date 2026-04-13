@@ -141,12 +141,23 @@ class TenantControllerTest {
 
         when(tenantService.getById(id)).thenReturn(response);
 
+        // PLATFORM_ADMIN is required — the endpoint is @PreAuthorize("hasRole('PLATFORM_ADMIN')")
         mockMvc.perform(get("/api/v1/tenants/{id}", id)
                         .header("X-User-ID", id.toString())
-                        .header("X-User-Role", "TENANT_ADMIN"))
+                        .header("X-User-Role", "PLATFORM_ADMIN"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.companyName").value("Acme Ltd"));
+    }
+
+    @Test
+    void getTenant_withNonPlatformAdmin_returns403() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/v1/tenants/{id}", id)
+                        .header("X-User-ID", id.toString())
+                        .header("X-User-Role", "TENANT_ADMIN"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -154,9 +165,10 @@ class TenantControllerTest {
         UUID id = UUID.randomUUID();
         when(tenantService.getById(id)).thenThrow(new TenantNotFoundException(id));
 
+        // PLATFORM_ADMIN required to reach the endpoint
         mockMvc.perform(get("/api/v1/tenants/{id}", id)
                         .header("X-User-ID", id.toString())
-                        .header("X-User-Role", "TENANT_ADMIN"))
+                        .header("X-User-Role", "PLATFORM_ADMIN"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }

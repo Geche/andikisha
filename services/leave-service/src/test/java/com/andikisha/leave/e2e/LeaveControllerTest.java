@@ -9,6 +9,7 @@ import com.andikisha.leave.application.service.LeaveBalanceService;
 import com.andikisha.leave.application.service.LeavePolicyService;
 import com.andikisha.leave.application.service.LeaveService;
 import com.andikisha.leave.domain.exception.LeaveRequestNotFoundException;
+import com.andikisha.leave.infrastructure.config.WebMvcConfig;
 import com.andikisha.leave.presentation.controller.LeaveController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(LeaveController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({
+        com.andikisha.leave.infrastructure.config.SecurityConfig.class,
+        com.andikisha.leave.presentation.filter.TrustedHeaderAuthFilter.class,
+        GlobalExceptionHandler.class,
+        WebMvcConfig.class
+})
 class LeaveControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -49,6 +55,8 @@ class LeaveControllerTest {
     private static final String TENANT_ID   = "e2e-tenant";
     private static final UUID   EMPLOYEE_ID = UUID.randomUUID();
     private static final UUID   REQUEST_ID  = UUID.randomUUID();
+    // authentication.name is set to X-User-ID by TrustedHeaderAuthFilter
+    private static final String USER_ID     = EMPLOYEE_ID.toString();
 
     // ------------------------------------------------------------------
     // POST /api/v1/leave/requests — submit
@@ -57,7 +65,8 @@ class LeaveControllerTest {
     @Test
     void submit_missingTenantHeader_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests")
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validSubmitJson()))
                 .andExpect(status().isBadRequest());
@@ -67,7 +76,8 @@ class LeaveControllerTest {
     void submit_missingBody_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
@@ -76,7 +86,8 @@ class LeaveControllerTest {
     void submit_nullLeaveType_returns400WithValidationError() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"startDate":"2026-05-01","endDate":"2026-05-05","days":5}
@@ -89,7 +100,8 @@ class LeaveControllerTest {
     void submit_zeroDays_returns400WithValidationError() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"leaveType":"ANNUAL","startDate":"2026-05-01","endDate":"2026-05-05","days":0}
@@ -105,7 +117,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"leaveType":"VACATION","startDate":"2026-05-01","endDate":"2026-05-05","days":5}
@@ -120,7 +133,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validSubmitJson()))
                 .andExpect(status().isCreated())
@@ -134,7 +148,8 @@ class LeaveControllerTest {
     @Test
     void approve_missingTenantHeader_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString()))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -145,7 +160,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString()))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
@@ -157,7 +173,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString()))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("WRONG_STATUS"));
     }
@@ -169,7 +186,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString()))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
     }
@@ -185,7 +203,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reject", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":"Not enough notice"}
@@ -200,7 +219,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reject", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":"Not enough notice"}
@@ -216,7 +236,8 @@ class LeaveControllerTest {
     @Test
     void cancel_missingTenantHeader_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests/{id}/cancel", REQUEST_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString()))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -226,7 +247,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/cancel", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString()))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isNoContent());
     }
 
@@ -238,7 +260,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/cancel", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", UUID.randomUUID().toString()))
+                        .header("X-User-ID", UUID.randomUUID().toString())
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("NOT_OWNER"));
     }
@@ -250,7 +273,8 @@ class LeaveControllerTest {
     @Test
     void reverse_missingTenantHeader_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reverse", REQUEST_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":"Employee resigned"}
@@ -262,7 +286,8 @@ class LeaveControllerTest {
     void reverse_missingReason_returns400WithValidationError() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reverse", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":""}
@@ -278,7 +303,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reverse", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":"Employee resigned"}
@@ -295,7 +321,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reverse", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":"Employee resigned"}
@@ -311,7 +338,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/reverse", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", EMPLOYEE_ID.toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"rejectionReason":"Employee resigned"}
@@ -326,7 +354,10 @@ class LeaveControllerTest {
 
     @Test
     void listRequests_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/leave/requests"))
+        // HR_MANAGER role passes auth; TenantInterceptor rejects missing X-Tenant-ID with 400
+        mockMvc.perform(get("/api/v1/leave/requests")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -337,6 +368,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(get("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
                         .param("status", "BOGUS"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("INVALID_STATUS"));
@@ -350,10 +383,21 @@ class LeaveControllerTest {
                         PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/leave/requests")
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.content[0].status").value("PENDING"));
+    }
+
+    @Test
+    void listRequests_withEmployeeRole_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/leave/requests")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isForbidden());
     }
 
     // ------------------------------------------------------------------
@@ -366,9 +410,20 @@ class LeaveControllerTest {
                 .thenThrow(new LeaveRequestNotFoundException(REQUEST_ID));
 
         mockMvc.perform(get("/api/v1/leave/requests/{id}", REQUEST_ID)
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
+    }
+
+    @Test
+    void getRequest_withEmployeeRole_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/leave/requests/{id}", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isForbidden());
     }
 
     // ------------------------------------------------------------------
@@ -377,7 +432,11 @@ class LeaveControllerTest {
 
     @Test
     void balances_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/leave/employees/{id}/balances", EMPLOYEE_ID))
+        // X-User-ID matches the path EMPLOYEE_ID so the ownership @PreAuthorize passes;
+        // TenantInterceptor then rejects the missing X-Tenant-ID with 400.
+        mockMvc.perform(get("/api/v1/leave/employees/{id}/balances", EMPLOYEE_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -386,8 +445,11 @@ class LeaveControllerTest {
         when(balanceService.getBalances(eq(EMPLOYEE_ID), any()))
                 .thenReturn(List.of(minimalBalanceResponse()));
 
+        // X-User-ID must match the path EMPLOYEE_ID for the ownership @PreAuthorize check
         mockMvc.perform(get("/api/v1/leave/employees/{id}/balances", EMPLOYEE_ID)
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].leaveType").value("ANNUAL"));
@@ -399,7 +461,9 @@ class LeaveControllerTest {
 
     @Test
     void policies_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/leave/policies"))
+        mockMvc.perform(get("/api/v1/leave/policies")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -408,7 +472,9 @@ class LeaveControllerTest {
         when(policyService.getPolicies()).thenReturn(List.of(minimalPolicyResponse()));
 
         mockMvc.perform(get("/api/v1/leave/policies")
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].leaveType").value("ANNUAL"));

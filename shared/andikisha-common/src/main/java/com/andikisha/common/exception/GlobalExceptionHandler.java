@@ -61,10 +61,18 @@ public class GlobalExceptionHandler {
                         "This record was modified by another request. Please retry."));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("Invalid argument: {}", ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("INVALID_ARGUMENT", "Invalid request argument"));
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        log.warn("Illegal state: {}", ex.getMessage());
         return ResponseEntity.badRequest()
-                .body(new ErrorResponse("BAD_REQUEST", ex.getMessage()));
+                .body(new ErrorResponse("BAD_REQUEST", "Request cannot be processed in the current state"));
     }
 
     @ExceptionHandler(Exception.class)

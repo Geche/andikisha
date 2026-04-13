@@ -10,36 +10,40 @@ service ComplianceService {
 }
 
 message GetTaxRatesRequest {
-  string country = 1;
-  string effective_date = 2;
+  string tenant_id = 1;
+  string country = 2;
+  string effective_date = 3;
 }
 
+// All monetary and rate fields use string to preserve BigDecimal precision
+// across the gRPC boundary. Callers must parse via new BigDecimal(value).
 message TaxBracket {
-  double lower_bound = 1;
-  double upper_bound = 2;
-  double rate = 3;
+  string lower_bound = 1;
+  string upper_bound = 2;
+  string rate = 3;
 }
 
 message TaxRatesResponse {
   string country = 1;
   repeated TaxBracket brackets = 2;
-  double personal_relief = 3;
-  double insurance_relief_rate = 4;
-  double max_insurance_relief = 5;
+  string personal_relief = 3;
+  string insurance_relief_rate = 4;
+  string max_insurance_relief = 5;
 }
 
 message GetStatutoryRatesRequest {
-  string country = 1;
-  string effective_date = 2;
+  string tenant_id = 1;
+  string country = 2;
+  string effective_date = 3;
 }
 
 message StatutoryRatesResponse {
   string country = 1;
-  double nssf_rate = 2;
-  double nssf_tier1_limit = 3;
-  double nssf_tier2_limit = 4;
-  double shif_rate = 5;
-  double housing_levy_employee_rate = 6;
-  double housing_levy_employer_rate = 7;
-  double nita_amount = 8;
+  string nssf_rate = 2;
+  string nssf_tier1_limit = 3;
+  string nssf_tier2_limit = 4;
+  string shif_rate = 5;
+  string housing_levy_employee_rate = 6;
+  string housing_levy_employer_rate = 7;
+  string nita_amount = 8;
 }

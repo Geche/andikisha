@@ -5,6 +5,7 @@ import com.andikisha.proto.tenant.TenantResponse;
 import com.andikisha.proto.tenant.TenantServiceGrpc;
 import com.andikisha.proto.tenant.VerifyTenantRequest;
 import com.andikisha.proto.tenant.VerifyTenantResponse;
+import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.tenant.application.service.TenantService;
 import com.andikisha.tenant.domain.exception.TenantNotFoundException;
 import com.andikisha.tenant.domain.model.TenantStatus;
@@ -30,7 +31,13 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
     @Override
     public void getTenant(GetTenantRequest request,
                           StreamObserver<TenantResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
+            TenantContext.setTenantId(request.getTenantId());
             UUID tenantId = UUID.fromString(request.getTenantId());
             com.andikisha.tenant.application.dto.response.TenantResponse tenant =
                     tenantService.getById(tenantId);
@@ -43,6 +50,9 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
                     .setCurrency(tenant.currency())
                     .build());
             observer.onCompleted();
+        } catch (IllegalArgumentException e) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id must be a valid UUID").asException());
         } catch (TenantNotFoundException e) {
             observer.onError(Status.NOT_FOUND
                     .withDescription("Tenant not found: " + request.getTenantId())
@@ -51,13 +61,21 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
             log.error("GetTenant failed", e);
             observer.onError(Status.INTERNAL
                     .withDescription("Internal error").asException());
+        } finally {
+            TenantContext.clear();
         }
     }
 
     @Override
     public void verifyTenantActive(VerifyTenantRequest request,
                                    StreamObserver<VerifyTenantResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
+            TenantContext.setTenantId(request.getTenantId());
             UUID tenantId = UUID.fromString(request.getTenantId());
             com.andikisha.tenant.application.dto.response.TenantResponse tenant =
                     tenantService.getById(tenantId);
@@ -74,6 +92,8 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
             log.error("VerifyTenantActive failed", e);
             observer.onNext(VerifyTenantResponse.newBuilder().setActive(false).build());
             observer.onCompleted();
+        } finally {
+            TenantContext.clear();
         }
     }
 

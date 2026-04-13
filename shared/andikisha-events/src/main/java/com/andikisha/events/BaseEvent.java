@@ -1,11 +1,62 @@
 package com.andikisha.events;
 
+import com.andikisha.events.attendance.ClockInEvent;
+import com.andikisha.events.attendance.ClockOutEvent;
+import com.andikisha.events.auth.UserDeactivatedEvent;
+import com.andikisha.events.auth.UserRegisteredEvent;
+import com.andikisha.events.compliance.ComplianceRateChangedEvent;
+import com.andikisha.events.document.DocumentGeneratedEvent;
+import com.andikisha.events.employee.EmployeeCreatedEvent;
+import com.andikisha.events.employee.EmployeeTerminatedEvent;
+import com.andikisha.events.employee.EmployeeUpdatedEvent;
+import com.andikisha.events.employee.SalaryChangedEvent;
+import com.andikisha.events.leave.LeaveApprovedEvent;
+import com.andikisha.events.leave.LeaveRejectedEvent;
+import com.andikisha.events.leave.LeaveRequestedEvent;
+import com.andikisha.events.leave.LeaveReversedEvent;
+import com.andikisha.events.notification.NotificationSentEvent;
+import com.andikisha.events.payroll.PaymentCompletedEvent;
+import com.andikisha.events.payroll.PayrollApprovedEvent;
+import com.andikisha.events.payroll.PayrollCalculatedEvent;
+import com.andikisha.events.payroll.PayrollInitiatedEvent;
+import com.andikisha.events.payroll.PayrollProcessedEvent;
+import com.andikisha.events.tenant.TenantCreatedEvent;
+import com.andikisha.events.tenant.TenantPlanChangedEvent;
+import com.andikisha.events.tenant.TenantReactivatedEvent;
+import com.andikisha.events.tenant.TenantSuspendedEvent;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = UserRegisteredEvent.class,       name = "UserRegistered"),
+        @JsonSubTypes.Type(value = UserDeactivatedEvent.class,      name = "UserDeactivated"),
+        @JsonSubTypes.Type(value = EmployeeCreatedEvent.class,      name = "EmployeeCreated"),
+        @JsonSubTypes.Type(value = EmployeeUpdatedEvent.class,      name = "EmployeeUpdated"),
+        @JsonSubTypes.Type(value = EmployeeTerminatedEvent.class,   name = "EmployeeTerminated"),
+        @JsonSubTypes.Type(value = SalaryChangedEvent.class,        name = "SalaryChanged"),
+        @JsonSubTypes.Type(value = TenantCreatedEvent.class,        name = "TenantCreated"),
+        @JsonSubTypes.Type(value = TenantSuspendedEvent.class,      name = "TenantSuspended"),
+        @JsonSubTypes.Type(value = TenantReactivatedEvent.class,    name = "TenantReactivated"),
+        @JsonSubTypes.Type(value = TenantPlanChangedEvent.class,    name = "TenantPlanChanged"),
+        @JsonSubTypes.Type(value = LeaveRequestedEvent.class,       name = "LeaveRequested"),
+        @JsonSubTypes.Type(value = LeaveApprovedEvent.class,        name = "LeaveApproved"),
+        @JsonSubTypes.Type(value = LeaveRejectedEvent.class,        name = "LeaveRejected"),
+        @JsonSubTypes.Type(value = LeaveReversedEvent.class,        name = "LeaveReversed"),
+        @JsonSubTypes.Type(value = PayrollInitiatedEvent.class,     name = "PayrollInitiated"),
+        @JsonSubTypes.Type(value = PayrollCalculatedEvent.class,    name = "PayrollCalculated"),
+        @JsonSubTypes.Type(value = PayrollApprovedEvent.class,      name = "PayrollApproved"),
+        @JsonSubTypes.Type(value = PayrollProcessedEvent.class,     name = "PayrollProcessed"),
+        @JsonSubTypes.Type(value = PaymentCompletedEvent.class,     name = "PaymentCompleted"),
+        @JsonSubTypes.Type(value = ComplianceRateChangedEvent.class, name = "ComplianceRateChanged"),
+        @JsonSubTypes.Type(value = ClockInEvent.class,              name = "ClockIn"),
+        @JsonSubTypes.Type(value = ClockOutEvent.class,             name = "ClockOut"),
+        @JsonSubTypes.Type(value = NotificationSentEvent.class,     name = "NotificationSent"),
+        @JsonSubTypes.Type(value = DocumentGeneratedEvent.class,    name = "DocumentGenerated"),
+})
 public abstract class BaseEvent {
 
     private final String eventId;

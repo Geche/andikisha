@@ -29,7 +29,6 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -78,16 +77,12 @@ public class AuthService {
         user = userRepository.save(user);
 
         final User savedUser = user;
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    eventPublisher.publishUserRegistered(savedUser);
-                }
-            });
-        } else {
-            eventPublisher.publishUserRegistered(savedUser);
-        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                eventPublisher.publishUserRegistered(savedUser);
+            }
+        });
 
         return generateTokenResponse(user);
     }
@@ -106,10 +101,8 @@ public class AuthService {
 
         user.clearLockIfExpired();
         if (user.isLocked()) {
-            long minutes = ChronoUnit.MINUTES.between(LocalDateTime.now(), user.getLockedUntil()) + 1;
             throw new AccountLockedException(
-                    "Account is locked due to too many failed attempts. Try again in "
-                            + minutes + " minute(s).");
+                    "Account temporarily locked due to too many failed attempts. Please try again later.");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {

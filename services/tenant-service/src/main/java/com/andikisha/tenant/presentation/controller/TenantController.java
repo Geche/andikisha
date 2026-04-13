@@ -43,6 +43,7 @@ public class TenantController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     @Operation(summary = "Get tenant by ID")
     public TenantResponse getById(@PathVariable UUID id) {
         return tenantService.getById(id);
@@ -56,6 +57,7 @@ public class TenantController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     @Operation(summary = "Update tenant details")
     public TenantResponse update(@PathVariable UUID id,
                                  @Valid @RequestBody UpdateTenantRequest request) {
@@ -63,6 +65,7 @@ public class TenantController {
     }
 
     @PostMapping("/{id}/suspend")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Suspend a tenant")
     public void suspend(@PathVariable UUID id,
@@ -71,6 +74,7 @@ public class TenantController {
     }
 
     @PostMapping("/{id}/reactivate")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Reactivate a suspended tenant")
     public void reactivate(@PathVariable UUID id) {
@@ -78,6 +82,7 @@ public class TenantController {
     }
 
     @PostMapping("/{id}/change-plan")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     @Operation(summary = "Change tenant subscription plan")
     public TenantResponse changePlan(@PathVariable UUID id,
                                      @Valid @RequestBody ChangePlanRequest request) {

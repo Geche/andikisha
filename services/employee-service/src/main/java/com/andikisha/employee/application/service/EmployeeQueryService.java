@@ -50,8 +50,13 @@ public class EmployeeQueryService {
                     .map(mapper::toSummary);
         }
         if (status != null) {
-            return repository.findByTenantIdAndStatus(
-                            tenantId, EmploymentStatus.valueOf(status.toUpperCase()), pageable)
+            EmploymentStatus empStatus;
+            try {
+                empStatus = EmploymentStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid status: " + status);
+            }
+            return repository.findByTenantIdAndStatus(tenantId, empStatus, pageable)
                     .map(mapper::toSummary);
         }
         return repository.findByTenantId(tenantId, pageable).map(mapper::toSummary);

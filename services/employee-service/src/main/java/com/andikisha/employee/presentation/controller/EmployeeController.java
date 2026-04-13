@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class EmployeeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
     @Operation(summary = "Create a new employee")
     public EmployeeDetailResponse create(
             @RequestHeader("X-User-ID") String userId,
@@ -58,6 +60,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
     @Operation(summary = "Update employee details")
     public EmployeeDetailResponse update(
             @RequestHeader("X-User-ID") String userId,
@@ -67,6 +70,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}/salary")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
     @Operation(summary = "Update employee salary")
     public EmployeeDetailResponse updateSalary(
             @RequestHeader("X-User-ID") String userId,
@@ -76,6 +80,7 @@ public class EmployeeController {
     }
 
     @PostMapping("/{id}/confirm-probation")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
     @Operation(summary = "Confirm probation and activate employee")
     public EmployeeDetailResponse confirmProbation(
             @RequestHeader("X-User-ID") String userId,
@@ -85,6 +90,7 @@ public class EmployeeController {
 
     @PostMapping("/{id}/terminate")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
     @Operation(summary = "Terminate an employee")
     public void terminate(
             @RequestHeader("X-User-ID") String userId,

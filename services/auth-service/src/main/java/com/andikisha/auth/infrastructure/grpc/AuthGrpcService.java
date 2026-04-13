@@ -68,6 +68,11 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
     @Override
     public void checkPermission(CheckPermissionRequest request,
                                 StreamObserver<CheckPermissionResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
             TenantContext.setTenantId(request.getTenantId());
             boolean allowed = authService.checkPermission(
@@ -79,6 +84,9 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
             );
             observer.onNext(CheckPermissionResponse.newBuilder().setAllowed(allowed).build());
             observer.onCompleted();
+        } catch (IllegalArgumentException e) {
+            observer.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("user_id must be a valid UUID").asException());
         } catch (Exception e) {
             log.error("Permission check failed", e);
             observer.onNext(CheckPermissionResponse.newBuilder().setAllowed(false).build());
@@ -91,6 +99,11 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
     @Override
     public void getUserByEmployeeId(GetUserByEmployeeIdRequest request,
                                     StreamObserver<com.andikisha.proto.auth.UserResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
             TenantContext.setTenantId(request.getTenantId());
             UserResponse user = authService.getUserByEmployeeId(
@@ -106,6 +119,9 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
                     .setIsActive(user.active())
                     .build());
             observer.onCompleted();
+        } catch (IllegalArgumentException e) {
+            observer.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("employee_id must be a valid UUID").asException());
         } catch (ResourceNotFoundException e) {
             observer.onError(io.grpc.Status.NOT_FOUND
                     .withDescription(e.getMessage()).asException());

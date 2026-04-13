@@ -94,7 +94,7 @@ public class EmployeeService {
                 request.otherAllowances() != null ? Money.of(request.otherAllowances(), currency) : null
         );
 
-        EmploymentType empType = EmploymentType.valueOf(request.employmentType().toUpperCase());
+        EmploymentType empType = parseEnum(EmploymentType.class, request.employmentType());
         LocalDate hireDate = request.hireDate() != null ? request.hireDate() : LocalDate.now();
         String employeeNumber = numberGenerator.generate(tenantId);
 
@@ -110,7 +110,7 @@ public class EmployeeService {
         if (request.dateOfBirth() != null) {
             employee.updatePersonalDetails(null, null, null, null,
                     request.dateOfBirth(),
-                    request.gender() != null ? Gender.valueOf(request.gender().toUpperCase()) : null);
+                    request.gender() != null ? parseEnum(Gender.class, request.gender()) : null);
         }
 
         employee = employeeRepository.save(employee);
@@ -135,7 +135,7 @@ public class EmployeeService {
                 request.firstName(), request.lastName(),
                 request.phoneNumber(), request.email(),
                 request.dateOfBirth(),
-                request.gender() != null ? Gender.valueOf(request.gender().toUpperCase()) : null
+                request.gender() != null ? parseEnum(Gender.class, request.gender()) : null
         );
 
         if (request.departmentId() != null
@@ -227,5 +227,13 @@ public class EmployeeService {
                 "ON_PROBATION", "ACTIVE", confirmedBy));
 
         return mapper.toDetailResponse(employee);
+    }
+
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String value) {
+        try {
+            return Enum.valueOf(type, value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid value '" + value + "' for " + type.getSimpleName());
+        }
     }
 }

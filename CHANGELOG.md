@@ -4,6 +4,63 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-04-11
+
+### Phase 1 — Foundation Services
+
+#### auth-service
+- Built to 100%: JWT token issuance and validation, unit tests, RabbitMQ event publishing verified
+
+#### tenant-service
+- Built to 100%: tenant provisioning, lifecycle management (create/suspend/reactivate), unit and integration tests passing
+
+#### employee-service
+- Domain models, repositories, DTOs, and services scaffolded (in progress)
+
+---
+
+### Phase 2 — Core HR: leave-service brought to 100%
+
+**Critical bug fixes**
+- Replaced all `double`/`float` day-count fields with `BigDecimal` across `LeaveBalance`, `LeaveRequest`, `LeaveBalanceService`, `SubmitLeaveRequest`, and `LeaveApprovedEvent` — prevents floating-point rounding errors in leave accounting
+- Fixed `LeaveService.approve()` ordering: state guard (`request.approve()`) now runs before `balance.deduct()`, preventing concurrent approvals from double-deducting the balance; the losing thread receives HTTP 409 via the new `ObjectOptimisticLockingFailureException` handler in `GlobalExceptionHandler`
+- Removed unfiltered `findOverlappingApprovedLeave` repository method (missing `employeeId` filter — cross-employee data exposure risk); replaced with `findOverlappingByEmployee` requiring `tenantId + employeeId + status`
+- Fixed JPQL overlap query to use named `:status` parameter instead of the non-portable Hibernate string literal `'APPROVED'`
+- Removed all `TenantContext.setTenantId()` calls from `LeaveController` — tenant lifecycle is owned exclusively by `TenantInterceptor`
+- Fixed `LeavePolicyService` self-invocation proxy bypass: extracted `savePolicyIfNotExists` into a dedicated `@Service` bean (`LeavePolicyInitializer`) so `@Transactional(REQUIRES_NEW)` is applied via the Spring AOP proxy; duplicate `TenantCreatedEvent` delivery no longer rolls back all five policy inserts
+
+**Code quality fixes**
+- Fixed `LeaveBalanceService` pro-ration and monthly accrual arithmetic to use `BigDecimal` with `RoundingMode.HALF_UP` (was raw `double`)
+- Replaced O(n²) policy lookup in `runMonthlyAccrual` with a `Map<LeaveType, LeavePolicy>`
+- Eliminated duplicate `LocalDate.now()` call to avoid midnight-rollover race
+- Changed sick leave policy default to `requiresApproval = false` per Kenya Employment Act (self-certified sick leave)
+
+**New features**
+- Added pending balance reservation at submit time: `sumDaysByStatus` JPQL aggregate deducts in-flight PENDING request days from available balance, preventing concurrent submissions from exhausting the same allowance
+- Implemented HR reversal workflow end-to-end:
+  - `LeaveRequest.reverse()` domain method (APPROVED → CANCELLED)
+  - `LeaveService.hrReverse()` — state guard first, then balance restore, then event publish
+  - `LeaveReversedEvent` added to `andikisha-events` (with `BigDecimal days`)
+  - `POST /api/v1/leave/requests/{id}/reverse` controller endpoint
+  - `publishLeaveReversed` added to `LeaveEventPublisher` port and `RabbitLeaveEventPublisher`
+
+**Shared library additions**
+- `GlobalExceptionHandler`: added `ObjectOptimisticLockingFailureException` → HTTP 409 and `MissingRequestHeaderException` → HTTP 400 handlers
+- `LeaveApprovedEvent`: `days` field changed from `double` to `BigDecimal`
+- `LeaveReversedEvent`: new event (`leaveRequestId`, `employeeId`, `leaveType`, `BigDecimal days`, `reason`, `reversedBy`)
+
+**Test suite — 8 test classes, 90+ cases**
+- `LeaveServiceApplicationTest` — context loads; mocks `ConnectionFactory` + `RabbitTemplate` to prevent broker TCP connection in CI
+- `LeaveRequestDomainTest` — 15 unit tests: factory guards, approve/reject/cancel state machine, `reverse()` guards, `attachMedicalCert`
+- `LeaveBalanceDomainTest` — 12 unit tests: deduct/restore/accrue/freeze and all guards
+- `LeaveServiceTest` — 22 unit tests: all submit paths (balance, policy, overlap, pending reservation), approve, reject, cancel, `hrReverse` (4 cases), list and get
+- `LeaveBalanceServiceTest` — 6 unit tests: pro-ration, policy-not-found skip, freeze, monthly accrual
+- `LeaveRequestRepositoryTest` — 16 integration tests (Testcontainers/PostgreSQL): tenant isolation, status filter, overlap detection (4 cases), `sumDaysByStatus` (4 cases)
+- `LeaveBalanceRepositoryTest` — 10 integration tests: tenant isolation, bulk freeze, frozen exclusion
+- `LeaveControllerTest` — 23 e2e tests (`@WebMvcTest`): all endpoints including `/reverse` (5 cases), missing-header 400, validation 422, not-found 404, business-rule 422
+
+---
+
 ## [Unreleased] — 2026-04-03
 
 ### Shared Modules — Proto & Common Library

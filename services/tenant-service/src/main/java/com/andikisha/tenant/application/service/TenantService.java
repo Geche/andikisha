@@ -15,7 +15,6 @@ import com.andikisha.tenant.domain.repository.PlanRepository;
 import com.andikisha.tenant.domain.repository.TenantRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -86,7 +85,8 @@ public class TenantService {
         return mapper.toResponse(tenant);
     }
 
-    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
+    // PLATFORM_ADMIN-only cross-tenant read — authorization enforced at the controller layer.
+    // findAll() intentionally bypasses per-tenant filtering; only PLATFORM_ADMIN may call this.
     public Page<TenantResponse> listAll(Pageable pageable) {
         return tenantRepository.findAll(pageable).map(mapper::toResponse);
     }

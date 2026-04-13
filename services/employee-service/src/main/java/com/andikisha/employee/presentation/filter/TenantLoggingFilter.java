@@ -29,7 +29,9 @@ public class TenantLoggingFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String tenantId  = request.getHeader(TENANT_HEADER);
+        String rawTenantId = request.getHeader(TENANT_HEADER);
+        // Sanitize to prevent log injection (CRLF in header value)
+        String tenantId  = rawTenantId != null ? rawTenantId.replaceAll("[\r\n\t]", "_") : null;
         String requestId = UUID.randomUUID().toString().substring(0, 8);
         try {
             if (tenantId != null) MDC.put(MDC_TENANT, tenantId);

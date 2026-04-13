@@ -31,8 +31,13 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
     @Override
     public void getEmployee(GetEmployeeRequest request,
                             StreamObserver<com.andikisha.proto.employee.EmployeeResponse> observer) {
-        TenantContext.setTenantId(request.getTenantId());
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
+            TenantContext.setTenantId(request.getTenantId());
             EmployeeDetailResponse dto = queryService.findById(
                     UUID.fromString(request.getEmployeeId()));
             observer.onNext(toProto(dto));
@@ -41,11 +46,14 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
             observer.onError(Status.INVALID_ARGUMENT
                     .withDescription("Invalid employee ID format: " + request.getEmployeeId())
                     .asException());
-        } catch (Exception e) {
-            log.error("GetEmployee failed for {}", request.getEmployeeId(), e);
+        } catch (com.andikisha.common.exception.ResourceNotFoundException e) {
             observer.onError(Status.NOT_FOUND
                     .withDescription("Employee not found: " + request.getEmployeeId())
                     .asException());
+        } catch (Exception e) {
+            log.error("GetEmployee failed for {}", request.getEmployeeId(), e);
+            observer.onError(Status.INTERNAL
+                    .withDescription("Internal error").asException());
         } finally {
             TenantContext.clear();
         }
@@ -54,8 +62,13 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
     @Override
     public void listActiveByTenant(ListActiveByTenantRequest request,
                                    StreamObserver<ListEmployeesResponse> observer) {
-        TenantContext.setTenantId(request.getTenantId());
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
+            TenantContext.setTenantId(request.getTenantId());
             var protoList = queryService.findAllActive().stream()
                     .map(this::toProto)
                     .toList();
@@ -76,8 +89,13 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
     @Override
     public void getSalaryStructure(GetSalaryRequest request,
                                    StreamObserver<SalaryStructureResponse> observer) {
-        TenantContext.setTenantId(request.getTenantId());
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
         try {
+            TenantContext.setTenantId(request.getTenantId());
             EmployeeDetailResponse dto = queryService.findById(
                     UUID.fromString(request.getEmployeeId()));
 
@@ -95,10 +113,13 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
             observer.onError(Status.INVALID_ARGUMENT
                     .withDescription("Invalid employee ID format: " + request.getEmployeeId())
                     .asException());
-        } catch (Exception e) {
-            log.error("GetSalaryStructure failed for {}", request.getEmployeeId(), e);
+        } catch (com.andikisha.common.exception.ResourceNotFoundException e) {
             observer.onError(Status.NOT_FOUND
                     .withDescription("Employee not found").asException());
+        } catch (Exception e) {
+            log.error("GetSalaryStructure failed for {}", request.getEmployeeId(), e);
+            observer.onError(Status.INTERNAL
+                    .withDescription("Internal error").asException());
         } finally {
             TenantContext.clear();
         }
