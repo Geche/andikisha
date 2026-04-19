@@ -16,7 +16,12 @@
       <imported>true</imported>
       <remarks>$PROJECT_DIR$/services/payroll-service/src/main/resources/application.yml</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/andikisha_payroll</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5436/andikisha_payroll</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="com.intellij.clouds.kubernetes.db.host.port" />
+        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
+        <property name="com.intellij.clouds.kubernetes.db.container.port" />
+      </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
     <data-source source="LOCAL" name="andikisha_auth@localhost" uuid="7a008698-3231-4974-a125-4a808990bb61">
@@ -81,7 +86,7 @@
       <imported>true</imported>
       <remarks>$PROJECT_DIR$/services/compliance-service/src/main/resources/application.yml</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/andikisha_compliance</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5438/andikisha_compliance</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
@@ -150,7 +155,12 @@
       <imported>true</imported>
       <remarks>$PROJECT_DIR$/services/leave-service/src/main/resources/application.yml</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/andikisha_leave</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5437/andikisha_leave</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="com.intellij.clouds.kubernetes.db.host.port" />
+        <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
+        <property name="com.intellij.clouds.kubernetes.db.container.port" />
+      </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
     <data-source source="LOCAL" name="0@localhost" uuid="376a1857-bfcb-40bc-bd21-a71bd7914339">

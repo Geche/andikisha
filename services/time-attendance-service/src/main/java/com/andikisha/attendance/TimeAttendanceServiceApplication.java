@@ -1,9 +1,9 @@
-package com.andikisha.timeattendance;
+package com.andikisha.attendance;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.andikisha.attendance", "com.andikisha.common"})
 public class TimeAttendanceServiceApplication {
 
     public static void main(String[] args) {
