@@ -1,1 +1,16 @@
 20.19.0
+# Hoist packages that multiple apps need (React, Next.js, TypeScript)
+# to node_modules at the workspace root to avoid duplication.
+shamefully-hoist=false
+
+# Strict peer dependency checks on install — forces you to resolve
+# peer dep warnings properly rather than silently ignoring them.
+strict-peer-dependencies=false
+
+# Store pnpm's global content-addressable store path.
+# Leave this commented unless you need a custom location.
+# store-dir=~/.pnpm-store
+
+# Always use the exact version specified in package.json
+# when adding new packages — prevents accidental ^ or ~ ranges.
+save-exact=false
