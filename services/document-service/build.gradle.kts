@@ -30,8 +30,8 @@ dependencies {
     // Messaging — listens for PayslipGeneratedEvent to auto-attach payslips
     implementation("org.springframework.boot:spring-boot-starter-amqp")
 
-    // gRPC server — other services call document-service to retrieve document URLs
-    implementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
+    // gRPC — server (expose document retrieval) + client (call payroll-service for payslip data)
+    implementation("net.devh:grpc-spring-boot-starter:$grpcStarterVersion")
 
     // Mapping
     implementation("org.mapstruct:mapstruct:$mapstructVersion")

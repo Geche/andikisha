@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+app:
+  storage:
+    base-path: ./test-document-storage
+
+grpc:
+  server:
+    port: 0
+  client:
+    payroll-service:
+      address: in-process:test
+      negotiation-type: plaintext

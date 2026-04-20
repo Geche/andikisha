@@ -219,10 +219,11 @@ public class LeaveService {
         // Restore balance
         if (request.getLeaveType() != LeaveType.UNPAID) {
             int year = request.getStartDate().getYear();
+            LeaveRequest finalRequest = request;
             balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
                             tenantId, request.getEmployeeId(), request.getLeaveType(), year)
                     .ifPresent(balance -> {
-                        balance.restore(request.getDays());
+                        balance.restore(finalRequest.getDays());
                         balanceRepository.save(balance);
                     });
         }

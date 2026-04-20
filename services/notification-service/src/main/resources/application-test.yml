@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+  mail:
+    host: localhost
+    port: 3025
+
+app:
+  notifications:
+    sms:
+      enabled: false
+
+grpc:
+  server:
+    port: 0

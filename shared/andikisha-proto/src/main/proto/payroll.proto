@@ -10,6 +10,7 @@ service PayrollService {
   rpc GetPayrollRun(GetPayrollRunRequest) returns (PayrollRunResponse);
   rpc GetPaySlip(GetPaySlipRequest) returns (PaySlipResponse);
   rpc GetLatestPaySlip(GetLatestPaySlipRequest) returns (PaySlipResponse);
+  rpc GetPaySlips(GetPaySlipsRequest) returns (GetPaySlipsResponse);
 }
 
 message GetPayrollRunRequest {
@@ -40,6 +41,37 @@ message GetPaySlipRequest {
 message GetLatestPaySlipRequest {
   string tenant_id = 1;
   string employee_id = 2;
+}
+
+message GetPaySlipsRequest {
+  string tenant_id = 1;
+  string payroll_run_id = 2;
+}
+
+message GetPaySlipsResponse {
+  repeated PaySlipDetail pay_slips = 1;
+}
+
+message PaySlipDetail {
+  string employee_id = 1;
+  string employee_name = 2;
+  string employee_number = 3;
+  string payroll_run_id = 4;
+  string period = 5;
+  double gross_pay = 6;
+  double net_pay = 7;
+  double basic_pay = 8;
+  double housing_allowance = 9;
+  double transport_allowance = 10;
+  double medical_allowance = 11;
+  double other_allowances = 12;
+  double paye = 13;
+  double nssf = 14;
+  double shif = 15;
+  double housing_levy = 16;
+  double helb = 17;
+  double personal_relief = 18;
+  double insurance_relief = 19;
 }
 
 message PaySlipResponse {
