@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,25 +56,29 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     BigDecimal sumRegularHours(String tenantId, UUID employeeId,
                            LocalDate startDate, LocalDate endDate);
 
-    @Query("""
-        SELECT COALESCE(SUM(ar.overtimeHours), 0) FROM AttendanceRecord ar
-        WHERE ar.tenantId = :tenantId AND ar.employeeId = :employeeId
-        AND ar.attendanceDate BETWEEN :startDate AND :endDate
-        AND ar.holiday = false
-        AND EXTRACT(DOW FROM ar.attendanceDate) BETWEEN 1 AND 5
-        """)
-    BigDecimal sumWeekdayOvertime(String tenantId, UUID employeeId,
-                              LocalDate startDate, LocalDate endDate);
+    @Query(value = """
+        SELECT COALESCE(SUM(overtime_hours), 0) FROM attendance_records
+        WHERE tenant_id = :tenantId AND employee_id = :employeeId
+        AND attendance_date BETWEEN :startDate AND :endDate
+        AND is_holiday = false
+        AND EXTRACT(DOW FROM attendance_date) BETWEEN 1 AND 5
+        """, nativeQuery = true)
+    BigDecimal sumWeekdayOvertime(@Param("tenantId") String tenantId,
+                                  @Param("employeeId") UUID employeeId,
+                                  @Param("startDate") LocalDate startDate,
+                                  @Param("endDate") LocalDate endDate);
 
-    @Query("""
-        SELECT COALESCE(SUM(ar.overtimeHours), 0) FROM AttendanceRecord ar
-        WHERE ar.tenantId = :tenantId AND ar.employeeId = :employeeId
-        AND ar.attendanceDate BETWEEN :startDate AND :endDate
-        AND ar.holiday = false
-        AND EXTRACT(DOW FROM ar.attendanceDate) IN (0, 6)
-        """)
-    BigDecimal sumWeekendOvertime(String tenantId, UUID employeeId,
-                              LocalDate startDate, LocalDate endDate);
+    @Query(value = """
+        SELECT COALESCE(SUM(overtime_hours), 0) FROM attendance_records
+        WHERE tenant_id = :tenantId AND employee_id = :employeeId
+        AND attendance_date BETWEEN :startDate AND :endDate
+        AND is_holiday = false
+        AND EXTRACT(DOW FROM attendance_date) IN (0, 6)
+        """, nativeQuery = true)
+    BigDecimal sumWeekendOvertime(@Param("tenantId") String tenantId,
+                                  @Param("employeeId") UUID employeeId,
+                                  @Param("startDate") LocalDate startDate,
+                                  @Param("endDate") LocalDate endDate);
 
     @Query("""
         SELECT COALESCE(SUM(ar.hoursWorked), 0) FROM AttendanceRecord ar

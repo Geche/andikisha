@@ -11,6 +11,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Branding starts Here!
         brand: {
           950: "#071e13",
           900: "#0b3d2e",
@@ -30,6 +31,7 @@ const config: Config = {
           alt: "#f8f7f4",
         },
       },
+      // Branding ends here!
       fontFamily: {
         display: ["var(--font-bricolage)", "sans-serif"],
         body: ["var(--font-dm-sans)", "sans-serif"],

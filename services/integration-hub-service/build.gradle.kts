@@ -66,4 +66,5 @@ dependencies {
     testImplementation("org.testcontainers:rabbitmq:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0") // Mock M-Pesa Daraja API
+    testRuntimeOnly("com.h2database:h2")
 }

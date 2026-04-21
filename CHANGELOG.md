@@ -4,6 +4,64 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-04-21
+
+### document-service — 100% complete (Phase 3)
+
+#### shared/andikisha-proto
+- Added `GetPaySlips` RPC to `PayrollService` with `GetPaySlipsRequest`, `GetPaySlipsResponse`, and `PaySlipDetail` message types — covers all 19 payslip fields (gross, net, basic pay, allowances, all statutory deductions, and reliefs) needed by document-service to build PDF payslips without a separate database query
+
+#### document-service
+- `build.gradle.kts`: changed `grpc-server-spring-boot-starter` → `grpc-spring-boot-starter` — the server-only starter does not include the gRPC client stubs required by `PayrollGrpcClient`; the unified starter bundles both server and client
+- `application.yml`: added `app.grpc.payroll.deadline-seconds` config property (default 10, overridable via `PAYROLL_GRPC_DEADLINE_SECONDS` env var)
+- `V1__create_documents.sql` and `V2__create_document_templates.sql`: fixed column indentation from parenthesis-aligned to consistent 4-space indented style
+
+**Test suite — 4 test classes, 45 cases — BUILD SUCCESSFUL**
+- `DocumentServiceTest` (10 unit tests) — getById happy path, NOT_FOUND tenant isolation guard, download single-DB-trip regression guard (I5), invalid document type → `BusinessRuleException` with code `INVALID_DOCUMENT_TYPE`, valid type filter, case-insensitive type resolution
+- `PayslipHtmlBuilderTest` (8 unit tests) — employee details rendering, earnings/deductions tables, net pay, tax reliefs section, empty reliefs omits section, HTML escaping (`&` → `&amp;`, `<` → `&lt;`), null net pay → `KES 0.00`, valid HTML structure
+- `DocumentRepositoryTest` (13 integration tests, Testcontainers/PostgreSQL 16) — tenant isolation via `findByIdAndTenantId` cross-tenant guard, employee filtering, type filtering, payroll run isolation, period uniqueness, `markReady`/`markFailed` status transitions
+- `DocumentControllerTest` (14 e2e tests, `@WebMvcTest`) — all 6 endpoints; missing `X-Tenant-ID` → 400, unknown document → 404 with `$.error = "NOT_FOUND"`, invalid type → 422 with `$.error = "INVALID_DOCUMENT_TYPE"`, download with correct `Content-Disposition` header
+
+---
+
+### frontend/landing — Full audit fix + MDX blog CMS
+
+#### API routes (new)
+- `app/api/contact/route.ts` — validates required fields, sends via Resend when `RESEND_API_KEY` is set, returns `{ ok: true }` without the key for local dev (graceful degradation)
+- `app/api/demo/route.ts` — validates name/email/company/employees, email subject includes company name and team size
+- `app/api/newsletter/route.ts` — validates email, sends two emails via Resend: internal team notification + subscriber welcome confirmation with unsubscribe instructions
+
+#### Blog CMS (MDX file-based)
+- `lib/blog.ts` — `PostMeta` and `Post` TypeScript interfaces; `getAllPosts()` reads all `.mdx` files from `content/blog/`, parses frontmatter with `gray-matter`, sorts by date descending; `getPost(slug)` reads single post and returns frontmatter + body content
+- `content/blog/` — 6 MDX articles with frontmatter (`title`, `excerpt`, `date`, `category`, `readTime`):
+  - `paye-2026-bracket-changes.mdx` — 2026 PAYE bracket changes with rate table
+  - `spreadsheet-payroll-cost.mdx` — cost analysis with Markdown table
+  - `nssf-tier-explainer.mdx` — NSSF Tier I & II breakdown
+  - `onboarding-kenya-sme.mdx` — Kenya employee onboarding checklist
+  - `shif-vs-nhif.mdx` — SHIF transition guide
+  - `housing-levy-guide.mdx` — Housing Levy employer obligations
+- `app/blog/BlogClient.tsx` — client component receiving `posts: PostMeta[]`; `activeCategory` state with client-side filtering; category buttons with `aria-pressed` accessibility attribute; `PostCard` sub-component; `NewsletterForm` sub-component calling `/api/newsletter` with success/error states
+- `app/blog/page.tsx` — converted to server component using `getAllPosts()`, passes posts to `BlogClient`; hero section remains server-rendered
+- `app/blog/[slug]/page.tsx` — rewrote to use `getPost(slug)` and `<MDXRemote source={post.content} />` for full MDX rendering; `generateStaticParams` from `getAllPosts()`; `generateMetadata` adds `openGraph` article metadata; removed inline `ARTICLE_BODY` placeholder map
+
+#### Bug and link fixes
+- `components/layout/Navbar.tsx`: Sign In link changed from `href="#"` to `process.env.NEXT_PUBLIC_APP_URL ?? "https://app.andikishahr.com"`
+- `components/layout/Footer.tsx`: `/features#time` corrected to `/features#integrations` — the features page has no `id="time"` section
+- `app/dpa/page.tsx` (new): Data Processing Agreement page with 12 sections covering Kenya DPA 2019 compliance, data subject rights, sub-processors, and retention obligations — resolves the 404 on the footer `/dpa` link
+- `lib/data.ts`: removed `BLOG_POSTS` export (replaced by MDX files and `lib/blog.ts`)
+- `app/contact/ContactForm.tsx`: removed `console.log("Contact form:", data)`; form now calls `/api/contact`; added `submitError` state with `AlertCircle` error display block; added `aria-describedby` to all fields
+- `app/demo/DemoForm.tsx`: removed `console.log("Demo request:", data)`; form now calls `/api/demo`; added `submitError` state; extracted magic number `300` to `SUBMIT_DELAY_MS` constant; added `aria-describedby` to all fields
+
+#### Dependencies and tooling
+- Added `next-mdx-remote ^5.0.0`, `gray-matter ^4.0.3`, `resend ^4.0.0` to dependencies
+- Added `@tailwindcss/typography ^0.5.15` to devDependencies
+- Removed non-existent `@types/gray-matter` (not in npm registry) from devDependencies
+- `tailwind.config.ts`: added `@tailwindcss/typography` plugin with custom `prose` theme matching brand fonts and colors; added `content/blog` to content paths; removed broken `count-up` and `progress-bar` animation keyframes that were declared but never defined
+- `.env.example` (new): documents all required environment variables — `RESEND_API_KEY`, `RESEND_FROM`, `CONTACT_TO`, `NEXT_PUBLIC_APP_URL`
+- `pnpm install` run — all packages resolved; TypeScript passes with zero errors
+
+---
+
 ## [Unreleased] — 2026-04-13
 
 ### Security hardening and bug fixes — all Phase 1 & 2 services at 100%

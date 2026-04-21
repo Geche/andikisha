@@ -24,8 +24,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
+
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -86,7 +89,8 @@ class AttendanceServiceTest {
     void clockIn_whenAlreadyClockedIn_throwsBusinessRuleException() {
         LocalDateTime now = LocalDateTime.of(2024, 4, 15, 8, 5);
         ClockInRequest request = new ClockInRequest(now, AttendanceSource.WEB, null, null, null);
-        AttendanceRecord existing = AttendanceRecord.createClockIn(TENANT_ID, EMPLOYEE_ID, now, AttendanceSource.WEB);
+        AttendanceRecord existing = AttendanceRecord.createClockIn(TENANT_ID, EMPLOYEE_ID,
+                now.atZone(ZoneId.of("Africa/Nairobi")).toInstant(), AttendanceSource.WEB);
 
         when(recordRepository.existsByTenantIdAndEmployeeIdAndAttendanceDateAndOnLeaveTrue(
                 TENANT_ID, EMPLOYEE_ID, now.toLocalDate())).thenReturn(false);
@@ -197,7 +201,8 @@ class AttendanceServiceTest {
         LocalDateTime clockIn  = LocalDateTime.of(2024, 4, 15, 8, 0);
         LocalDateTime clockOut = LocalDateTime.of(2024, 4, 15, 17, 0);
         ClockOutRequest request = new ClockOutRequest(clockOut, AttendanceSource.WEB, null, null);
-        AttendanceRecord record = AttendanceRecord.createClockIn(TENANT_ID, EMPLOYEE_ID, clockIn, AttendanceSource.WEB);
+        AttendanceRecord record = AttendanceRecord.createClockIn(TENANT_ID, EMPLOYEE_ID,
+                clockIn.atZone(ZoneId.of("Africa/Nairobi")).toInstant(), AttendanceSource.WEB);
 
         when(recordRepository.findByTenantIdAndEmployeeIdAndAttendanceDate(
                 TENANT_ID, EMPLOYEE_ID, clockOut.toLocalDate())).thenReturn(Optional.of(record));
@@ -255,7 +260,8 @@ class AttendanceServiceTest {
         LocalDateTime clockIn  = LocalDateTime.of(2024, 4, 15, 8, 0);
         LocalDateTime clockOut = LocalDateTime.of(2024, 4, 15, 16, 0);
         ClockOutRequest request = new ClockOutRequest(clockOut, AttendanceSource.WEB, null, null);
-        AttendanceRecord record = AttendanceRecord.createClockIn(TENANT_ID, EMPLOYEE_ID, clockIn, AttendanceSource.WEB);
+        AttendanceRecord record = AttendanceRecord.createClockIn(TENANT_ID, EMPLOYEE_ID,
+                clockIn.atZone(ZoneId.of("Africa/Nairobi")).toInstant(), AttendanceSource.WEB);
         WorkSchedule schedule = WorkSchedule.createDefault(TENANT_ID);
 
         when(recordRepository.findByTenantIdAndEmployeeIdAndAttendanceDate(

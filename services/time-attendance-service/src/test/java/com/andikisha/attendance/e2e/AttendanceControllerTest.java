@@ -20,8 +20,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -175,7 +175,7 @@ class AttendanceControllerTest {
     private AttendanceResponse stubAttendanceResponse() {
         return new AttendanceResponse(UUID.randomUUID(), EMPLOYEE_ID,
                 LocalDate.of(2024, 4, 15),
-                LocalDateTime.of(2024, 4, 15, 8, 0), null,
+                Instant.parse("2024-04-15T05:00:00Z"), null,
                 "WEB", null,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 false, null, false, false, false, false, null, false);

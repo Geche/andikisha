@@ -24,7 +24,7 @@ public class RabbitAttendanceEventPublisher implements AttendanceEventPublisher 
         var event = new ClockInEvent(
                 record.getTenantId(),
                 record.getEmployeeId().toString(),
-                record.getClockIn().atZone(java.time.ZoneId.systemDefault()).toInstant(),
+                record.getClockIn(),
                 record.getClockInSource().name()
         );
         rabbitTemplate.convertAndSend("attendance.events", "attendance.clock_in", event);
@@ -36,7 +36,7 @@ public class RabbitAttendanceEventPublisher implements AttendanceEventPublisher 
         var event = new ClockOutEvent(
                 record.getTenantId(),
                 record.getEmployeeId().toString(),
-                record.getClockOut().atZone(java.time.ZoneId.systemDefault()).toInstant(),
+                record.getClockOut(),
                 record.getHoursWorked()
         );
         rabbitTemplate.convertAndSend("attendance.events", "attendance.clock_out", event);

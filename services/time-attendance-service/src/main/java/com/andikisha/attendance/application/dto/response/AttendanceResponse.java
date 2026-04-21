@@ -1,16 +1,16 @@
 package com.andikisha.attendance.application.dto.response;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record AttendanceResponse(
         UUID id,
         UUID employeeId,
         LocalDate attendanceDate,
-        LocalDateTime clockIn,
-        LocalDateTime clockOut,
+        Instant clockIn,
+        Instant clockOut,
         String clockInSource,
         String clockOutSource,
         BigDecimal hoursWorked,

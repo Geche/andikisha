@@ -68,7 +68,7 @@ com.andikisha.{service}/
 
 - Use Java records for DTOs and events. Never use records for JPA entities.
 - Entities extend BaseEntity (UUID id, tenantId, createdAt, updatedAt, version).
-- Use Money value object for all monetary amounts. Never use raw double or float for money.
+- Use Money value object for monetary amounts in domain entities. Exception: denormalised snapshot entities (for example PaySlip) holding many amounts in a single known currency may store currency once at the entity level as a String column and use BigDecimal per amount. Never use raw double or float for money.
 - All entities include @Column(name = "tenant_id") and WHERE tenant_id = ? in queries.
 - Repository methods must filter by tenantId. Example: findByTenantIdAndStatus(String tenantId, Status status).
 - Use constructor injection. Never use field injection with @Autowired.
@@ -104,4 +104,4 @@ Never commit .env files, application-prod.yml secrets, or build/ directories.
 - Do not create cross-service database foreign keys. Use UUID references only.
 - Do not call external APIs directly from domain services. Route through Integration Hub.
 - Do not put business logic in controllers. Controllers delegate to application services.
-- Do not use float or double for money. Use BigDecimal with Money value object.
+- Do not use raw double or float for money. Use BigDecimal fields directly on snapshot entities; use Money.of() at the application boundary where a Money type is required.

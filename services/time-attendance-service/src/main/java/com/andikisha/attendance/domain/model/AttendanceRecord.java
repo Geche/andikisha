@@ -11,9 +11,12 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
+
+
 
 @Entity
 @Table(name = "attendance_records")
@@ -26,10 +29,10 @@ public class AttendanceRecord extends BaseEntity {
     private LocalDate attendanceDate;
 
     @Column(name = "clock_in")
-    private LocalDateTime clockIn;
+    private Instant clockIn;
 
     @Column(name = "clock_out")
-    private LocalDateTime clockOut;
+    private Instant clockOut;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "clock_in_source", length = 20)
@@ -89,13 +92,15 @@ public class AttendanceRecord extends BaseEntity {
 
     protected AttendanceRecord() {}
 
+    private static final ZoneId EAT = ZoneId.of("Africa/Nairobi");
+
     public static AttendanceRecord createClockIn(String tenantId, UUID employeeId,
-                                                 LocalDateTime clockIn,
+                                                 Instant clockIn,
                                                  AttendanceSource source) {
         AttendanceRecord record = new AttendanceRecord();
         record.setTenantId(tenantId);
         record.employeeId = employeeId;
-        record.attendanceDate = clockIn.toLocalDate();
+        record.attendanceDate = clockIn.atZone(EAT).toLocalDate();
         record.clockIn = clockIn;
         record.clockInSource = source;
         record.hoursWorked = BigDecimal.ZERO;
@@ -144,7 +149,7 @@ public class AttendanceRecord extends BaseEntity {
         return record;
     }
 
-    public void clockOut(LocalDateTime clockOut, AttendanceSource source,
+    public void clockOut(Instant clockOut, AttendanceSource source,
                          BigDecimal standardHoursPerDay) {
         if (this.clockIn == null) {
             throw new BusinessRuleException("Cannot clock out without a clock-in");
@@ -202,8 +207,8 @@ public class AttendanceRecord extends BaseEntity {
 
     public UUID getEmployeeId() { return employeeId; }
     public LocalDate getAttendanceDate() { return attendanceDate; }
-    public LocalDateTime getClockIn() { return clockIn; }
-    public LocalDateTime getClockOut() { return clockOut; }
+    public Instant getClockIn() { return clockIn; }
+    public Instant getClockOut() { return clockOut; }
     public AttendanceSource getClockInSource() { return clockInSource; }
     public AttendanceSource getClockOutSource() { return clockOutSource; }
     public Double getClockInLatitude() { return clockInLatitude; }

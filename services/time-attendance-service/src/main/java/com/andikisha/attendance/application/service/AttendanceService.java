@@ -22,9 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
@@ -33,6 +35,7 @@ import java.util.UUID;
 public class AttendanceService {
 
     private static final Logger log = LoggerFactory.getLogger(AttendanceService.class);
+    private static final ZoneId EAT = ZoneId.of("Africa/Nairobi");
 
     private final AttendanceRecordRepository recordRepository;
     private final WorkScheduleRepository scheduleRepository;
@@ -71,8 +74,9 @@ public class AttendanceService {
 
         AttendanceSource source = request.source() != null ? request.source() : AttendanceSource.WEB;
 
+        Instant clockInInstant = request.clockInTime().atZone(EAT).toInstant();
         AttendanceRecord record = AttendanceRecord.createClockIn(
-                tenantId, employeeId, request.clockInTime(), source);
+                tenantId, employeeId, clockInInstant, source);
 
         if (request.latitude() != null && request.longitude() != null) {
             record.setLocation(ClockType.CLOCK_IN,
@@ -127,7 +131,8 @@ public class AttendanceService {
 
         AttendanceSource source = request.source() != null ? request.source() : AttendanceSource.WEB;
 
-        record.clockOut(request.clockOutTime(), source, standardHours);
+        Instant clockOutInstant = request.clockOutTime().atZone(EAT).toInstant();
+        record.clockOut(clockOutInstant, source, standardHours);
 
         if (request.latitude() != null && request.longitude() != null) {
             record.setLocation(ClockType.CLOCK_OUT,

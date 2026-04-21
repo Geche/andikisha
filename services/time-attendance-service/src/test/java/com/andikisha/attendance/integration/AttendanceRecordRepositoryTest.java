@@ -19,7 +19,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -67,7 +69,7 @@ class AttendanceRecordRepositoryTest {
     void findByIdAndTenantId_enforcesTenantIsolation() {
         AttendanceRecord record = repository.save(
                 AttendanceRecord.createClockIn(TENANT_A, EMPLOYEE,
-                        LocalDateTime.of(2024, 4, 10, 8, 0), AttendanceSource.WEB));
+                        LocalDate.of(2024, 4, 10).atTime(8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB));
 
         assertThat(repository.findByIdAndTenantId(record.getId(), TENANT_A)).isPresent();
         assertThat(repository.findByIdAndTenantId(record.getId(), TENANT_B)).isEmpty();
@@ -166,13 +168,13 @@ class AttendanceRecordRepositoryTest {
     void sumRegularHours_sumsAcrossMultipleDays() {
         // Monday 2024-04-08: 8h regular, 1h overtime (weekday)
         AttendanceRecord monday = clockedIn(TENANT_A, EMPLOYEE, LocalDate.of(2024, 4, 8));
-        monday.clockOut(LocalDateTime.of(2024, 4, 8, 17, 0).plusHours(1),
+        monday.clockOut(LocalDateTime.of(2024, 4, 8, 18, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(monday);
 
         // Tuesday 2024-04-09: 8h regular
         AttendanceRecord tuesday = clockedIn(TENANT_A, EMPLOYEE, LocalDate.of(2024, 4, 9));
-        tuesday.clockOut(LocalDateTime.of(2024, 4, 9, 16, 0),
+        tuesday.clockOut(LocalDateTime.of(2024, 4, 9, 16, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(tuesday);
 
@@ -183,15 +185,16 @@ class AttendanceRecordRepositoryTest {
     @Test
     void sumRegularHours_excludesHolidayRecords() {
         // IMP-3 regression: regular hours on holiday days must not be double-counted
-        AttendanceRecord holiday = AttendanceRecord.markHoliday(TENANT_A, EMPLOYEE,
-                LocalDate.of(2024, 4, 19), "Good Friday");
-        holiday.clockOut(LocalDateTime.of(2024, 4, 19, 16, 0),
+        AttendanceRecord holiday = AttendanceRecord.createClockIn(TENANT_A, EMPLOYEE,
+                LocalDate.of(2024, 4, 19).atTime(8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB);
+        ReflectionTestUtils.setField(holiday, "holiday", true);
+        holiday.clockOut(LocalDate.of(2024, 4, 19).atTime(16, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(holiday);
 
         // Regular weekday
         AttendanceRecord weekday = clockedIn(TENANT_A, EMPLOYEE, LocalDate.of(2024, 4, 8));
-        weekday.clockOut(LocalDateTime.of(2024, 4, 8, 16, 0),
+        weekday.clockOut(LocalDate.of(2024, 4, 8).atTime(16, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(weekday);
 
@@ -204,14 +207,14 @@ class AttendanceRecordRepositoryTest {
     void sumWeekdayOvertime_countsOnlyWeekdayNonHolidayOvertime() {
         // Monday 2024-04-08: 9h worked → 1h overtime (weekday, non-holiday)
         AttendanceRecord monday = clockedIn(TENANT_A, EMPLOYEE, LocalDate.of(2024, 4, 8));
-        monday.clockOut(LocalDateTime.of(2024, 4, 8, 17, 0),
+        monday.clockOut(LocalDate.of(2024, 4, 8).atTime(17, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(monday);
 
         // Saturday 2024-04-13: 9h worked → 1h overtime (weekend — must NOT be counted here)
         AttendanceRecord saturday = AttendanceRecord.createClockIn(TENANT_A, EMPLOYEE,
-                LocalDateTime.of(2024, 4, 13, 8, 0), AttendanceSource.WEB);
-        saturday.clockOut(LocalDateTime.of(2024, 4, 13, 17, 0),
+                LocalDateTime.of(2024, 4, 13, 8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB);
+        saturday.clockOut(LocalDate.of(2024, 4, 13).atTime(17, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(saturday);
 
@@ -223,21 +226,21 @@ class AttendanceRecordRepositoryTest {
     void sumWeekendOvertime_countsOnlySaturdayAndSunday() {
         // Saturday 2024-04-13: 9h worked → 1h weekend overtime
         AttendanceRecord saturday = AttendanceRecord.createClockIn(TENANT_A, EMPLOYEE,
-                LocalDateTime.of(2024, 4, 13, 8, 0), AttendanceSource.WEB);
-        saturday.clockOut(LocalDateTime.of(2024, 4, 13, 17, 0),
+                LocalDateTime.of(2024, 4, 13, 8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB);
+        saturday.clockOut(LocalDate.of(2024, 4, 13).atTime(17, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(saturday);
 
         // Sunday 2024-04-14: 10h worked → 2h weekend overtime
         AttendanceRecord sunday = AttendanceRecord.createClockIn(TENANT_A, EMPLOYEE,
-                LocalDateTime.of(2024, 4, 14, 8, 0), AttendanceSource.WEB);
-        sunday.clockOut(LocalDateTime.of(2024, 4, 14, 18, 0),
+                LocalDateTime.of(2024, 4, 14, 8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB);
+        sunday.clockOut(LocalDate.of(2024, 4, 14).atTime(18, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(sunday);
 
         // Monday 2024-04-08: 9h worked → 1h weekday overtime (must NOT appear here)
         AttendanceRecord monday = clockedIn(TENANT_A, EMPLOYEE, LocalDate.of(2024, 4, 8));
-        monday.clockOut(LocalDateTime.of(2024, 4, 8, 17, 0),
+        monday.clockOut(LocalDate.of(2024, 4, 8).atTime(17, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(monday);
 
@@ -248,15 +251,16 @@ class AttendanceRecordRepositoryTest {
     @Test
     void sumHolidayHours_countsOnlyHolidayRecords() {
         // Good Friday 2024-04-19 (holiday): employee worked 8h
-        AttendanceRecord goodFriday = AttendanceRecord.markHoliday(TENANT_A, EMPLOYEE,
-                LocalDate.of(2024, 4, 19), "Good Friday");
-        goodFriday.clockOut(LocalDateTime.of(2024, 4, 19, 16, 0),
+        AttendanceRecord goodFriday = AttendanceRecord.createClockIn(TENANT_A, EMPLOYEE,
+                LocalDate.of(2024, 4, 19).atTime(8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB);
+        ReflectionTestUtils.setField(goodFriday, "holiday", true);
+        goodFriday.clockOut(LocalDate.of(2024, 4, 19).atTime(16, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(goodFriday);
 
         // Regular weekday — must not appear in holiday sum
         AttendanceRecord weekday = clockedIn(TENANT_A, EMPLOYEE, LocalDate.of(2024, 4, 8));
-        weekday.clockOut(LocalDateTime.of(2024, 4, 8, 16, 0),
+        weekday.clockOut(LocalDate.of(2024, 4, 8).atTime(16, 0).atZone(EAT).toInstant(),
                 AttendanceSource.WEB, new BigDecimal("8.0"));
         repository.save(weekday);
 
@@ -281,8 +285,10 @@ class AttendanceRecordRepositoryTest {
     // Helpers
     // -------------------------------------------------------------------------
 
+    private static final ZoneId EAT = ZoneId.of("Africa/Nairobi");
+
     private AttendanceRecord clockedIn(String tenantId, UUID employeeId, LocalDate date) {
         return AttendanceRecord.createClockIn(tenantId, employeeId,
-                date.atTime(8, 0), AttendanceSource.WEB);
+                date.atTime(8, 0).atZone(EAT).toInstant(), AttendanceSource.WEB);
     }
 }
