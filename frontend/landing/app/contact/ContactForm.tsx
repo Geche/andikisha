@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface FormState {
   name: string;
@@ -21,15 +21,21 @@ const SUBJECT_OPTIONS = [
   "Other",
 ];
 
-async function submitContact(data: FormState): Promise<{ ok: boolean }> {
-  await new Promise((r) => setTimeout(r, 800));
-  console.log("Contact form:", data);
-  return { ok: true };
+async function submitContact(
+  data: FormState
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch("/api/contact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
 }
 
 export default function ContactForm() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [errors, setErrors] = useState<Partial<FormState>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -52,9 +58,14 @@ export default function ContactForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    setSubmitError(null);
     startTransition(async () => {
       const result = await submitContact(form);
-      if (result.ok) setSubmitted(true);
+      if (result.ok) {
+        setSubmitted(true);
+      } else {
+        setSubmitError(result.error ?? "Something went wrong. Please try again.");
+      }
     });
   };
 
@@ -88,9 +99,12 @@ export default function ContactForm() {
             placeholder="Your name"
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
+            aria-describedby={errors.name ? "contact-name-error" : undefined}
             autoComplete="name"
           />
-          {errors.name && <p className="form-error">{errors.name}</p>}
+          {errors.name && (
+            <p id="contact-name-error" className="form-error">{errors.name}</p>
+          )}
         </div>
         <div>
           <label htmlFor="contact-email" className="form-label">
@@ -103,9 +117,12 @@ export default function ContactForm() {
             placeholder="you@company.co.ke"
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
+            aria-describedby={errors.email ? "contact-email-error" : undefined}
             autoComplete="email"
           />
-          {errors.email && <p className="form-error">{errors.email}</p>}
+          {errors.email && (
+            <p id="contact-email-error" className="form-error">{errors.email}</p>
+          )}
         </div>
       </div>
 
@@ -118,13 +135,16 @@ export default function ContactForm() {
           className="form-input"
           value={form.subject}
           onChange={(e) => update("subject", e.target.value)}
+          aria-describedby={errors.subject ? "contact-subject-error" : undefined}
         >
           <option value="" disabled>Select a subject</option>
           {SUBJECT_OPTIONS.map((o) => (
             <option key={o} value={o}>{o}</option>
           ))}
         </select>
-        {errors.subject && <p className="form-error">{errors.subject}</p>}
+        {errors.subject && (
+          <p id="contact-subject-error" className="form-error">{errors.subject}</p>
+        )}
       </div>
 
       <div>
@@ -138,9 +158,19 @@ export default function ContactForm() {
           placeholder="Tell us what you need..."
           value={form.message}
           onChange={(e) => update("message", e.target.value)}
+          aria-describedby={errors.message ? "contact-message-error" : undefined}
         />
-        {errors.message && <p className="form-error">{errors.message}</p>}
+        {errors.message && (
+          <p id="contact-message-error" className="form-error">{errors.message}</p>
+        )}
       </div>
+
+      {submitError && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+          <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-[14px] text-red-700">{submitError}</p>
+        </div>
+      )}
 
       <button
         type="submit"

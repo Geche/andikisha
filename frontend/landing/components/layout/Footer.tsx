@@ -6,7 +6,7 @@ const PRODUCT_LINKS = [
   { label: "Payroll & Compliance", href: "/features#payroll" },
   { label: "People Management", href: "/features#people" },
   { label: "Employee Self-Service", href: "/features#employee" },
-  { label: "Time & Attendance", href: "/features#time" },
+  { label: "Time & Attendance", href: "/features#integrations" },
   { label: "Pricing", href: "/pricing" },
 ];
 

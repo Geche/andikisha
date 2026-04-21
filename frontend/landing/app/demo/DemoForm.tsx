@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 interface FormState {
   name: string;
@@ -21,25 +21,27 @@ const INITIAL: FormState = {
   message: "",
 };
 
-const EMPLOYEE_OPTIONS = [
-  "1 – 10",
-  "11 – 30",
-  "31 – 100",
-  "101 – 300",
-  "300+",
-];
+const EMPLOYEE_OPTIONS = ["1 – 10", "11 – 30", "31 – 100", "101 – 300", "300+"];
 
-async function submitDemoRequest(data: FormState): Promise<{ ok: boolean; error?: string }> {
-  // Simulate network latency — replace with real API call or email service
-  await new Promise((r) => setTimeout(r, 900));
-  // In production: POST to /api/demo or send via Resend / SendGrid
-  console.log("Demo request:", data);
-  return { ok: true };
+const SUBMIT_DELAY_MS = 300;
+
+async function submitDemoRequest(
+  data: FormState
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch("/api/demo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  // Ensure minimum perceived progress so the button doesn't flash
+  await new Promise((r) => setTimeout(r, SUBMIT_DELAY_MS));
+  return res.json();
 }
 
 export default function DemoForm() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [errors, setErrors] = useState<Partial<FormState>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -62,9 +64,14 @@ export default function DemoForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    setSubmitError(null);
     startTransition(async () => {
       const result = await submitDemoRequest(form);
-      if (result.ok) setSubmitted(true);
+      if (result.ok) {
+        setSubmitted(true);
+      } else {
+        setSubmitError(result.error ?? "Something went wrong. Please try again.");
+      }
     });
   };
 
@@ -90,7 +97,6 @@ export default function DemoForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-      {/* Name */}
       <div>
         <label htmlFor="demo-name" className="form-label">
           Full name <span className="text-red-500">*</span>
@@ -110,7 +116,6 @@ export default function DemoForm() {
         )}
       </div>
 
-      {/* Email */}
       <div>
         <label htmlFor="demo-email" className="form-label">
           Work email <span className="text-red-500">*</span>
@@ -130,7 +135,6 @@ export default function DemoForm() {
         )}
       </div>
 
-      {/* Company + Phone in a row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="demo-company" className="form-label">
@@ -167,7 +171,6 @@ export default function DemoForm() {
         </div>
       </div>
 
-      {/* Team size */}
       <div>
         <label htmlFor="demo-employees" className="form-label">
           Team size <span className="text-red-500">*</span>
@@ -189,7 +192,6 @@ export default function DemoForm() {
         )}
       </div>
 
-      {/* Message */}
       <div>
         <label htmlFor="demo-message" className="form-label">
           Anything specific you want to cover?
@@ -203,6 +205,13 @@ export default function DemoForm() {
           onChange={(e) => update("message", e.target.value)}
         />
       </div>
+
+      {submitError && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+          <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-[14px] text-red-700">{submitError}</p>
+        </div>
+      )}
 
       <button
         type="submit"

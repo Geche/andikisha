@@ -69,7 +69,7 @@ export default function Navbar() {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
               <Link
-                href="#"
+                href={process.env.NEXT_PUBLIC_APP_URL ?? "https://app.andikishahr.com"}
                 className="text-[15px] font-medium text-neutral-600 hover:text-brand-900 transition-colors px-3 py-2"
               >
                 Sign In
