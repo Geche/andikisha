@@ -7,7 +7,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "grpc.server.port=-1",
+        "spring.autoconfigure.exclude=" +
+                "net.devh.boot.grpc.server.autoconfigure.GrpcServerAutoConfiguration," +
+                "net.devh.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration," +
+                "net.devh.boot.grpc.server.autoconfigure.GrpcServerMetricAutoConfiguration," +
+                "net.devh.boot.grpc.client.autoconfigure.GrpcClientAutoConfiguration," +
+                "net.devh.boot.grpc.client.autoconfigure.GrpcClientHealthAutoConfiguration"
+})
 @ActiveProfiles("test")
 class LeaveServiceApplicationTest {
 

@@ -16,6 +16,7 @@ import com.andikisha.payroll.domain.model.PayrollStatus;
 import com.andikisha.payroll.domain.repository.PaySlipRepository;
 import com.andikisha.payroll.domain.repository.PayrollRunRepository;
 import com.andikisha.payroll.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.payroll.infrastructure.grpc.LeaveGrpcClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,7 @@ class PayrollServiceTest {
     @Mock PaySlipRepository paySlipRepository;
     @Mock KenyanTaxCalculator taxCalculator;
     @Mock EmployeeGrpcClient employeeClient;
+    @Mock LeaveGrpcClient leaveClient;
     @Mock PayrollMapper mapper;
     @Mock PayrollEventPublisher eventPublisher;
     @Mock PlatformTransactionManager transactionManager;
@@ -64,7 +66,7 @@ class PayrollServiceTest {
         lenient().when(clock.getZone()).thenReturn(ZoneOffset.UTC);
 
         service = new PayrollService(payrollRunRepository, paySlipRepository, taxCalculator,
-                employeeClient, mapper, eventPublisher, transactionManager, clock);
+                employeeClient, leaveClient, mapper, eventPublisher, transactionManager, clock);
 
         TenantContext.setTenantId(TENANT_ID);
     }

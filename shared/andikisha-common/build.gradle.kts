@@ -30,6 +30,9 @@ dependencies {
     // Spring WebMVC (HandlerInterceptor)
     api("org.springframework:spring-webmvc")
 
+    // Spring Security — for AccessDeniedException handler in GlobalExceptionHandler
+    api("org.springframework.security:spring-security-core")
+
     // JSON serialisation for value objects (Money, etc.)
     api("com.fasterxml.jackson.core:jackson-databind")
     api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")

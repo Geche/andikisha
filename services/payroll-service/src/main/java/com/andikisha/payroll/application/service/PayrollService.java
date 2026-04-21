@@ -16,8 +16,10 @@ import com.andikisha.payroll.domain.model.PayrollStatus;
 import com.andikisha.payroll.domain.repository.PaySlipRepository;
 import com.andikisha.payroll.domain.repository.PayrollRunRepository;
 import com.andikisha.payroll.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.payroll.infrastructure.grpc.LeaveGrpcClient;
 import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.proto.employee.SalaryStructureResponse;
+import com.andikisha.proto.leave.LeaveBalanceResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -41,10 +43,13 @@ public class PayrollService {
 
     private static final Logger log = LoggerFactory.getLogger(PayrollService.class);
 
+    private static final int STANDARD_WORKING_DAYS_PER_MONTH = 22;
+
     private final PayrollRunRepository payrollRunRepository;
     private final PaySlipRepository paySlipRepository;
     private final KenyanTaxCalculator taxCalculator;
     private final EmployeeGrpcClient employeeClient;
+    private final LeaveGrpcClient leaveClient;
     private final PayrollMapper mapper;
     private final PayrollEventPublisher eventPublisher;
     private final TransactionTemplate transactionTemplate;
@@ -54,6 +59,7 @@ public class PayrollService {
                           PaySlipRepository paySlipRepository,
                           KenyanTaxCalculator taxCalculator,
                           EmployeeGrpcClient employeeClient,
+                          LeaveGrpcClient leaveClient,
                           PayrollMapper mapper,
                           PayrollEventPublisher eventPublisher,
                           PlatformTransactionManager transactionManager,
@@ -62,6 +68,7 @@ public class PayrollService {
         this.paySlipRepository = paySlipRepository;
         this.taxCalculator = taxCalculator;
         this.employeeClient = employeeClient;
+        this.leaveClient = leaveClient;
         this.mapper = mapper;
         this.eventPublisher = eventPublisher;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
@@ -107,12 +114,14 @@ public class PayrollService {
     public PayrollRunResponse calculatePayroll(UUID payrollRunId) {
         String tenantId = TenantContext.requireTenantId();
 
-        // Phase 1: mark CALCULATING (short write TX)
+        // Phase 1: mark CALCULATING (short write TX); capture period for leave lookup
+        final String[] periodRef = {null};
         transactionTemplate.executeWithoutResult(tx -> {
             PayrollRun run = payrollRunRepository.findByIdAndTenantId(payrollRunId, tenantId)
                     .orElseThrow(() -> new PayrollRunNotFoundException(payrollRunId));
             run.markCalculating();
             payrollRunRepository.save(run);
+            periodRef[0] = run.getPeriod();
         });
 
         // Phase 2: fetch from gRPC — no DB connection held
@@ -129,12 +138,17 @@ public class PayrollService {
             throw new BusinessRuleException("NO_EMPLOYEES", "No active employees found for this tenant");
         }
 
+        // Parse period year for leave balance lookup (period format: YYYY-MM)
+        int periodYear = Integer.parseInt(periodRef[0].substring(0, 4));
+
         List<EmployeeSalaryData> salaryData = new ArrayList<>();
         for (EmployeeResponse employee : employees) {
             try {
                 SalaryStructureResponse salary = employeeClient.getSalaryStructure(
                         tenantId, employee.getId());
-                salaryData.add(new EmployeeSalaryData(employee, salary));
+                List<LeaveBalanceResponse> leaveBalances = leaveClient.getLeaveBalances(
+                        tenantId, employee.getId(), periodYear);
+                salaryData.add(new EmployeeSalaryData(employee, salary, leaveBalances));
             } catch (Exception e) {
                 log.warn("Failed to fetch salary for employee {}, skipping: {}",
                         employee.getId(), e.getMessage());
@@ -184,6 +198,13 @@ public class PayrollService {
                     // Pass basicPay separately: NSSF is on pensionable pay, not gross
                     DeductionResult deductions = taxCalculator.calculate(grossPay, basicPay);
 
+                    // Unpaid leave deduction: daily rate × unpaid days used this period
+                    BigDecimal unpaidLeaveDeduction = computeUnpaidLeaveDeduction(
+                            basicPay, data.leaveBalances());
+                    BigDecimal totalDeductions = deductions.totalDeductions().add(unpaidLeaveDeduction);
+                    BigDecimal netPay = deductions.netPay().subtract(unpaidLeaveDeduction)
+                            .max(BigDecimal.ZERO);
+
                     PaySlip paySlip = PaySlip.builder()
                             .tenantId(tenantId)
                             .employeeId(UUID.fromString(employee.getId()))
@@ -203,11 +224,11 @@ public class PayrollService {
                             .housingLevy(deductions.housingLevyEmployee())
                             .housingLevyEmployer(deductions.housingLevyEmployer())
                             .helb(BigDecimal.ZERO)
-                            .otherDeductions(BigDecimal.ZERO)
+                            .otherDeductions(unpaidLeaveDeduction)
                             .personalRelief(deductions.personalRelief())
                             .insuranceRelief(deductions.insuranceRelief())
-                            .totalDeductions(deductions.totalDeductions())
-                            .netPay(deductions.netPay())
+                            .totalDeductions(totalDeductions)
+                            .netPay(netPay)
                             .currency(salary.getCurrency().isBlank() ? "KES" : salary.getCurrency())
                             .paymentPhone(employee.getPhoneNumber())
                             .build();
@@ -333,5 +354,27 @@ public class PayrollService {
         }
     }
 
-    private record EmployeeSalaryData(EmployeeResponse employee, SalaryStructureResponse salary) {}
+    /**
+     * Deducts unpaid leave at a daily rate of basicPay / 22 working days.
+     * Only UNPAID leave type is deducted; all other leave types (annual, sick, etc.)
+     * are paid entitlements and do not affect the payslip.
+     */
+    private BigDecimal computeUnpaidLeaveDeduction(BigDecimal basicPay,
+                                                    List<LeaveBalanceResponse> balances) {
+        double unpaidDaysUsed = balances.stream()
+                .filter(b -> "UNPAID".equals(b.getLeaveType()))
+                .mapToDouble(LeaveBalanceResponse::getUsed)
+                .findFirst()
+                .orElse(0.0);
+
+        if (unpaidDaysUsed <= 0.0) return BigDecimal.ZERO;
+
+        BigDecimal dailyRate = basicPay.divide(
+                BigDecimal.valueOf(STANDARD_WORKING_DAYS_PER_MONTH), 2, java.math.RoundingMode.HALF_UP);
+        return dailyRate.multiply(BigDecimal.valueOf(unpaidDaysUsed))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    private record EmployeeSalaryData(EmployeeResponse employee, SalaryStructureResponse salary,
+                                      List<LeaveBalanceResponse> leaveBalances) {}
 }

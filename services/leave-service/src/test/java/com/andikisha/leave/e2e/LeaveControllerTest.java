@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -442,7 +443,7 @@ class LeaveControllerTest {
 
     @Test
     void balances_returnsListForEmployee() throws Exception {
-        when(balanceService.getBalances(eq(EMPLOYEE_ID), any()))
+        when(balanceService.getBalances(eq(EMPLOYEE_ID), anyInt()))
                 .thenReturn(List.of(minimalBalanceResponse()));
 
         // X-User-ID must match the path EMPLOYEE_ID for the ownership @PreAuthorize check

@@ -1,6 +1,7 @@
 package com.andikisha.payroll;
 
 import com.andikisha.payroll.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.payroll.infrastructure.grpc.LeaveGrpcClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +29,10 @@ class PayrollServiceApplicationTest {
     // Prevents grpc-spring-boot-starter from trying to connect to employee-service on startup
     @MockitoBean
     private EmployeeGrpcClient employeeGrpcClient;
+
+    // Prevents grpc-spring-boot-starter from trying to connect to leave-service on startup
+    @MockitoBean
+    private LeaveGrpcClient leaveGrpcClient;
 
     @Test
     void contextLoads() {

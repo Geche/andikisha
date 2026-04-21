@@ -43,6 +43,11 @@ grpc:
       negotiation-type: plaintext
       enable-keep-alive: true
       keep-alive-time: 30s
+    leave-service:
+      address: dns:///${LEAVE_SERVICE_HOST:localhost}:${LEAVE_GRPC_PORT:9087}
+      negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
 
 management:
   endpoints:

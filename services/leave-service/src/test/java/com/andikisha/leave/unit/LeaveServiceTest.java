@@ -36,6 +36,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -85,7 +86,7 @@ class LeaveServiceTest {
         when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
                 .thenReturn(Optional.of(policy));
         when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
-                eq(TENANT_ID), eq(EMPLOYEE_ID), eq(LeaveType.ANNUAL), any()))
+                eq(TENANT_ID), eq(EMPLOYEE_ID), eq(LeaveType.ANNUAL), anyInt()))
                 .thenReturn(Optional.of(balance));
         when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
                 .thenReturn(BigDecimal.ZERO);
@@ -120,7 +121,7 @@ class LeaveServiceTest {
         when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
                 .thenReturn(Optional.of(policy));
         when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
-                eq(TENANT_ID), eq(EMPLOYEE_ID), eq(LeaveType.ANNUAL), any()))
+                eq(TENANT_ID), eq(EMPLOYEE_ID), eq(LeaveType.ANNUAL), anyInt()))
                 .thenReturn(Optional.of(balance));
         when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
                 .thenReturn(BigDecimal.ZERO);
@@ -179,7 +180,7 @@ class LeaveServiceTest {
 
         when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
                 .thenReturn(Optional.of(policy));
-        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), any()))
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
                 .thenReturn(Optional.of(balance));
         when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
                 .thenReturn(BigDecimal.ZERO);
@@ -188,7 +189,7 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("OVERLAPPING_LEAVE");
+                .hasMessageContaining("approved leave");
     }
 
     @Test
@@ -213,7 +214,7 @@ class LeaveServiceTest {
 
         // Balance repository never queried for UNPAID leave
         verify(balanceRepository, never()).findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
-                any(), any(), any(), any());
+                any(), any(), any(), anyInt());
     }
 
     // ------------------------------------------------------------------
@@ -233,7 +234,7 @@ class LeaveServiceTest {
 
         when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
                 .thenReturn(Optional.of(request));
-        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), any()))
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
                 .thenReturn(Optional.of(balance));
         when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
@@ -308,7 +309,7 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.cancel(REQUEST_ID, EMPLOYEE_ID))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("NOT_OWNER");
+                .hasMessageContaining("only cancel your own");
     }
 
     // ------------------------------------------------------------------
@@ -330,7 +331,7 @@ class LeaveServiceTest {
 
         when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
                 .thenReturn(Optional.of(request));
-        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), any()))
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
                 .thenReturn(Optional.of(balance));
         when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
@@ -382,7 +383,7 @@ class LeaveServiceTest {
         leaveService.hrReverse(REQUEST_ID, REVIEWER_ID, "HR", "reason");
 
         verify(balanceRepository, never()).findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
-                any(), any(), any(), any());
+                any(), any(), any(), anyInt());
     }
 
     // ------------------------------------------------------------------
