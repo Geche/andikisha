@@ -27,6 +27,7 @@ dependencies {
     // Lombok
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     // Dev
     developmentOnly("org.springframework.boot:spring-boot-devtools")

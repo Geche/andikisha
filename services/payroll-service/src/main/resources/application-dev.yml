@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5436/andikisha_payroll
+    username: andikisha
+    password: changeme
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: andikisha
+    password: changeme
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+grpc:
+  client:
+    employee-service:
+      address: static://localhost:9082
+    leave-service:
+      address: static://localhost:9087
+
+logging:
+  level:
+    com.andikisha: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

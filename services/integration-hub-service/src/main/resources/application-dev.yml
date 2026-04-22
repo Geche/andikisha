@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5442/andikisha_integration
+    username: andikisha
+    password: changeme
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: andikisha
+    password: changeme
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# M-Pesa and bank transfer disabled in dev; keys provided as empty strings
+# to satisfy Spring binding — they are unused while enabled=false
+app:
+  mpesa:
+    consumer-key: ""
+    consumer-secret: ""
+  # Dev encryption key — never use this value outside local development
+  credential-encryption-key: "dev-only-insecure-key-replace-in-prod"
+
+logging:
+  level:
+    com.andikisha: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE

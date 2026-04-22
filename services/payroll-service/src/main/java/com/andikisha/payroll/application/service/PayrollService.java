@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -114,14 +115,13 @@ public class PayrollService {
     public PayrollRunResponse calculatePayroll(UUID payrollRunId) {
         String tenantId = TenantContext.requireTenantId();
 
-        // Phase 1: mark CALCULATING (short write TX); capture period for leave lookup
-        final String[] periodRef = {null};
-        transactionTemplate.executeWithoutResult(tx -> {
+        // Phase 1: mark CALCULATING (short write TX); return period for leave lookup
+        String period = transactionTemplate.execute(tx -> {
             PayrollRun run = payrollRunRepository.findByIdAndTenantId(payrollRunId, tenantId)
                     .orElseThrow(() -> new PayrollRunNotFoundException(payrollRunId));
             run.markCalculating();
             payrollRunRepository.save(run);
-            periodRef[0] = run.getPeriod();
+            return run.getPeriod();
         });
 
         // Phase 2: fetch from gRPC — no DB connection held
@@ -139,7 +139,7 @@ public class PayrollService {
         }
 
         // Parse period year for leave balance lookup (period format: YYYY-MM)
-        int periodYear = Integer.parseInt(periodRef[0].substring(0, 4));
+        int periodYear = Integer.parseInt(period.substring(0, 4));
 
         List<EmployeeSalaryData> salaryData = new ArrayList<>();
         for (EmployeeResponse employee : employees) {
@@ -150,7 +150,7 @@ public class PayrollService {
                         tenantId, employee.getId(), periodYear);
                 salaryData.add(new EmployeeSalaryData(employee, salary, leaveBalances));
             } catch (Exception e) {
-                log.warn("Failed to fetch salary for employee {}, skipping: {}",
+                log.warn("Failed to fetch payroll data for employee {}, skipping: {}",
                         employee.getId(), e.getMessage());
             }
         }
@@ -361,18 +361,16 @@ public class PayrollService {
      */
     private BigDecimal computeUnpaidLeaveDeduction(BigDecimal basicPay,
                                                     List<LeaveBalanceResponse> balances) {
-        double unpaidDaysUsed = balances.stream()
+        BigDecimal unpaidDaysUsed = balances.stream()
                 .filter(b -> "UNPAID".equals(b.getLeaveType()))
-                .mapToDouble(LeaveBalanceResponse::getUsed)
-                .findFirst()
-                .orElse(0.0);
+                .map(b -> BigDecimal.valueOf(b.getUsed()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (unpaidDaysUsed <= 0.0) return BigDecimal.ZERO;
+        if (unpaidDaysUsed.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
 
         BigDecimal dailyRate = basicPay.divide(
-                BigDecimal.valueOf(STANDARD_WORKING_DAYS_PER_MONTH), 2, java.math.RoundingMode.HALF_UP);
-        return dailyRate.multiply(BigDecimal.valueOf(unpaidDaysUsed))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal.valueOf(STANDARD_WORKING_DAYS_PER_MONTH), 4, RoundingMode.HALF_UP);
+        return dailyRate.multiply(unpaidDaysUsed).setScale(2, RoundingMode.HALF_UP);
     }
 
     private record EmployeeSalaryData(EmployeeResponse employee, SalaryStructureResponse salary,

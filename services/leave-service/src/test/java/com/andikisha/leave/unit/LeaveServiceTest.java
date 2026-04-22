@@ -128,7 +128,8 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Insufficient");
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("INSUFFICIENT_BALANCE"));
 
         verify(requestRepository, never()).save(any());
     }
@@ -147,7 +148,8 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("No leave policy found");
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("POLICY_NOT_FOUND"));
     }
 
     @Test
@@ -161,7 +163,8 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Unknown leave type");
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("INVALID_LEAVE_TYPE"));
     }
 
     @Test
@@ -189,7 +192,8 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("approved leave");
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("OVERLAPPING_LEAVE"));
     }
 
     @Test
@@ -309,7 +313,8 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.cancel(REQUEST_ID, EMPLOYEE_ID))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("only cancel your own");
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("NOT_OWNER"));
     }
 
     // ------------------------------------------------------------------
@@ -404,7 +409,8 @@ class LeaveServiceTest {
     void listRequests_withInvalidStatus_throwsBusinessRule() {
         assertThatThrownBy(() -> leaveService.listRequests("BOGUS", PageRequest.of(0, 20)))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Unknown leave status");
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("INVALID_STATUS"));
     }
 
     @Test

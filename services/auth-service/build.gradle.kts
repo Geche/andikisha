@@ -45,6 +45,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     // API docs
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")

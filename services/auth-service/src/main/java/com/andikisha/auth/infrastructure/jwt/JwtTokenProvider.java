@@ -1,13 +1,13 @@
 package com.andikisha.auth.infrastructure.jwt;
 
 import com.andikisha.auth.domain.model.User;
+import com.andikisha.auth.infrastructure.config.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -25,18 +25,15 @@ public class JwtTokenProvider {
 
     private final long refreshTokenExpirationMs;
 
-    public JwtTokenProvider(
-            @Value("${app.jwt.secret}") String jwtSecret,
-            @Value("${app.jwt.expiration-ms}") long accessTokenExpirationMs,
-            @Value("${app.jwt.refresh-expiration-ms}") long refreshTokenExpirationMs) {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+    public JwtTokenProvider(JwtProperties jwtProperties) {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
                     "JWT secret must be at least 256 bits (32 bytes) when Base64-decoded");
         }
         this.key = Keys.hmacShaKeyFor(keyBytes);
-        this.accessTokenExpirationMs = accessTokenExpirationMs;
-        this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        this.accessTokenExpirationMs = jwtProperties.expirationMs();
+        this.refreshTokenExpirationMs = jwtProperties.refreshExpirationMs();
     }
 
     public String generateAccessToken(User user) {

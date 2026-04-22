@@ -1,3 +1,16 @@
+# services/api-gateway/src/main/resources/application.yml
+#
+# Base configuration — applies to ALL profiles (dev, prod).
+# No secrets. No hardcoded values. Everything sensitive comes
+# from environment variables injected at runtime.
+#
+# The ${VAR_NAME} syntax means: read from environment variable.
+# Spring will fail to start if a required variable is missing and
+# no fallback is defined — which is intentional for prod safety.
+#
+# JWT_ISSUER_URI / JWT_JWK_SET_URI — no fallback. In prod these resolve
+# to the auth-service Kubernetes service name; in dev profile use localhost.
+
 spring:
   application:
     name: api-gateway
@@ -88,14 +101,14 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8081}
-          jwk-set-uri: ${JWT_JWK_SET_URI:http://localhost:8081/api/v1/auth/.well-known/jwks.json}
+          issuer-uri: ${JWT_ISSUER_URI}
+          jwk-set-uri: ${JWT_JWK_SET_URI}
 
   # Redis — rate limiting
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD:}
 
 server:

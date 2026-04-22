@@ -1,11 +1,21 @@
+# services/audit-service/src/main/resources/application.yml
+#
+# Base configuration — applies to ALL profiles (dev, prod).
+# No secrets. No hardcoded values. Everything sensitive comes
+# from environment variables injected at runtime.
+#
+# The ${VAR_NAME} syntax means: read from environment variable.
+# Spring will fail to start if a required variable is missing and
+# no fallback is defined — which is intentional for prod safety.
+
 spring:
   application:
     name: audit-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/andikisha_audit
-    username: ${DB_USERNAME:andikisha}
-    password: ${DB_PASSWORD:andikisha}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -31,10 +41,10 @@ spring:
     validate-on-migrate: true
 
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
     virtual-host: /
     listener:
       simple:

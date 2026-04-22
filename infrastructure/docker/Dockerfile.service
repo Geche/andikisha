@@ -1,0 +1,62 @@
+# infrastructure/docker/Dockerfile.service
+# Place this file at: andikisha-microservices/infrastructure/docker/Dockerfile.service
+#
+# Build any service by passing SERVICE_NAME as a build arg:
+#   docker build -f infrastructure/docker/Dockerfile.service \
+#     --build-arg SERVICE_NAME=auth-service \
+#     -t andikisha/auth-service:latest .
+#
+# Examples:
+#   --build-arg SERVICE_NAME=auth-service
+#   --build-arg SERVICE_NAME=employee-service
+#   --build-arg SERVICE_NAME=tenant-service
+#   --build-arg SERVICE_NAME=payroll-service
+#   --build-arg SERVICE_NAME=leave-service
+
+# ── Stage 1: Build ─────────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /app
+
+# Copy Gradle wrapper and root build files first.
+# Docker caches this layer separately so dependency resolution
+# does not re-run on every source change.
+COPY gradle/ gradle/
+COPY gradlew build.gradle.kts settings.gradle.kts gradle.properties ./
+
+# Copy shared libraries that all services depend on.
+COPY shared/ shared/
+
+# Copy the specific service module.
+ARG SERVICE_NAME
+COPY services/${SERVICE_NAME}/ services/${SERVICE_NAME}/
+
+# Make the Gradle wrapper executable and build the fat JAR.
+# -x test skips tests at image build time; run tests separately in CI.
+RUN chmod +x gradlew
+RUN ./gradlew :services:${SERVICE_NAME}:bootJar -x test --no-daemon
+
+# ── Stage 2: Runtime ───────────────────────────────────────────────────────
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Create a non-root user and group to run the service.
+# Never run Spring Boot services as root in any environment.
+RUN addgroup --system appgroup && adduser --system appuser --ingroup appgroup
+
+# Pull the fat JAR from the build stage.
+ARG SERVICE_NAME
+COPY --from=builder /app/services/${SERVICE_NAME}/build/libs/*.jar app.jar
+
+# Switch to the non-root user before the entrypoint.
+USER appuser
+
+# 8080 = HTTP (REST), 9090 = gRPC
+# Override in Kubernetes manifests or docker-compose.yml with the
+# correct per-service ports (e.g. 8081/9081 for auth-service).
+EXPOSE 8080 9090
+
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]

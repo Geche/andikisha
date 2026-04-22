@@ -17,12 +17,14 @@ import com.andikisha.payroll.domain.repository.PaySlipRepository;
 import com.andikisha.payroll.domain.repository.PayrollRunRepository;
 import com.andikisha.payroll.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.payroll.infrastructure.grpc.LeaveGrpcClient;
+import com.andikisha.proto.leave.LeaveBalanceResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 
@@ -31,6 +33,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -224,6 +227,70 @@ class PayrollServiceTest {
 
         assertThatThrownBy(() -> service.getPayrollRun(runId))
                 .isInstanceOf(PayrollRunNotFoundException.class);
+    }
+
+    // -------------------------------------------------------------------------
+    // computeUnpaidLeaveDeduction (private — tested via ReflectionTestUtils)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void computeUnpaidLeaveDeduction_noUnpaidLeave_returnsZero() {
+        List<LeaveBalanceResponse> balances = List.of(
+                LeaveBalanceResponse.newBuilder().setLeaveType("ANNUAL").setUsed(5.0).build(),
+                LeaveBalanceResponse.newBuilder().setLeaveType("SICK").setUsed(2.0).build()
+        );
+
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), balances);
+        assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void computeUnpaidLeaveDeduction_unpaidDaysUsed_deductsCorrectly() {
+        // basicPay=100_000, unpaid=11 days, daily rate=100_000/22=4_545.4545, deduction=50_000.00
+        List<LeaveBalanceResponse> balances = List.of(
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(11.0).build()
+        );
+
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), balances);
+        assertThat(result).isEqualByComparingTo(new BigDecimal("50000.00"));
+    }
+
+    @Test
+    void computeUnpaidLeaveDeduction_multipleUnpaidEntries_sumsAllUsed() {
+        // Two UNPAID entries: 5 + 3 = 8 days; daily rate = 50_000/22
+        List<LeaveBalanceResponse> balances = List.of(
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(5.0).build(),
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(3.0).build()
+        );
+
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(50_000), balances);
+        BigDecimal expected = BigDecimal.valueOf(50_000)
+                .divide(BigDecimal.valueOf(22), 4, java.math.RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(8))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        assertThat(result).isEqualByComparingTo(expected);
+    }
+
+    @Test
+    void computeUnpaidLeaveDeduction_zeroUnpaidUsed_returnsZero() {
+        List<LeaveBalanceResponse> balances = List.of(
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(0.0).build()
+        );
+
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(80_000), balances);
+        assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void computeUnpaidLeaveDeduction_emptyBalances_returnsZero() {
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(60_000), List.of());
+        assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @SuppressWarnings("unchecked")
+    private BigDecimal invokeDeduction(BigDecimal basicPay, List<LeaveBalanceResponse> balances) {
+        return (BigDecimal) ReflectionTestUtils.invokeMethod(
+                service, "computeUnpaidLeaveDeduction", basicPay, balances);
     }
 
     // -------------------------------------------------------------------------

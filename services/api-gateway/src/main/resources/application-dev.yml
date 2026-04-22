@@ -1,0 +1,17 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081
+          jwk-set-uri: http://localhost:8081/api/v1/auth/.well-known/jwks.json
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    com.andikisha: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security: DEBUG

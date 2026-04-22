@@ -15,6 +15,6 @@ grpc:
 
 app:
   jwt:
-    secret: dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3RzLW9ubHktMzItYnl0ZXMtbG9uZw==
+    secret: ${JWT_SECRET}
     expiration-ms: 3600000
     refresh-expiration-ms: 604800000

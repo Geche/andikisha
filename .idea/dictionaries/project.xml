@@ -2,11 +2,13 @@
   <dictionary name="project">
     <words>
       <w>andikisha</w>
+      <w>grpc</w>
       <w>jackson</w>
       <w>krapin</w>
       <w>mpesa</w>
       <w>nhif</w>
       <w>nssf</w>
+      <w>prometheus</w>
       <w>shif</w>
     </words>
   </dictionary>

@@ -1,0 +1,335 @@
+# infrastructure/docker/docker-compose.infra.yml
+# Place this file at: andikisha-microservices/infrastructure/docker/docker-compose.infra.yml
+#
+# Start:  docker compose -f infrastructure/docker/docker-compose.infra.yml up -d
+# Stop:   docker compose -f infrastructure/docker/docker-compose.infra.yml down
+# Reset:  docker compose -f infrastructure/docker/docker-compose.infra.yml down -v
+#
+# Port map — PostgreSQL instances:
+#   andikisha-auth         5433
+#   andikisha-employee     5434
+#   andikisha-tenant       5435
+#   andikisha-payroll      5436
+#   andikisha-leave        5437
+#   andikisha-compliance   5438
+#   andikisha-time         5439
+#   andikisha-document     5440
+#   andikisha-notify       5441
+#   andikisha-integration  5442
+#   andikisha-analytics    5443
+#   andikisha-audit        5444
+#
+# Supporting infrastructure:
+#   RabbitMQ AMQP         5672
+#   RabbitMQ UI          15672
+#   Redis                 6379
+#   Zipkin UI             9411
+
+name: andikisha
+
+services:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 1 — Foundation
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  andikisha-auth:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-auth
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_auth
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_auth_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-employee:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-employee
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_employee
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_employee_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_employee"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-tenant:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-tenant
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_tenant
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg_tenant_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_tenant"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 2 — Core HR
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  andikisha-payroll:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-payroll
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_payroll
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5436:5432"
+    volumes:
+      - pg_payroll_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_payroll"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-leave:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-leave
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_leave
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5437:5432"
+    volumes:
+      - pg_leave_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_leave"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-compliance:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-compliance
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_compliance
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5438:5432"
+    volumes:
+      - pg_compliance_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_compliance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-time:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-time
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_time
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5439:5432"
+    volumes:
+      - pg_time_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_time"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 3 — Supporting Services
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  andikisha-document:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-document
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_document
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5440:5432"
+    volumes:
+      - pg_document_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_document"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-notify:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-notify
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_notify
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5441:5432"
+    volumes:
+      - pg_notify_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_notify"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-integration:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-integration
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_integration
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5442:5432"
+    volumes:
+      - pg_integration_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_integration"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 4 — Intelligence
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  andikisha-analytics:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-analytics
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_analytics
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5443:5432"
+    volumes:
+      - pg_analytics_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  andikisha-audit:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-audit
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_audit
+      POSTGRES_USER: andikisha
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5444:5432"
+    volumes:
+      - pg_audit_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_audit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # MESSAGING, CACHE, TRACING
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: andikisha-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI — http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: andikisha
+      RABBITMQ_DEFAULT_PASS: changeme
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    container_name: andikisha-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  zipkin:
+    image: openzipkin/zipkin@sha256:d17e856dcbba7ffeefbbfc252f89ab78a4ab6faed47e646d46daad78f91b5ee2
+    container_name: andikisha-zipkin
+    restart: unless-stopped
+    ports:
+      - "9411:9411"  # Tracing UI — http://localhost:9411
+
+volumes:
+  pg_auth_data:
+  pg_employee_data:
+  pg_tenant_data:
+  pg_payroll_data:
+  pg_leave_data:
+  pg_compliance_data:
+  pg_time_data:
+  pg_document_data:
+  pg_notify_data:
+  pg_integration_data:
+  pg_analytics_data:
+  pg_audit_data:
+  rabbitmq_data:
+  redis_data:
