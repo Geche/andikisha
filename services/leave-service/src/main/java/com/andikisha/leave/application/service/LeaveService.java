@@ -128,6 +128,7 @@ public class LeaveService {
         );
 
         leaveRequest = requestRepository.save(leaveRequest);
+        eventPublisher.publishLeaveRequested(leaveRequest);
         log.info("Leave request submitted by {} for {} days of {}",
                 employeeName, request.days(), leaveType);
 

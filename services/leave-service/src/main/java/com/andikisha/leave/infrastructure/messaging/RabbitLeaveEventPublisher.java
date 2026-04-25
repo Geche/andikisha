@@ -2,6 +2,7 @@ package com.andikisha.leave.infrastructure.messaging;
 
 import com.andikisha.events.leave.LeaveApprovedEvent;
 import com.andikisha.events.leave.LeaveRejectedEvent;
+import com.andikisha.events.leave.LeaveRequestedEvent;
 import com.andikisha.events.leave.LeaveReversedEvent;
 import com.andikisha.leave.application.port.LeaveEventPublisher;
 import com.andikisha.leave.domain.model.LeaveRequest;
@@ -19,6 +20,22 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
 
     public RabbitLeaveEventPublisher(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
+    }
+
+    @Override
+    public void publishLeaveRequested(LeaveRequest request) {
+        var event = new LeaveRequestedEvent(
+                request.getTenantId(),
+                request.getId().toString(),
+                request.getEmployeeId().toString(),
+                request.getLeaveType().name(),
+                request.getStartDate(),
+                request.getEndDate(),
+                request.getDays().doubleValue()
+        );
+        rabbitTemplate.convertAndSend(
+                RabbitMqConfig.LEAVE_EXCHANGE, "leave.requested", event);
+        log.info("Published leave requested for {}", request.getEmployeeName());
     }
 
     @Override
@@ -44,6 +61,7 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getTenantId(),
                 request.getId().toString(),
                 request.getEmployeeId().toString(),
+                request.getLeaveType().name(),
                 request.getRejectionReason(),
                 request.getReviewedBy().toString()
         );

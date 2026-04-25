@@ -48,7 +48,10 @@ public class RabbitPayrollEventPublisher implements PayrollEventPublisher {
         var event = new PayrollApprovedEvent(
                 run.getTenantId(), run.getId().toString(),
                 run.getPeriod(), run.getEmployeeCount(),
-                run.getTotalGross(), run.getTotalNet(), run.getApprovedBy());
+                run.getTotalGross(), run.getTotalNet(),
+                run.getTotalPaye(), run.getTotalNssf(),
+                run.getTotalShif(), run.getTotalHousingLevy(),
+                run.getApprovedBy());
         sendAfterCommit(RabbitMqConfig.PAYROLL_EXCHANGE, "payroll.approved", event);
         log.info("Queued payroll.approved event for period {}", run.getPeriod());
     }

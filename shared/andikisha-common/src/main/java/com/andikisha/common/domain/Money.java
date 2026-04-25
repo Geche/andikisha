@@ -2,11 +2,13 @@ package com.andikisha.common.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
 
+@Getter
 @Embeddable
 public class Money {
 
@@ -105,14 +107,6 @@ public class Money {
                     "Cannot combine " + this.currency + " with " + other.currency
             );
         }
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getCurrency() {
-        return currency;
     }
 
     @Override

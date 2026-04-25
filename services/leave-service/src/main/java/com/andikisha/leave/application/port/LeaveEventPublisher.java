@@ -4,6 +4,8 @@ import com.andikisha.leave.domain.model.LeaveRequest;
 
 public interface LeaveEventPublisher {
 
+    void publishLeaveRequested(LeaveRequest request);
+
     void publishLeaveApproved(LeaveRequest request);
 
     void publishLeaveRejected(LeaveRequest request);
