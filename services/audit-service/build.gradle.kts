@@ -52,4 +52,5 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:rabbitmq:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
+    testRuntimeOnly("com.h2database:h2")
 }
