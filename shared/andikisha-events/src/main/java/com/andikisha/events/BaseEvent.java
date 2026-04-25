@@ -6,6 +6,7 @@ import com.andikisha.events.auth.UserDeactivatedEvent;
 import com.andikisha.events.auth.UserRegisteredEvent;
 import com.andikisha.events.compliance.ComplianceRateChangedEvent;
 import com.andikisha.events.document.DocumentGeneratedEvent;
+import com.andikisha.events.document.DocumentReadyEvent;
 import com.andikisha.events.employee.EmployeeCreatedEvent;
 import com.andikisha.events.employee.EmployeeTerminatedEvent;
 import com.andikisha.events.employee.EmployeeUpdatedEvent;
@@ -25,6 +26,7 @@ import com.andikisha.events.tenant.TenantCreatedEvent;
 import com.andikisha.events.tenant.TenantPlanChangedEvent;
 import com.andikisha.events.tenant.TenantReactivatedEvent;
 import com.andikisha.events.tenant.TenantSuspendedEvent;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -58,13 +60,15 @@ import java.util.UUID;
         @JsonSubTypes.Type(value = ClockOutEvent.class,             name = "ClockOut"),
         @JsonSubTypes.Type(value = NotificationSentEvent.class,     name = "NotificationSent"),
         @JsonSubTypes.Type(value = DocumentGeneratedEvent.class,    name = "DocumentGenerated"),
+        @JsonSubTypes.Type(value = DocumentReadyEvent.class,        name = "DocumentReady"),
 })
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public abstract class BaseEvent {
 
-    private final String eventId;
-    private final String eventType;
-    private final String tenantId;
-    private final Instant timestamp;
+    private String eventId;
+    private String eventType;
+    private String tenantId;
+    private Instant timestamp;
 
     protected BaseEvent(String eventType, String tenantId) {
         this.eventId = UUID.randomUUID().toString();
@@ -73,13 +77,8 @@ public abstract class BaseEvent {
         this.timestamp = Instant.now();
     }
 
-    // Jackson deserialization
-    protected BaseEvent() {
-        this.eventId = null;
-        this.eventType = null;
-        this.tenantId = null;
-        this.timestamp = null;
-    }
+    protected BaseEvent() {}
+
 
     public String getEventId() { return eventId; }
     public String getEventType() { return eventType; }

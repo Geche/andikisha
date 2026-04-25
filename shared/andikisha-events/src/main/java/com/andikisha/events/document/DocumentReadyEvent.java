@@ -4,11 +4,11 @@ import com.andikisha.events.BaseEvent;
 
 public class DocumentReadyEvent extends BaseEvent {
 
-    private final String documentId;
-    private final String employeeId;
-    private final String documentType;
-    private final String fileName;
-    private final String period;
+    private String documentId;
+    private String employeeId;
+    private String documentType;
+    private String fileName;
+    private String period;
 
     public DocumentReadyEvent(String tenantId, String documentId, String employeeId,
                                String documentType, String fileName, String period) {
@@ -20,11 +20,7 @@ public class DocumentReadyEvent extends BaseEvent {
         this.period       = period;
     }
 
-    protected DocumentReadyEvent() {
-        super();
-        this.documentId = null; this.employeeId = null;
-        this.documentType = null; this.fileName = null; this.period = null;
-    }
+    protected DocumentReadyEvent() { super(); }
 
     public String getDocumentId()   { return documentId; }
     public String getEmployeeId()   { return employeeId; }

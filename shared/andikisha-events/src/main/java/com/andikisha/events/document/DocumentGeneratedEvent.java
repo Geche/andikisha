@@ -4,9 +4,9 @@ import com.andikisha.events.BaseEvent;
 
 public class DocumentGeneratedEvent extends BaseEvent {
 
-    private final String documentId;
-    private final String documentType;
-    private final String employeeId;
+    private String documentId;
+    private String documentType;
+    private String employeeId;
 
     public DocumentGeneratedEvent(String tenantId, String documentId,
                                   String documentType, String employeeId) {
@@ -16,7 +16,7 @@ public class DocumentGeneratedEvent extends BaseEvent {
         this.employeeId = employeeId;
     }
 
-    protected DocumentGeneratedEvent() { super(); this.documentId = null; this.documentType = null; this.employeeId = null; }
+    protected DocumentGeneratedEvent() { super(); }
 
     public String getDocumentId() { return documentId; }
     public String getDocumentType() { return documentType; }

@@ -4,9 +4,9 @@ import com.andikisha.events.BaseEvent;
 
 public class EmployeeTerminatedEvent extends BaseEvent {
 
-    private final String employeeId;
-    private final String reason;
-    private final String terminatedBy;
+    private String employeeId;
+    private String reason;
+    private String terminatedBy;
 
     public EmployeeTerminatedEvent(String tenantId, String employeeId,
                                    String reason, String terminatedBy) {
@@ -16,7 +16,7 @@ public class EmployeeTerminatedEvent extends BaseEvent {
         this.terminatedBy = terminatedBy;
     }
 
-    protected EmployeeTerminatedEvent() { super(); this.employeeId = null; this.reason = null; this.terminatedBy = null; }
+    protected EmployeeTerminatedEvent() { super(); }
 
     public String getEmployeeId() { return employeeId; }
     public String getReason() { return reason; }

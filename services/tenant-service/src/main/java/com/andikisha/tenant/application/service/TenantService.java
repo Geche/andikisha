@@ -45,8 +45,9 @@ public class TenantService {
 
     @Transactional
     public TenantResponse create(CreateTenantRequest request) {
-        if (tenantRepository.existsByAdminEmail(request.adminEmail())) {
-            throw new DuplicateResourceException("Tenant", "adminEmail", request.adminEmail());
+        String normalizedEmail = request.adminEmail().toLowerCase().trim();
+        if (tenantRepository.existsByAdminEmail(normalizedEmail)) {
+            throw new DuplicateResourceException("Tenant", "adminEmail", normalizedEmail);
         }
         if (tenantRepository.existsByCompanyNameAndCountry(
                 request.companyName(), request.country())) {
@@ -63,7 +64,7 @@ public class TenantService {
                 request.companyName(),
                 request.country(),
                 request.currency(),
-                request.adminEmail(),
+                normalizedEmail,
                 request.adminPhone(),
                 plan
         );

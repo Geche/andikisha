@@ -6,13 +6,13 @@ import java.time.LocalDate;
 
 public class LeaveApprovedEvent extends BaseEvent {
 
-    private final String leaveRequestId;
-    private final String employeeId;
-    private final String leaveType;
-    private final LocalDate startDate;
-    private final LocalDate endDate;
-    private final BigDecimal days;
-    private final String approvedBy;
+    private String leaveRequestId;
+    private String employeeId;
+    private String leaveType;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private BigDecimal days;
+    private String approvedBy;
 
     public LeaveApprovedEvent(String tenantId, String leaveRequestId,
                               String employeeId, String leaveType,
@@ -28,7 +28,7 @@ public class LeaveApprovedEvent extends BaseEvent {
         this.approvedBy = approvedBy;
     }
 
-    protected LeaveApprovedEvent() { super(); this.leaveRequestId = null; this.employeeId = null; this.leaveType = null; this.startDate = null; this.endDate = null; this.days = null; this.approvedBy = null; }
+    protected LeaveApprovedEvent() { super(); }
 
     public String getLeaveRequestId() { return leaveRequestId; }
     public String getEmployeeId() { return employeeId; }

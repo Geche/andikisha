@@ -28,6 +28,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      * Finds RETRYING notifications (standard retry) plus PENDING or SENDING
      * notifications older than staleThreshold (stuck due to crash or race condition).
      */
+    // System-level scheduler query: intentionally cross-tenant; only dispatches IDs, never exposes content.
     @Query("SELECT n FROM Notification n WHERE " +
            "n.status = com.andikisha.notification.domain.model.NotificationStatus.RETRYING OR " +
            "(n.status IN (com.andikisha.notification.domain.model.NotificationStatus.PENDING, " +

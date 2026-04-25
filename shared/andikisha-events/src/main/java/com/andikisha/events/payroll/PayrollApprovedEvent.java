@@ -5,16 +5,16 @@ import java.math.BigDecimal;
 
 public class PayrollApprovedEvent extends BaseEvent {
 
-    private final String payrollRunId;
-    private final String period;
-    private final int employeeCount;
-    private final BigDecimal totalGross;
-    private final BigDecimal totalNet;
-    private final BigDecimal totalPaye;
-    private final BigDecimal totalNssf;
-    private final BigDecimal totalShif;
-    private final BigDecimal totalHousingLevy;
-    private final String approvedBy;
+    private String payrollRunId;
+    private String period;
+    private int employeeCount;
+    private BigDecimal totalGross;
+    private BigDecimal totalNet;
+    private BigDecimal totalPaye;
+    private BigDecimal totalNssf;
+    private BigDecimal totalShif;
+    private BigDecimal totalHousingLevy;
+    private String approvedBy;
 
     public PayrollApprovedEvent(String tenantId, String payrollRunId,
                                 String period, int employeeCount,
@@ -35,14 +35,7 @@ public class PayrollApprovedEvent extends BaseEvent {
         this.approvedBy = approvedBy;
     }
 
-    protected PayrollApprovedEvent() {
-        super();
-        this.payrollRunId = null; this.period = null; this.employeeCount = 0;
-        this.totalGross = null; this.totalNet = null;
-        this.totalPaye = null; this.totalNssf = null;
-        this.totalShif = null; this.totalHousingLevy = null;
-        this.approvedBy = null;
-    }
+    protected PayrollApprovedEvent() { super(); }
 
     public String getPayrollRunId() { return payrollRunId; }
     public String getPeriod() { return period; }

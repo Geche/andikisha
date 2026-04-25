@@ -25,9 +25,10 @@ public class MpesaCallbackController {
     public Map<String, String> handleResult(@RequestBody Map<String, Object> payload) {
         log.info("M-Pesa B2C result callback received");
 
+        String conversationId = null;
         try {
             Map<String, Object> result = extractResult(payload);
-            String conversationId = (String) result.get("ConversationID");
+            conversationId = (String) result.get("ConversationID");
             int resultCode = ((Number) result.get("ResultCode")).intValue();
 
             if (resultCode == 0) {
@@ -40,7 +41,8 @@ public class MpesaCallbackController {
                         null, String.valueOf(resultCode), desc);
             }
         } catch (Exception e) {
-            log.error("Failed to process M-Pesa callback: {}", e.getMessage());
+            log.error("Failed to process M-Pesa callback [conversationId={}] payload={}: {}",
+                    conversationId, payload, e.getMessage(), e);
         }
 
         return Map.of("ResultCode", "0", "ResultDesc", "Accepted");

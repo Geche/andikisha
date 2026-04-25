@@ -21,6 +21,8 @@ public interface PaymentTransactionRepository
     Page<PaymentTransaction> findByTenantIdOrderByCreatedAtDesc(
             String tenantId, Pageable pageable);
 
+    // M-Pesa callbacks carry conversationId only — cross-tenant lookup is intentional;
+    // the operation only writes receipt/error data back to the matched record.
     Optional<PaymentTransaction> findByConversationId(String conversationId);
 
     List<PaymentTransaction> findByTenantIdAndPayrollRunIdAndStatus(

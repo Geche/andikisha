@@ -8,14 +8,14 @@ import java.math.BigDecimal;
 @Getter
 public class PaymentFailedEvent extends BaseEvent {
 
-    private final String payrollRunId;
-    private final String paySlipId;
-    private final String employeeId;
-    private final String employeeName;
-    private final String paymentMethod;
-    private final BigDecimal amount;
-    private final String errorCode;
-    private final String errorMessage;
+    private String payrollRunId;
+    private String paySlipId;
+    private String employeeId;
+    private String employeeName;
+    private String paymentMethod;
+    private BigDecimal amount;
+    private String errorCode;
+    private String errorMessage;
 
     public PaymentFailedEvent(String tenantId, String payrollRunId,
                               String paySlipId, String employeeId,
@@ -33,16 +33,6 @@ public class PaymentFailedEvent extends BaseEvent {
         this.errorMessage = errorMessage;
     }
 
-    protected PaymentFailedEvent() {
-        super();
-        this.payrollRunId = null;
-        this.paySlipId = null;
-        this.employeeId = null;
-        this.employeeName = null;
-        this.paymentMethod = null;
-        this.amount = null;
-        this.errorCode = null;
-        this.errorMessage = null;
-    }
+    protected PaymentFailedEvent() { super(); }
 
 }

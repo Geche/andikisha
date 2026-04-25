@@ -4,11 +4,11 @@ import com.andikisha.events.BaseEvent;
 
 public class LeaveRejectedEvent extends BaseEvent {
 
-    private final String leaveRequestId;
-    private final String employeeId;
-    private final String leaveType;
-    private final String reason;
-    private final String rejectedBy;
+    private String leaveRequestId;
+    private String employeeId;
+    private String leaveType;
+    private String reason;
+    private String rejectedBy;
 
     public LeaveRejectedEvent(String tenantId, String leaveRequestId,
                               String employeeId, String leaveType,
@@ -21,7 +21,7 @@ public class LeaveRejectedEvent extends BaseEvent {
         this.rejectedBy = rejectedBy;
     }
 
-    protected LeaveRejectedEvent() { super(); this.leaveRequestId = null; this.employeeId = null; this.leaveType = null; this.reason = null; this.rejectedBy = null; }
+    protected LeaveRejectedEvent() { super(); }
 
     public String getLeaveRequestId() { return leaveRequestId; }
     public String getEmployeeId() { return employeeId; }

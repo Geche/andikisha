@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Component
 public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
@@ -31,11 +33,15 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getLeaveType().name(),
                 request.getStartDate(),
                 request.getEndDate(),
-                request.getDays().doubleValue()
+                request.getDays()
         );
-        rabbitTemplate.convertAndSend(
-                RabbitMqConfig.LEAVE_EXCHANGE, "leave.requested", event);
-        log.info("Published leave requested for {}", request.getEmployeeName());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.requested", event);
+                log.info("Published leave requested for {}", request.getEmployeeName());
+            }
+        });
     }
 
     @Override
@@ -50,9 +56,13 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getDays(),
                 request.getReviewedBy().toString()
         );
-        rabbitTemplate.convertAndSend(
-                RabbitMqConfig.LEAVE_EXCHANGE, "leave.approved", event);
-        log.info("Published leave approved for {}", request.getEmployeeName());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.approved", event);
+                log.info("Published leave approved for {}", request.getEmployeeName());
+            }
+        });
     }
 
     @Override
@@ -65,9 +75,13 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getRejectionReason(),
                 request.getReviewedBy().toString()
         );
-        rabbitTemplate.convertAndSend(
-                RabbitMqConfig.LEAVE_EXCHANGE, "leave.rejected", event);
-        log.info("Published leave rejected for {}", request.getEmployeeName());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.rejected", event);
+                log.info("Published leave rejected for {}", request.getEmployeeName());
+            }
+        });
     }
 
     @Override
@@ -81,8 +95,12 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getRejectionReason(),
                 request.getReviewedBy().toString()
         );
-        rabbitTemplate.convertAndSend(
-                RabbitMqConfig.LEAVE_EXCHANGE, "leave.reversed", event);
-        log.info("Published leave reversed for {}", request.getEmployeeName());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.reversed", event);
+                log.info("Published leave reversed for {}", request.getEmployeeName());
+            }
+        });
     }
 }

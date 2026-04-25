@@ -4,9 +4,9 @@ import com.andikisha.events.BaseEvent;
 
 public class ComplianceRateChangedEvent extends BaseEvent {
 
-    private final String country;
-    private final String rateType;
-    private final String effectiveDate;
+    private String country;
+    private String rateType;
+    private String effectiveDate;
 
     public ComplianceRateChangedEvent(String tenantId, String country,
                                       String rateType, String effectiveDate) {
@@ -16,7 +16,7 @@ public class ComplianceRateChangedEvent extends BaseEvent {
         this.effectiveDate = effectiveDate;
     }
 
-    protected ComplianceRateChangedEvent() { super(); this.country = null; this.rateType = null; this.effectiveDate = null; }
+    protected ComplianceRateChangedEvent() { super(); }
 
     public String getCountry() { return country; }
     public String getRateType() { return rateType; }

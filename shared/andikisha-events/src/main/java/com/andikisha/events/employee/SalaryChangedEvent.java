@@ -5,11 +5,11 @@ import java.math.BigDecimal;
 
 public class SalaryChangedEvent extends BaseEvent {
 
-    private final String employeeId;
-    private final BigDecimal oldSalary;
-    private final BigDecimal newSalary;
-    private final String currency;
-    private final String changedBy;
+    private String employeeId;
+    private BigDecimal oldSalary;
+    private BigDecimal newSalary;
+    private String currency;
+    private String changedBy;
 
     public SalaryChangedEvent(String tenantId, String employeeId,
                               BigDecimal oldSalary, BigDecimal newSalary,
@@ -22,7 +22,7 @@ public class SalaryChangedEvent extends BaseEvent {
         this.changedBy = changedBy;
     }
 
-    protected SalaryChangedEvent() { super(); this.employeeId = null; this.oldSalary = null; this.newSalary = null; this.currency = null; this.changedBy = null; }
+    protected SalaryChangedEvent() { super(); }
 
     public String getEmployeeId() { return employeeId; }
     public BigDecimal getOldSalary() { return oldSalary; }

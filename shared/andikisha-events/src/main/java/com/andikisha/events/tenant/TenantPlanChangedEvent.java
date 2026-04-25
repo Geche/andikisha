@@ -4,8 +4,8 @@ import com.andikisha.events.BaseEvent;
 
 public class TenantPlanChangedEvent extends BaseEvent {
 
-    private final String oldPlan;
-    private final String newPlan;
+    private String oldPlan;
+    private String newPlan;
 
     public TenantPlanChangedEvent(String tenantId, String oldPlan, String newPlan) {
         super("tenant.plan_changed", tenantId);
@@ -13,7 +13,7 @@ public class TenantPlanChangedEvent extends BaseEvent {
         this.newPlan = newPlan;
     }
 
-    protected TenantPlanChangedEvent() { super(); this.oldPlan = null; this.newPlan = null; }
+    protected TenantPlanChangedEvent() { super(); }
 
     public String getOldPlan() { return oldPlan; }
     public String getNewPlan() { return newPlan; }

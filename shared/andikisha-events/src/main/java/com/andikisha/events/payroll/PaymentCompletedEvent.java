@@ -5,13 +5,13 @@ import java.math.BigDecimal;
 
 public class PaymentCompletedEvent extends BaseEvent {
 
-    private final String payrollRunId;
-    private final String paySlipId;
-    private final String employeeId;
-    private final String providerReceipt;
-    private final BigDecimal amount;
-    private final String phoneNumber;
-    private final String paymentMethod;
+    private String payrollRunId;
+    private String paySlipId;
+    private String employeeId;
+    private String providerReceipt;
+    private BigDecimal amount;
+    private String phoneNumber;
+    private String paymentMethod;
 
     public PaymentCompletedEvent(String tenantId, String payrollRunId,
                                  String paySlipId, String employeeId,
@@ -27,16 +27,7 @@ public class PaymentCompletedEvent extends BaseEvent {
         this.paymentMethod = paymentMethod;
     }
 
-    protected PaymentCompletedEvent() {
-        super();
-        this.payrollRunId = null;
-        this.paySlipId = null;
-        this.employeeId = null;
-        this.providerReceipt = null;
-        this.amount = null;
-        this.phoneNumber = null;
-        this.paymentMethod = null;
-    }
+    protected PaymentCompletedEvent() { super(); }
 
     public String getPayrollRunId() { return payrollRunId; }
     public String getPaySlipId() { return paySlipId; }

@@ -5,11 +5,11 @@ import java.math.BigDecimal;
 
 public class PayrollCalculatedEvent extends BaseEvent {
 
-    private final String payrollRunId;
-    private final String period;
-    private final int employeeCount;
-    private final BigDecimal totalGross;
-    private final BigDecimal totalNet;
+    private String payrollRunId;
+    private String period;
+    private int employeeCount;
+    private BigDecimal totalGross;
+    private BigDecimal totalNet;
 
     public PayrollCalculatedEvent(String tenantId, String payrollRunId,
                                   String period, int employeeCount,
@@ -22,14 +22,7 @@ public class PayrollCalculatedEvent extends BaseEvent {
         this.totalNet = totalNet;
     }
 
-    protected PayrollCalculatedEvent() {
-        super();
-        this.payrollRunId = null;
-        this.period = null;
-        this.employeeCount = 0;
-        this.totalGross = null;
-        this.totalNet = null;
-    }
+    protected PayrollCalculatedEvent() { super(); }
 
     public String getPayrollRunId()  { return payrollRunId; }
     public String getPeriod()        { return period; }

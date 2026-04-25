@@ -5,15 +5,15 @@ import java.math.BigDecimal;
 
 public class EmployeeCreatedEvent extends BaseEvent {
 
-    private final String employeeId;
-    private final String employeeNumber;
-    private final String firstName;
-    private final String lastName;
-    private final String email;
-    private final String phoneNumber;
-    private final String departmentId;
-    private final BigDecimal basicSalary;
-    private final String currency;
+    private String employeeId;
+    private String employeeNumber;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phoneNumber;
+    private String departmentId;
+    private BigDecimal basicSalary;
+    private String currency;
 
     public EmployeeCreatedEvent(String tenantId, String employeeId,
                                 String employeeNumber, String firstName, String lastName,
@@ -31,7 +31,7 @@ public class EmployeeCreatedEvent extends BaseEvent {
         this.currency = currency;
     }
 
-    protected EmployeeCreatedEvent() { super(); this.employeeId = null; this.employeeNumber = null; this.firstName = null; this.lastName = null; this.email = null; this.phoneNumber = null; this.departmentId = null; this.basicSalary = null; this.currency = null; }
+    protected EmployeeCreatedEvent() { super(); }
 
     public String getEmployeeId() { return employeeId; }
     public String getEmployeeNumber() { return employeeNumber; }

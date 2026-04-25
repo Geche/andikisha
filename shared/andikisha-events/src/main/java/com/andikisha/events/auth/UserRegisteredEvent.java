@@ -4,9 +4,9 @@ import com.andikisha.events.BaseEvent;
 
 public class UserRegisteredEvent extends BaseEvent {
 
-    private final String userId;
-    private final String email;
-    private final String role;
+    private String userId;
+    private String email;
+    private String role;
 
     public UserRegisteredEvent(String tenantId, String userId,
                                String email, String role) {
@@ -16,7 +16,7 @@ public class UserRegisteredEvent extends BaseEvent {
         this.role = role;
     }
 
-    protected UserRegisteredEvent() { super(); this.userId = null; this.email = null; this.role = null; }
+    protected UserRegisteredEvent() { super(); }
 
     public String getUserId() { return userId; }
     public String getEmail() { return email; }

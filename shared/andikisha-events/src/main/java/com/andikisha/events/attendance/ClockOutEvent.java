@@ -6,9 +6,9 @@ import java.time.Instant;
 
 public class ClockOutEvent extends BaseEvent {
 
-    private final String employeeId;
-    private final Instant clockOutTime;
-    private final BigDecimal hoursWorked;
+    private String employeeId;
+    private Instant clockOutTime;
+    private BigDecimal hoursWorked;
 
     public ClockOutEvent(String tenantId, String employeeId,
                          Instant clockOutTime, BigDecimal hoursWorked) {
@@ -18,12 +18,7 @@ public class ClockOutEvent extends BaseEvent {
         this.hoursWorked = hoursWorked;
     }
 
-    protected ClockOutEvent() {
-        super();
-        this.employeeId = null;
-        this.clockOutTime = null;
-        this.hoursWorked = BigDecimal.ZERO;
-    }
+    protected ClockOutEvent() { super(); }
 
     public String getEmployeeId() { return employeeId; }
     public Instant getClockOutTime() { return clockOutTime; }

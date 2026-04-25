@@ -4,11 +4,11 @@ import com.andikisha.events.BaseEvent;
 
 public class TenantCreatedEvent extends BaseEvent {
 
-    private final String tenantName;
-    private final String country;
-    private final String currency;
-    private final String plan;
-    private final String adminEmail;
+    private String tenantName;
+    private String country;
+    private String currency;
+    private String plan;
+    private String adminEmail;
 
     public TenantCreatedEvent(String tenantId, String tenantName,
                               String country, String currency, String plan, String adminEmail) {
@@ -20,7 +20,7 @@ public class TenantCreatedEvent extends BaseEvent {
         this.adminEmail = adminEmail;
     }
 
-    protected TenantCreatedEvent() { super(); this.tenantName = null; this.country = null; this.currency = null; this.plan = null; this.adminEmail = null; }
+    protected TenantCreatedEvent() { super(); }
 
     public String getTenantName() { return tenantName; }
     public String getCountry() { return country; }

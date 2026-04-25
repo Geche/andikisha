@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Component
 public class RabbitAttendanceEventPublisher implements AttendanceEventPublisher {
@@ -27,8 +29,13 @@ public class RabbitAttendanceEventPublisher implements AttendanceEventPublisher 
                 record.getClockIn(),
                 record.getClockInSource().name()
         );
-        rabbitTemplate.convertAndSend("attendance.events", "attendance.clock_in", event);
-        log.info("Published clock-in for employee {}", record.getEmployeeId());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend("attendance.events", "attendance.clock_in", event);
+                log.info("Published clock-in for employee {}", record.getEmployeeId());
+            }
+        });
     }
 
     @Override
@@ -39,7 +46,12 @@ public class RabbitAttendanceEventPublisher implements AttendanceEventPublisher 
                 record.getClockOut(),
                 record.getHoursWorked()
         );
-        rabbitTemplate.convertAndSend("attendance.events", "attendance.clock_out", event);
-        log.info("Published clock-out for employee {}", record.getEmployeeId());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                rabbitTemplate.convertAndSend("attendance.events", "attendance.clock_out", event);
+                log.info("Published clock-out for employee {}", record.getEmployeeId());
+            }
+        });
     }
 }

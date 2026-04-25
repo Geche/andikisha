@@ -5,12 +5,12 @@ import java.math.BigDecimal;
 
 public class LeaveReversedEvent extends BaseEvent {
 
-    private final String leaveRequestId;
-    private final String employeeId;
-    private final String leaveType;
-    private final BigDecimal days;
-    private final String reason;
-    private final String reversedBy;
+    private String leaveRequestId;
+    private String employeeId;
+    private String leaveType;
+    private BigDecimal days;
+    private String reason;
+    private String reversedBy;
 
     public LeaveReversedEvent(String tenantId, String leaveRequestId,
                               String employeeId, String leaveType,
@@ -24,7 +24,7 @@ public class LeaveReversedEvent extends BaseEvent {
         this.reversedBy = reversedBy;
     }
 
-    protected LeaveReversedEvent() { super(); this.leaveRequestId = null; this.employeeId = null; this.leaveType = null; this.days = null; this.reason = null; this.reversedBy = null; }
+    protected LeaveReversedEvent() { super(); }
 
     public String getLeaveRequestId() { return leaveRequestId; }
     public String getEmployeeId()     { return employeeId; }
