@@ -363,7 +363,7 @@ public class PayrollService {
                                                     List<LeaveBalanceResponse> balances) {
         BigDecimal unpaidDaysUsed = balances.stream()
                 .filter(b -> "UNPAID".equals(b.getLeaveType()))
-                .map(b -> BigDecimal.valueOf(b.getUsed()))
+                .map(b -> new BigDecimal(b.getUsed()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (unpaidDaysUsed.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;

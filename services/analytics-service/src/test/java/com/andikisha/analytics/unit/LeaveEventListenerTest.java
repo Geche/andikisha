@@ -49,7 +49,7 @@ class LeaveEventListenerTest {
     void handleLeaveRequestedEvent_recordsSubmission() {
         LeaveRequestedEvent event = new LeaveRequestedEvent(
                 TENANT, "req-1", "emp-1", "ANNUAL",
-                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 5), 5.0
+                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 5), new BigDecimal("5.0")
         );
 
         when(repository.findByTenantIdAndPeriodAndLeaveType(TENANT, "2026-04", "ANNUAL"))
@@ -65,7 +65,7 @@ class LeaveEventListenerTest {
     void handleLeaveRequestedEvent_existingRecord_incrementsSubmission() {
         LeaveRequestedEvent event = new LeaveRequestedEvent(
                 TENANT, "req-1", "emp-1", "ANNUAL",
-                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 5), 5.0
+                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 5), new BigDecimal("5.0")
         );
 
         LeaveAnalytics existing = LeaveAnalytics.create(TENANT, "2026-04", "ANNUAL");

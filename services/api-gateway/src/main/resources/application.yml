@@ -1,120 +1,318 @@
-# services/api-gateway/src/main/resources/application.yml
-#
-# Base configuration — applies to ALL profiles (dev, prod).
-# No secrets. No hardcoded values. Everything sensitive comes
-# from environment variables injected at runtime.
-#
-# The ${VAR_NAME} syntax means: read from environment variable.
-# Spring will fail to start if a required variable is missing and
-# no fallback is defined — which is intentional for prod safety.
-#
-# JWT_ISSUER_URI / JWT_JWK_SET_URI — no fallback. In prod these resolve
-# to the auth-service Kubernetes service name; in dev profile use localhost.
+server:
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
     name: api-gateway
-
-  # Spring Cloud Gateway (reactive — no servlet, no datasource)
   cloud:
     gateway:
+      default-filters:
+        - name: CircuitBreaker
+          args:
+            name: defaultCircuitBreaker
+            fallbackUri: forward:/fallback/default
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter:
+              replenishRate: 50
+              burstCapacity: 100
+              requestedTokens: 1
+            key-resolver: "#{@userKeyResolver}"
       routes:
+        # Auth Service
         - id: auth-service
-          uri: http://localhost:8081
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/api/v1/auth/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: authCircuitBreaker
+                fallbackUri: forward:/fallback/auth
 
-        - id: employee-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/v1/employees/**,/api/v1/departments/**
-          filters:
-            - StripPrefix=0
-
+        # Tenant Service
         - id: tenant-service
-          uri: http://localhost:8083
+          uri: ${TENANT_SERVICE_URL:http://localhost:8083}
           predicates:
             - Path=/api/v1/tenants/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: tenantCircuitBreaker
+                fallbackUri: forward:/fallback/tenant
 
-        - id: payroll-service
-          uri: http://localhost:8084
+        - id: tenant-plans
+          uri: ${TENANT_SERVICE_URL:http://localhost:8083}
           predicates:
-            - Path=/api/v1/payroll/**,/api/v1/payslips/**
-          filters:
-            - StripPrefix=0
+            - Path=/api/v1/plans/**
 
+        - id: tenant-feature-flags
+          uri: ${TENANT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/feature-flags/**
+
+        # Employee Service
+        - id: employee-service
+          uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/employees/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: employeeCircuitBreaker
+                fallbackUri: forward:/fallback/employee
+
+        - id: department-service
+          uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/departments/**
+
+        # Payroll Service
+        - id: payroll-service
+          uri: ${PAYROLL_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/payroll/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: payrollCircuitBreaker
+                fallbackUri: forward:/fallback/payroll
+
+        # Compliance Service
         - id: compliance-service
-          uri: http://localhost:8085
+          uri: ${COMPLIANCE_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/v1/compliance/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: complianceCircuitBreaker
+                fallbackUri: forward:/fallback/compliance
 
-        - id: time-attendance-service
-          uri: http://localhost:8086
+        # Time and Attendance Service
+        - id: attendance-service
+          uri: ${ATTENDANCE_SERVICE_URL:http://localhost:8086}
           predicates:
             - Path=/api/v1/attendance/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: attendanceCircuitBreaker
+                fallbackUri: forward:/fallback/attendance
 
+        # Leave Service
         - id: leave-service
-          uri: http://localhost:8087
+          uri: ${LEAVE_SERVICE_URL:http://localhost:8087}
           predicates:
             - Path=/api/v1/leave/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: leaveCircuitBreaker
+                fallbackUri: forward:/fallback/leave
 
+        # Document Service
         - id: document-service
-          uri: http://localhost:8088
+          uri: ${DOCUMENT_SERVICE_URL:http://localhost:8088}
           predicates:
             - Path=/api/v1/documents/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: documentCircuitBreaker
+                fallbackUri: forward:/fallback/document
 
+        # Notification Service
         - id: notification-service
-          uri: http://localhost:8089
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8089}
           predicates:
             - Path=/api/v1/notifications/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: notificationCircuitBreaker
+                fallbackUri: forward:/fallback/notification
 
-        - id: integration-hub-service
-          uri: http://localhost:8090
+        # Integration Hub Service
+        - id: integration-payments
+          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
           predicates:
-            - Path=/api/v1/integrations/**,/api/v1/payments/**
+            - Path=/api/v1/payments/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: integrationCircuitBreaker
+                fallbackUri: forward:/fallback/integration
 
+        - id: integration-filings
+          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/filings/**
+
+        - id: integration-config
+          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/integrations/**
+
+        - id: integration-callbacks
+          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/callbacks/**
+
+        # Analytics Service
         - id: analytics-service
-          uri: http://localhost:8091
+          uri: ${ANALYTICS_SERVICE_URL:http://localhost:8091}
           predicates:
-            - Path=/api/v1/analytics/**,/api/v1/reports/**
+            - Path=/api/v1/analytics/**
           filters:
-            - StripPrefix=0
+            - name: CircuitBreaker
+              args:
+                name: analyticsCircuitBreaker
+                fallbackUri: forward:/fallback/analytics
 
-  # OAuth2 resource server — validates JWTs issued by auth-service
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI}
-          jwk-set-uri: ${JWT_JWK_SET_URI}
+        # Audit Service
+        - id: audit-service
+          uri: ${AUDIT_SERVICE_URL:http://localhost:8092}
+          predicates:
+            - Path=/api/v1/audit/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: auditCircuitBreaker
+                fallbackUri: forward:/fallback/audit
 
-  # Redis — rate limiting
+        # Downstream Swagger docs (for aggregation)
+        - id: auth-api-docs
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/services/auth/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: employee-api-docs
+          uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/services/employee/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: tenant-api-docs
+          uri: ${TENANT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/services/tenant/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: payroll-api-docs
+          uri: ${PAYROLL_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/services/payroll/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: leave-api-docs
+          uri: ${LEAVE_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/services/leave/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: attendance-api-docs
+          uri: ${ATTENDANCE_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/services/attendance/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: compliance-api-docs
+          uri: ${COMPLIANCE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/services/compliance/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: document-api-docs
+          uri: ${DOCUMENT_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/services/document/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: notification-api-docs
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8089}
+          predicates:
+            - Path=/services/notification/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: integration-api-docs
+          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/services/integration/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: analytics-api-docs
+          uri: ${ANALYTICS_SERVICE_URL:http://localhost:8091}
+          predicates:
+            - Path=/services/analytics/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
+        - id: audit-api-docs
+          uri: ${AUDIT_SERVICE_URL:http://localhost:8092}
+          predicates:
+            - Path=/services/audit/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
-server:
-  port: 8080
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001,http://localhost:3002}
+  swagger:
+    gateway-url: ${GATEWAY_URL:http://localhost:8080}
 
-# Resilience4j circuit breaker defaults
+# Springdoc config for aggregated docs
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - name: 1. Authentication
+        url: /services/auth/v3/api-docs
+      - name: 2. Tenants & Plans
+        url: /services/tenant/v3/api-docs
+      - name: 3. Employees & Departments
+        url: /services/employee/v3/api-docs
+      - name: 4. Payroll
+        url: /services/payroll/v3/api-docs
+      - name: 5. Leave Management
+        url: /services/leave/v3/api-docs
+      - name: 6. Time & Attendance
+        url: /services/attendance/v3/api-docs
+      - name: 7. Compliance
+        url: /services/compliance/v3/api-docs
+      - name: 8. Documents
+        url: /services/document/v3/api-docs
+      - name: 9. Notifications
+        url: /services/notification/v3/api-docs
+      - name: 10. Integration Hub
+        url: /services/integration/v3/api-docs
+      - name: 11. Analytics
+        url: /services/analytics/v3/api-docs
+      - name: 12. Audit
+        url: /services/audit/v3/api-docs
+
+# Circuit breaker defaults
 resilience4j:
   circuitbreaker:
     configs:
@@ -122,22 +320,23 @@ resilience4j:
         sliding-window-size: 10
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
-        permitted-number-of-calls-in-half-open-state: 3
+        permitted-number-of-calls-in-half-open-state: 5
+        slow-call-duration-threshold: 5s
+        slow-call-rate-threshold: 80
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 10s
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus,gateway
+        include: health,info,metrics,gateway
   endpoint:
     health:
       show-details: when-authorized
-  metrics:
-    export:
-      prometheus:
+      probes:
         enabled: true
-
-logging:
-  level:
-    com.andikisha.gateway: INFO
-    org.springframework.cloud.gateway: INFO
+    gateway:
+      enabled: true

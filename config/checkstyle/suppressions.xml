@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!--
+        GPS coordinates in AttendanceRecord are legitimate IEEE 754 doubles.
+        Latitude/longitude are not monetary values and do not accumulate rounding error
+        in a way that matters for their use case (geofencing, ~6 decimal places).
+    -->
+    <suppress id="NoPrimitiveMoneyTypes"
+              files="AttendanceRecord\.java"
+              lines="1-999"/>
+
+    <!-- Generated protobuf source — not under our control -->
+    <suppress id="NoPrimitiveMoneyTypes"
+              files=".*[/\\]generated[/\\].*"/>
+
+    <!-- Test code — flexibility for test helpers and mocks -->
+    <suppress id="NoPrimitiveMoneyTypes"
+              files=".*[/\\]test[/\\].*"/>
+</suppressions>

@@ -62,7 +62,7 @@ class LeaveAnalyticsTest {
         la.recordApproval(new BigDecimal("3.0"));
         la.recordRejection();
 
-        assertThat(la.getApprovalRate()).isCloseTo(66.67, org.assertj.core.data.Offset.offset(0.01));
+        assertThat(la.getApprovalRate()).isCloseTo(new BigDecimal("66.67"), org.assertj.core.data.Offset.offset(new BigDecimal("0.01")));
     }
 
     @Test
@@ -77,7 +77,7 @@ class LeaveAnalyticsTest {
         LeaveAnalytics la = LeaveAnalytics.create(TENANT, PERIOD, LEAVE_TYPE);
         la.recordApproval(new BigDecimal("2.0"));
 
-        assertThat(la.getApprovalRate()).isEqualTo(100.0);
+        assertThat(la.getApprovalRate()).isEqualByComparingTo(new BigDecimal("100.00"));
     }
 
     @Test

@@ -88,8 +88,12 @@ public class LeaveAnalytics extends BaseEntity {
     public BigDecimal getTotalDaysTaken() { return totalDaysTaken; }
     public int getUniqueEmployees() { return uniqueEmployees; }
     public BigDecimal getAverageDaysPerRequest() { return averageDaysPerRequest; }
-    public double getApprovalRate() {
+    public BigDecimal getApprovalRate() {
         int total = requestsApproved + requestsRejected;
-        return total > 0 ? (double) requestsApproved / total * 100 : 0;
+        if (total == 0) return BigDecimal.ZERO;
+        return BigDecimal.valueOf(requestsApproved)
+                .divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP);
     }
 }

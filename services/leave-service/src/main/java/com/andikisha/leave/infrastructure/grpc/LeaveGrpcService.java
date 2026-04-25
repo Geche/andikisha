@@ -107,10 +107,10 @@ public class LeaveGrpcService extends LeaveServiceGrpc.LeaveServiceImplBase {
                 .setEmployeeId(b.getEmployeeId().toString())
                 .setLeaveType(b.getLeaveType().name())
                 .setYear(b.getYear())
-                .setAccrued(b.getAccrued().doubleValue())
-                .setUsed(b.getUsed().doubleValue())
-                .setCarriedOver(b.getCarriedOver().doubleValue())
-                .setAvailable(b.getAvailable().doubleValue())
+                .setAccrued(b.getAccrued().toPlainString())
+                .setUsed(b.getUsed().toPlainString())
+                .setCarriedOver(b.getCarriedOver().toPlainString())
+                .setAvailable(b.getAvailable().toPlainString())
                 .build();
     }
 }

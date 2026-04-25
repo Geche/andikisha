@@ -19,10 +19,10 @@ message GetMonthlyHoursRequest {
 message MonthlyHoursResponse {
   string employee_id = 1;
   string period = 2;
-  double regular_hours = 3;
-  double overtime_weekday = 4;
-  double overtime_weekend = 5;
-  double overtime_holiday = 6;
+  string regular_hours = 3;
+  string overtime_weekday = 4;
+  string overtime_weekend = 5;
+  string overtime_holiday = 6;
   int32 days_present = 7;
   int32 days_absent = 8;
 }

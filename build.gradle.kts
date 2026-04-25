@@ -14,14 +14,23 @@ allprojects {
     }
 }
 
-// Apply Java toolchain and test config to every subproject that uses the java plugin
+// Apply Java toolchain, test config, and Checkstyle to every subproject that uses the java plugin
 subprojects {
     plugins.withId("java") {
+        apply(plugin = "checkstyle")
+
         configure<JavaPluginExtension> {
             toolchain {
                 languageVersion = JavaLanguageVersion.of(21)
             }
         }
+
+        configure<CheckstyleExtension> {
+            toolVersion = "10.21.0"
+            configDirectory = rootProject.layout.projectDirectory.dir("config/checkstyle")
+            isIgnoreFailures = false
+        }
+
         tasks.withType<Test> {
             useJUnitPlatform()
         }

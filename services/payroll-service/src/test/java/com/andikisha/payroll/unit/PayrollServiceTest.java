@@ -236,8 +236,8 @@ class PayrollServiceTest {
     @Test
     void computeUnpaidLeaveDeduction_noUnpaidLeave_returnsZero() {
         List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("ANNUAL").setUsed(5.0).build(),
-                LeaveBalanceResponse.newBuilder().setLeaveType("SICK").setUsed(2.0).build()
+                LeaveBalanceResponse.newBuilder().setLeaveType("ANNUAL").setUsed("5.0").build(),
+                LeaveBalanceResponse.newBuilder().setLeaveType("SICK").setUsed("2.0").build()
         );
 
         BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), balances);
@@ -248,7 +248,7 @@ class PayrollServiceTest {
     void computeUnpaidLeaveDeduction_unpaidDaysUsed_deductsCorrectly() {
         // basicPay=100_000, unpaid=11 days, daily rate=100_000/22=4_545.4545, deduction=50_000.00
         List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(11.0).build()
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("11.0").build()
         );
 
         BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), balances);
@@ -259,8 +259,8 @@ class PayrollServiceTest {
     void computeUnpaidLeaveDeduction_multipleUnpaidEntries_sumsAllUsed() {
         // Two UNPAID entries: 5 + 3 = 8 days; daily rate = 50_000/22
         List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(5.0).build(),
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(3.0).build()
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("5.0").build(),
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("3.0").build()
         );
 
         BigDecimal result = invokeDeduction(BigDecimal.valueOf(50_000), balances);
@@ -274,7 +274,7 @@ class PayrollServiceTest {
     @Test
     void computeUnpaidLeaveDeduction_zeroUnpaidUsed_returnsZero() {
         List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed(0.0).build()
+                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("0.0").build()
         );
 
         BigDecimal result = invokeDeduction(BigDecimal.valueOf(80_000), balances);

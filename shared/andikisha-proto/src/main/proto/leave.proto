@@ -20,10 +20,10 @@ message LeaveBalanceResponse {
   string employee_id = 1;
   string leave_type = 2;
   int32 year = 3;
-  double accrued = 4;
-  double used = 5;
-  double carried_over = 6;
-  double available = 7;
+  string accrued = 4;
+  string used = 5;
+  string carried_over = 6;
+  string available = 7;
 }
 
 message GetLeaveBalancesRequest {

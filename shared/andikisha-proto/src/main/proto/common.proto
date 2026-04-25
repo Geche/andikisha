@@ -22,9 +22,9 @@ message PaginationMeta {
   int32 total_pages = 4;
 }
 
-// Shared money type
+// Shared money type — amount as string to preserve decimal precision
 message MoneyProto {
-  double amount = 1;
+  string amount = 1;
   string currency = 2;
 }
 

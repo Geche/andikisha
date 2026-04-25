@@ -41,11 +41,6 @@ public class PayrollEventListener {
         }
     }
 
-    /**
-     * Fetches the payslip details via gRPC then fires one async task per employee.
-     * The listener thread returns immediately after dispatching; each payslip is
-     * generated concurrently on the documentTaskExecutor thread pool.
-     */
     private void dispatchPayslipGeneration(PayrollProcessedEvent event) {
         log.info("Dispatching payslip generation for payroll run {} period {}",
                 event.getPayrollRunId(), event.getPeriod());
@@ -67,8 +62,8 @@ public class PayrollEventListener {
                         slip.getEmployeeNumber(),
                         event.getPeriod(),
                         earnings, deductions, reliefs,
-                        BigDecimal.valueOf(slip.getGrossPay()),
-                        BigDecimal.valueOf(slip.getNetPay())
+                        toBigDecimal(slip.getGrossPay()),
+                        toBigDecimal(slip.getNetPay())
                 );
             }
 
@@ -78,34 +73,47 @@ public class PayrollEventListener {
         } catch (Exception e) {
             log.error("Failed to dispatch payslip generation for payroll run {}: {}",
                     event.getPayrollRunId(), e.getMessage(), e);
-            throw new RuntimeException(e); // re-throw so RabbitMQ routes to DLX
+            throw new RuntimeException(e);
         }
     }
 
     private Map<String, BigDecimal> buildEarnings(com.andikisha.proto.payroll.PaySlipDetail slip) {
         Map<String, BigDecimal> m = new LinkedHashMap<>();
-        m.put("Basic Salary", BigDecimal.valueOf(slip.getBasicPay()));
-        if (slip.getHousingAllowance()   > 0) m.put("Housing Allowance",   BigDecimal.valueOf(slip.getHousingAllowance()));
-        if (slip.getTransportAllowance() > 0) m.put("Transport Allowance", BigDecimal.valueOf(slip.getTransportAllowance()));
-        if (slip.getMedicalAllowance()   > 0) m.put("Medical Allowance",   BigDecimal.valueOf(slip.getMedicalAllowance()));
-        if (slip.getOtherAllowances()    > 0) m.put("Other Allowances",    BigDecimal.valueOf(slip.getOtherAllowances()));
+        m.put("Basic Salary", toBigDecimal(slip.getBasicPay()));
+        if (isPositive(slip.getHousingAllowance()))   m.put("Housing Allowance",   toBigDecimal(slip.getHousingAllowance()));
+        if (isPositive(slip.getTransportAllowance())) m.put("Transport Allowance", toBigDecimal(slip.getTransportAllowance()));
+        if (isPositive(slip.getMedicalAllowance()))   m.put("Medical Allowance",   toBigDecimal(slip.getMedicalAllowance()));
+        if (isPositive(slip.getOtherAllowances()))    m.put("Other Allowances",    toBigDecimal(slip.getOtherAllowances()));
         return m;
     }
 
     private Map<String, BigDecimal> buildDeductions(com.andikisha.proto.payroll.PaySlipDetail slip) {
         Map<String, BigDecimal> m = new LinkedHashMap<>();
-        m.put("PAYE",           BigDecimal.valueOf(slip.getPaye()));
-        m.put("NSSF (Employee)", BigDecimal.valueOf(slip.getNssf()));
-        m.put("SHIF",           BigDecimal.valueOf(slip.getShif()));
-        m.put("Housing Levy",   BigDecimal.valueOf(slip.getHousingLevy()));
-        if (slip.getHelb() > 0) m.put("HELB", BigDecimal.valueOf(slip.getHelb()));
+        m.put("PAYE",            toBigDecimal(slip.getPaye()));
+        m.put("NSSF (Employee)", toBigDecimal(slip.getNssf()));
+        m.put("SHIF",            toBigDecimal(slip.getShif()));
+        m.put("Housing Levy",    toBigDecimal(slip.getHousingLevy()));
+        if (isPositive(slip.getHelb())) m.put("HELB", toBigDecimal(slip.getHelb()));
         return m;
     }
 
     private Map<String, BigDecimal> buildReliefs(com.andikisha.proto.payroll.PaySlipDetail slip) {
         Map<String, BigDecimal> m = new LinkedHashMap<>();
-        m.put("Personal Relief", BigDecimal.valueOf(slip.getPersonalRelief()));
-        if (slip.getInsuranceRelief() > 0) m.put("Insurance Relief", BigDecimal.valueOf(slip.getInsuranceRelief()));
+        m.put("Personal Relief", toBigDecimal(slip.getPersonalRelief()));
+        if (isPositive(slip.getInsuranceRelief())) m.put("Insurance Relief", toBigDecimal(slip.getInsuranceRelief()));
         return m;
+    }
+
+    private static BigDecimal toBigDecimal(String value) {
+        return (value == null || value.isBlank()) ? BigDecimal.ZERO : new BigDecimal(value);
+    }
+
+    private static boolean isPositive(String value) {
+        if (value == null || value.isBlank()) return false;
+        try {
+            return new BigDecimal(value).compareTo(BigDecimal.ZERO) > 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }

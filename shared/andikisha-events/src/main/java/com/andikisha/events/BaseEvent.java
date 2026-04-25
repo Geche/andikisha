@@ -29,10 +29,12 @@ import com.andikisha.events.tenant.TenantSuspendedEvent;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = UserRegisteredEvent.class,       name = "UserRegistered"),
@@ -79,11 +81,6 @@ public abstract class BaseEvent {
 
     protected BaseEvent() {}
 
-
-    public String getEventId() { return eventId; }
-    public String getEventType() { return eventType; }
-    public String getTenantId() { return tenantId; }
-    public Instant getTimestamp() { return timestamp; }
 
     @Override
     public String toString() {

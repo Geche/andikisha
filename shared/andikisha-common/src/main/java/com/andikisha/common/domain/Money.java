@@ -35,10 +35,6 @@ public class Money {
         return new Money(BigDecimal.valueOf(amount), "KES");
     }
 
-    public static Money kes(double amount) {
-        return new Money(BigDecimal.valueOf(amount), "KES");
-    }
-
     public static Money of(BigDecimal amount, String currency) {
         return new Money(amount, currency);
     }
@@ -62,10 +58,6 @@ public class Money {
                 this.amount.multiply(factor).setScale(2, RoundingMode.HALF_UP),
                 this.currency
         );
-    }
-
-    public Money multiply(double factor) {
-        return multiply(BigDecimal.valueOf(factor));
     }
 
     public Money percentage(BigDecimal percent) {
