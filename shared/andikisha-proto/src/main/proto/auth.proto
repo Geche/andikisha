@@ -8,6 +8,7 @@ service AuthService {
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
   rpc GetUserByEmployeeId(GetUserByEmployeeIdRequest) returns (UserResponse);
+  rpc ValidateUssdSession(ValidateUssdSessionRequest) returns (ValidateUssdSessionResponse);
 }
 
 message ValidateTokenRequest {
@@ -47,4 +48,16 @@ message UserResponse {
   string role = 4;
   string employee_id = 5;
   bool is_active = 6;
+}
+
+message ValidateUssdSessionRequest {
+  string session_token = 1;
+  string msisdn = 2;
+}
+
+message ValidateUssdSessionResponse {
+  bool valid = 1;
+  string employee_id = 2;
+  string tenant_id = 3;
+  string invalidation_reason = 4;
 }

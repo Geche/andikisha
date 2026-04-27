@@ -7,6 +7,7 @@ option java_multiple_files = true;
 service TenantService {
   rpc GetTenant(GetTenantRequest) returns (TenantResponse);
   rpc VerifyTenantActive(VerifyTenantRequest) returns (VerifyTenantResponse);
+  rpc ValidateTenantLicence(ValidateLicenceRequest) returns (ValidateLicenceResponse);
 }
 
 message GetTenantRequest {
@@ -29,4 +30,16 @@ message VerifyTenantRequest {
 message VerifyTenantResponse {
   bool active = 1;
   string plan = 2;
+}
+
+message ValidateLicenceRequest {
+  string tenant_id = 1;
+}
+
+message ValidateLicenceResponse {
+  bool access_allowed = 1;
+  string licence_status = 2;
+  bool writes_allowed = 3;
+  string restriction_reason = 4;
+  string licence_expiry_date = 5;
 }
