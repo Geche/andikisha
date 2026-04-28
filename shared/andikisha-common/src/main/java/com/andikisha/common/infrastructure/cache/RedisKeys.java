@@ -17,6 +17,13 @@ public final class RedisKeys {
         return "lock:payroll:disburse:" + tenantId;
     }
 
+    // Tenant plan tier cache. TTL: 24 hours.
+    // Written by Tenant Service on licence creation and plan upgrade.
+    // Read by Auth Service at JWT issuance to include the plan claim.
+    public static String tenantPlanTier(String tenantId) {
+        return "tenant:plan:" + tenantId;
+    }
+
     // USSD session cache. TTL: 5 minutes.
     // Written by Auth Service on USSD session creation.
     public static String ussdSession(String msisdn) {

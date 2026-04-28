@@ -33,6 +33,15 @@ dependencies {
         artifact { classifier = "osx-aarch_64" }
     }
 
+    // Shared common library (RedisKeys, exceptions)
+    implementation(project(":shared:andikisha-common"))
+
+    // Shared events (PayrollProcessedEvent for lock release)
+    implementation(project(":shared:andikisha-events"))
+
+    // RabbitMQ (async lock release on payroll disbursement completion)
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
+
     // JWT validation
     implementation("io.jsonwebtoken:jjwt-api:${rootProject.extra["jjwtVersion"]}")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:${rootProject.extra["jjwtVersion"]}")

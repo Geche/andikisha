@@ -21,6 +21,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 // Tenant CRUD uses explicit tenantId path params, not TenantContext
                 .excludePathPatterns("/api/v1/tenants", "/api/v1/tenants/**")
                 // Plan listing is public (needed during signup before a tenant exists)
-                .excludePathPatterns("/api/v1/plans", "/api/v1/plans/**");
+                .excludePathPatterns("/api/v1/plans", "/api/v1/plans/**")
+                // SUPER_ADMIN endpoints operate platform-wide, not per-tenant
+                .excludePathPatterns("/api/v1/super-admin", "/api/v1/super-admin/**");
     }
 }

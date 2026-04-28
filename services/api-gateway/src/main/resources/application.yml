@@ -7,6 +7,7 @@ spring:
   cloud:
     gateway:
       default-filters:
+        - RemoveRequestHeader=X-Internal-Request
         - name: CircuitBreaker
           args:
             name: defaultCircuitBreaker
@@ -19,7 +20,20 @@ spring:
               requestedTokens: 1
             key-resolver: "#{@userKeyResolver}"
       routes:
-        # Auth Service
+        # ── Super Admin routes ──────────────────────────────────────────────
+        - id: super-admin-routes
+          uri: ${TENANT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/super-admin/**
+          filters:
+            - AddRequestHeader=X-Internal-Request, true
+            - SuperAdminAuthFilter
+            - name: CircuitBreaker
+              args:
+                name: tenantCircuitBreaker
+                fallbackUri: forward:/fallback/tenant-service
+
+        # ── Phase 1: Foundation ─────────────────────────────────────────────
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
@@ -28,9 +42,8 @@ spring:
             - name: CircuitBreaker
               args:
                 name: authCircuitBreaker
-                fallbackUri: forward:/fallback/auth
+                fallbackUri: forward:/fallback/auth-service
 
-        # Tenant Service
         - id: tenant-service
           uri: ${TENANT_SERVICE_URL:http://localhost:8083}
           predicates:
@@ -39,7 +52,7 @@ spring:
             - name: CircuitBreaker
               args:
                 name: tenantCircuitBreaker
-                fallbackUri: forward:/fallback/tenant
+                fallbackUri: forward:/fallback/tenant-service
 
         - id: tenant-plans
           uri: ${TENANT_SERVICE_URL:http://localhost:8083}
@@ -51,78 +64,87 @@ spring:
           predicates:
             - Path=/api/v1/feature-flags/**
 
-        # Employee Service
         - id: employee-service
           uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/v1/employees/**
+            - Path=/api/v1/employees/**, /api/v1/departments/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
                 name: employeeCircuitBreaker
-                fallbackUri: forward:/fallback/employee
+                fallbackUri: forward:/fallback/employee-service
 
-        - id: department-service
-          uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
-          predicates:
-            - Path=/api/v1/departments/**
-
-        # Payroll Service
+        # ── Phase 2: Core HR ────────────────────────────────────────────────
         - id: payroll-service
           uri: ${PAYROLL_SERVICE_URL:http://localhost:8084}
           predicates:
             - Path=/api/v1/payroll/**
           filters:
+            - TenantLicenceFilter
+            - PayrollDisbursementLockFilter
             - name: CircuitBreaker
               args:
-                name: payrollCircuitBreaker
-                fallbackUri: forward:/fallback/payroll
+                name: payrollServiceCB
+                fallbackUri: forward:/fallback/payroll-service
 
-        # Compliance Service
         - id: compliance-service
           uri: ${COMPLIANCE_SERVICE_URL:http://localhost:8085}
           predicates:
             - Path=/api/v1/compliance/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
-                name: complianceCircuitBreaker
-                fallbackUri: forward:/fallback/compliance
+                name: complianceServiceCB
+                fallbackUri: forward:/fallback/compliance-service
 
-        # Time and Attendance Service
         - id: attendance-service
           uri: ${ATTENDANCE_SERVICE_URL:http://localhost:8086}
           predicates:
-            - Path=/api/v1/attendance/**
+            - Path=/api/v1/attendance/**, /api/v1/shifts/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
-                name: attendanceCircuitBreaker
-                fallbackUri: forward:/fallback/attendance
+                name: attendanceServiceCB
+                fallbackUri: forward:/fallback/time-attendance-service
 
-        # Leave Service
         - id: leave-service
           uri: ${LEAVE_SERVICE_URL:http://localhost:8087}
           predicates:
             - Path=/api/v1/leave/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
-                name: leaveCircuitBreaker
-                fallbackUri: forward:/fallback/leave
+                name: leaveServiceCB
+                fallbackUri: forward:/fallback/leave-service
 
-        # Document Service
+        # ── Phase 2 New ─────────────────────────────────────────────────────
+        - id: expense-service
+          uri: ${EXPENSE_SERVICE_URL:http://localhost:8093}
+          predicates:
+            - Path=/api/v1/expenses/**
+          filters:
+            - TenantLicenceFilter
+            - name: CircuitBreaker
+              args:
+                name: expenseServiceCB
+                fallbackUri: forward:/fallback/expense-service
+
+        # ── Phase 3: Supporting ─────────────────────────────────────────────
         - id: document-service
           uri: ${DOCUMENT_SERVICE_URL:http://localhost:8088}
           predicates:
             - Path=/api/v1/documents/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
-                name: documentCircuitBreaker
-                fallbackUri: forward:/fallback/document
+                name: documentServiceCB
+                fallbackUri: forward:/fallback/document-service
 
-        # Notification Service
         - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8089}
           predicates:
@@ -130,47 +152,71 @@ spring:
           filters:
             - name: CircuitBreaker
               args:
-                name: notificationCircuitBreaker
-                fallbackUri: forward:/fallback/notification
+                name: notificationServiceCB
+                fallbackUri: forward:/fallback/notification-service
 
-        # Integration Hub Service
-        - id: integration-payments
+        - id: integration-hub-service
           uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
           predicates:
-            - Path=/api/v1/payments/**
+            - Path=/api/v1/integrations/**, /api/v1/payments/**, /api/v1/filings/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
-                name: integrationCircuitBreaker
-                fallbackUri: forward:/fallback/integration
-
-        - id: integration-filings
-          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
-          predicates:
-            - Path=/api/v1/filings/**
-
-        - id: integration-config
-          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
-          predicates:
-            - Path=/api/v1/integrations/**
+                name: integrationHubCB
+                fallbackUri: forward:/fallback/integration-hub-service
 
         - id: integration-callbacks
           uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
           predicates:
             - Path=/api/v1/callbacks/**
 
-        # Analytics Service
+        # ── Phase 3 New ─────────────────────────────────────────────────────
+        - id: recruitment-service
+          uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8094}
+          predicates:
+            - Path=/api/v1/recruitment/**
+          filters:
+            - TenantLicenceFilter
+            - name: CircuitBreaker
+              args:
+                name: recruitmentServiceCB
+                fallbackUri: forward:/fallback/recruitment-service
+
+        - id: performance-service
+          uri: ${PERFORMANCE_SERVICE_URL:http://localhost:8095}
+          predicates:
+            - Path=/api/v1/performance/**
+          filters:
+            - TenantLicenceFilter
+            - name: CircuitBreaker
+              args:
+                name: performanceServiceCB
+                fallbackUri: forward:/fallback/performance-service
+
+        - id: asset-service
+          uri: ${ASSET_SERVICE_URL:http://localhost:8096}
+          predicates:
+            - Path=/api/v1/assets/**
+          filters:
+            - TenantLicenceFilter
+            - name: CircuitBreaker
+              args:
+                name: assetServiceCB
+                fallbackUri: forward:/fallback/asset-service
+
+        # ── Phase 4: Intelligence ────────────────────────────────────────────
         - id: analytics-service
           uri: ${ANALYTICS_SERVICE_URL:http://localhost:8091}
           predicates:
             - Path=/api/v1/analytics/**
           filters:
+            - TenantLicenceFilter
             - name: CircuitBreaker
               args:
-                name: analyticsCircuitBreaker
-                fallbackUri: forward:/fallback/analytics
+                name: analyticsServiceCB
+                fallbackUri: forward:/fallback/analytics-service
 
-        # Audit Service
         - id: audit-service
           uri: ${AUDIT_SERVICE_URL:http://localhost:8092}
           predicates:
@@ -178,10 +224,10 @@ spring:
           filters:
             - name: CircuitBreaker
               args:
-                name: auditCircuitBreaker
-                fallbackUri: forward:/fallback/audit
+                name: auditServiceCB
+                fallbackUri: forward:/fallback/audit-service
 
-        # Downstream Swagger docs (for aggregation)
+        # ── Downstream Swagger api-docs (aggregated) ────────────────────────
         - id: auth-api-docs
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
@@ -271,11 +317,17 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 app:
   jwt:
     secret: ${JWT_SECRET}
   cors:
-    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001,http://localhost:3002}
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003}
   swagger:
     gateway-url: ${GATEWAY_URL:http://localhost:8080}
 
@@ -312,17 +364,32 @@ springdoc:
       - name: 12. Audit
         url: /services/audit/v3/api-docs
 
-# Circuit breaker defaults
+# Circuit breakers — default profile for all services.
+# Financial profile (payroll, compliance, integration hub) is stricter.
 resilience4j:
   circuitbreaker:
     configs:
       default:
         sliding-window-size: 10
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
         slow-call-duration-threshold: 5s
         slow-call-rate-threshold: 80
+      financial:
+        sliding-window-size: 10
+        failure-rate-threshold: 30
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      payrollServiceCB:
+        base-config: financial
+      complianceServiceCB:
+        base-config: financial
+      integrationHubCB:
+        base-config: financial
   timelimiter:
     configs:
       default:

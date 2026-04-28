@@ -13,9 +13,21 @@ public class RabbitMqConfig {
 
     public static final String TENANT_EXCHANGE = "tenant.events";
 
+    /**
+     * Dedicated exchange for licence-lifecycle events. Kept separate from the
+     * legacy {@link #TENANT_EXCHANGE} so consumers can subscribe to licence
+     * events alone without filtering through unrelated tenant CRUD events.
+     */
+    public static final String LICENCE_EXCHANGE = "andikisha.tenant.events";
+
     @Bean
     TopicExchange tenantExchange() {
         return new TopicExchange(TENANT_EXCHANGE, true, false);
+    }
+
+    @Bean
+    TopicExchange licenceExchange() {
+        return new TopicExchange(LICENCE_EXCHANGE, true, false);
     }
 
     @Bean

@@ -11,6 +11,8 @@ import com.andikisha.proto.auth.CheckPermissionResponse;
 import com.andikisha.proto.auth.GetUserByEmployeeIdRequest;
 import com.andikisha.proto.auth.ValidateTokenRequest;
 import com.andikisha.proto.auth.ValidateTokenResponse;
+import com.andikisha.proto.auth.ValidateUssdSessionRequest;
+import com.andikisha.proto.auth.ValidateUssdSessionResponse;
 import io.grpc.stub.StreamObserver;
 import io.jsonwebtoken.Claims;
 import net.devh.boot.grpc.server.service.GrpcService;
@@ -26,10 +28,13 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
+    private final com.andikisha.auth.domain.repository.UssdSessionRepository ussdSessionRepository;
 
-    public AuthGrpcService(JwtTokenProvider jwtTokenProvider, AuthService authService) {
+    public AuthGrpcService(JwtTokenProvider jwtTokenProvider, AuthService authService,
+                           com.andikisha.auth.domain.repository.UssdSessionRepository ussdSessionRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.authService = authService;
+        this.ussdSessionRepository = ussdSessionRepository;
     }
 
     @Override
@@ -131,6 +136,60 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
                     .withDescription("Internal error").asException());
         } finally {
             TenantContext.clear();
+        }
+    }
+
+    @Override
+    public void validateUssdSession(ValidateUssdSessionRequest request,
+                                    StreamObserver<ValidateUssdSessionResponse> observer) {
+        try {
+            if (!jwtTokenProvider.validateToken(request.getSessionToken())) {
+                observer.onNext(ValidateUssdSessionResponse.newBuilder()
+                        .setValid(false)
+                        .setInvalidationReason("TOKEN_INVALID_OR_EXPIRED")
+                        .build());
+                observer.onCompleted();
+                return;
+            }
+
+            Claims claims = jwtTokenProvider.getClaims(request.getSessionToken());
+            String sessionType = claims.get("sessionType", String.class);
+
+            if (!"USSD".equals(sessionType)) {
+                observer.onNext(ValidateUssdSessionResponse.newBuilder()
+                        .setValid(false)
+                        .setInvalidationReason("NOT_A_USSD_TOKEN")
+                        .build());
+                observer.onCompleted();
+                return;
+            }
+
+            String tokenMsisdn = claims.getSubject();
+            if (!request.getMsisdn().equals(tokenMsisdn)) {
+                observer.onNext(ValidateUssdSessionResponse.newBuilder()
+                        .setValid(false)
+                        .setInvalidationReason("MSISDN_MISMATCH")
+                        .build());
+                observer.onCompleted();
+                return;
+            }
+
+            String employeeId = claims.get("employeeId", String.class);
+            String tenantId = claims.get("tenantId", String.class);
+
+            observer.onNext(ValidateUssdSessionResponse.newBuilder()
+                    .setValid(true)
+                    .setEmployeeId(employeeId != null ? employeeId : "")
+                    .setTenantId(tenantId != null ? tenantId : "")
+                    .build());
+            observer.onCompleted();
+        } catch (Exception e) {
+            log.error("ValidateUssdSession failed", e);
+            observer.onNext(ValidateUssdSessionResponse.newBuilder()
+                    .setValid(false)
+                    .setInvalidationReason("INTERNAL_ERROR")
+                    .build());
+            observer.onCompleted();
         }
     }
 }

@@ -22,6 +22,9 @@ import com.andikisha.events.payroll.PayrollApprovedEvent;
 import com.andikisha.events.payroll.PayrollCalculatedEvent;
 import com.andikisha.events.payroll.PayrollInitiatedEvent;
 import com.andikisha.events.payroll.PayrollProcessedEvent;
+import com.andikisha.events.tenant.LicenceExpiringEvent;
+import com.andikisha.events.tenant.LicenceRenewedEvent;
+import com.andikisha.events.tenant.LicenceUpgradedEvent;
 import com.andikisha.events.tenant.TenantCreatedEvent;
 import com.andikisha.events.tenant.TenantPlanChangedEvent;
 import com.andikisha.events.tenant.TenantReactivatedEvent;
@@ -63,6 +66,9 @@ import java.util.UUID;
         @JsonSubTypes.Type(value = NotificationSentEvent.class,     name = "NotificationSent"),
         @JsonSubTypes.Type(value = DocumentGeneratedEvent.class,    name = "DocumentGenerated"),
         @JsonSubTypes.Type(value = DocumentReadyEvent.class,        name = "DocumentReady"),
+        @JsonSubTypes.Type(value = LicenceRenewedEvent.class,       name = "LicenceRenewed"),
+        @JsonSubTypes.Type(value = LicenceExpiringEvent.class,      name = "LicenceExpiring"),
+        @JsonSubTypes.Type(value = LicenceUpgradedEvent.class,      name = "LicenceUpgraded"),
 })
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public abstract class BaseEvent {

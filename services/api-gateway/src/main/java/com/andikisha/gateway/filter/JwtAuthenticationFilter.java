@@ -35,6 +35,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/v1/auth/login",
             "/api/v1/auth/register",
             "/api/v1/auth/refresh",
+            "/api/v1/auth/super-admin/provision",
+            "/api/v1/auth/super-admin/login",
+            "/api/v1/auth/ussd/validate",
             "/api/v1/plans",
             "/api/v1/tenants"
     );
@@ -88,7 +91,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 return unauthorized(exchange, "Token missing tenantId claim");
             }
 
+            // Strip any client-supplied identity headers BEFORE setting validated values
+            // to prevent spoofing (mutate().header() appends, not replaces)
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                    .headers(h -> {
+                        h.remove("X-User-ID");
+                        h.remove("X-Tenant-ID");
+                        h.remove("X-User-Role");
+                        h.remove("X-User-Email");
+                        h.remove("X-Employee-ID");
+                    })
                     .header("X-User-ID", userId)
                     .header("X-Tenant-ID", tenantId)
                     .header("X-User-Role", role != null ? role : "")

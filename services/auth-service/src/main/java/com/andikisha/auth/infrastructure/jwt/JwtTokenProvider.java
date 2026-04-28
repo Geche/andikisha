@@ -36,15 +36,19 @@ public class JwtTokenProvider {
         this.refreshTokenExpirationMs = jwtProperties.refreshExpirationMs();
     }
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(User user, String planTier) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(user.getId().toString())
                 .claim("tenantId", user.getTenantId())
                 .claim("email", user.getEmail())
                 .claim("role", user.getRole().name())
                 .claim("employeeId",
-                        user.getEmployeeId() != null ? user.getEmployeeId().toString() : null)
+                        user.getEmployeeId() != null ? user.getEmployeeId().toString() : null);
+        if (planTier != null) {
+            builder.claim("plan", planTier);
+        }
+        return builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(accessTokenExpirationMs)))
                 .signWith(key)
@@ -81,6 +85,62 @@ public class JwtTokenProvider {
 
     public String getTenantIdFromToken(String token) {
         return getClaims(token).get("tenantId", String.class);
+    }
+
+    public String generateUssdToken(String msisdn, String tenantId, String employeeId,
+                                    long expirationMs) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(msisdn)
+                .claim("tenantId", tenantId)
+                .claim("employeeId", employeeId)
+                .claim("role", "EMPLOYEE")
+                .claim("sessionType", "USSD")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateSuperAdminToken(String userId, long expirationMs) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(userId)
+                .claim("tenantId", "SYSTEM")
+                .claim("role", "SUPER_ADMIN")
+                .claim("sessionType", "SUPER_ADMIN")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateSuperAdminRefreshToken(String userId, long expirationMs) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(userId)
+                .claim("tenantId", "SYSTEM")
+                .claim("role", "SUPER_ADMIN")
+                .claim("type", "refresh")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateImpersonationToken(String superAdminUserId, String targetTenantId,
+                                             long expirationMs) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .subject(superAdminUserId)
+                .claim("tenantId", targetTenantId)
+                .claim("role", "ADMIN")
+                .claim("impersonatedBy", superAdminUserId)
+                .claim("sessionType", "IMPERSONATION")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(key)
+                .compact();
     }
 
     public boolean validateToken(String token) {

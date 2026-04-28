@@ -31,9 +31,9 @@ class PlanServiceTest {
     @Test
     void getAvailablePlans_returnsOnlyActivePlans() {
         Plan starter = Plan.create("Starter", PlanTier.STARTER, Money.kes(2500),
-                25, 2, true, true, false, false, false);
+                25, 2, true, true, false, false, false, false, false);
         Plan enterprise = Plan.create("Enterprise", PlanTier.ENTERPRISE, Money.kes(15000),
-                500, 20, true, true, true, true, true);
+                500, 20, true, true, true, true, true, true, true);
 
         when(planRepository.findByTenantIdAndActiveTrue("SYSTEM"))
                 .thenReturn(List.of(starter, enterprise));

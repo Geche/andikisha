@@ -50,6 +50,12 @@ public class Plan extends BaseEntity {
     @Column(name = "analytics_enabled", nullable = false)
     private boolean analyticsEnabled;
 
+    @Column(name = "ewa_enabled", nullable = false)
+    private boolean ewaEnabled = false;
+
+    @Column(name = "multi_country_enabled", nullable = false)
+    private boolean multiCountryEnabled = false;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
@@ -62,7 +68,8 @@ public class Plan extends BaseEntity {
                               int maxEmployees, int maxAdmins,
                               boolean payrollEnabled, boolean leaveEnabled,
                               boolean attendanceEnabled, boolean documentsEnabled,
-                              boolean analyticsEnabled) {
+                              boolean analyticsEnabled,
+                              boolean ewaEnabled, boolean multiCountryEnabled) {
         Plan plan = new Plan();
         plan.setTenantId("SYSTEM");
         plan.name = name;
@@ -75,6 +82,8 @@ public class Plan extends BaseEntity {
         plan.attendanceEnabled = attendanceEnabled;
         plan.documentsEnabled = documentsEnabled;
         plan.analyticsEnabled = analyticsEnabled;
+        plan.ewaEnabled = ewaEnabled;
+        plan.multiCountryEnabled = multiCountryEnabled;
         plan.active = true;
         return plan;
     }
@@ -89,5 +98,7 @@ public class Plan extends BaseEntity {
     public boolean isAttendanceEnabled() { return attendanceEnabled; }
     public boolean isDocumentsEnabled() { return documentsEnabled; }
     public boolean isAnalyticsEnabled() { return analyticsEnabled; }
+    public boolean isEwaEnabled() { return ewaEnabled; }
+    public boolean isMultiCountryEnabled() { return multiCountryEnabled; }
     public boolean isActive() { return active; }
 }

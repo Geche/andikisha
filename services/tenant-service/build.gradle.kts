@@ -31,6 +31,9 @@ dependencies {
     // Messaging — publishes TenantProvisionedEvent, TenantSuspendedEvent
     implementation("org.springframework.boot:spring-boot-starter-amqp")
 
+    // Redis — licence status cache (60s TTL, read by gateway and other services)
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     // gRPC server — other services call tenant-service to resolve tenantId → schema
     implementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
 

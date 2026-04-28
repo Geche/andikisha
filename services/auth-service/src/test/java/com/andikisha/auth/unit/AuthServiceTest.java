@@ -32,6 +32,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
@@ -59,6 +61,8 @@ class AuthServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private UserMapper userMapper;
     @Mock private AuthEventPublisher eventPublisher;
+    @Mock private StringRedisTemplate redisTemplate;
+    @Mock private ValueOperations<String, String> valueOps;
 
     @InjectMocks private AuthService authService;
 
@@ -94,7 +98,9 @@ class AuthServiceTest {
     }
 
     private void stubTokenGeneration() {
-        when(jwtTokenProvider.generateAccessToken(any())).thenReturn("access-token");
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        when(valueOps.get(anyString())).thenReturn(null);
+        when(jwtTokenProvider.generateAccessToken(any(), any())).thenReturn("access-token");
         when(jwtTokenProvider.generateRefreshToken(any())).thenReturn("refresh-token");
         when(jwtTokenProvider.getRefreshTokenExpiry()).thenReturn(Instant.now().plusSeconds(3600));
         when(jwtTokenProvider.getAccessTokenExpirationMs()).thenReturn(3600000L);

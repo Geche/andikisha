@@ -23,4 +23,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByPhoneNumberAndTenantId(String phoneNumber, String tenantId);
 
     Page<User> findByTenantId(String tenantId, Pageable pageable);
+
+    boolean existsByRoleAndTenantId(com.andikisha.auth.domain.model.Role role, String tenantId);
+
+    Optional<User> findByEmailAndTenantIdAndRole(String email, String tenantId,
+                                                 com.andikisha.auth.domain.model.Role role);
 }

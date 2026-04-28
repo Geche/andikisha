@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -16,6 +18,12 @@ class TenantServiceApplicationTest {
     private ConnectionFactory connectionFactory;
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    // Prevent actual Redis connection during context load test
+    @MockitoBean
+    private RedisConnectionFactory redisConnectionFactory;
+    @MockitoBean
+    private StringRedisTemplate stringRedisTemplate;
 
     @Test
     void contextLoads() {

@@ -2,6 +2,7 @@ package com.andikisha.common.tenant;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 public class TenantInterceptor implements HandlerInterceptor {
@@ -10,8 +11,8 @@ public class TenantInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request,
-                             HttpServletResponse response,
-                             Object handler) throws Exception {
+                             @NonNull HttpServletResponse response,
+                             @NonNull Object handler) throws Exception {
         String tenantId = request.getHeader(TENANT_HEADER);
         if (tenantId == null || tenantId.isBlank()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST,
@@ -23,9 +24,9 @@ public class TenantInterceptor implements HandlerInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request,
-                                HttpServletResponse response,
-                                Object handler,
+    public void afterCompletion(@NonNull HttpServletRequest request,
+                                @NonNull HttpServletResponse response,
+                                @NonNull Object handler,
                                 Exception ex) {
         TenantContext.clear();
     }

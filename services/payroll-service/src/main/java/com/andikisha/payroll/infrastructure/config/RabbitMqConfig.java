@@ -3,6 +3,7 @@ package com.andikisha.payroll.infrastructure.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
@@ -18,6 +19,8 @@ public class RabbitMqConfig {
     public static final String PAYROLL_EXCHANGE = "payroll.events";
     public static final String EMPLOYEE_EXCHANGE = "employee.events";
     public static final String PAYROLL_EMPLOYEE_EVENTS_QUEUE = "payroll.employee-events";
+    public static final String PAYROLL_DLX = "dlx.payroll";
+    public static final String PAYROLL_DLQ = "dlq.payroll.employee-events";
 
     @Bean
     TopicExchange payrollExchange() {
@@ -41,6 +44,23 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(payrollEmployeeEventsQueue())
                 .to(employeeExchange())
                 .with("employee.*");
+    }
+
+    @Bean
+    DirectExchange payrollDeadLetterExchange() {
+        return new DirectExchange(PAYROLL_DLX, true, false);
+    }
+
+    @Bean
+    Queue payrollDeadLetterQueue() {
+        return QueueBuilder.durable(PAYROLL_DLQ).build();
+    }
+
+    @Bean
+    Binding bindPayrollDlq() {
+        return BindingBuilder.bind(payrollDeadLetterQueue())
+                .to(payrollDeadLetterExchange())
+                .with(PAYROLL_EMPLOYEE_EVENTS_QUEUE);
     }
 
     @Bean

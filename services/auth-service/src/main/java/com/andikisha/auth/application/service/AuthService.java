@@ -18,10 +18,12 @@ import com.andikisha.auth.domain.repository.RefreshTokenRepository;
 import com.andikisha.auth.domain.repository.RolePermissionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import com.andikisha.common.infrastructure.cache.RedisKeys;
 import io.jsonwebtoken.JwtException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.common.tenant.TenantContext;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final AuthEventPublisher eventPublisher;
+    private final StringRedisTemplate redisTemplate;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -49,7 +52,8 @@ public class AuthService {
                        JwtTokenProvider jwtTokenProvider,
                        PasswordEncoder passwordEncoder,
                        UserMapper userMapper,
-                       AuthEventPublisher eventPublisher) {
+                       AuthEventPublisher eventPublisher,
+                       StringRedisTemplate redisTemplate) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.rolePermissionRepository = rolePermissionRepository;
@@ -57,6 +61,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
         this.eventPublisher = eventPublisher;
+        this.redisTemplate = redisTemplate;
     }
 
     @Transactional
@@ -77,12 +82,14 @@ public class AuthService {
         user = userRepository.save(user);
 
         final User savedUser = user;
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                eventPublisher.publishUserRegistered(savedUser);
-            }
-        });
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishUserRegistered(savedUser);
+                }
+            });
+        }
 
         return generateTokenResponse(user);
     }
@@ -201,7 +208,8 @@ public class AuthService {
     }
 
     private TokenResponse generateTokenResponse(User user) {
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String planTier = redisTemplate.opsForValue().get(RedisKeys.tenantPlanTier(user.getTenantId()));
+        String accessToken = jwtTokenProvider.generateAccessToken(user, planTier);
         String refreshTokenStr = jwtTokenProvider.generateRefreshToken(user);
 
         RefreshToken refreshToken = RefreshToken.create(

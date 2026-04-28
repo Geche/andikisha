@@ -37,6 +37,9 @@ dependencies {
     // Messaging
     implementation("org.springframework.boot:spring-boot-starter-amqp")
 
+    // Redis (plan tier cache for JWT plan claim)
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
     // gRPC server (exposes auth stubs to other services)
     implementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
 

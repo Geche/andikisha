@@ -1,6 +1,8 @@
 package com.andikisha.tenant.presentation.advice;
 
 import com.andikisha.common.dto.ErrorResponse;
+import com.andikisha.common.exception.LicenceSuspendedException;
+import com.andikisha.tenant.domain.exception.InvalidLicenceTransitionException;
 import com.andikisha.tenant.domain.exception.TenantNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,5 +28,17 @@ public class TenantExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse("ACCESS_DENIED", "Access denied"));
+    }
+
+    @ExceptionHandler(InvalidLicenceTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTransition(InvalidLicenceTransitionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("INVALID_LICENCE_TRANSITION", ex.getMessage()));
+    }
+
+    @ExceptionHandler(LicenceSuspendedException.class)
+    public ResponseEntity<ErrorResponse> handleLicenceSuspended(LicenceSuspendedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("LICENCE_SUSPENDED", ex.getMessage()));
     }
 }

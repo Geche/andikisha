@@ -6,6 +6,7 @@ import com.andikisha.proto.tenant.VerifyTenantRequest;
 import com.andikisha.proto.tenant.VerifyTenantResponse;
 import com.andikisha.tenant.application.service.TenantService;
 import com.andikisha.tenant.domain.exception.TenantNotFoundException;
+import com.andikisha.tenant.domain.repository.TenantLicenceRepository;
 import com.andikisha.tenant.infrastructure.grpc.TenantGrpcService;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
@@ -15,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +30,8 @@ import static org.mockito.Mockito.when;
 class TenantGrpcServiceTest {
 
     @Mock private TenantService tenantService;
+    @Mock private TenantLicenceRepository licenceRepository;
+    @Mock private StringRedisTemplate redisTemplate;
 
     @InjectMocks private TenantGrpcService grpcService;
 

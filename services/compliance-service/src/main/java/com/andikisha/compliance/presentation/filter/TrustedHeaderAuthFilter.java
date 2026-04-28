@@ -25,10 +25,13 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        String userId = request.getHeader("X-User-ID");
-        String role   = request.getHeader("X-User-Role");
+        String rawUserId = request.getHeader("X-User-ID");
+        String rawRole   = request.getHeader("X-User-Role");
 
-        if (userId != null && !userId.isBlank() && role != null && !role.isBlank()) {
+        if (rawUserId != null && !rawUserId.isBlank() && rawRole != null && !rawRole.isBlank()) {
+            // Sanitize to prevent log injection via CR/LF characters
+            String userId = rawUserId.replaceAll("[\r\n\t]", "_");
+            String role   = rawRole.replaceAll("[\r\n\t]", "_");
             var auth = new UsernamePasswordAuthenticationToken(
                     userId,
                     null,

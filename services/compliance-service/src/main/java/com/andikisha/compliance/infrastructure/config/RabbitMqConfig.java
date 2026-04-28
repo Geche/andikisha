@@ -3,6 +3,7 @@ package com.andikisha.compliance.infrastructure.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
@@ -17,6 +18,8 @@ public class RabbitMqConfig {
 
     public static final String PAYROLL_EXCHANGE         = "payroll.events";
     public static final String COMPLIANCE_PAYROLL_QUEUE = "compliance.payroll-events";
+    public static final String COMPLIANCE_DLX           = "dlx.compliance";
+    public static final String COMPLIANCE_DLQ           = "dlq.compliance.payroll-events";
 
     @Bean TopicExchange payrollExchange() {
         return new TopicExchange(PAYROLL_EXCHANGE, true, false);
@@ -31,6 +34,23 @@ public class RabbitMqConfig {
     @Bean Binding bindPayrollEvents() {
         return BindingBuilder.bind(compliancePayrollQueue())
                 .to(payrollExchange()).with("payroll.processed");
+    }
+
+    @Bean
+    DirectExchange complianceDeadLetterExchange() {
+        return new DirectExchange(COMPLIANCE_DLX, true, false);
+    }
+
+    @Bean
+    Queue complianceDeadLetterQueue() {
+        return QueueBuilder.durable(COMPLIANCE_DLQ).build();
+    }
+
+    @Bean
+    Binding bindComplianceDlq() {
+        return BindingBuilder.bind(complianceDeadLetterQueue())
+                .to(complianceDeadLetterExchange())
+                .with(COMPLIANCE_PAYROLL_QUEUE);
     }
 
     @Bean Jackson2JsonMessageConverter messageConverter(ObjectMapper objectMapper) {
