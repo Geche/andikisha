@@ -1,0 +1,555 @@
+# AndikishaHR — Postman API Testing Guide
+
+**Date:** 2026-04-30  
+**Collection:** `docs/api-contracts/AndikishaHR-Postman-Collection.json`  
+**Scope:** All 13 microservices, 14 test folders, ~80 requests
+
+---
+
+## Table of Contents
+1. [Setup: Import Collection & Create Environment](#1-setup-import-collection--create-environment)
+2. [Start the Services](#2-start-the-services)
+3. [Authentication Flow](#3-authentication-flow)
+4. [Run Order](#4-run-order)
+5. [Reading Results & Manual Validation](#5-reading-results--manual-validation)
+6. [Test Scripting — Custom Assertions](#6-test-scripting--custom-assertions)
+7. [Negative & Error Case Testing](#7-negative--error-case-testing)
+8. [Environment Variables](#8-environment-variables)
+9. [Automated Regression with Newman CLI](#9-automated-regression-with-newman-cli)
+10. [Best Practices Checklist](#10-best-practices-checklist)
+11. [Common Pitfalls](#11-common-pitfalls)
+12. [Kenyan Payroll Manual Verification Reference](#12-kenyan-payroll-manual-verification-reference)
+
+---
+
+## 1. Setup: Import Collection & Create Environment
+
+### Import the Collection
+
+1. Open Postman → **Import** → drag in `docs/api-contracts/AndikishaHR-Postman-Collection.json`
+2. The collection loads with 14 folders and all variables pre-wired
+
+### Create a Local Environment
+
+1. Click **Environments** (left sidebar) → **+** → name it `AndikishaHR Local`
+2. Add the following variables. All values start **empty** — the collection's test scripts populate them automatically during the run.
+
+| Variable | Initial Value | Populated By |
+|---|---|---|
+| `baseUrl` | `http://localhost:8080` | Manual |
+| `superAdminToken` | *(empty)* | Folder 00: Super Admin Login |
+| `tenantToken` | *(empty)* | Folder 00: Tenant User Login |
+| `refreshToken` | *(empty)* | Folder 00: Tenant User Login |
+| `tenantId` | *(empty)* | Folder 00: Provision Tenant |
+| `planId` | *(empty)* | Folder 00: List Plans |
+| `employeeId` | *(empty)* | Folder 03: Create Employee |
+| `departmentId` | *(empty)* | Folder 03: Create Department |
+| `payrollRunId` | *(empty)* | Folder 04: Initiate Payroll Run |
+| `paySlipId` | *(empty)* | Folder 04: Get PaySlips for Run |
+| `leaveRequestId` | *(empty)* | Folder 05: Submit Leave Request |
+| `attendanceId` | *(empty)* | Folder 06: Clock In |
+| `filingId` | *(empty)* | Folder 10: Create PAYE Filing |
+| `documentId` | *(empty)* | Folder 08: List All Documents |
+
+3. Select `AndikishaHR Local` as the active environment (top-right dropdown in Postman)
+
+---
+
+## 2. Start the Services
+
+```bash
+cd infrastructure/docker
+cp .env.example .env          # fill in JWT_SECRET at minimum (32-byte base64 string)
+docker compose -f docker-compose.infra.yml -f docker-compose.full.yml up -d
+```
+
+Wait ~90 seconds for all 13 services to become healthy:
+
+```bash
+docker compose ps              # all containers should show "healthy"
+```
+
+Quick sanity check before opening Postman:
+
+```bash
+curl http://localhost:8080/api/v1/gateway/health
+```
+
+Expected: JSON with a `status` field for each service.
+
+---
+
+## 3. Authentication Flow
+
+The collection handles all authentication automatically. Understanding the flow helps you debug when things go wrong.
+
+### Super Admin (platform-level operations)
+
+```
+POST /api/v1/auth/super-admin/provision   →  creates the super-admin account (run once only)
+POST /api/v1/auth/super-admin/login       →  writes {{superAdminToken}} to environment
+```
+
+The super-admin token is used for:
+- Creating tenant organisations
+- Renewing/upgrading licences
+- Accessing platform-wide analytics
+- Suspending/reactivating tenants
+
+### Tenant User (HR system operations)
+
+```
+POST /api/v1/super-admin/tenants   →  uses superAdminToken; writes {{tenantId}}
+POST /api/v1/auth/register         →  uses X-Tenant-ID header; writes {{tenantToken}}
+POST /api/v1/auth/login            →  refreshes {{tenantToken}} and {{refreshToken}}
+```
+
+### How Every Subsequent Request Is Authenticated
+
+Every request after bootstrap sends:
+
+```
+Authorization: Bearer {{tenantToken}}
+X-Tenant-ID:   {{tenantId}}
+```
+
+Both headers are pre-configured on every request in the collection. You never need to copy-paste a token manually. When the token expires, re-run the **Tenant User Login** request in folder 00.
+
+---
+
+## 4. Run Order
+
+Run the folders **strictly in this order**. Each folder depends on IDs captured by the previous one. Running out of order results in empty variables and 400/404 errors.
+
+```
+00 - Bootstrap (Run First)     ← MANDATORY FIRST — seeds all tokens and IDs
+01 - Auth Service
+02 - Tenant & Super Admin
+03 - Employee Service          ← seeds {{employeeId}}, {{departmentId}}
+04 - Payroll Service           ← requires {{employeeId}}; seeds {{payrollRunId}}, {{paySlipId}}
+05 - Leave Service             ← requires {{employeeId}}; seeds {{leaveRequestId}}
+06 - Time & Attendance         ← requires {{employeeId}}; seeds {{attendanceId}}
+07 - Compliance Service
+08 - Documents                 ← documents generated by payroll approval in folder 04
+09 - Notifications             ← notifications created by events from folders 04 and 05
+10 - Integration Hub           ← requires {{payrollRunId}} from folder 04
+11 - Analytics Service         ← data populated by events from all previous folders
+12 - Audit Service             ← audit entries created by all previous actions
+13 - Gateway Health
+14 - Employee Termination      ← run last; terminates the test employee
+```
+
+### How to Run a Folder
+
+Right-click any folder → **Run folder** → confirm the environment is correct → click **Run AndikishaHR**.
+
+### How to Run the Entire Collection
+
+Click the collection name in the sidebar → **Run collection** → ensure folders are in the correct order → **Run AndikishaHR**.
+
+---
+
+## 5. Reading Results & Manual Validation
+
+### Open the Console First
+
+Before running anything, open **View → Show Postman Console** (`Ctrl+Alt+C` / `Cmd+Alt+C`). Every test assertion, `console.log()`, and variable capture prints here in real time. It is the fastest way to see why a request failed.
+
+### Test Results Tab
+
+After each request, click the **Test Results** tab in the response panel:
+- Green tick = assertion passed
+- Red cross = assertion failed — read the message to understand what was expected vs. actual
+
+### Variable Capture — Confirming IDs Were Saved
+
+After folder 03, click the **Environment** icon (top right) and confirm:
+- `employeeId` has a UUID value
+- `departmentId` has a UUID value
+
+If either is empty, the create request failed. Check the response body in the Console before proceeding.
+
+### Manual Value Validation (Beyond Status Codes)
+
+The collection checks status codes and field presence. Validate **values** manually for the following:
+
+#### Payroll Payslip Spot-Check (Folder 04)
+
+After **Calculate Payroll Run**, open the response body and verify John Kamau's payslip (gross KES 120,000):
+
+| Field | Formula | Expected Value |
+|---|---|---|
+| `shifContribution` | grossPay × 2.75% | 3,300.00 |
+| `housingLevyEmployee` | grossPay × 1.5% | 1,800.00 |
+| `nssfContribution` | Tier I: 7,000×6% + Tier II: 29,000×6% | 2,160.00 |
+| `netPay` | grossPay − all deductions | ~85,544.95 |
+| Accounting identity | netPay + totalDeductions | Must equal grossPay |
+
+#### Leave Balance Deduction Check (Folder 05)
+
+After **Approve Leave Request**, run `GET /api/v1/leave/employees/{{employeeId}}/balances` and confirm:
+- ANNUAL balance decreased by exactly **5 days**
+- Other leave types (SICK, MATERNITY, PATERNITY) are unchanged
+
+#### Compliance Tax Brackets Check (Folder 07)
+
+`GET /api/v1/compliance/KE/tax-brackets` must return exactly **5 bands**:
+
+| Band | Lower Limit | Upper Limit | Rate |
+|---|---|---|---|
+| 1 | 0 | 24,000 | 10% |
+| 2 | 24,001 | 32,333 | 25% |
+| 3 | 32,334 | 500,000 | 30% |
+| 4 | 500,001 | 800,000 | 32.5% |
+| 5 | 800,001 | — | 35% |
+
+#### Audit Trail Check (Folder 12)
+
+After completing all previous folders, `GET /api/v1/audit` should contain entries for:
+- Employee creation (`domain: EMPLOYEE`, `action: CREATE`)
+- Payroll approval (`domain: PAYROLL`, `action: APPROVE`)
+- Leave approval (`domain: LEAVE`, `action: APPROVE`)
+- Leave rejection (if you ran the reject request)
+
+---
+
+## 6. Test Scripting — Custom Assertions
+
+Open any request → **Tests** tab → add JavaScript. Here are reusable patterns:
+
+### Pattern 1 — Validate a Specific Field Value
+
+```javascript
+pm.test("SHIF is 2.75% of gross pay", () => {
+    const payslip = pm.response.json()[0];
+    const expectedShif = (parseFloat(payslip.grossPay) * 0.0275).toFixed(2);
+    pm.expect(payslip.shifContribution).to.equal(expectedShif);
+});
+```
+
+### Pattern 2 — Validate Accounting Identity
+
+```javascript
+pm.test("Net pay + total deductions equals gross pay", () => {
+    const p = pm.response.json()[0];
+    const gross      = parseFloat(p.grossPay);
+    const net        = parseFloat(p.netPay);
+    const deductions = parseFloat(p.totalDeductions);
+    pm.expect(Math.abs(gross - net - deductions)).to.be.lessThan(0.01);
+});
+```
+
+### Pattern 3 — Validate Paginated Response Structure
+
+```javascript
+pm.test("Response is a valid paginated object", () => {
+    const body = pm.response.json();
+    pm.expect(body).to.have.all.keys('content', 'totalElements', 'totalPages', 'number', 'size');
+    pm.expect(body.content).to.be.an('array');
+    pm.expect(body.totalElements).to.be.at.least(0);
+});
+```
+
+### Pattern 4 — Capture a Nested Value for Later Requests
+
+```javascript
+const body = pm.response.json();
+if (body.content && body.content.length > 0) {
+    pm.collectionVariables.set('firstPaySlipId', body.content[0].id);
+    pm.test("PaySlip ID captured", () => true);
+}
+```
+
+### Pattern 5 — Validate Error Response Structure
+
+```javascript
+pm.test("Error response has code and message", () => {
+    const body = pm.response.json();
+    pm.expect(body).to.have.property('error');
+    pm.expect(body).to.have.property('message');
+    pm.expect(body.message).to.be.a('string').and.not.empty;
+});
+```
+
+### Pattern 6 — Validate Timestamps Are Recent
+
+```javascript
+pm.test("createdAt is within the last 60 seconds", () => {
+    const body = pm.response.json();
+    const created = new Date(body.createdAt).getTime();
+    const now     = Date.now();
+    pm.expect(now - created).to.be.lessThan(60000);
+});
+```
+
+### Pattern 7 — Assert Array Contains a Specific Item
+
+```javascript
+pm.test("Tax brackets include 30% band", () => {
+    const brackets = pm.response.json();
+    const band30 = brackets.find(b => parseFloat(b.rate) === 0.30 || b.rate === "30%");
+    pm.expect(band30).to.not.be.undefined;
+});
+```
+
+---
+
+## 7. Negative & Error Case Testing
+
+Create a folder named **"Negative Tests"** in the collection and add these requests after completing the happy path.
+
+### Authentication Failures
+
+| Test | Setup | Expected Status |
+|---|---|---|
+| Missing token | Remove `Authorization` header entirely | 401 |
+| Expired token | Set `Authorization: Bearer expired.token.here` | 401 |
+| Wrong tenant ID | Set `X-Tenant-ID` to a random UUID | 403 or 404 |
+| Missing tenant header | Remove `X-Tenant-ID` entirely | 400 |
+
+### Authorization Failures
+
+| Test | Setup | Expected Status |
+|---|---|---|
+| Employee lists all employees | Add pre-request script setting `X-User-Role: EMPLOYEE` | 403 |
+| Employee approves payroll | POST to `/payroll/runs/{{payrollRunId}}/approve` with EMPLOYEE role | 403 |
+| Manager self-approves leave | Submit leave for manager's employeeId, then approve as that same user | 422 |
+| Employee downloads another's payslip | GET `/documents/{{documentId}}/download` with EMPLOYEE role for someone else's doc | 403 |
+
+**How to impersonate a role for one request without logging out:**
+
+In the request's **Pre-request Script** tab:
+```javascript
+pm.request.headers.upsert({ key: 'X-User-Role', value: 'EMPLOYEE' });
+```
+
+This overrides the role header for that single request only.
+
+### Business Logic Violations
+
+| Test | Request | Body Change | Expected |
+|---|---|---|---|
+| Duplicate KRA PIN | POST `/employees` (second time) | Same `kraPin` as first employee | 409 Conflict |
+| Leave exceeds balance | POST `/leave/requests` | `days: 999` | 422 Unprocessable Entity |
+| Duplicate payroll period | POST `/payroll/runs` | Same `period` as an active run | 409 Conflict |
+| Invalid KRA PIN format | POST `/employees` | `kraPin: "INVALID"` | 400 Bad Request |
+| Invalid phone number | POST `/employees` | `phoneNumber: "1234"` | 400 Bad Request |
+| National ID too short | POST `/employees` | `nationalId: "123"` (< 6 digits) | 400 Bad Request |
+| Invalid payroll period format | POST `/payroll/runs` | `period: "April 2026"` | 400 Bad Request |
+| Leave start after end date | POST `/leave/requests` | `startDate` after `endDate` | 400 Bad Request |
+
+### Not Found Cases
+
+| Test | Request | Expected |
+|---|---|---|
+| Get non-existent employee | GET `/employees/00000000-0000-0000-0000-000000000000` | 404 |
+| Get non-existent payroll run | GET `/payroll/runs/00000000-0000-0000-0000-000000000000` | 404 |
+| Approve non-existent leave | POST `/leave/requests/00000000-0000-0000-0000-000000000000/approve` | 404 |
+
+---
+
+## 8. Environment Variables
+
+### Switching Between Environments
+
+Create separate environments for each deployment target. Only `baseUrl` needs to change:
+
+| Environment | `baseUrl` |
+|---|---|
+| `AndikishaHR Local` | `http://localhost:8080` |
+| `AndikishaHR Staging` | `https://api.staging.andikisha.com` |
+| `AndikishaHR Production` | `https://api.andikisha.com` |
+
+All tokens and IDs are stored as **collection variables**, not environment variables. They reset when you switch environments. Re-run folder 00 after switching.
+
+### Re-running After a Docker Restart
+
+**If the database was wiped** (volumes deleted): Re-run folder 00 completely. Clear all collection variables first via **Edit Collection → Variables → clear all values**.
+
+**If the database persists** (only containers restarted): Re-run only the login requests in folder 00 to refresh expired tokens.
+
+### Exporting the Environment
+
+After a successful test run with all IDs populated, export the environment for sharing with teammates:
+**Environments → ⋮ → Export** → save as `andikisha-local-env.json` (add to `.gitignore`).
+
+---
+
+## 9. Automated Regression with Newman CLI
+
+Newman runs the entire collection from the terminal with no GUI. Use it in CI pipelines and before merging any PR.
+
+### Install Newman
+
+```bash
+npm install -g newman newman-reporter-htmlextra
+```
+
+### Run the Full Collection
+
+```bash
+newman run docs/api-contracts/AndikishaHR-Postman-Collection.json \
+  --env-var "baseUrl=http://localhost:8080" \
+  --delay-request 300 \
+  --reporters cli,htmlextra \
+  --reporter-htmlextra-export reports/postman-report.html
+```
+
+`--delay-request 300` adds 300ms between requests to prevent race conditions where a record hasn't committed before the next read.
+
+### Run a Single Folder
+
+```bash
+newman run docs/api-contracts/AndikishaHR-Postman-Collection.json \
+  --env-var "baseUrl=http://localhost:8080" \
+  --folder "04 - Payroll Service" \
+  --env-var "tenantId=<your-tenant-id>" \
+  --env-var "tenantToken=<your-token>" \
+  --env-var "employeeId=<your-employee-id>" \
+  --env-var "payrollRunId=<your-run-id>"
+```
+
+### Interpreting Newman Output
+
+```
+✓  Initiate Payroll Run            201  (650ms)
+✓  Calculate Payroll Run           200  (2341ms)
+✗  Approve Payroll Run
+  ↳ Status 200                     [FAIL]  expected response to have status code 200 but got 403
+```
+
+Red `✗` lines are failures. Newman exits with code `1` on any failure, which fails a CI pipeline automatically.
+
+### GitHub Actions Integration
+
+Add this step to `.github/workflows/ci.yml` to run regression tests automatically:
+
+```yaml
+- name: Run Postman Collection (SIT regression)
+  run: |
+    npm install -g newman
+    newman run docs/api-contracts/AndikishaHR-Postman-Collection.json \
+      --env-var "baseUrl=http://localhost:8080" \
+      --delay-request 300 \
+      --reporters cli
+  env:
+    # Tokens are bootstrapped by a previous setup step
+    TENANT_ID: ${{ env.BOOTSTRAPPED_TENANT_ID }}
+```
+
+---
+
+## 10. Best Practices Checklist
+
+### Before Every Test Session
+
+- [ ] All 13 containers show `healthy` in `docker compose ps`
+- [ ] Postman Console is open (`View → Show Postman Console`)
+- [ ] Active environment is set to the correct target (`AndikishaHR Local`)
+- [ ] Collection variables are either all populated (continuing a session) or all clear (fresh start)
+
+### During Testing
+
+- [ ] Always run folder 00 first on a fresh database
+- [ ] Confirm each ID variable is populated before running dependent folders
+- [ ] Check the **Tests** tab after every request — not just the HTTP status code
+- [ ] For payroll, manually verify the math on at least one payslip
+- [ ] If a request fails unexpectedly, check the Console for the full error body before assuming the API is broken
+
+### For Release Sign-Off (SIT)
+
+- [ ] Full collection passes via `newman` with **zero failures**
+- [ ] All negative test cases executed and produce correct error status codes
+- [ ] One payslip manually cross-checked against the calculation in Section 12
+- [ ] Audit trail (folder 12) contains entries for employee creation, payroll approval, and leave approval
+- [ ] Compliance folder returns correct 5 PAYE bands with correct percentages
+- [ ] An EMPLOYEE role cannot access another employee's details (403 confirmed)
+- [ ] Manager self-approval attempt returns 422
+
+---
+
+## 11. Common Pitfalls
+
+| Symptom | Likely Cause | Fix |
+|---|---|---|
+| All requests return 401 | Token expired or not set | Re-run login requests in folder 00 |
+| All requests return 400 | `X-Tenant-ID` header missing | Check `tenantId` variable is populated |
+| Folder 04 payroll finds 0 employees | Folder 03 wasn't run first | Run folder 03, confirm `employeeId` is set |
+| Payroll initiate returns 409 | Period `2026-04` already has an active run | Change `period` to `2026-05` in the request body |
+| Analytics returns empty data | Events haven't propagated through RabbitMQ | Wait 5–10 seconds after payroll approval, then retry |
+| M-Pesa disburse returns 500 | No valid Safaricom sandbox credentials configured | Expected in local dev — test PAYE/NSSF/SHIF filing endpoints instead |
+| Documents folder returns empty | Payroll not yet approved | Approve payroll in folder 04 before running folder 08 |
+| Notifications folder returns empty | Events not yet processed | Same as analytics — wait for async processing |
+| Test environment has stale data | Previous test run left conflicting records | Clear collection variables and re-run from folder 00 |
+
+---
+
+## 12. Kenyan Payroll Manual Verification Reference
+
+Use this to cross-check the system's payslip output for **John Kamau** (gross KES 120,000). All values must match within **KES 1.00** rounding tolerance.
+
+```
+INPUTS
+──────────────────────────────────────────
+Basic Salary:        80,000.00
+Housing Allowance:   15,000.00
+Transport Allowance:  5,000.00
+Medical Allowance:    5,000.00
+Other Allowances:         0.00
+──────────────────────────────────────────
+Gross Pay:          120,000.00
+
+STATUTORY DEDUCTIONS
+──────────────────────────────────────────
+NSSF:
+  Tier I  (0 – 7,000):         7,000 × 6%  =    420.00
+  Tier II (7,001 – 36,000):   29,000 × 6%  =  1,740.00
+  Total NSSF:                              =  2,160.00
+
+SHIF:                          120,000 × 2.75% =  3,300.00
+
+Housing Levy (Employee):       120,000 × 1.50% =  1,800.00
+
+TAXABLE INCOME
+──────────────────────────────────────────
+Taxable = Gross − NSSF − Housing Levy Employee
+        = 120,000 − 2,160 − 1,800
+        = 116,040.00
+
+PAYE CALCULATION
+──────────────────────────────────────────
+Band 1 (0 – 24,000):           24,000 × 10%  =  2,400.00
+Band 2 (24,001 – 32,333):       8,333 × 25%  =  2,083.25
+Band 3 (32,334 – 116,040):     83,706 × 30%  = 25,111.80
+                                               ──────────
+Gross PAYE:                                   = 29,595.05
+Less: Personal Relief:                        =  2,400.00
+                                               ──────────
+PAYE payable:                                 = 27,195.05
+
+NET PAY
+──────────────────────────────────────────
+Net = Gross − NSSF − SHIF − Housing Levy Employee − PAYE
+    = 120,000 − 2,160 − 3,300 − 1,800 − 27,195.05
+    = 85,544.95
+
+ACCOUNTING IDENTITY CHECK
+──────────────────────────────────────────
+Total Deductions = NSSF + SHIF + Housing Levy + PAYE
+                 = 2,160 + 3,300 + 1,800 + 27,195.05
+                 = 34,455.05
+
+Net + Deductions = 85,544.95 + 34,455.05 = 120,000.00 ✓
+```
+
+**Rates reference (effective 2024–2026):**
+- SHIF: 2.75% of gross (replaced NHIF in October 2024)
+- Housing Levy: 1.5% employee + 1.5% employer contribution
+- NSSF: 6% of gross — Tier I capped at KES 7,000, Tier II capped at KES 36,000
+- Personal Relief: KES 2,400/month fixed
+- Insurance Relief: 15% of SHIF contribution, max KES 5,000/month
+
+---
+
+*Document maintained in `docs/Engineering/postman-testing-guide.md`*  
+*Collection file: `docs/api-contracts/AndikishaHR-Postman-Collection.json`*
