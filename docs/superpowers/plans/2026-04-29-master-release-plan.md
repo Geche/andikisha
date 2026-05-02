@@ -9,10 +9,10 @@
 
 | Phase | Plan File | Duration | Milestone | Status |
 |-------|-----------|----------|-----------|--------|
-| **Phase 1** | `2026-04-29-phase1-critical-security-stability.md` | 5 days | All 11 critical blockers resolved | ⬜ TODO |
-| **Phase 2** | `2026-04-29-phase2-devops-infrastructure.md` | 5 days | K8s + CI/CD + tracing + logging | ⬜ TODO |
-| **Phase 3** | `2026-04-29-phase3-authorization-hardening.md` | 3 days | PII access, brute-force, config fixes | ⬜ TODO |
-| **Phase 4** | `2026-04-29-phase4-performance-uat.md` | 4 days | Load tests pass, SIT signed off, UAT ready | ⬜ TODO |
+| **Phase 1** | `2026-04-29-phase1-critical-security-stability.md` | 5 days | All 11 critical blockers resolved | ✅ DONE — `v0.9.0-security` |
+| **Phase 2** | `2026-04-29-phase2-devops-infrastructure.md` | 5 days | K8s + CI/CD + tracing + logging | ✅ DONE — `v0.9.1-devops` |
+| **Phase 3** | `2026-04-29-phase3-authorization-hardening.md` | 3 days | PII access, brute-force, config fixes | ✅ DONE — `v0.9.2-auth` |
+| **Phase 4** | `2026-04-29-phase4-performance-uat.md` | 4 days | Load tests pass, SIT signed off, UAT ready | ✅ DONE — `v1.0.0-rc1` |
 
 **Total:** ~17 working days (3.5 weeks) to production-ready
 
