@@ -10,6 +10,7 @@ import com.andikisha.compliance.domain.model.Country;
 import com.andikisha.compliance.domain.repository.StatutoryRateRepository;
 import com.andikisha.compliance.domain.repository.TaxBracketRepository;
 import com.andikisha.compliance.domain.repository.TaxReliefRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +61,7 @@ public class ComplianceService {
         return getTaxBracketsAsOf(countryCode, LocalDate.now());
     }
 
+    @Cacheable(value = "tax-brackets", key = "#countryCode + ':' + #asOf")
     public List<TaxBracketResponse> getTaxBracketsAsOf(String countryCode, LocalDate asOf) {
         Country country = parseCountry(countryCode);
         return taxBracketRepository.findActiveByCountryAndDate(country, asOf)
@@ -70,6 +72,7 @@ public class ComplianceService {
         return getStatutoryRatesAsOf(countryCode, LocalDate.now());
     }
 
+    @Cacheable(value = "statutory-rates", key = "#countryCode + ':' + #asOf")
     public List<StatutoryRateResponse> getStatutoryRatesAsOf(String countryCode, LocalDate asOf) {
         Country country = parseCountry(countryCode);
         return statutoryRateRepository.findActiveByCountryAndDate(country, asOf)
@@ -80,6 +83,7 @@ public class ComplianceService {
         return getTaxReliefsAsOf(countryCode, LocalDate.now());
     }
 
+    @Cacheable(value = "tax-reliefs", key = "#countryCode + ':' + #asOf")
     public List<TaxReliefResponse> getTaxReliefsAsOf(String countryCode, LocalDate asOf) {
         Country country = parseCountry(countryCode);
         return taxReliefRepository.findActiveByCountryAndDate(country, asOf)
