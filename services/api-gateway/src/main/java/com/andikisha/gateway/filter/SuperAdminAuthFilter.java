@@ -35,7 +35,7 @@ public class SuperAdminAuthFilter
 
     public SuperAdminAuthFilter(@Value("${app.jwt.secret}") String secret) {
         super(Config.class);
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes = Decoders.BASE64URL.decode(secret);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 

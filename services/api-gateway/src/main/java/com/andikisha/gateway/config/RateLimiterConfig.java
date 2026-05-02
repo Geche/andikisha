@@ -22,7 +22,7 @@ public class RateLimiterConfig {
     private final SecretKey key;
 
     public RateLimiterConfig(@Value("${app.jwt.secret}") String secret) {
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
     }
 
     /**

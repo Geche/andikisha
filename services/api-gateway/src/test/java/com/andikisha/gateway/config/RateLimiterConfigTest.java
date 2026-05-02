@@ -25,7 +25,7 @@ class RateLimiterConfigTest {
     @BeforeEach
     void setUp() {
         keyResolver = new RateLimiterConfig(TEST_SECRET).userKeyResolver();
-        key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(TEST_SECRET));
     }
 
     private String buildToken(String plan, String tenantId, String sub) {

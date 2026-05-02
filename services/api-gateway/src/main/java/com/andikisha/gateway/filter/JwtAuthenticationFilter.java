@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     );
 
     public JwtAuthenticationFilter(@Value("${app.jwt.secret}") String jwtSecret) {
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        this.key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(jwtSecret));
     }
 
     @Override

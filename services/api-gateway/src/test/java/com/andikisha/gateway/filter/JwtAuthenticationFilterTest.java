@@ -35,7 +35,7 @@ class JwtAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         filter = new JwtAuthenticationFilter(TEST_SECRET);
-        key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(TEST_SECRET));
     }
 
     // ── Missing / malformed Authorization header ───────────────────────────────

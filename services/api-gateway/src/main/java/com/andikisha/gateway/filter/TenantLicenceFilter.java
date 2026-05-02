@@ -42,7 +42,7 @@ public class TenantLicenceFilter
     public TenantLicenceFilter(@Value("${app.jwt.secret}") String secret,
                                ReactiveStringRedisTemplate redisTemplate) {
         super(Config.class);
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        byte[] keyBytes = Decoders.BASE64URL.decode(secret);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.redisTemplate = redisTemplate;
     }

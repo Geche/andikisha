@@ -47,7 +47,7 @@ class TenantLicenceFilterTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
 
         filter = new TenantLicenceFilter(TEST_SECRET, redisTemplate);
-        key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
+        key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(TEST_SECRET));
     }
 
     private String buildToken(String role, String tenantId, String impersonatedBy) {

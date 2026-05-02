@@ -26,7 +26,7 @@ public class JwtTokenProvider {
     private final long refreshTokenExpirationMs;
 
     public JwtTokenProvider(JwtProperties jwtProperties) {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
+        byte[] keyBytes = Decoders.BASE64URL.decode(jwtProperties.secret());
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
                     "JWT secret must be at least 256 bits (32 bytes) when Base64-decoded");
