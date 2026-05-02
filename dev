@@ -9,7 +9,7 @@ SERVICE=${1:?Usage: ./dev <service-name>}
 shift
 
 # Load shared env
-source "$(dirname "$0")/.env.local"
+source "$(dirname "$0")/config/env/.env.local"
 
 # Map service name → DB host/port/name
 case "$SERVICE" in
