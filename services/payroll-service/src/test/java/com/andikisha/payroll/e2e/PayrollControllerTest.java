@@ -10,6 +10,7 @@ import com.andikisha.payroll.infrastructure.config.WebMvcConfig;
 import com.andikisha.payroll.presentation.controller.PayrollController;
 import com.andikisha.payroll.presentation.filter.TrustedHeaderAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -46,7 +47,7 @@ class PayrollControllerTest {
 
     private static final String TENANT_ID = "e2e-tenant";
     private static final String USER_ID   = "payroll-user";
-    private static final String USER_ROLE = "PAYROLL_MANAGER";
+    private static final String USER_ROLE = "HR_MANAGER";
     private static final UUID   RUN_ID    = UUID.randomUUID();
 
     // -------------------------------------------------------------------------
@@ -221,6 +222,34 @@ class PayrollControllerTest {
                         .header("X-User-ID", USER_ID)
                         .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isNoContent());
+    }
+
+    // -------------------------------------------------------------------------
+    // CB-05 — role-based access control
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("POST /api/v1/payroll/runs with EMPLOYEE role returns 403")
+    void initiatePayroll_withEmployeeRole_returns403() throws Exception {
+        mockMvc.perform(post("/api/v1/payroll/runs")
+                        .header("X-User-ID", "emp-user")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {"period":"2026-04","payFrequency":"MONTHLY"}
+                            """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/payroll/runs/{id}/approve with EMPLOYEE role returns 403")
+    void approvePayroll_withEmployeeRole_returns403() throws Exception {
+        mockMvc.perform(post("/api/v1/payroll/runs/{id}/approve", UUID.randomUUID())
+                        .header("X-User-ID", "emp-user")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isForbidden());
     }
 
     // -------------------------------------------------------------------------

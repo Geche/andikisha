@@ -62,7 +62,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest().getURI().getPath();
 
         if (isPublicPath(path)) {
-            return chain.filter(exchange);
+            // Strip the X-Internal-Request header from the inbound request before routing.
+            // This prevents external clients from forging this sentinel header even on routes
+            // that override default-filters (e.g. super-admin-routes).
+            ServerWebExchange sanitised = exchange.mutate()
+                    .request(r -> r.headers(h -> h.remove("X-Internal-Request")))
+                    .build();
+            return chain.filter(sanitised);
         }
 
         String authHeader = exchange.getRequest().getHeaders()
@@ -92,7 +98,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             }
 
             // Strip any client-supplied identity headers BEFORE setting validated values
-            // to prevent spoofing (mutate().header() appends, not replaces)
+            // to prevent spoofing (mutate().header() appends, not replaces).
+            // Also strip X-Internal-Request so external clients cannot forge this sentinel
+            // on routes whose per-route filters override default-filters.
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                     .headers(h -> {
                         h.remove("X-User-ID");
@@ -100,6 +108,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                         h.remove("X-User-Role");
                         h.remove("X-User-Email");
                         h.remove("X-Employee-ID");
+                        h.remove("X-Internal-Request");
                     })
                     .header("X-User-ID", userId)
                     .header("X-Tenant-ID", tenantId)

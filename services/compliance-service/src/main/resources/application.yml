@@ -44,6 +44,10 @@ spring:
 grpc:
   server:
     port: ${GRPC_PORT:9085}
+  client:
+    payroll-service:
+      address: 'static://${PAYROLL_SERVICE_HOST:localhost}:${PAYROLL_SERVICE_GRPC_PORT:9084}'
+      negotiation-type: plaintext
 
 management:
   endpoints:

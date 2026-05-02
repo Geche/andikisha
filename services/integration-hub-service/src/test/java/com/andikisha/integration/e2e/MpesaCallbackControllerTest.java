@@ -1,11 +1,13 @@
 package com.andikisha.integration.e2e;
 
 import com.andikisha.integration.application.service.PaymentService;
+import com.andikisha.integration.infrastructure.config.SecurityConfig;
 import com.andikisha.integration.presentation.controller.MpesaCallbackController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -13,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -21,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MpesaCallbackController.class)
+@Import({SecurityConfig.class, WebMvcTestSecurityConfig.class})
 class MpesaCallbackControllerTest {
 
     @Autowired MockMvc mockMvc;

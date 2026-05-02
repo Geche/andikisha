@@ -27,7 +27,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         "spring.data.redis.host=localhost",
         "spring.data.redis.port=6379",
         "app.mpesa.consumer-key=test-key",
-        "app.mpesa.consumer-secret=test-secret"
+        "app.mpesa.consumer-secret=test-secret",
+        "mpesa.callback.ip-validation-disabled=true"
 })
 class IntegrationHubServiceApplicationTest {
 

@@ -3,8 +3,10 @@ package com.andikisha.notification.e2e;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.notification.application.dto.response.NotificationResponse;
 import com.andikisha.notification.application.service.NotificationService;
+import com.andikisha.notification.infrastructure.config.SecurityConfig;
 import com.andikisha.notification.infrastructure.config.WebMvcConfig;
 import com.andikisha.notification.presentation.controller.NotificationController;
+import com.andikisha.notification.presentation.filter.TrustedHeaderAuthFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(NotificationController.class)
-@Import({GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({GlobalExceptionHandler.class, WebMvcConfig.class,
+        SecurityConfig.class, TrustedHeaderAuthFilter.class})
 class NotificationControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -44,10 +47,10 @@ class NotificationControllerTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void myNotifications_missingTenantHeader_returns400() throws Exception {
+    void myNotifications_noAuth_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/notifications/me")
                         .header("X-User-ID", USER_ID.toString()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -57,8 +60,9 @@ class NotificationControllerTest {
                 .thenReturn(new PageImpl<>(List.of(response), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/notifications/me")
-                        .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", USER_ID.toString()))
+                        .header("X-User-ID", USER_ID.toString())
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].subject").value("Test Subject"));
     }
@@ -68,10 +72,10 @@ class NotificationControllerTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void unreadCount_missingTenantHeader_returns400() throws Exception {
+    void unreadCount_noAuth_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/notifications/me/unread-count")
                         .header("X-User-ID", USER_ID.toString()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -79,8 +83,9 @@ class NotificationControllerTest {
         when(notificationService.countUnread(USER_ID)).thenReturn(3L);
 
         mockMvc.perform(get("/api/v1/notifications/me/unread-count")
-                        .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", USER_ID.toString()))
+                        .header("X-User-ID", USER_ID.toString())
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.unreadCount").value(3));
     }
@@ -90,9 +95,9 @@ class NotificationControllerTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void listAll_missingTenantHeader_returns400() throws Exception {
+    void listAll_noAuth_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/notifications"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -101,6 +106,8 @@ class NotificationControllerTest {
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
         mockMvc.perform(get("/api/v1/notifications")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(0));
@@ -117,6 +124,8 @@ class NotificationControllerTest {
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
 
         mockMvc.perform(get("/api/v1/notifications/employees/{id}", empId)
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk());
     }

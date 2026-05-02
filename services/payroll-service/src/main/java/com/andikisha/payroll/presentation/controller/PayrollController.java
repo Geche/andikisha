@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class PayrollController {
         this.payrollService = payrollService;
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @PostMapping("/runs")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Initiate a new payroll run")
@@ -45,6 +47,7 @@ public class PayrollController {
         return payrollService.initiatePayroll(request, userId);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @PostMapping("/runs/{id}/calculate")
     @Operation(summary = "Calculate payroll for all active employees")
     public PayrollRunResponse calculate(
@@ -53,6 +56,7 @@ public class PayrollController {
         return payrollService.calculatePayroll(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @PostMapping("/runs/{id}/approve")
     @Operation(summary = "Approve a calculated payroll run")
     public PayrollRunResponse approve(
@@ -62,6 +66,7 @@ public class PayrollController {
         return payrollService.approvePayroll(id, userId);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @GetMapping("/runs")
     @Operation(summary = "List payroll runs")
     public Page<PayrollRunResponse> listRuns(
@@ -70,6 +75,7 @@ public class PayrollController {
         return payrollService.listPayrollRuns(pageable);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @GetMapping("/runs/{id}")
     @Operation(summary = "Get payroll run details")
     public PayrollRunResponse getRun(
@@ -78,6 +84,7 @@ public class PayrollController {
         return payrollService.getPayrollRun(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @GetMapping("/runs/{id}/payslips")
     @Operation(summary = "Get all payslips for a payroll run")
     public List<PaySlipResponse> getPaySlips(
@@ -86,6 +93,7 @@ public class PayrollController {
         return payrollService.getPaySlipsForRun(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
     @GetMapping("/payslips/{id}")
     @Operation(summary = "Get a single payslip")
     public PaySlipResponse getPaySlip(
@@ -94,6 +102,7 @@ public class PayrollController {
         return payrollService.getPaySlip(id);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
     @GetMapping("/employees/{employeeId}/payslips")
     @Operation(summary = "Get payslip history for an employee")
     public Page<PaySlipResponse> getEmployeePaySlips(
@@ -103,6 +112,7 @@ public class PayrollController {
         return payrollService.getEmployeePaySlips(employeeId, pageable);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @DeleteMapping("/runs/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Cancel a payroll run")

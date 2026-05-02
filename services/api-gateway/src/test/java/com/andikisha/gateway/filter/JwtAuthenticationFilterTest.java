@@ -10,13 +10,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -109,7 +113,7 @@ class JwtAuthenticationFilterTest {
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.post("/api/v1/auth/login").build());
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
-        when(chain.filter(exchange)).thenReturn(Mono.empty());
+        when(chain.filter(any())).thenReturn(Mono.empty());
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
@@ -121,7 +125,7 @@ class JwtAuthenticationFilterTest {
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.post("/api/v1/tenants").build());
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
-        when(chain.filter(exchange)).thenReturn(Mono.empty());
+        when(chain.filter(any())).thenReturn(Mono.empty());
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
@@ -145,7 +149,7 @@ class JwtAuthenticationFilterTest {
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/swagger-ui/index.html").build());
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
-        when(chain.filter(exchange)).thenReturn(Mono.empty());
+        when(chain.filter(any())).thenReturn(Mono.empty());
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
@@ -181,5 +185,60 @@ class JwtAuthenticationFilterTest {
         };
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+    }
+
+    // ── CB-04: X-Internal-Request header stripping ────────────────────────────
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("X-Internal-Request header from external client is stripped before routing (authenticated path)")
+    void internalRequestHeader_fromExternalClient_isStripped_onAuthenticatedPath() {
+        String token = Jwts.builder()
+                .subject("user-super")
+                .claim("tenantId", "tenant-super")
+                .claim("role", "SUPER_ADMIN")
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(key)
+                .compact();
+
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/super-admin/tenants")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .header("X-Internal-Request", "true")
+                        .build());
+
+        AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+        GatewayFilterChain chain = downstream -> {
+            captured.set(downstream);
+            return Mono.empty();
+        };
+
+        StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+        assertThat(captured.get()).isNotNull();
+        assertThat(captured.get().getRequest().getHeaders().get("X-Internal-Request"))
+                .as("X-Internal-Request must be stripped from the downstream request")
+                .isNullOrEmpty();
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("X-Internal-Request header from external client is stripped before routing (public path)")
+    void internalRequestHeader_fromExternalClient_isStripped_onPublicPath() {
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/v1/auth/login")
+                        .header("X-Internal-Request", "true")
+                        .build());
+
+        AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+        GatewayFilterChain chain = downstream -> {
+            captured.set(downstream);
+            return Mono.empty();
+        };
+
+        StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+        assertThat(captured.get()).isNotNull();
+        assertThat(captured.get().getRequest().getHeaders().get("X-Internal-Request"))
+                .as("X-Internal-Request must be stripped from the downstream request on public paths too")
+                .isNullOrEmpty();
     }
 }

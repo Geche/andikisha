@@ -37,6 +37,9 @@ dependencies {
     // gRPC server — other services call tenant-service to resolve tenantId → schema
     implementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
 
+    // gRPC client — calls auth-service to provision the initial admin user
+    implementation("net.devh:grpc-client-spring-boot-starter:$grpcStarterVersion")
+
     // Mapping
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")

@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/filings")
 @Tag(name = "Statutory Filings", description = "KRA, NSSF, SHIF statutory submissions")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
 public class FilingController {
 
     private final FilingService filingService;

@@ -97,6 +97,26 @@ public class AuthService {
     }
 
     @Transactional
+    public String provisionTenantAdmin(String tenantId, String email,
+                                       String firstName, String lastName,
+                                       String phone, String temporaryPassword) {
+        if (userRepository.existsByEmailAndTenantId(email, tenantId)) {
+            // Idempotent — if called twice, return existing userId
+            return userRepository.findByEmailAndTenantId(email, tenantId)
+                    .map(u -> u.getId().toString())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "User exists by email query but not found by ID for tenantId=" + tenantId));
+        }
+        TenantContext.setTenantId(tenantId);
+        try {
+            TokenResponse response = register(new RegisterRequest(email, phone, temporaryPassword, null));
+            return response.user().id().toString();
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         String tenantId = TenantContext.requireTenantId();
 

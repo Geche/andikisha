@@ -143,6 +143,12 @@ public class LeaveService {
         LeaveRequest request = requestRepository.findByIdAndTenantId(leaveRequestId, tenantId)
                 .orElseThrow(() -> new LeaveRequestNotFoundException(leaveRequestId));
 
+        if (request.getEmployeeId().equals(reviewerId)) {
+            throw new BusinessRuleException("SELF_APPROVAL_PROHIBITED",
+                    "A manager cannot approve their own leave request. " +
+                    "employeeId=" + reviewerId);
+        }
+
         // Transition state first — this validates the request is still PENDING
         // (guards against concurrent approvals deducting the balance twice)
         request.approve(reviewerId, reviewerName);

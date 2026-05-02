@@ -72,6 +72,10 @@ public class EmployeeService {
                 && employeeRepository.existsByTenantIdAndEmail(tenantId, request.email())) {
             throw new DuplicateResourceException("Employee", "email", request.email());
         }
+        if (request.kraPin() != null && !request.kraPin().isBlank()
+                && employeeRepository.existsByTenantIdAndKraPin(tenantId, request.kraPin().toUpperCase())) {
+            throw new DuplicateResourceException("Employee", "kraPin", request.kraPin());
+        }
 
         Department department = null;
         if (request.departmentId() != null) {
@@ -102,7 +106,7 @@ public class EmployeeService {
                 tenantId, employeeNumber,
                 request.firstName(), request.lastName(),
                 request.nationalId(), request.phoneNumber(),
-                request.email(), request.kraPin(),
+                request.email(), request.kraPin() != null ? request.kraPin().toUpperCase() : null,
                 request.nhifNumber(), request.nssfNumber(),
                 empType, salary, department, position, hireDate
         );

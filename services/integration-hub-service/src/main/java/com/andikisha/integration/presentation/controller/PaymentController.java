@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/payments")
 @Tag(name = "Payments", description = "Salary disbursement via M-Pesa and bank transfer")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
 public class PaymentController {
 
     private final PaymentService paymentService;

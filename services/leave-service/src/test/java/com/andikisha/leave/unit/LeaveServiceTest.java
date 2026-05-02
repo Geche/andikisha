@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -256,6 +257,25 @@ class LeaveServiceTest {
 
         assertThatThrownBy(() -> leaveService.approve(REQUEST_ID, REVIEWER_ID, "Manager"))
                 .isInstanceOf(LeaveRequestNotFoundException.class);
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("Manager cannot approve their own leave request")
+    void approve_reviewerIsRequestor_throwsBusinessRuleException() {
+        UUID employeeId = UUID.randomUUID();
+        UUID leaveRequestId = UUID.randomUUID();
+
+        LeaveRequest selfRequest = LeaveRequest.create(
+                TENANT_ID, employeeId, "Self Manager", LeaveType.ANNUAL,
+                LocalDate.now().plusDays(7), LocalDate.now().plusDays(11),
+                BigDecimal.valueOf(5), "Holiday");
+
+        when(requestRepository.findByIdAndTenantId(eq(leaveRequestId), anyString()))
+                .thenReturn(Optional.of(selfRequest));
+
+        assertThatThrownBy(() -> leaveService.approve(leaveRequestId, employeeId, "Self Manager"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("cannot approve");
     }
 
     // ------------------------------------------------------------------

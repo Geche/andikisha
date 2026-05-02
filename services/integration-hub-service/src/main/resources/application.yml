@@ -80,3 +80,8 @@ management:
       show-details: when-authorized
       probes:
         enabled: true
+
+mpesa:
+  callback:
+    allowed-cidrs: ${MPESA_CALLBACK_ALLOWED_CIDRS:196.201.214.0/24,196.201.216.0/23}
+    ip-validation-disabled: ${MPESA_CALLBACK_IP_VALIDATION_DISABLED:false}

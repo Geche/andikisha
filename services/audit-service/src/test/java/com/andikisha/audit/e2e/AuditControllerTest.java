@@ -3,10 +3,13 @@ package com.andikisha.audit.e2e;
 import com.andikisha.audit.application.dto.response.AuditEntryResponse;
 import com.andikisha.audit.application.dto.response.AuditSummaryResponse;
 import com.andikisha.audit.application.service.AuditService;
+import com.andikisha.audit.infrastructure.config.SecurityConfig;
 import com.andikisha.audit.infrastructure.config.WebMvcConfig;
 import com.andikisha.audit.presentation.advice.AuditExceptionHandler;
 import com.andikisha.audit.presentation.controller.AuditController;
+import com.andikisha.audit.presentation.filter.TrustedHeaderAuthFilter;
 import com.andikisha.common.exception.GlobalExceptionHandler;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,7 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuditController.class)
-@Import({AuditExceptionHandler.class, GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({AuditExceptionHandler.class, GlobalExceptionHandler.class, WebMvcConfig.class,
+        SecurityConfig.class, TrustedHeaderAuthFilter.class})
 class AuditControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -41,9 +45,9 @@ class AuditControllerTest {
     // ── GET /api/v1/audit ──────────────────────────────────────────────────────
 
     @Test
-    void listAll_missingTenantHeader_returns400() throws Exception {
+    void listAll_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -52,6 +56,8 @@ class AuditControllerTest {
         when(auditService.listAll(any())).thenReturn(new PageImpl<>(List.of(entry)));
 
         mockMvc.perform(get("/api/v1/audit")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].domain").value("EMPLOYEE"))
@@ -65,6 +71,8 @@ class AuditControllerTest {
         when(auditService.listAll(any())).thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/v1/audit")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(0));
@@ -73,9 +81,9 @@ class AuditControllerTest {
     // ── GET /api/v1/audit/domain/{domain} ─────────────────────────────────────
 
     @Test
-    void byDomain_missingTenantHeader_returns400() throws Exception {
+    void byDomain_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit/domain/EMPLOYEE"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -85,6 +93,8 @@ class AuditControllerTest {
                 .thenReturn(new PageImpl<>(List.of(entry)));
 
         mockMvc.perform(get("/api/v1/audit/domain/EMPLOYEE")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].domain").value("EMPLOYEE"));
@@ -96,6 +106,8 @@ class AuditControllerTest {
                 .thenThrow(new IllegalArgumentException("No enum constant for INVALID"));
 
         mockMvc.perform(get("/api/v1/audit/domain/INVALID")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("BAD_REQUEST"));
@@ -104,9 +116,9 @@ class AuditControllerTest {
     // ── GET /api/v1/audit/action/{action} ─────────────────────────────────────
 
     @Test
-    void byAction_missingTenantHeader_returns400() throws Exception {
+    void byAction_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit/action/CREATE"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -116,6 +128,8 @@ class AuditControllerTest {
                 .thenReturn(new PageImpl<>(List.of(entry)));
 
         mockMvc.perform(get("/api/v1/audit/action/APPROVE")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].action").value("APPROVE"));
@@ -127,6 +141,8 @@ class AuditControllerTest {
                 .thenThrow(new IllegalArgumentException("No enum constant for BADACTION"));
 
         mockMvc.perform(get("/api/v1/audit/action/BADACTION")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("BAD_REQUEST"));
@@ -135,9 +151,9 @@ class AuditControllerTest {
     // ── GET /api/v1/audit/resource/{type}/{id} ────────────────────────────────
 
     @Test
-    void byResource_missingTenantHeader_returns400() throws Exception {
+    void byResource_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit/resource/Employee/emp-1"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -147,6 +163,8 @@ class AuditControllerTest {
                 .thenReturn(new PageImpl<>(List.of(entry)));
 
         mockMvc.perform(get("/api/v1/audit/resource/Employee/emp-1")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray());
@@ -155,9 +173,9 @@ class AuditControllerTest {
     // ── GET /api/v1/audit/actor/{actorId} ────────────────────────────────────
 
     @Test
-    void byActor_missingTenantHeader_returns400() throws Exception {
+    void byActor_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit/actor/user-1"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -165,6 +183,8 @@ class AuditControllerTest {
         when(auditService.listByActor(eq("user-1"), any())).thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/v1/audit/actor/user-1")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk());
     }
@@ -172,11 +192,11 @@ class AuditControllerTest {
     // ── GET /api/v1/audit/date-range ──────────────────────────────────────────
 
     @Test
-    void byDateRange_missingTenantHeader_returns400() throws Exception {
+    void byDateRange_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit/date-range")
                         .param("from", "2026-04-01")
                         .param("to", "2026-04-30"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -184,6 +204,8 @@ class AuditControllerTest {
         when(auditService.listByDateRange(any(), any(), any())).thenReturn(Page.empty());
 
         mockMvc.perform(get("/api/v1/audit/date-range")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT)
                         .param("from", "2026-04-01")
                         .param("to", "2026-04-30"))
@@ -193,11 +215,11 @@ class AuditControllerTest {
     // ── GET /api/v1/audit/summary ─────────────────────────────────────────────
 
     @Test
-    void summary_missingTenantHeader_returns400() throws Exception {
+    void summary_missingTenantHeader_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/audit/summary")
                         .param("from", "2026-04-01")
                         .param("to", "2026-04-30"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -209,6 +231,8 @@ class AuditControllerTest {
         when(auditService.getSummary(any(), any())).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/audit/summary")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
                         .header("X-Tenant-ID", TENANT)
                         .param("from", "2026-04-01")
                         .param("to", "2026-04-30"))
@@ -219,6 +243,26 @@ class AuditControllerTest {
                 .andExpect(jsonPath("$.breakdown[0].count").value(5))
                 .andExpect(jsonPath("$.breakdown[1].domain").value("LEAVE"))
                 .andExpect(jsonPath("$.breakdown[1].count").value(3));
+    }
+
+    // ── security tests ─────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /api/v1/audit without auth returns 401")
+    void listAuditEntries_noAuth_returns401() throws Exception {
+        mockMvc.perform(get("/api/v1/audit")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/audit with ADMIN role returns 200")
+    void listAuditEntries_withAdminRole_returns200() throws Exception {
+        mockMvc.perform(get("/api/v1/audit")
+                        .header("X-User-ID", "admin-user-id")
+                        .header("X-User-Role", "ADMIN")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isOk());
     }
 
     // ── helpers ────────────────────────────────────────────────────────────────

@@ -2,12 +2,15 @@ package com.andikisha.integration.e2e;
 
 import com.andikisha.integration.application.dto.response.FilingRecordResponse;
 import com.andikisha.integration.application.service.FilingService;
+import com.andikisha.integration.infrastructure.config.SecurityConfig;
 import com.andikisha.integration.presentation.controller.FilingController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FilingController.class)
+@Import({SecurityConfig.class, WebMvcTestSecurityConfig.class})
 class FilingControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -33,6 +37,7 @@ class FilingControllerTest {
     private static final String TENANT_ID = "tenant-e2e-test";
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     void createPayeFiling_happyPath_returns201() throws Exception {
         when(filingService.createPayeFiling(eq("2024-01"), eq(10), any()))
                 .thenReturn(buildResponse("KRA_ITAX", "2024-01"));
@@ -51,6 +56,7 @@ class FilingControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     void createPayeFiling_missingPeriod_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/filings/paye")
                         .header("X-Tenant-ID", TENANT_ID)
@@ -63,6 +69,7 @@ class FilingControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     void createPayeFiling_negativeEmployeeCount_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/filings/paye")
                         .header("X-Tenant-ID", TENANT_ID)
@@ -76,6 +83,7 @@ class FilingControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     void createNssfFiling_happyPath_returns201() throws Exception {
         when(filingService.createNssfFiling(any(), any(int.class), any(), any()))
                 .thenReturn(buildResponse("NSSF_REMITTANCE", "2024-01"));
@@ -94,6 +102,7 @@ class FilingControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     void createShifFiling_happyPath_returns201() throws Exception {
         when(filingService.createShifFiling(any(), any(int.class), any()))
                 .thenReturn(buildResponse("SHIF_REMITTANCE", "2024-01"));
@@ -111,6 +120,7 @@ class FilingControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = {"ADMIN"})
     void getFiling_happyPath_returns200() throws Exception {
         UUID id = UUID.randomUUID();
         when(filingService.getFiling(id)).thenReturn(buildResponse("KRA_ITAX", "2024-01"));

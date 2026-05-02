@@ -31,8 +31,9 @@ dependencies {
     // Messaging — listens to PayrollRunCompletedEvent for compliance checks
     implementation("org.springframework.boot:spring-boot-starter-amqp")
 
-    // gRPC server — payroll-service calls compliance-service to compute PAYE/NSSF/SHIF
-    implementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
+    // gRPC — server (payroll-service calls compliance-service to compute PAYE/NSSF/SHIF)
+    //        client (compliance-service calls payroll-service to fetch payslips for audit)
+    implementation("net.devh:grpc-spring-boot-starter:$grpcStarterVersion")
 
     // Mapping
     implementation("org.mapstruct:mapstruct:$mapstructVersion")

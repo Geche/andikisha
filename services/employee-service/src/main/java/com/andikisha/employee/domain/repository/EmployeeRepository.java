@@ -30,6 +30,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     boolean existsByTenantIdAndEmail(String tenantId, String email);
 
+    boolean existsByTenantIdAndKraPin(String tenantId, String kraPin);
+
     @Query("""
         SELECT e FROM Employee e
         WHERE e.tenantId = :tenantId

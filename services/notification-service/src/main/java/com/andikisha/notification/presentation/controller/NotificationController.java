@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @Tag(name = "Notifications", description = "Notification history and preferences")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -28,6 +30,7 @@ public class NotificationController {
 
     @GetMapping("/me")
     @Operation(summary = "Get my notifications")
+    @PreAuthorize("isAuthenticated()")
     public Page<NotificationResponse> myNotifications(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @RequestHeader("X-User-ID") String userId,
@@ -37,6 +40,7 @@ public class NotificationController {
 
     @GetMapping("/me/unread-count")
     @Operation(summary = "Get unread notification count")
+    @PreAuthorize("isAuthenticated()")
     public Map<String, Long> unreadCount(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @RequestHeader("X-User-ID") String userId) {

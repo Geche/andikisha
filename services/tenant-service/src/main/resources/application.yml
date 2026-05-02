@@ -50,6 +50,10 @@ spring:
 grpc:
   server:
     port: ${GRPC_PORT:9083}
+  client:
+    auth-service:
+      address: 'static://${AUTH_SERVICE_HOST:localhost}:${AUTH_SERVICE_GRPC_PORT:9081}'
+      negotiation-type: plaintext
 
 management:
   endpoints:

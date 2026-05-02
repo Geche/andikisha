@@ -28,6 +28,10 @@ class TenantServiceApplicationTest {
     @MockitoBean
     private StringRedisTemplate stringRedisTemplate;
 
+    // Prevent gRPC client from attempting to connect to auth-service during context load
+    @MockitoBean
+    private com.andikisha.tenant.infrastructure.grpc.AuthServiceGrpcClient authServiceGrpcClient;
+
     @Test
     void contextLoads() {
     }

@@ -9,6 +9,8 @@ import com.andikisha.proto.auth.AuthServiceGrpc;
 import com.andikisha.proto.auth.CheckPermissionRequest;
 import com.andikisha.proto.auth.CheckPermissionResponse;
 import com.andikisha.proto.auth.GetUserByEmployeeIdRequest;
+import com.andikisha.proto.auth.ProvisionTenantAdminRequest;
+import com.andikisha.proto.auth.ProvisionTenantAdminResponse;
 import com.andikisha.proto.auth.ValidateTokenRequest;
 import com.andikisha.proto.auth.ValidateTokenResponse;
 import com.andikisha.proto.auth.ValidateUssdSessionRequest;
@@ -190,6 +192,31 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
                     .setInvalidationReason("INTERNAL_ERROR")
                     .build());
             observer.onCompleted();
+        }
+    }
+
+    @Override
+    public void provisionTenantAdmin(ProvisionTenantAdminRequest request,
+                                     StreamObserver<ProvisionTenantAdminResponse> observer) {
+        try {
+            String userId = authService.provisionTenantAdmin(
+                    request.getTenantId(),
+                    request.getEmail(),
+                    request.getFirstName(),
+                    request.getLastName(),
+                    request.getPhone(),
+                    request.getTemporaryPassword()
+            );
+            observer.onNext(ProvisionTenantAdminResponse.newBuilder()
+                    .setUserId(userId)
+                    .setEmail(request.getEmail())
+                    .build());
+            observer.onCompleted();
+        } catch (Exception e) {
+            log.error("Failed to provision tenant admin for tenantId={}", request.getTenantId(), e);
+            observer.onError(io.grpc.Status.INTERNAL
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
         }
     }
 }

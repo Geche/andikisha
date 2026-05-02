@@ -26,6 +26,8 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -97,6 +99,26 @@ class EmployeeServiceTest {
         assertThatThrownBy(() -> employeeService.create(request, "admin-user"))
                 .isInstanceOf(DuplicateResourceException.class)
                 .hasMessageContaining("nationalId");
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("Creating employee with duplicate KRA PIN throws DuplicateResourceException")
+    void createEmployee_duplicateKraPin_throwsDuplicateResourceException() {
+        var request = new CreateEmployeeRequest(
+                "Jane", "Doe", "12345678", "+254722123456",
+                null, "A001234567B", "1234567", "9876543",
+                "PERMANENT", BigDecimal.valueOf(150_000),
+                null, null, null, null, null,
+                null, null, null, null, null
+        );
+
+        when(employeeRepository.existsByTenantIdAndNationalId(TENANT_ID, "12345678")).thenReturn(false);
+        when(employeeRepository.existsByTenantIdAndPhoneNumber(TENANT_ID, "+254722123456")).thenReturn(false);
+        when(employeeRepository.existsByTenantIdAndKraPin(anyString(), eq("A001234567B"))).thenReturn(true);
+
+        assertThatThrownBy(() -> employeeService.create(request, "admin-user"))
+                .isInstanceOf(DuplicateResourceException.class)
+                .hasMessageContaining("kraPin");
     }
 
     @Test
