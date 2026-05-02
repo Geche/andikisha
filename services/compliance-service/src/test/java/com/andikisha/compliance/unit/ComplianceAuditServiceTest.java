@@ -2,35 +2,31 @@ package com.andikisha.compliance.unit;
 
 import com.andikisha.compliance.application.service.ComplianceAuditService;
 import com.andikisha.compliance.domain.repository.StatutoryRateRepository;
-import com.andikisha.proto.payroll.GetPaySlipsRequest;
-import com.andikisha.proto.payroll.GetPaySlipsResponse;
+import com.andikisha.compliance.infrastructure.grpc.PayrollGrpcClient;
 import com.andikisha.proto.payroll.PaySlipDetail;
-import com.andikisha.proto.payroll.PayrollServiceGrpc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ComplianceAuditServiceTest {
 
     @Mock StatutoryRateRepository statutoryRateRepository;
-    @Mock PayrollServiceGrpc.PayrollServiceBlockingStub payrollStub;
+    @Mock PayrollGrpcClient payrollGrpcClient;
 
     private ComplianceAuditService service;
 
     @BeforeEach
     void setUp() {
-        service = new ComplianceAuditService(statutoryRateRepository);
-        ReflectionTestUtils.setField(service, "payrollStub", payrollStub);
+        service = new ComplianceAuditService(statutoryRateRepository, payrollGrpcClient);
     }
 
     @Test
@@ -43,8 +39,7 @@ class ComplianceAuditServiceTest {
                 .setHousingLevy("1200.00")
                 .build();
 
-        when(payrollStub.getPaySlips(any(GetPaySlipsRequest.class)))
-                .thenReturn(GetPaySlipsResponse.newBuilder().addPaySlips(slip).build());
+        when(payrollGrpcClient.getPaySlips(anyString(), anyString())).thenReturn(List.of(slip));
 
         List<String> result = service.auditPayrollRun("tenant-1", "run-1", "2026-04");
         assertThat(result).isEmpty();
@@ -60,8 +55,7 @@ class ComplianceAuditServiceTest {
                 .setHousingLevy("1200.00")
                 .build();
 
-        when(payrollStub.getPaySlips(any(GetPaySlipsRequest.class)))
-                .thenReturn(GetPaySlipsResponse.newBuilder().addPaySlips(slip).build());
+        when(payrollGrpcClient.getPaySlips(anyString(), anyString())).thenReturn(List.of(slip));
 
         List<String> result = service.auditPayrollRun("tenant-1", "run-1", "2026-04");
         assertThat(result).hasSize(1);
@@ -78,8 +72,7 @@ class ComplianceAuditServiceTest {
                 .setHousingLevy("500.00")
                 .build();
 
-        when(payrollStub.getPaySlips(any(GetPaySlipsRequest.class)))
-                .thenReturn(GetPaySlipsResponse.newBuilder().addPaySlips(slip).build());
+        when(payrollGrpcClient.getPaySlips(anyString(), anyString())).thenReturn(List.of(slip));
 
         List<String> result = service.auditPayrollRun("tenant-1", "run-1", "2026-04");
         assertThat(result).hasSize(1);
@@ -95,8 +88,7 @@ class ComplianceAuditServiceTest {
                 .setHousingLevy("50.00") // expected 1500.00
                 .build();
 
-        when(payrollStub.getPaySlips(any(GetPaySlipsRequest.class)))
-                .thenReturn(GetPaySlipsResponse.newBuilder().addPaySlips(slip).build());
+        when(payrollGrpcClient.getPaySlips(anyString(), anyString())).thenReturn(List.of(slip));
 
         List<String> result = service.auditPayrollRun("tenant-1", "run-1", "2026-04");
         assertThat(result).hasSize(2);
@@ -106,7 +98,7 @@ class ComplianceAuditServiceTest {
 
     @Test
     void audit_grpcFailure_returnsAuditSkipped() {
-        when(payrollStub.getPaySlips(any(GetPaySlipsRequest.class)))
+        when(payrollGrpcClient.getPaySlips(anyString(), anyString()))
                 .thenThrow(new RuntimeException("Connection refused"));
 
         List<String> result = service.auditPayrollRun("tenant-1", "run-1", "2026-04");
@@ -125,8 +117,7 @@ class ComplianceAuditServiceTest {
                 .setHousingLevy("1200.80")
                 .build();
 
-        when(payrollStub.getPaySlips(any(GetPaySlipsRequest.class)))
-                .thenReturn(GetPaySlipsResponse.newBuilder().addPaySlips(slip).build());
+        when(payrollGrpcClient.getPaySlips(anyString(), anyString())).thenReturn(List.of(slip));
 
         List<String> result = service.auditPayrollRun("tenant-1", "run-1", "2026-04");
         assertThat(result).isEmpty();

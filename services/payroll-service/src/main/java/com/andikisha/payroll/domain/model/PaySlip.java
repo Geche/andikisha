@@ -71,7 +71,7 @@ public class PaySlip extends BaseEntity {
     @Column(name = "housing_levy_employer", nullable = false, precision = 15, scale = 2)
     private BigDecimal housingLevyEmployer;
 
-    @Column(precision = 15, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal helb;
 
     @Column(name = "other_deductions", nullable = false, precision = 15, scale = 2)

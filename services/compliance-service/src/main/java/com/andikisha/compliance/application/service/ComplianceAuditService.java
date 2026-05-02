@@ -1,10 +1,8 @@
 package com.andikisha.compliance.application.service;
 
 import com.andikisha.compliance.domain.repository.StatutoryRateRepository;
-import com.andikisha.proto.payroll.GetPaySlipsRequest;
+import com.andikisha.compliance.infrastructure.grpc.PayrollGrpcClient;
 import com.andikisha.proto.payroll.PaySlipDetail;
-import com.andikisha.proto.payroll.PayrollServiceGrpc;
-import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,12 +21,12 @@ public class ComplianceAuditService {
     private static final BigDecimal TOLERANCE    = new BigDecimal("1.00");
 
     private final StatutoryRateRepository statutoryRateRepository;
+    private final PayrollGrpcClient payrollGrpcClient;
 
-    @GrpcClient("payroll-service")
-    private PayrollServiceGrpc.PayrollServiceBlockingStub payrollStub;
-
-    public ComplianceAuditService(StatutoryRateRepository statutoryRateRepository) {
+    public ComplianceAuditService(StatutoryRateRepository statutoryRateRepository,
+                                  PayrollGrpcClient payrollGrpcClient) {
         this.statutoryRateRepository = statutoryRateRepository;
+        this.payrollGrpcClient = payrollGrpcClient;
     }
 
     public List<String> auditPayrollRun(String tenantId, String payrollRunId, String period) {
@@ -36,11 +34,7 @@ public class ComplianceAuditService {
 
         List<PaySlipDetail> payslips;
         try {
-            var response = payrollStub.getPaySlips(GetPaySlipsRequest.newBuilder()
-                    .setPayrollRunId(payrollRunId)
-                    .setTenantId(tenantId)
-                    .build());
-            payslips = response.getPaySlipsList();
+            payslips = payrollGrpcClient.getPaySlips(tenantId, payrollRunId);
         } catch (Exception e) {
             log.error("Could not retrieve payslips for audit — payrollRunId={}: {}", payrollRunId, e.getMessage());
             return List.of("AUDIT_SKIPPED: Could not retrieve payslips from payroll-service — " + e.getMessage());
@@ -54,8 +48,8 @@ public class ComplianceAuditService {
             BigDecimal actualShif   = new BigDecimal(slip.getShif());
             if (actualShif.subtract(expectedShif).abs().compareTo(TOLERANCE) > 0) {
                 anomalies.add(String.format(
-                        "SHIF_MISMATCH employeeId=%s gross=%.2f expected=%.2f actual=%.2f",
-                        slip.getEmployeeId(), gross, expectedShif, actualShif));
+                        "SHIF_MISMATCH employeeId=%s gross=%s expected=%s actual=%s",
+                        slip.getEmployeeId(), gross.toPlainString(), expectedShif.toPlainString(), actualShif.toPlainString()));
             }
 
             // Verify Housing Levy: must equal gross * 1.5%
@@ -63,8 +57,8 @@ public class ComplianceAuditService {
             BigDecimal actualHousing   = new BigDecimal(slip.getHousingLevy());
             if (actualHousing.subtract(expectedHousing).abs().compareTo(TOLERANCE) > 0) {
                 anomalies.add(String.format(
-                        "HOUSING_LEVY_MISMATCH employeeId=%s gross=%.2f expected=%.2f actual=%.2f",
-                        slip.getEmployeeId(), gross, expectedHousing, actualHousing));
+                        "HOUSING_LEVY_MISMATCH employeeId=%s gross=%s expected=%s actual=%s",
+                        slip.getEmployeeId(), gross.toPlainString(), expectedHousing.toPlainString(), actualHousing.toPlainString()));
             }
         }
 

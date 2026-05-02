@@ -12,7 +12,7 @@ export interface Employee {
   nssfNumber: string;
   departmentId: string | null;
   departmentName: string | null;
-  basicSalary: number;
+  basicSalary: string;
   currency: string;
   status: EmploymentStatus;
   hireDate: string;

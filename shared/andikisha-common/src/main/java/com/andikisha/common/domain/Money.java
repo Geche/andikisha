@@ -31,10 +31,6 @@ public class Money {
         return new Money(amount, "KES");
     }
 
-    public static Money kes(long amount) {
-        return new Money(BigDecimal.valueOf(amount), "KES");
-    }
-
     public static Money of(BigDecimal amount, String currency) {
         return new Money(amount, currency);
     }
@@ -60,37 +56,13 @@ public class Money {
         );
     }
 
-    public Money percentage(BigDecimal percent) {
-        BigDecimal factor = percent.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
-        return multiply(factor);
-    }
-
     public Money min(Money other) {
         assertSameCurrency(other);
         return this.amount.compareTo(other.amount) <= 0 ? this : other;
     }
 
-    public Money max(Money other) {
-        assertSameCurrency(other);
-        return this.amount.compareTo(other.amount) >= 0 ? this : other;
-    }
-
     public boolean isPositive() {
         return amount.compareTo(BigDecimal.ZERO) > 0;
-    }
-
-    public boolean isZero() {
-        return amount.compareTo(BigDecimal.ZERO) == 0;
-    }
-
-    public boolean isGreaterThan(Money other) {
-        assertSameCurrency(other);
-        return this.amount.compareTo(other.amount) > 0;
-    }
-
-    public boolean isLessThan(Money other) {
-        assertSameCurrency(other);
-        return this.amount.compareTo(other.amount) < 0;
     }
 
     private void assertSameCurrency(Money other) {

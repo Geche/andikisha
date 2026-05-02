@@ -65,20 +65,21 @@ public class PayrollSummary extends BaseEntity {
         s.setTenantId(tenantId);
         s.period = period;
         s.employeeCount = employeeCount;
-        s.totalGross = totalGross;
-        s.totalNet = totalNet;
-        s.totalPaye = totalPaye;
-        s.totalNssf = totalNssf;
-        s.totalShif = totalShif;
-        s.totalHousingLevy = totalHousingLevy;
         s.currency = "KES";
         s.payrollRunId = payrollRunId;
         s.approvedBy = approvedBy;
 
+        s.totalGross       = totalGross       != null ? totalGross       : BigDecimal.ZERO;
+        s.totalNet         = totalNet         != null ? totalNet         : BigDecimal.ZERO;
+        s.totalPaye        = totalPaye        != null ? totalPaye        : BigDecimal.ZERO;
+        s.totalNssf        = totalNssf        != null ? totalNssf        : BigDecimal.ZERO;
+        s.totalShif        = totalShif        != null ? totalShif        : BigDecimal.ZERO;
+        s.totalHousingLevy = totalHousingLevy != null ? totalHousingLevy : BigDecimal.ZERO;
+
         if (employeeCount > 0) {
-            s.averageGross = totalGross.divide(
+            s.averageGross = s.totalGross.divide(
                     BigDecimal.valueOf(employeeCount), 2, RoundingMode.HALF_UP);
-            s.averageNet = totalNet.divide(
+            s.averageNet = s.totalNet.divide(
                     BigDecimal.valueOf(employeeCount), 2, RoundingMode.HALF_UP);
         } else {
             s.averageGross = BigDecimal.ZERO;
