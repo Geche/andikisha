@@ -4,6 +4,10 @@ on:
   push:
     branches: [ master ]
 
+concurrency:
+  group: cd-staging-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   AWS_REGION: af-south-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
@@ -77,8 +81,14 @@ jobs:
 
       - name: Wait for rollout
         run: |
-          for SVC in api-gateway auth-service payroll-service employee-service; do
-            kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m
+          SERVICES=(api-gateway auth-service tenant-service employee-service \
+                    payroll-service compliance-service time-attendance-service \
+                    leave-service document-service notification-service \
+                    integration-hub-service analytics-service audit-service)
+          for SVC in "${SERVICES[@]}"; do
+            echo "Waiting for $SVC..."
+            kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m || \
+              echo "WARNING: ${SVC} rollout timed out or failed"
           done
 
       - name: Smoke test

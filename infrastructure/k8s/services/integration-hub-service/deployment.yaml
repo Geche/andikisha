@@ -89,6 +89,8 @@ spec:
                 configMapKeyRef:
                   name: andikisha-config
                   key: redis-host
+            - name: REDIS_PORT
+              value: "6379"
             - name: MPESA_CONSUMER_KEY
               valueFrom:
                 secretKeyRef:

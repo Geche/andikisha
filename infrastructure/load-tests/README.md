@@ -46,12 +46,12 @@ NSSF:           Tier I  7,000 × 6%  =  420.00
                 Tier II 29,000 × 6% = 1,740.00  → Total 2,160.00
 SHIF:           120,000 × 2.75%     = 3,300.00
 Housing Levy:   120,000 × 1.5%      = 1,800.00
-Taxable Income: 120,000 - 2,160 - 1,800 = 116,040.00
+Taxable Income: 120,000 - 2,160 = 117,840.00 (Housing Levy does NOT reduce taxable income per Finance Act 2023)
 PAYE:           0-24K @10% = 2,400.00
-                24K-32.333K @25% = 2,083.25
-                32.333K-116,040 @30% = 25,111.80
-                Gross PAYE = 29,595.05
-                Less personal relief = -2,400.00 → PAYE = 27,195.05
-Net Pay:        120,000 - 2,160 - 3,300 - 1,800 - 27,195.05 = 85,544.95
+                24K-32.3K @25% = 2,075.00
+                32.3K-117,840 @30% = 25,662.00
+                Gross PAYE = 30,137.00
+                Less personal relief = -2,400.00 → PAYE = 27,737.00
+Net Pay:        120,000 - 2,160 - 3,300 - 1,800 - 27,737.00 = 85,003.00
 ```
 System payslip must match within KES 1.00 rounding tolerance.

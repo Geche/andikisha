@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -98,8 +99,9 @@ public class PayrollController {
     @Operation(summary = "Get a single payslip")
     public PaySlipResponse getPaySlip(
             @RequestHeader("X-Tenant-ID") String tenantId,
-            @PathVariable UUID id) {
-        return payrollService.getPaySlip(id);
+            @PathVariable UUID id,
+            Authentication authentication) {
+        return payrollService.getPaySlip(id, authentication);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
@@ -108,8 +110,9 @@ public class PayrollController {
     public Page<PaySlipResponse> getEmployeePaySlips(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @PathVariable UUID employeeId,
-            Pageable pageable) {
-        return payrollService.getEmployeePaySlips(employeeId, pageable);
+            Pageable pageable,
+            Authentication authentication) {
+        return payrollService.getEmployeePaySlips(employeeId, pageable, authentication);
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")

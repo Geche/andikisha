@@ -84,7 +84,7 @@ public class PayrollRun extends BaseEntity {
     @Column(length = 500)
     private String notes;
 
-    @OneToMany(mappedBy = "payrollRun", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "payrollRun", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<PaySlip> paySlips = new ArrayList<>();
 
     protected PayrollRun() {}

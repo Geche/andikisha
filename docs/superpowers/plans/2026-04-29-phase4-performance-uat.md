@@ -850,19 +850,22 @@ SHIF:                120,000 × 2.75% = 3,300.00
 
 Housing Levy (Employee): 120,000 × 1.5% = 1,800.00
 
-Taxable Income = Gross - NSSF - AHL employee portion
-               = 120,000 - 2,160 - 1,800 = 116,040.00
+Taxable Income = Gross - NSSF only
+               = 120,000 - 2,160 = 117,840.00
+  NOTE: Housing Levy does NOT reduce PAYE taxable income
+        per Finance Act 2023 / KRA guidance. The system
+        correctly excludes it from the taxable income formula.
 
-PAYE on 116,040:
-  0     - 24,000: 24,000 × 10%   =  2,400.00
-  24,001 - 32,333: 8,333 × 25%   =  2,083.25
-  32,334 - 116,040: 83,706 × 30% = 25,111.80
-  Gross PAYE:                       29,595.05
+PAYE on 117,840:
+  0     - 24,000:  24,000 × 10%  =  2,400.00
+  24,001 - 32,300: 8,300 × 25%   =  2,075.00
+  32,301 - 117,840: 85,540 × 30% = 25,662.00
+  Gross PAYE:                       30,137.00
   Less personal relief:             -2,400.00
-  PAYE:                             27,195.05
+  PAYE:                             27,737.00
 
-Net Pay = 120,000 - 2,160 - 3,300 - 1,800 - 27,195.05
-        = 85,544.95
+Net Pay = 120,000 - 2,160 - 3,300 - 1,800 - 27,737.00
+        = 85,003.00
 ```
 
 The system payslip must match within KES 1.00 (rounding tolerance).

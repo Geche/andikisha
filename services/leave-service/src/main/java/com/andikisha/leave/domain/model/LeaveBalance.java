@@ -30,13 +30,13 @@ public class LeaveBalance extends BaseEntity {
     @Column(nullable = false)
     private int year;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 5, scale = 1)
     private BigDecimal accrued;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 5, scale = 1)
     private BigDecimal used;
 
-    @Column(name = "carried_over", nullable = false)
+    @Column(name = "carried_over", nullable = false, precision = 5, scale = 1)
     private BigDecimal carriedOver;
 
     @Column(nullable = false)

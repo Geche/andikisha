@@ -106,6 +106,11 @@ public class SuperAdminAuthService {
 
     @Transactional
     public ImpersonationResponse impersonate(String requestingUserId, String targetTenantId) {
+        if (SYSTEM_TENANT.equalsIgnoreCase(targetTenantId)) {
+            throw new BusinessRuleException("FORBIDDEN",
+                    "Cannot impersonate the system tenant");
+        }
+
         User admin = userRepository.findById(
                         java.util.UUID.fromString(requestingUserId))
                 .filter(u -> u.getRole() == Role.SUPER_ADMIN)

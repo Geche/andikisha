@@ -40,6 +40,7 @@ public class LeaveController {
 
     @PostMapping("/requests")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Submit a leave request")
     public LeaveRequestResponse submit(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -80,6 +81,7 @@ public class LeaveController {
 
     @PostMapping("/requests/{id}/cancel")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel a pending leave request (employee only)")
     public void cancel(
             @RequestHeader("X-Tenant-ID") String tenantId,

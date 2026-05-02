@@ -25,6 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
@@ -225,9 +228,13 @@ public class PayrollService {
                     // Unpaid leave deduction: daily rate × unpaid days used this period
                     BigDecimal unpaidLeaveDeduction = computeUnpaidLeaveDeduction(
                             basicPay, data.leaveBalances());
-                    BigDecimal totalDeductions = deductions.totalDeductions().add(unpaidLeaveDeduction);
-                    BigDecimal netPay = deductions.netPay().subtract(unpaidLeaveDeduction)
-                            .max(BigDecimal.ZERO);
+                    BigDecimal rawNetPay = deductions.netPay().subtract(unpaidLeaveDeduction);
+                    BigDecimal netPay = rawNetPay.max(BigDecimal.ZERO);
+                    // If unpaid leave pushes netPay below zero, cap total deductions to gross
+                    // so the accounting identity gross = net + totalDeductions holds.
+                    BigDecimal totalDeductions = netPay.compareTo(BigDecimal.ZERO) == 0
+                            ? grossPay
+                            : deductions.totalDeductions().add(unpaidLeaveDeduction);
 
                     PaySlip paySlip = PaySlip.builder()
                             .tenantId(tenantId)
@@ -318,16 +325,19 @@ public class PayrollService {
                 .stream().map(mapper::toResponse).toList();
     }
 
-    public PaySlipResponse getPaySlip(UUID paySlipId) {
+    public PaySlipResponse getPaySlip(UUID paySlipId, Authentication authentication) {
         String tenantId = TenantContext.requireTenantId();
         PaySlip slip = paySlipRepository.findByIdAndTenantId(paySlipId, tenantId)
                 .orElseThrow(() -> new com.andikisha.common.exception.ResourceNotFoundException(
                         "PaySlip", paySlipId));
+        enforcePayslipOwnership(slip.getEmployeeId(), authentication);
         return mapper.toResponse(slip);
     }
 
-    public Page<PaySlipResponse> getEmployeePaySlips(UUID employeeId, Pageable pageable) {
+    public Page<PaySlipResponse> getEmployeePaySlips(UUID employeeId, Pageable pageable,
+                                                      Authentication authentication) {
         String tenantId = TenantContext.requireTenantId();
+        enforcePayslipOwnership(employeeId, authentication);
         return paySlipRepository.findByEmployeeIdAndTenantIdOrderByCreatedAtDesc(
                         employeeId, tenantId, pageable)
                 .map(mapper::toResponse);
@@ -345,6 +355,30 @@ public class PayrollService {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static final SimpleGrantedAuthority ROLE_ADMIN      = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority ROLE_HR_MANAGER = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
+    private static final SimpleGrantedAuthority ROLE_HR         = new SimpleGrantedAuthority("ROLE_HR");
+
+    /**
+     * Employees may only read their own payslips.
+     * ADMIN, HR_MANAGER, and HR roles may read any payslip within the tenant.
+     */
+    private void enforcePayslipOwnership(UUID targetEmployeeId, Authentication authentication) {
+        if (authentication == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        boolean isPrivileged = authentication.getAuthorities().contains(ROLE_ADMIN)
+                || authentication.getAuthorities().contains(ROLE_HR_MANAGER)
+                || authentication.getAuthorities().contains(ROLE_HR);
+        if (isPrivileged) {
+            return;
+        }
+        // EMPLOYEE role: authentication.getName() carries the employee UUID set by TrustedHeaderAuthFilter
+        if (!targetEmployeeId.toString().equals(authentication.getName())) {
+            throw new AccessDeniedException("Access denied: you may only view your own payslips");
+        }
+    }
 
     /**
      * Saves a FAILED status for the payroll run in its own transaction so the

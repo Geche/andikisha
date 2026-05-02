@@ -49,6 +49,7 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
             response.setHeader("X-Request-ID", requestId);
             filterChain.doFilter(request, response);
         } finally {
+            SecurityContextHolder.clearContext();
             TenantContext.clear();
             MDC.remove("tenantId");
             MDC.remove("requestId");
