@@ -37,6 +37,10 @@ spring:
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
+    deserialization:
+      use-big-decimal-for-floats: true
+    generator:
+      write-bigdecimal-as-plain: true
 
 # storage.base-path and grpc deadline are operational config — safe defaults kept here
 app:

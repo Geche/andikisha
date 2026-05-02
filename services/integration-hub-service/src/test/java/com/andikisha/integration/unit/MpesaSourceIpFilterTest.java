@@ -68,4 +68,23 @@ class MpesaSourceIpFilterTest {
 
         assertThat(response.getStatus()).isNotEqualTo(403);
     }
+
+    @Test
+    void filter_whenIpValidationDisabled_unknownIpPasses() throws Exception {
+        // Build a filter with ip-validation-disabled = true — any IP must be accepted on callback paths
+        MpesaSourceIpFilter disabledFilter = new MpesaSourceIpFilter(
+                List.of("196.201.214.0/24", "196.201.216.0/23"),
+                true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/callbacks/mpesa/b2c/result");
+        request.setRemoteAddr("1.2.3.4"); // unknown IP that would normally be rejected
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain localChain = new MockFilterChain();
+
+        disabledFilter.doFilter(request, response, localChain);
+
+        // Filter should bypass IP check and pass the request through
+        assertThat(response.getStatus()).isNotEqualTo(403);
+        assertThat(localChain.getRequest()).isNotNull();
+    }
 }

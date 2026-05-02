@@ -51,6 +51,10 @@ spring:
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
+    deserialization:
+      use-big-decimal-for-floats: true
+    generator:
+      write-bigdecimal-as-plain: true
 
 # enabled flags and environment name are operational — safe defaults kept here.
 # API keys and encryption key have no fallback.

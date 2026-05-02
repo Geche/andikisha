@@ -52,6 +52,10 @@ spring:
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
+    deserialization:
+      use-big-decimal-for-floats: true
+    generator:
+      write-bigdecimal-as-plain: true
 
 # email.from and sms operational defaults are not secrets — kept here.
 # sms.api-key has no fallback; Spring fails fast if SMS_ENABLED=true without it.

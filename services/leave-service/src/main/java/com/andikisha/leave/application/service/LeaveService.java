@@ -17,6 +17,7 @@ import com.andikisha.leave.domain.repository.LeavePolicyRepository;
 import com.andikisha.leave.domain.repository.LeaveRequestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -138,40 +139,46 @@ public class LeaveService {
     @Transactional
     public LeaveRequestResponse approve(UUID leaveRequestId, UUID reviewerId,
                                         String reviewerName) {
-        String tenantId = TenantContext.requireTenantId();
+        try {
+            String tenantId = TenantContext.requireTenantId();
 
-        LeaveRequest request = requestRepository.findByIdAndTenantId(leaveRequestId, tenantId)
-                .orElseThrow(() -> new LeaveRequestNotFoundException(leaveRequestId));
+            LeaveRequest request = requestRepository.findByIdAndTenantId(leaveRequestId, tenantId)
+                    .orElseThrow(() -> new LeaveRequestNotFoundException(leaveRequestId));
 
-        if (request.getEmployeeId().equals(reviewerId)) {
-            throw new BusinessRuleException("SELF_APPROVAL_PROHIBITED",
-                    "A manager cannot approve their own leave request. " +
-                    "employeeId=" + reviewerId);
+            if (request.getEmployeeId().equals(reviewerId)) {
+                throw new BusinessRuleException("SELF_APPROVAL_PROHIBITED",
+                        "A manager cannot approve their own leave request. " +
+                        "employeeId=" + reviewerId);
+            }
+
+            // Transition state first — this validates the request is still PENDING
+            // (guards against concurrent approvals deducting the balance twice)
+            request.approve(reviewerId, reviewerName);
+
+            // Deduct from balance only after the state guard has passed
+            if (request.getLeaveType() != LeaveType.UNPAID) {
+                int year = request.getStartDate().getYear();
+                LeaveBalance balance = balanceRepository
+                        .findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
+                                tenantId, request.getEmployeeId(), request.getLeaveType(), year)
+                        .orElseThrow(() -> new BusinessRuleException("NO_BALANCE",
+                                "Leave balance not found for employee"));
+
+                balance.deduct(request.getDays());
+                balanceRepository.save(balance);
+            }
+
+            request = requestRepository.save(request);
+
+            eventPublisher.publishLeaveApproved(request);
+            log.info("Leave approved for {} by {}", request.getEmployeeName(), reviewerName);
+
+            return mapper.toResponse(request);
+        } catch (OptimisticLockingFailureException e) {
+            throw new BusinessRuleException(
+                    "CONCURRENT_MODIFICATION",
+                    "Leave request was modified by another operation. Please retry.");
         }
-
-        // Transition state first — this validates the request is still PENDING
-        // (guards against concurrent approvals deducting the balance twice)
-        request.approve(reviewerId, reviewerName);
-
-        // Deduct from balance only after the state guard has passed
-        if (request.getLeaveType() != LeaveType.UNPAID) {
-            int year = request.getStartDate().getYear();
-            LeaveBalance balance = balanceRepository
-                    .findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
-                            tenantId, request.getEmployeeId(), request.getLeaveType(), year)
-                    .orElseThrow(() -> new BusinessRuleException("NO_BALANCE",
-                            "Leave balance not found for employee"));
-
-            balance.deduct(request.getDays());
-            balanceRepository.save(balance);
-        }
-
-        request = requestRepository.save(request);
-
-        eventPublisher.publishLeaveApproved(request);
-        log.info("Leave approved for {} by {}", request.getEmployeeName(), reviewerName);
-
-        return mapper.toResponse(request);
     }
 
     @Transactional

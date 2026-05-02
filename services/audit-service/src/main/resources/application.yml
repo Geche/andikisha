@@ -51,6 +51,15 @@ spring:
         concurrency: 3
         max-concurrency: 10
 
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      use-big-decimal-for-floats: true
+    generator:
+      write-bigdecimal-as-plain: true
+
 server:
   port: ${SERVER_PORT:8092}
 

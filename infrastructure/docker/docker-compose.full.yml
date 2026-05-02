@@ -1,0 +1,592 @@
+# infrastructure/docker/docker-compose.full.yml
+#
+# All 13 AndikishaHR application services.
+#
+# Usage (always paired with the infra compose):
+#   cd infrastructure/docker
+#   docker compose -f docker-compose.infra.yml -f docker-compose.full.yml up -d
+#
+# The infra compose provides: postgres instances, rabbitmq, redis, zipkin.
+# This file adds the 13 Spring Boot services that consume those resources.
+#
+# All secrets must be present in a .env file alongside this file.
+# See .env.example for required variables.
+
+name: andikisha
+
+services:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 1 — Foundation
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: auth-service
+    image: andikisha/auth-service:local
+    container_name: andikisha-auth-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+      - "9081:9081"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8081"
+      GRPC_PORT: "9081"
+      DB_HOST: andikisha-postgres-auth
+      DB_PORT: "5432"
+      DB_NAME: andikisha_auth
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  tenant-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: tenant-service
+    image: andikisha/tenant-service:local
+    container_name: andikisha-tenant-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+      - "9083:9083"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8083"
+      GRPC_PORT: "9083"
+      DB_HOST: andikisha-postgres-tenant
+      DB_PORT: "5432"
+      DB_NAME: andikisha_tenant
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_GRPC_PORT: "9081"
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-tenant:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  employee-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: employee-service
+    image: andikisha/employee-service:local
+    container_name: andikisha-employee-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+      - "9082:9082"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8082"
+      GRPC_PORT: "9082"
+      DB_HOST: andikisha-postgres-employee
+      DB_PORT: "5432"
+      DB_NAME: andikisha_employee
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-employee:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: api-gateway
+    image: andikisha/api-gateway:local
+    container_name: andikisha-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8080"
+      JWT_SECRET: ${JWT_SECRET}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      # Downstream service URLs — resolved via Docker Compose internal DNS
+      AUTH_SERVICE_URL: http://auth-service:8081
+      TENANT_SERVICE_URL: http://tenant-service:8083
+      EMPLOYEE_SERVICE_URL: http://employee-service:8082
+      PAYROLL_SERVICE_URL: http://payroll-service:8084
+      COMPLIANCE_SERVICE_URL: http://compliance-service:8085
+      ATTENDANCE_SERVICE_URL: http://time-attendance-service:8086
+      LEAVE_SERVICE_URL: http://leave-service:8087
+      DOCUMENT_SERVICE_URL: http://document-service:8088
+      NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      INTEGRATION_SERVICE_URL: http://integration-hub-service:8090
+      ANALYTICS_SERVICE_URL: http://analytics-service:8091
+      AUDIT_SERVICE_URL: http://audit-service:8092
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      tenant-service:
+        condition: service_healthy
+      employee-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 2 — Core HR
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  leave-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: leave-service
+    image: andikisha/leave-service:local
+    container_name: andikisha-leave-service
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+      - "9087:9087"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8087"
+      GRPC_PORT: "9087"
+      DB_HOST: andikisha-postgres-leave
+      DB_PORT: "5432"
+      DB_NAME: andikisha_leave
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-leave:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  payroll-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: payroll-service
+    image: andikisha/payroll-service:local
+    container_name: andikisha-payroll-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+      - "9084:9084"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8084"
+      GRPC_PORT: "9084"
+      DB_HOST: andikisha-postgres-payroll
+      DB_PORT: "5432"
+      DB_NAME: andikisha_payroll
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
+      LEAVE_SERVICE_HOST: leave-service
+      LEAVE_GRPC_PORT: "9087"
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-payroll:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      employee-service:
+        condition: service_healthy
+      leave-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  compliance-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: compliance-service
+    image: andikisha/compliance-service:local
+    container_name: andikisha-compliance-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+      - "9085:9085"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8085"
+      GRPC_PORT: "9085"
+      DB_HOST: andikisha-postgres-compliance
+      DB_PORT: "5432"
+      DB_NAME: andikisha_compliance
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      PAYROLL_SERVICE_HOST: payroll-service
+      PAYROLL_SERVICE_GRPC_PORT: "9084"
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-compliance:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payroll-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  time-attendance-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: time-attendance-service
+    image: andikisha/time-attendance-service:local
+    container_name: andikisha-time-attendance-service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+      - "9086:9086"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8086"
+      GRPC_PORT: "9086"
+      DB_HOST: andikisha-postgres-time
+      DB_PORT: "5432"
+      DB_NAME: andikisha_time
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-time:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 3 — Supporting Services
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  document-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: document-service
+    image: andikisha/document-service:local
+    container_name: andikisha-document-service
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+      - "9088:9088"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8088"
+      GRPC_PORT: "9088"
+      DB_HOST: andikisha-postgres-document
+      DB_PORT: "5432"
+      DB_NAME: andikisha_document
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      PAYROLL_SERVICE_HOST: payroll-service
+      PAYROLL_GRPC_PORT: "9084"
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-document:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payroll-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: notification-service
+    image: andikisha/notification-service:local
+    container_name: andikisha-notification-service
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+      - "9089:9089"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8089"
+      GRPC_PORT: "9089"
+      DB_HOST: andikisha-postgres-notify
+      DB_PORT: "5432"
+      DB_NAME: andikisha_notify
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      # Mail — point at MailHog or a real SMTP relay in dev
+      MAIL_HOST: ${MAIL_HOST:-mailhog}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@andikisha.co.ke}
+      # SMS — disabled by default in dev; set SMS_ENABLED=true to activate
+      SMS_API_KEY: ${SMS_API_KEY:-dev-placeholder}
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-notify:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  integration-hub-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: integration-hub-service
+    image: andikisha/integration-hub-service:local
+    container_name: andikisha-integration-hub-service
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+      - "9090:9090"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8090"
+      GRPC_PORT: "9090"
+      DB_HOST: andikisha-postgres-integration
+      DB_PORT: "5432"
+      DB_NAME: andikisha_integration
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      # M-Pesa — disabled by default in dev; no real keys required unless testing
+      MPESA_ENABLED: "false"
+      MPESA_ENV: ${MPESA_ENV:-sandbox}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      BANK_TRANSFER_ENABLED: "false"
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY:-changeme-32-char-dev-key-padded}
+      MPESA_CALLBACK_IP_VALIDATION_DISABLED: "true"
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-integration:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PHASE 4 — Intelligence
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  analytics-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: analytics-service
+    image: andikisha/analytics-service:local
+    container_name: andikisha-analytics-service
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+      - "9091:9091"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8091"
+      GRPC_PORT: "9091"
+      DB_HOST: andikisha-postgres-analytics
+      DB_PORT: "5432"
+      DB_NAME: andikisha_analytics
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-analytics:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  audit-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: audit-service
+    image: andikisha/audit-service:local
+    container_name: andikisha-audit-service
+    restart: unless-stopped
+    ports:
+      - "8092:8092"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8092"
+      DB_HOST: andikisha-postgres-audit
+      DB_PORT: "5432"
+      DB_NAME: andikisha_audit
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-audit:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s

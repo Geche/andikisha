@@ -1,0 +1,44 @@
+# Test profile configuration for notification-service.
+# Overrides all ${...} placeholders from application.yml that have no defaults.
+# Used when tests run with @ActiveProfiles("test").
+# MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD and SMS_API_KEY have no
+# defaults in application.yml — supplied here with safe no-op test values.
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    enabled: false
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  mail:
+    host: localhost
+    port: 1025
+    username: test
+    password: test
+
+app:
+  notifications:
+    sms:
+      api-key: test-sms-api-key-not-real

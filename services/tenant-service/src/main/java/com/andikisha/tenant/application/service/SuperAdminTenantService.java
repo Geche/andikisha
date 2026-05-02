@@ -103,8 +103,7 @@ public class SuperAdminTenantService {
         //    cryptographically random and trivially shareable over a secure channel.
         String temporaryPassword = generateTemporaryPassword();
 
-        // 4. Provision admin user in Auth Service (currently a stub —
-        //    see NoOpAuthServiceClient for the TODO).
+        // 4. Provision admin user in Auth Service via gRPC.
         try {
             authServiceClient.provisionInitialAdmin(
                     savedTenant.getTenantId(),

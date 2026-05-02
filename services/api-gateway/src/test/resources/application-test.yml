@@ -1,0 +1,22 @@
+# Test profile configuration for api-gateway.
+# api-gateway is WebFlux (Spring Cloud Gateway) — no JPA, no H2 needed.
+# Overrides all ${...} placeholders from application.yml that have no defaults.
+# Used when tests run with @ActiveProfiles("test").
+# JWT_SECRET, RABBITMQ_USERNAME and RABBITMQ_PASSWORD have no defaults — supplied here.
+
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3RzLW9ubHktMzItYnl0ZXMtbG9uZw==
