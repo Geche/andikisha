@@ -1,6 +1,8 @@
 package com.andikisha.payroll.infrastructure.grpc;
 
+import com.andikisha.proto.leave.EmployeeLeaveBalances;
 import com.andikisha.proto.leave.GetLeaveBalanceRequest;
+import com.andikisha.proto.leave.GetLeaveBalancesBatchRequest;
 import com.andikisha.proto.leave.GetLeaveBalancesRequest;
 import com.andikisha.proto.leave.LeaveBalanceResponse;
 import com.andikisha.proto.leave.LeaveBalancesResponse;
@@ -61,5 +63,15 @@ public class LeaveGrpcClient {
                     leaveType, employeeId, e.getStatus());
             return Optional.empty();
         }
+    }
+
+    public List<EmployeeLeaveBalances> getLeaveBalancesBatch(String tenantId, List<String> employeeIds, int year) {
+        var response = stub.getLeaveBalancesBatch(
+                GetLeaveBalancesBatchRequest.newBuilder()
+                        .setTenantId(tenantId)
+                        .addAllEmployeeIds(employeeIds)
+                        .setYear(year)
+                        .build());
+        return response.getResultsList();
     }
 }

@@ -12,6 +12,7 @@ service EmployeeService {
   rpc ListEmployees(ListEmployeesRequest) returns (ListEmployeesResponse);
   rpc ListActiveByTenant(ListActiveByTenantRequest) returns (ListEmployeesResponse);
   rpc GetSalaryStructure(GetSalaryRequest) returns (SalaryStructureResponse);
+  rpc GetSalaryStructuresBatch(GetSalaryStructuresBatchRequest) returns (GetSalaryStructuresBatchResponse);
   rpc GetDepartment(GetDepartmentRequest) returns (DepartmentResponse);
 }
 
@@ -94,4 +95,13 @@ enum EmploymentStatus {
   ON_LEAVE = 3;
   SUSPENDED = 4;
   TERMINATED = 5;
+}
+
+message GetSalaryStructuresBatchRequest {
+  string tenant_id             = 1;
+  repeated string employee_ids = 2;
+}
+
+message GetSalaryStructuresBatchResponse {
+  repeated SalaryStructureResponse salary_structures = 1;
 }

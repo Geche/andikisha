@@ -19,6 +19,7 @@ import com.andikisha.payroll.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.payroll.infrastructure.grpc.LeaveGrpcClient;
 import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.proto.employee.SalaryStructureResponse;
+import com.andikisha.proto.leave.EmployeeLeaveBalances;
 import com.andikisha.proto.leave.LeaveBalanceResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,9 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -149,18 +152,31 @@ public class PayrollService {
         // Parse period year for leave balance lookup (period format: YYYY-MM)
         int periodYear = Integer.parseInt(period.substring(0, 4));
 
+        // Collect all employee IDs for batch calls
+        List<String> employeeIds = employees.stream().map(EmployeeResponse::getId).toList();
+
+        // Two batch gRPC calls instead of 2N serial calls
+        Map<String, SalaryStructureResponse> salaryMap = employeeClient
+                .getSalaryStructuresBatch(tenantId, employeeIds)
+                .stream()
+                .collect(Collectors.toMap(SalaryStructureResponse::getEmployeeId, s -> s));
+
+        Map<String, List<LeaveBalanceResponse>> leaveMap = leaveClient
+                .getLeaveBalancesBatch(tenantId, employeeIds, periodYear)
+                .stream()
+                .collect(Collectors.toMap(
+                        EmployeeLeaveBalances::getEmployeeId,
+                        EmployeeLeaveBalances::getBalancesList));
+
         List<EmployeeSalaryData> salaryData = new ArrayList<>();
         for (EmployeeResponse employee : employees) {
-            try {
-                SalaryStructureResponse salary = employeeClient.getSalaryStructure(
-                        tenantId, employee.getId());
-                List<LeaveBalanceResponse> leaveBalances = leaveClient.getLeaveBalances(
-                        tenantId, employee.getId(), periodYear);
-                salaryData.add(new EmployeeSalaryData(employee, salary, leaveBalances));
-            } catch (Exception e) {
-                log.warn("Failed to fetch payroll data for employee {}, skipping: {}",
-                        employee.getId(), e.getMessage());
+            SalaryStructureResponse salary = salaryMap.get(employee.getId());
+            if (salary == null) {
+                log.warn("No salary structure found for employee {}, skipping", employee.getId());
+                continue;
             }
+            List<LeaveBalanceResponse> leaveBalances = leaveMap.getOrDefault(employee.getId(), List.of());
+            salaryData.add(new EmployeeSalaryData(employee, salary, leaveBalances));
         }
 
         int skipped = employees.size() - salaryData.size();

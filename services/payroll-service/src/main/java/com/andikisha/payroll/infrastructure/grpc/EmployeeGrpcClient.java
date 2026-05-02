@@ -3,6 +3,7 @@ package com.andikisha.payroll.infrastructure.grpc;
 import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.proto.employee.EmployeeServiceGrpc;
 import com.andikisha.proto.employee.GetSalaryRequest;
+import com.andikisha.proto.employee.GetSalaryStructuresBatchRequest;
 import com.andikisha.proto.employee.ListActiveByTenantRequest;
 import com.andikisha.proto.employee.SalaryStructureResponse;
 import io.grpc.Channel;
@@ -35,5 +36,14 @@ public class EmployeeGrpcClient {
                         .setTenantId(tenantId)
                         .setEmployeeId(employeeId)
                         .build());
+    }
+
+    public List<SalaryStructureResponse> getSalaryStructuresBatch(String tenantId, List<String> employeeIds) {
+        var response = stub.getSalaryStructuresBatch(
+                GetSalaryStructuresBatchRequest.newBuilder()
+                        .setTenantId(tenantId)
+                        .addAllEmployeeIds(employeeIds)
+                        .build());
+        return response.getSalaryStructuresList();
     }
 }

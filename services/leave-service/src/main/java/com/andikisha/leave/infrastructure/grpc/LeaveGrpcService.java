@@ -4,7 +4,10 @@ import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeaveType;
 import com.andikisha.leave.domain.repository.LeaveBalanceRepository;
+import com.andikisha.proto.leave.EmployeeLeaveBalances;
 import com.andikisha.proto.leave.GetLeaveBalanceRequest;
+import com.andikisha.proto.leave.GetLeaveBalancesBatchRequest;
+import com.andikisha.proto.leave.GetLeaveBalancesBatchResponse;
 import com.andikisha.proto.leave.GetLeaveBalancesRequest;
 import com.andikisha.proto.leave.LeaveBalanceResponse;
 import com.andikisha.proto.leave.LeaveBalancesResponse;
@@ -16,8 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @GrpcService
 public class LeaveGrpcService extends LeaveServiceGrpc.LeaveServiceImplBase {
@@ -97,6 +102,51 @@ public class LeaveGrpcService extends LeaveServiceGrpc.LeaveServiceImplBase {
         } catch (Exception e) {
             log.error("GetLeaveBalances failed for employee {}", request.getEmployeeId(), e);
             observer.onError(Status.INTERNAL.withDescription("Internal error").asRuntimeException());
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Override
+    public void getLeaveBalancesBatch(GetLeaveBalancesBatchRequest request,
+                                       StreamObserver<GetLeaveBalancesBatchResponse> observer) {
+        if (request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asRuntimeException());
+            return;
+        }
+        try {
+            TenantContext.setTenantId(request.getTenantId());
+            List<UUID> employeeIds = request.getEmployeeIdsList().stream()
+                    .map(UUID::fromString)
+                    .toList();
+
+            List<LeaveBalance> allBalances = balanceRepository
+                    .findByTenantIdAndEmployeeIdInAndYear(
+                            request.getTenantId(), employeeIds, request.getYear());
+
+            Map<String, List<LeaveBalanceResponse>> grouped = allBalances.stream()
+                    .collect(Collectors.groupingBy(
+                            b -> b.getEmployeeId().toString(),
+                            Collectors.mapping(this::toProto, Collectors.toList())));
+
+            List<EmployeeLeaveBalances> results = employeeIds.stream()
+                    .map(empId -> EmployeeLeaveBalances.newBuilder()
+                            .setEmployeeId(empId.toString())
+                            .addAllBalances(grouped.getOrDefault(empId.toString(), List.of()))
+                            .build())
+                    .toList();
+
+            observer.onNext(GetLeaveBalancesBatchResponse.newBuilder()
+                    .addAllResults(results)
+                    .build());
+            observer.onCompleted();
+        } catch (IllegalArgumentException e) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Invalid argument: " + e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            log.error("GetLeaveBalancesBatch failed for tenant {}", request.getTenantId(), e);
+            observer.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
         } finally {
             TenantContext.clear();
         }

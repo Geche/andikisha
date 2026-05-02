@@ -68,6 +68,12 @@ public class EmployeeQueryService {
                 .stream().map(mapper::toDetailResponse).toList();
     }
 
+    public List<EmployeeDetailResponse> findAllByIds(List<UUID> ids) {
+        String tenantId = TenantContext.requireTenantId();
+        return repository.findAllByTenantIdAndIdIn(tenantId, ids)
+                .stream().map(mapper::toDetailResponse).toList();
+    }
+
     public long countActive() {
         String tenantId = TenantContext.requireTenantId();
         return repository.countActiveByTenantId(tenantId, EmploymentStatus.TERMINATED);

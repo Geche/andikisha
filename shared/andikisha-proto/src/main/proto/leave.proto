@@ -7,6 +7,7 @@ option java_multiple_files = true;
 service LeaveService {
   rpc GetLeaveBalance(GetLeaveBalanceRequest) returns (LeaveBalanceResponse);
   rpc GetLeaveBalances(GetLeaveBalancesRequest) returns (LeaveBalancesResponse);
+  rpc GetLeaveBalancesBatch(GetLeaveBalancesBatchRequest) returns (GetLeaveBalancesBatchResponse);
 }
 
 message GetLeaveBalanceRequest {
@@ -34,4 +35,19 @@ message GetLeaveBalancesRequest {
 
 message LeaveBalancesResponse {
   repeated LeaveBalanceResponse balances = 1;
+}
+
+message GetLeaveBalancesBatchRequest {
+  string tenant_id             = 1;
+  repeated string employee_ids = 2;
+  int32 year                   = 3;
+}
+
+message EmployeeLeaveBalances {
+  string employee_id                     = 1;
+  repeated LeaveBalanceResponse balances = 2;
+}
+
+message GetLeaveBalancesBatchResponse {
+  repeated EmployeeLeaveBalances results = 1;
 }

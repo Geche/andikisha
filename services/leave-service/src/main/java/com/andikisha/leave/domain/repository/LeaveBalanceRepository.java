@@ -15,6 +15,9 @@ public interface LeaveBalanceRepository extends JpaRepository<LeaveBalance, UUID
     List<LeaveBalance> findByTenantIdAndEmployeeIdAndYear(
             String tenantId, UUID employeeId, int year);
 
+    List<LeaveBalance> findByTenantIdAndEmployeeIdInAndYear(
+            String tenantId, List<UUID> employeeIds, int year);
+
     Optional<LeaveBalance> findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
             String tenantId, UUID employeeId, LeaveType leaveType, int year);
 

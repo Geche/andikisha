@@ -6,6 +6,8 @@ import com.andikisha.employee.application.service.EmployeeQueryService;
 import com.andikisha.proto.employee.EmployeeServiceGrpc;
 import com.andikisha.proto.employee.GetEmployeeRequest;
 import com.andikisha.proto.employee.GetSalaryRequest;
+import com.andikisha.proto.employee.GetSalaryStructuresBatchRequest;
+import com.andikisha.proto.employee.GetSalaryStructuresBatchResponse;
 import com.andikisha.proto.employee.ListActiveByTenantRequest;
 import com.andikisha.proto.employee.ListEmployeesResponse;
 import com.andikisha.proto.employee.SalaryStructureResponse;
@@ -15,6 +17,7 @@ import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.UUID;
 
 @GrpcService
@@ -120,6 +123,47 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
             log.error("GetSalaryStructure failed for {}", request.getEmployeeId(), e);
             observer.onError(Status.INTERNAL
                     .withDescription("Internal error").asException());
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Override
+    public void getSalaryStructuresBatch(GetSalaryStructuresBatchRequest request,
+                                          StreamObserver<GetSalaryStructuresBatchResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asRuntimeException());
+            return;
+        }
+        try {
+            TenantContext.setTenantId(request.getTenantId());
+            List<UUID> ids = request.getEmployeeIdsList().stream()
+                    .map(UUID::fromString)
+                    .toList();
+            List<SalaryStructureResponse> responses = queryService.findAllByIds(ids).stream()
+                    .map(dto -> SalaryStructureResponse.newBuilder()
+                            .setEmployeeId(dto.id().toString())
+                            .setBasicSalary(dto.basicSalary().toPlainString())
+                            .setHousingAllowance(dto.housingAllowance() != null ? dto.housingAllowance().toPlainString() : "0")
+                            .setTransportAllowance(dto.transportAllowance() != null ? dto.transportAllowance().toPlainString() : "0")
+                            .setMedicalAllowance(dto.medicalAllowance() != null ? dto.medicalAllowance().toPlainString() : "0")
+                            .setOtherAllowances(dto.otherAllowances() != null ? dto.otherAllowances().toPlainString() : "0")
+                            .setCurrency(dto.currency())
+                            .build())
+                    .toList();
+            observer.onNext(GetSalaryStructuresBatchResponse.newBuilder()
+                    .addAllSalaryStructures(responses)
+                    .build());
+            observer.onCompleted();
+        } catch (IllegalArgumentException e) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Invalid employee ID in batch: " + e.getMessage())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            log.error("GetSalaryStructuresBatch failed for tenant {}", request.getTenantId(), e);
+            observer.onError(Status.INTERNAL
+                    .withDescription(e.getMessage()).asRuntimeException());
         } finally {
             TenantContext.clear();
         }
