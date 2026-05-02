@@ -50,4 +50,4 @@ frontend/**/.env.local
 .DS_Store
 
 # Local Docker env — never commit real credentials
-infrastructure/docker/.env
+infrastructure/docker/.env.env.local

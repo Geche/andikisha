@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Usage: ./dev <service-name> [extra gradle args...]
+# Example: ./dev auth-service
+#          ./dev payroll-service --debug-jvm
+
+set -euo pipefail
+
+SERVICE=${1:?Usage: ./dev <service-name>}
+shift
+
+# Load shared env
+source "$(dirname "$0")/.env.local"
+
+# Map service name → DB host/port/name
+case "$SERVICE" in
+  auth-service)          DB_HOST=$AUTH_DB_HOST;         DB_PORT=$AUTH_DB_PORT;         DB_NAME=$AUTH_DB_NAME ;;
+  employee-service)      DB_HOST=$EMPLOYEE_DB_HOST;     DB_PORT=$EMPLOYEE_DB_PORT;     DB_NAME=$EMPLOYEE_DB_NAME ;;
+  tenant-service)        DB_HOST=$TENANT_DB_HOST;       DB_PORT=$TENANT_DB_PORT;       DB_NAME=$TENANT_DB_NAME ;;
+  payroll-service)       DB_HOST=$PAYROLL_DB_HOST;      DB_PORT=$PAYROLL_DB_PORT;      DB_NAME=$PAYROLL_DB_NAME ;;
+  leave-service)         DB_HOST=$LEAVE_DB_HOST;        DB_PORT=$LEAVE_DB_PORT;        DB_NAME=$LEAVE_DB_NAME ;;
+  compliance-service)    DB_HOST=$COMPLIANCE_DB_HOST;   DB_PORT=$COMPLIANCE_DB_PORT;   DB_NAME=$COMPLIANCE_DB_NAME ;;
+  time-attendance-service) DB_HOST=$TIME_DB_HOST;       DB_PORT=$TIME_DB_PORT;         DB_NAME=$TIME_DB_NAME ;;
+  document-service)      DB_HOST=$DOCUMENT_DB_HOST;     DB_PORT=$DOCUMENT_DB_PORT;     DB_NAME=$DOCUMENT_DB_NAME ;;
+  notification-service)  DB_HOST=$NOTIFICATION_DB_HOST; DB_PORT=$NOTIFICATION_DB_PORT; DB_NAME=$NOTIFICATION_DB_NAME ;;
+  integration-hub-service) DB_HOST=$INTEGRATION_DB_HOST; DB_PORT=$INTEGRATION_DB_PORT; DB_NAME=$INTEGRATION_DB_NAME ;;
+  analytics-service)     DB_HOST=$ANALYTICS_DB_HOST;    DB_PORT=$ANALYTICS_DB_PORT;    DB_NAME=$ANALYTICS_DB_NAME ;;
+  audit-service)         DB_HOST=$AUDIT_DB_HOST;        DB_PORT=$AUDIT_DB_PORT;        DB_NAME=$AUDIT_DB_NAME ;;
+  *)
+    echo "Unknown service: $SERVICE"
+    echo "Valid services: auth-service, employee-service, tenant-service, payroll-service,"
+    echo "  leave-service, compliance-service, time-attendance-service, document-service,"
+    echo "  notification-service, integration-hub-service, analytics-service, audit-service"
+    exit 1
+    ;;
+esac
+
+export DB_HOST DB_PORT DB_NAME
+
+echo "▶ Starting $SERVICE (DB: $DB_HOST:$DB_PORT/$DB_NAME)"
+exec ./gradlew ":services:$SERVICE:bootRun" "$@"
