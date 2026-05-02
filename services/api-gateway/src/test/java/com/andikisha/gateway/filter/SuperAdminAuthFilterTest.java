@@ -35,7 +35,7 @@ class SuperAdminAuthFilterTest {
     @BeforeEach
     void setUp() {
         filter = new SuperAdminAuthFilter(TEST_SECRET);
-        key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(TEST_SECRET));
+        key = Keys.hmacShaKeyFor(decodeSecret(TEST_SECRET));
     }
 
     private String buildToken(String role, String tenantId) {
@@ -156,5 +156,10 @@ class SuperAdminAuthFilterTest {
         StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
 
         verify(chain).filter(exchange);
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 }

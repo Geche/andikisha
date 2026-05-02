@@ -22,7 +22,7 @@ public class RateLimiterConfig {
     private final SecretKey key;
 
     public RateLimiterConfig(@Value("${app.jwt.secret}") String secret) {
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
+        this.key = Keys.hmacShaKeyFor(decodeSecret(secret));
     }
 
     /**
@@ -61,5 +61,10 @@ public class RateLimiterConfig {
     @Primary
     public RedisRateLimiter planAwareRateLimiter() {
         return new TenantPlanRateLimiter();
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 }

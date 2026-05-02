@@ -25,7 +25,7 @@ class RateLimiterConfigTest {
     @BeforeEach
     void setUp() {
         keyResolver = new RateLimiterConfig(TEST_SECRET).userKeyResolver();
-        key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(TEST_SECRET));
+        key = Keys.hmacShaKeyFor(decodeSecret(TEST_SECRET));
     }
 
     private String buildToken(String plan, String tenantId, String sub) {
@@ -104,5 +104,10 @@ class RateLimiterConfigTest {
         StepVerifier.create(keyResolver.resolve(exchange))
                 .expectNextMatches(k -> k.startsWith("ANON:"))
                 .verifyComplete();
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 }

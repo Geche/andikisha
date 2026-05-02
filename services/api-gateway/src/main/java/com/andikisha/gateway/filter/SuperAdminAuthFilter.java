@@ -35,7 +35,7 @@ public class SuperAdminAuthFilter
 
     public SuperAdminAuthFilter(@Value("${app.jwt.secret}") String secret) {
         super(Config.class);
-        byte[] keyBytes = Decoders.BASE64URL.decode(secret);
+        byte[] keyBytes = decodeSecret(secret);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -87,6 +87,11 @@ public class SuperAdminAuthFilter
         DataBuffer buffer = response.bufferFactory()
                 .wrap(body.getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(buffer));
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 
     private String escapeJson(String s) {

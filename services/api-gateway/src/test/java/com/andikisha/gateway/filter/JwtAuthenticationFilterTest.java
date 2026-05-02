@@ -35,7 +35,7 @@ class JwtAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         filter = new JwtAuthenticationFilter(TEST_SECRET);
-        key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(TEST_SECRET));
+        key = Keys.hmacShaKeyFor(decodeSecret(TEST_SECRET));
     }
 
     // ── Missing / malformed Authorization header ───────────────────────────────
@@ -240,5 +240,10 @@ class JwtAuthenticationFilterTest {
         assertThat(captured.get().getRequest().getHeaders().get("X-Internal-Request"))
                 .as("X-Internal-Request must be stripped from the downstream request on public paths too")
                 .isNullOrEmpty();
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 }

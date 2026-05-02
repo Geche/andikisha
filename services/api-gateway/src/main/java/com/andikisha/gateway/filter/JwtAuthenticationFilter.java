@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     );
 
     public JwtAuthenticationFilter(@Value("${app.jwt.secret}") String jwtSecret) {
-        this.key = Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(jwtSecret));
+        this.key = Keys.hmacShaKeyFor(decodeSecret(jwtSecret));
     }
 
     @Override
@@ -128,6 +128,11 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         return -100;
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 
     private boolean isPublicPath(String path) {

@@ -26,7 +26,7 @@ public class JwtTokenProvider {
     private final long refreshTokenExpirationMs;
 
     public JwtTokenProvider(JwtProperties jwtProperties) {
-        byte[] keyBytes = Decoders.BASE64URL.decode(jwtProperties.secret());
+        byte[] keyBytes = decodeSecret(jwtProperties.secret());
         if (keyBytes.length < 32) {
             throw new IllegalStateException(
                     "JWT secret must be at least 256 bits (32 bytes) when Base64-decoded");
@@ -34,6 +34,12 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenExpirationMs = jwtProperties.expirationMs();
         this.refreshTokenExpirationMs = jwtProperties.refreshExpirationMs();
+    }
+
+    private static byte[] decodeSecret(String secret) {
+        // Normalise URL-safe Base64 (-_) → standard Base64 (+/) so both formats are accepted
+        String normalised = secret.replace('-', '+').replace('_', '/');
+        return java.util.Base64.getDecoder().decode(normalised);
     }
 
     public String generateAccessToken(User user, String planTier) {
