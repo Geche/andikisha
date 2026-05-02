@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payroll-service
+  namespace: andikisha
+  labels:
+    app: payroll-service
+    app.kubernetes.io/name: payroll-service
+    app.kubernetes.io/part-of: andikisha-hr
+    app.kubernetes.io/version: latest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payroll-service
+  template:
+    metadata:
+      labels:
+        app: payroll-service
+        app.kubernetes.io/name: payroll-service
+        app.kubernetes.io/part-of: andikisha-hr
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8084"
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: payroll-service
+          image: andikisha/payroll-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8084
+              protocol: TCP
+            - name: grpc
+              containerPort: 9084
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVER_PORT
+              value: "8084"
+            - name: GRPC_PORT
+              value: "9084"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: payroll-db-host
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "andikisha_payroll"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: payroll-db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: payroll-db-password
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: rabbitmq-host
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: rabbitmq-username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: rabbitmq-password
+            - name: ZIPKIN_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: zipkin-endpoint
+            - name: EMPLOYEE_SERVICE_HOST
+              value: "employee-service"
+            - name: EMPLOYEE_GRPC_PORT
+              value: "9082"
+            - name: LEAVE_SERVICE_HOST
+              value: "leave-service"
+            - name: LEAVE_GRPC_PORT
+              value: "9087"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

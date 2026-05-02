@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: andikisha
+  labels:
+    app: analytics-service
+    app.kubernetes.io/name: analytics-service
+    app.kubernetes.io/part-of: andikisha-hr
+spec:
+  type: ClusterIP
+  selector:
+    app: analytics-service
+  ports:
+    - name: http
+      port: 8091
+      targetPort: 8091
+      protocol: TCP
+    - name: grpc
+      port: 9091
+      targetPort: 9091
+      protocol: TCP

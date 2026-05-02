@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: andikisha
+  labels:
+    app: analytics-service
+    app.kubernetes.io/name: analytics-service
+    app.kubernetes.io/part-of: andikisha-hr
+    app.kubernetes.io/version: latest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+        app.kubernetes.io/name: analytics-service
+        app.kubernetes.io/part-of: andikisha-hr
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8091"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: analytics-service
+          image: andikisha/analytics-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8091
+              protocol: TCP
+            - name: grpc
+              containerPort: 9091
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVER_PORT
+              value: "8091"
+            - name: GRPC_PORT
+              value: "9091"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: analytics-db-host
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "andikisha_analytics"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: analytics-db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: analytics-db-password
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: rabbitmq-host
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: rabbitmq-username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: rabbitmq-password
+            - name: ZIPKIN_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: zipkin-endpoint
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: redis-host
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8091
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8091
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

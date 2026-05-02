@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant-service
+  namespace: andikisha
+  labels:
+    app: tenant-service
+    app.kubernetes.io/name: tenant-service
+    app.kubernetes.io/part-of: andikisha-hr
+    app.kubernetes.io/version: latest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tenant-service
+  template:
+    metadata:
+      labels:
+        app: tenant-service
+        app.kubernetes.io/name: tenant-service
+        app.kubernetes.io/part-of: andikisha-hr
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8083"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: tenant-service
+          image: andikisha/tenant-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8083
+              protocol: TCP
+            - name: grpc
+              containerPort: 9083
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: SERVER_PORT
+              value: "8083"
+            - name: GRPC_PORT
+              value: "9083"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: tenant-db-host
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "andikisha_tenant"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: tenant-db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: tenant-db-password
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: rabbitmq-host
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: rabbitmq-username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: andikisha-secrets
+                  key: rabbitmq-password
+            - name: ZIPKIN_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: zipkin-endpoint
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: andikisha-config
+                  key: redis-host
+            - name: AUTH_SERVICE_HOST
+              value: "auth-service"
+            - name: AUTH_SERVICE_GRPC_PORT
+              value: "9081"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8083
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8083
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

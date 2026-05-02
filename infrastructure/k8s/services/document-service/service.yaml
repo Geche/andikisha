@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: document-service
+  namespace: andikisha
+  labels:
+    app: document-service
+    app.kubernetes.io/name: document-service
+    app.kubernetes.io/part-of: andikisha-hr
+spec:
+  type: ClusterIP
+  selector:
+    app: document-service
+  ports:
+    - name: http
+      port: 8088
+      targetPort: 8088
+      protocol: TCP
+    - name: grpc
+      port: 9088
+      targetPort: 9088
+      protocol: TCP

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-service
+  namespace: andikisha
+  labels:
+    app: compliance-service
+    app.kubernetes.io/name: compliance-service
+    app.kubernetes.io/part-of: andikisha-hr
+spec:
+  type: ClusterIP
+  selector:
+    app: compliance-service
+  ports:
+    - name: http
+      port: 8085
+      targetPort: 8085
+      protocol: TCP
+    - name: grpc
+      port: 9085
+      targetPort: 9085
+      protocol: TCP
