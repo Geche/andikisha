@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,6 +23,8 @@ class TenantServiceApplicationTest {
     // Prevent actual Redis connection during context load test
     @MockitoBean
     private RedisConnectionFactory redisConnectionFactory;
+    @MockitoBean
+    private ReactiveRedisConnectionFactory reactiveRedisConnectionFactory;
     @MockitoBean
     private StringRedisTemplate stringRedisTemplate;
 

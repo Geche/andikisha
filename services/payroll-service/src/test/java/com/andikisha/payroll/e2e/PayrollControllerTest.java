@@ -5,7 +5,10 @@ import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.payroll.application.dto.response.PayrollRunResponse;
 import com.andikisha.payroll.application.service.PayrollService;
 import com.andikisha.payroll.domain.exception.PayrollRunNotFoundException;
+import com.andikisha.payroll.infrastructure.config.SecurityConfig;
+import com.andikisha.payroll.infrastructure.config.WebMvcConfig;
 import com.andikisha.payroll.presentation.controller.PayrollController;
+import com.andikisha.payroll.presentation.filter.TrustedHeaderAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PayrollController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({GlobalExceptionHandler.class, WebMvcConfig.class, SecurityConfig.class, TrustedHeaderAuthFilter.class})
 class PayrollControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -42,6 +45,8 @@ class PayrollControllerTest {
     @MockitoBean JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     private static final String TENANT_ID = "e2e-tenant";
+    private static final String USER_ID   = "payroll-user";
+    private static final String USER_ROLE = "PAYROLL_MANAGER";
     private static final UUID   RUN_ID    = UUID.randomUUID();
 
     // -------------------------------------------------------------------------
@@ -52,7 +57,8 @@ class PayrollControllerTest {
     void initiate_missingTenantHeader_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/payroll/runs")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-User-ID", "hr-admin")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE)
                         .content("""
                                 {"period":"2024-01","payFrequency":"MONTHLY"}
                                 """))
@@ -63,7 +69,8 @@ class PayrollControllerTest {
     void initiate_withInvalidPeriodFormat_returns400WithValidationError() throws Exception {
         mockMvc.perform(post("/api/v1/payroll/runs")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", "hr-admin")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"period":"January-2024","payFrequency":"MONTHLY"}
@@ -76,7 +83,8 @@ class PayrollControllerTest {
     void initiate_withBlankPeriod_returns400WithValidationError() throws Exception {
         mockMvc.perform(post("/api/v1/payroll/runs")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", "hr-admin")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"period":"","payFrequency":"MONTHLY"}
@@ -91,7 +99,8 @@ class PayrollControllerTest {
 
         mockMvc.perform(post("/api/v1/payroll/runs")
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", "hr-admin")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"period":"2024-01","payFrequency":"MONTHLY"}
@@ -107,7 +116,9 @@ class PayrollControllerTest {
 
     @Test
     void calculate_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(post("/api/v1/payroll/runs/{id}/calculate", RUN_ID))
+        mockMvc.perform(post("/api/v1/payroll/runs/{id}/calculate", RUN_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isBadRequest());
     }
 
@@ -117,7 +128,9 @@ class PayrollControllerTest {
                 .thenThrow(new PayrollRunNotFoundException(RUN_ID));
 
         mockMvc.perform(post("/api/v1/payroll/runs/{id}/calculate", RUN_ID)
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
@@ -133,7 +146,8 @@ class PayrollControllerTest {
 
         mockMvc.perform(post("/api/v1/payroll/runs/{id}/approve", RUN_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", "cfo-user"))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
@@ -145,7 +159,8 @@ class PayrollControllerTest {
 
         mockMvc.perform(post("/api/v1/payroll/runs/{id}/approve", RUN_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", "cfo-user"))
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("WRONG_STATUS"));
     }
@@ -156,7 +171,9 @@ class PayrollControllerTest {
 
     @Test
     void listRuns_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/payroll/runs"))
+        mockMvc.perform(get("/api/v1/payroll/runs")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isBadRequest());
     }
 
@@ -168,7 +185,9 @@ class PayrollControllerTest {
                         PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/payroll/runs")
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].period").value("2024-01"))
                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -184,7 +203,9 @@ class PayrollControllerTest {
                 .thenThrow(new PayrollRunNotFoundException(RUN_ID));
 
         mockMvc.perform(get("/api/v1/payroll/runs/{id}", RUN_ID)
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
@@ -196,7 +217,9 @@ class PayrollControllerTest {
     @Test
     void cancel_returns204() throws Exception {
         mockMvc.perform(delete("/api/v1/payroll/runs/{id}", RUN_ID)
-                        .header("X-Tenant-ID", TENANT_ID))
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", USER_ROLE))
                 .andExpect(status().isNoContent());
     }
 

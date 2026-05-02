@@ -6,8 +6,10 @@ import com.andikisha.employee.application.service.EmployeeQueryService;
 import com.andikisha.employee.application.service.EmployeeService;
 import com.andikisha.employee.domain.exception.EmployeeNotFoundException;
 import com.andikisha.common.exception.GlobalExceptionHandler;
+import com.andikisha.employee.infrastructure.config.SecurityConfig;
 import com.andikisha.employee.infrastructure.config.WebMvcConfig;
 import com.andikisha.employee.presentation.advice.EmployeeExceptionHandler;
+import com.andikisha.employee.presentation.filter.TrustedHeaderAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(com.andikisha.employee.presentation.controller.EmployeeController.class)
-@Import({EmployeeExceptionHandler.class, GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({EmployeeExceptionHandler.class, GlobalExceptionHandler.class, WebMvcConfig.class,
+        SecurityConfig.class, TrustedHeaderAuthFilter.class})
 class EmployeeControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -166,7 +169,16 @@ class EmployeeControllerTest {
                         .header("X-User-ID", USER_ID)
                         .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"firstName\":\"Jane\",\"lastName\":\"Doe\"}"))
+                        .content("""
+                                {
+                                  "firstName":"Jane","lastName":"Doe",
+                                  "nationalId":"12345678","phoneNumber":"+254700000001",
+                                  "kraPin":"A000000001Z","nhifNumber":"NH000001",
+                                  "nssfNumber":"NS000001","employmentType":"FULL_TIME",
+                                  "basicSalary":50000,"department":"Engineering",
+                                  "jobTitle":"Developer","joinDate":"2026-01-01"
+                                }
+                                """))
                 .andExpect(status().isForbidden());
     }
 

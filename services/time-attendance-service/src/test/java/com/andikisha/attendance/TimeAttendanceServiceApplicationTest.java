@@ -1,6 +1,7 @@
 package com.andikisha.attendance;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -18,9 +19,19 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false"
+        "spring.flyway.enabled=false",
+        "spring.rabbitmq.host=localhost",
+        "spring.rabbitmq.port=5672",
+        "spring.rabbitmq.username=guest",
+        "spring.rabbitmq.password=guest"
 })
 class TimeAttendanceServiceApplicationTest {
+
+    // Prevents CachingConnectionFactory from opening a TCP connection to the broker.
+    // Because ConnectionFactory is satisfied here, RabbitAutoConfiguration's own factory
+    // is skipped (@ConditionalOnMissingBean) and all listener containers stay idle.
+    @MockitoBean
+    ConnectionFactory connectionFactory;
 
     @MockitoBean
     RabbitTemplate rabbitTemplate;

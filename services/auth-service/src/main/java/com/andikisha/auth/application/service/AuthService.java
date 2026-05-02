@@ -89,6 +89,8 @@ public class AuthService {
                     eventPublisher.publishUserRegistered(savedUser);
                 }
             });
+        } else {
+            eventPublisher.publishUserRegistered(savedUser);
         }
 
         return generateTokenResponse(user);

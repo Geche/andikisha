@@ -3,7 +3,9 @@ package com.andikisha.compliance.e2e;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.compliance.application.dto.response.ComplianceSummaryResponse;
 import com.andikisha.compliance.domain.exception.InvalidCountryCodeException;
+import com.andikisha.compliance.infrastructure.config.SecurityConfig;
 import com.andikisha.compliance.infrastructure.config.WebMvcConfig;
+import com.andikisha.compliance.presentation.filter.TrustedHeaderAuthFilter;
 import com.andikisha.compliance.application.dto.response.StatutoryRateResponse;
 import com.andikisha.compliance.application.dto.response.TaxBracketResponse;
 import com.andikisha.compliance.application.service.ComplianceService;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -28,12 +31,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ComplianceController.class)
-@Import({GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({GlobalExceptionHandler.class, WebMvcConfig.class, SecurityConfig.class, TrustedHeaderAuthFilter.class})
 class ComplianceControllerTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @MockitoBean ComplianceService complianceService;
+    @MockitoBean
+    JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
     private static final String BASE    = "/api/v1/compliance";
     private static final String TENANT  = "acme-corp";

@@ -2,6 +2,7 @@ package com.andikisha.integration;
 
 import com.andikisha.integration.infrastructure.messaging.PaymentProcessor;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -18,13 +19,23 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.flyway.enabled=false",
-        "app.credential-encryption-key="
+        "app.credential-encryption-key=",
+        "spring.rabbitmq.host=localhost",
+        "spring.rabbitmq.port=5672",
+        "spring.rabbitmq.username=guest",
+        "spring.rabbitmq.password=guest",
+        "spring.data.redis.host=localhost",
+        "spring.data.redis.port=6379",
+        "app.mpesa.consumer-key=test-key",
+        "app.mpesa.consumer-secret=test-secret"
 })
 class IntegrationHubServiceApplicationTest {
 
     @MockitoBean RabbitTemplate rabbitTemplate;
     @MockitoBean StringRedisTemplate stringRedisTemplate;
     @MockitoBean PaymentProcessor paymentProcessor;
+    @MockitoBean
+    ConnectionFactory connectionFactory;
 
     @Test
     void contextLoads() {

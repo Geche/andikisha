@@ -76,9 +76,9 @@ class LeaveGrpcServiceTest {
         LeaveBalanceResponse resp = captor.getValue();
         assertThat(resp.getEmployeeId()).isEqualTo(EMPLOYEE_ID.toString());
         assertThat(resp.getLeaveType()).isEqualTo("ANNUAL");
-        assertThat(resp.getAccrued()).isEqualTo(21.0);
-        assertThat(resp.getUsed()).isEqualTo(5.0);
-        assertThat(resp.getAvailable()).isEqualTo(16.0);
+        assertThat(resp.getAccrued()).isEqualTo("21.0");
+        assertThat(resp.getUsed()).isEqualTo("5.0");
+        assertThat(resp.getAvailable()).isEqualTo("16.0");
     }
 
     @Test

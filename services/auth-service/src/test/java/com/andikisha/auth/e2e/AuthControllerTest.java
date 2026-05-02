@@ -6,9 +6,11 @@ import com.andikisha.auth.application.service.AuthService;
 import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.auth.domain.exception.InvalidCredentialsException;
 import com.andikisha.auth.domain.exception.TokenExpiredException;
+import com.andikisha.auth.infrastructure.config.SecurityConfig;
 import com.andikisha.auth.infrastructure.config.WebMvcConfig;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
 import com.andikisha.auth.presentation.advice.AuthExceptionHandler;
+import com.andikisha.auth.presentation.filter.JwtAuthenticationFilter;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(com.andikisha.auth.presentation.controller.AuthController.class)
-@Import({AuthExceptionHandler.class, GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({AuthExceptionHandler.class, GlobalExceptionHandler.class, WebMvcConfig.class,
+        SecurityConfig.class, JwtAuthenticationFilter.class})
 class AuthControllerTest {
 
     @Autowired MockMvc mockMvc;

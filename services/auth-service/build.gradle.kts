@@ -69,4 +69,5 @@ dependencies {
     testImplementation("org.testcontainers:rabbitmq:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
     testImplementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
+    testRuntimeOnly("com.h2database:h2")
 }

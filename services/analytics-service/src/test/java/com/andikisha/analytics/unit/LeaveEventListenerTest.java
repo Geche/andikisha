@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,7 +123,7 @@ class LeaveEventListenerTest {
                 "Insufficient cover", "admin"
         );
 
-        when(repository.findByTenantIdAndPeriodAndLeaveType(TENANT, "2026-04", "SICK"))
+        when(repository.findByTenantIdAndPeriodAndLeaveType(TENANT, YearMonth.now().toString(), "SICK"))
                 .thenReturn(Optional.empty());
         when(repository.save(any(LeaveAnalytics.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -138,7 +139,7 @@ class LeaveEventListenerTest {
                 "Insufficient cover", "admin"
         );
 
-        when(repository.findByTenantIdAndPeriodAndLeaveType(TENANT, "2026-04", "MATERNITY"))
+        when(repository.findByTenantIdAndPeriodAndLeaveType(TENANT, YearMonth.now().toString(), "MATERNITY"))
                 .thenReturn(Optional.empty());
         when(repository.save(any(LeaveAnalytics.class))).thenAnswer(inv -> {
             LeaveAnalytics la = inv.getArgument(0);
