@@ -46,6 +46,13 @@ spring:
 #   IllegalArgumentException: Could not resolve placeholder 'JWT_SECRET'
 # That is the correct behaviour. Do not add a fallback here.
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
 logging:
   level:
     com.andikisha: DEBUG

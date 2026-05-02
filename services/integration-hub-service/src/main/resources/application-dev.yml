@@ -27,6 +27,13 @@ app:
   # Dev encryption key — never use this value outside local development
   credential-encryption-key: "dev-only-insecure-key-replace-in-prod"
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
 logging:
   level:
     com.andikisha: DEBUG

@@ -19,6 +19,13 @@ grpc:
     payroll-service:
       address: static://localhost:9084
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
 logging:
   level:
     com.andikisha: DEBUG

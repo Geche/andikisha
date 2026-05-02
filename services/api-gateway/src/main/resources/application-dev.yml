@@ -8,6 +8,16 @@ spring:
     redis:
       host: localhost
       port: 6379
+  rabbitmq:
+    username: andikisha
+    password: changeme
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
 
 logging:
   level:

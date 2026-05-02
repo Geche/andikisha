@@ -36,7 +36,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    baseline-on-migrate: true
     validate-on-migrate: true
 
   rabbitmq:
@@ -53,7 +52,7 @@ spring:
         max-concurrency: 10
 
 server:
-  port: 8092
+  port: ${SERVER_PORT:8092}
 
 # audit-service has no gRPC server; it is a pure RabbitMQ event consumer
 
@@ -64,7 +63,9 @@ management:
         include: health,info,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
+      probes:
+        enabled: true
   metrics:
     export:
       prometheus:
@@ -78,8 +79,10 @@ management:
 
 springdoc:
   api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
     path: /api-docs
   swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
     path: /swagger-ui.html
 
 logging:

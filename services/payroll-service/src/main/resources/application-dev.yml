@@ -21,6 +21,13 @@ grpc:
     leave-service:
       address: static://localhost:9087
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
 logging:
   level:
     com.andikisha: DEBUG
