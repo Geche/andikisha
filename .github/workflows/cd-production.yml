@@ -1,0 +1,61 @@
+name: CD — Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Git SHA of the staging image to promote'
+        required: true
+      confirm:
+        description: 'Type DEPLOY to confirm'
+        required: true
+
+env:
+  AWS_REGION: af-south-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
+  EKS_CLUSTER: andikisha-production
+
+jobs:
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PROD_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy to production
+        run: |
+          TAG=${{ github.event.inputs.image_tag }}
+          REGISTRY=${{ env.ECR_REGISTRY }}/andikisha
+          cd infrastructure/k8s
+          SERVICES=(api-gateway auth-service tenant-service employee-service \
+                    payroll-service compliance-service time-attendance-service \
+                    leave-service document-service notification-service \
+                    integration-hub-service analytics-service audit-service)
+          IMAGES=""
+          for SERVICE in "${SERVICES[@]}"; do
+            IMAGES="${IMAGES} andikisha/${SERVICE}=${REGISTRY}/${SERVICE}:${TAG}"
+          done
+          kustomize edit set image ${IMAGES}
+          kubectl apply -k .
+
+      - name: Monitor rollout
+        run: |
+          for SVC in api-gateway auth-service payroll-service leave-service; do
+            kubectl rollout status deployment/${SVC} -n andikisha --timeout=10m
+          done

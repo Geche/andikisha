@@ -39,14 +39,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_auth
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5433:5432"
     volumes:
       - pg_auth_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_auth"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_auth"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,14 +58,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_employee
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5434:5432"
     volumes:
       - pg_employee_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_employee"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_employee"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,14 +77,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_tenant
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5435:5432"
     volumes:
       - pg_tenant_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_tenant"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_tenant"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -100,14 +100,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_payroll
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5436:5432"
     volumes:
       - pg_payroll_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_payroll"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_payroll"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -119,14 +119,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_leave
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5437:5432"
     volumes:
       - pg_leave_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_leave"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_leave"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -138,14 +138,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_compliance
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5438:5432"
     volumes:
       - pg_compliance_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_compliance"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_compliance"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -157,14 +157,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_time
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5439:5432"
     volumes:
       - pg_time_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_time"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_time"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -180,14 +180,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_document
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5440:5432"
     volumes:
       - pg_document_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_document"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_document"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -199,14 +199,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_notify
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5441:5432"
     volumes:
       - pg_notify_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_notify"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_notify"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -218,14 +218,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_integration
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5442:5432"
     volumes:
       - pg_integration_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_integration"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_integration"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -241,14 +241,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_analytics
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5443:5432"
     volumes:
       - pg_analytics_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_analytics"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_analytics"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -260,14 +260,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: andikisha_audit
-      POSTGRES_USER: andikisha
-      POSTGRES_PASSWORD: changeme
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
       - "5444:5432"
     volumes:
       - pg_audit_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U andikisha -d andikisha_audit"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_audit"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -285,8 +285,8 @@ services:
       - "5672:5672"    # AMQP
       - "15672:15672"  # Management UI — http://localhost:15672
     environment:
-      RABBITMQ_DEFAULT_USER: andikisha
-      RABBITMQ_DEFAULT_PASS: changeme
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-changeme}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -300,12 +300,13 @@ services:
     image: redis:7-alpine
     container_name: andikisha-redis
     restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5

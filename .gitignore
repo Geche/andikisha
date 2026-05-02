@@ -48,3 +48,6 @@ frontend/**/.env.local
 
 ### Mac OS ###
 .DS_Store
+
+# Local Docker env — never commit real credentials
+infrastructure/docker/.env
