@@ -25,6 +25,16 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-gateway")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // Observability
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
+    // Distributed tracing — Micrometer Brave bridge to Zipkin
+    implementation("io.micrometer:micrometer-tracing-bridge-brave")
+    implementation("io.zipkin.reporter2:zipkin-reporter-brave")
+
+    // Structured JSON logging — Logstash Logback Encoder
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j")
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 

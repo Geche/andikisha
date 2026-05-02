@@ -27,7 +27,6 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
         jdbc.batch_size: 25
   flyway:
     enabled: true
@@ -56,3 +55,13 @@ management:
       show-details: when-authorized
       probes:
         enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"

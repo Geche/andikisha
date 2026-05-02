@@ -47,6 +47,13 @@ dependencies {
     // Observability
     implementation("io.micrometer:micrometer-registry-prometheus")
 
+    // Distributed tracing — Micrometer Brave bridge to Zipkin
+    implementation("io.micrometer:micrometer-tracing-bridge-brave")
+    implementation("io.zipkin.reporter2:zipkin-reporter-brave")
+
+    // Structured JSON logging — Logstash Logback Encoder
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
+
     // Lombok
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
