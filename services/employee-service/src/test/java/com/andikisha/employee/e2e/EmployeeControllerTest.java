@@ -54,7 +54,7 @@ class EmployeeControllerTest {
         // Auth passes; TenantInterceptor rejects missing X-Tenant-ID with 400
         mockMvc.perform(get("/api/v1/employees")
                         .header("X-User-ID", USER_ID)
-                        .header("X-User-Role", "EMPLOYEE"))
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -66,7 +66,7 @@ class EmployeeControllerTest {
         mockMvc.perform(get("/api/v1/employees/{id}", EMPLOYEE_ID)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
-                        .header("X-User-Role", "EMPLOYEE"))
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
@@ -78,7 +78,7 @@ class EmployeeControllerTest {
         mockMvc.perform(get("/api/v1/employees/{id}", EMPLOYEE_ID)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
-                        .header("X-User-Role", "EMPLOYEE"))
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(EMPLOYEE_ID.toString()))
                 .andExpect(jsonPath("$.nationalId").value("12345678"));
@@ -190,6 +190,66 @@ class EmployeeControllerTest {
                         .header("X-User-Role", "EMPLOYEE")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"reason\":\"Resigned\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("GET /api/v1/employees with EMPLOYEE role returns 403")
+    void listEmployees_withEmployeeRole_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/employees")
+                        .header("X-User-ID", "emp-user-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("GET /api/v1/employees with HR_MANAGER role returns 200")
+    void listEmployees_withHrManagerRole_returns200() throws Exception {
+        when(queryService.findAll(any(), any(), any(), any()))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+        mockMvc.perform(get("/api/v1/employees")
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("EMPLOYEE accessing own record returns 200")
+    void getEmployee_employeeAccessingOwnRecord_returns200() throws Exception {
+        String employeeId = "00000000-0000-0000-0000-000000000001";
+        when(queryService.findById(UUID.fromString(employeeId)))
+                .thenReturn(new EmployeeDetailResponse(
+                        UUID.fromString(employeeId), TENANT_ID, "EMP-0001",
+                        "Jane", "Doe",
+                        "12345678", "+254700000001", null,
+                        "A123456789B", "1234567", "9876543",
+                        null, null,
+                        null, null, null, null,
+                        "PERMANENT", "ACTIVE",
+                        java.math.BigDecimal.valueOf(150_000), java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
+                        java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
+                        java.math.BigDecimal.valueOf(150_000), "KES",
+                        java.time.LocalDate.now().minusMonths(1), null, null,
+                        null, null, java.time.LocalDateTime.now()
+                ));
+        mockMvc.perform(get("/api/v1/employees/{id}", employeeId)
+                        .header("X-User-ID", employeeId)
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("EMPLOYEE accessing another employee record returns 403")
+    void getEmployee_employeeAccessingOtherRecord_returns403() throws Exception {
+        String myId    = "00000000-0000-0000-0000-000000000001";
+        String otherId = "00000000-0000-0000-0000-000000000002";
+        mockMvc.perform(get("/api/v1/employees/{id}", otherId)
+                        .header("X-User-ID", myId)
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc"))
                 .andExpect(status().isForbidden());
     }
 

@@ -122,7 +122,7 @@ public class LeaveController {
     }
 
     @GetMapping("/employees/{employeeId}/requests")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER') or #employeeId.toString() == authentication.name")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER') or #employeeId.toString().equals(authentication.name)")
     @Operation(summary = "Get leave requests for a specific employee")
     public Page<LeaveRequestResponse> employeeRequests(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -132,7 +132,7 @@ public class LeaveController {
     }
 
     @GetMapping("/employees/{employeeId}/balances")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER') or #employeeId.toString() == authentication.name")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER') or #employeeId.toString().equals(authentication.name)")
     @Operation(summary = "Get leave balances for an employee")
     public List<LeaveBalanceResponse> balances(
             @RequestHeader("X-Tenant-ID") String tenantId,

@@ -44,6 +44,7 @@ public class EmployeeController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @Operation(summary = "List employees with filtering and pagination")
     public Page<EmployeeSummaryResponse> list(
             @RequestParam(required = false) String departmentId,
@@ -54,6 +55,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR') or #id.toString().equals(authentication.name)")
     @Operation(summary = "Get employee by ID")
     public EmployeeDetailResponse getById(@PathVariable UUID id) {
         return queryService.findById(id);

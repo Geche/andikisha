@@ -456,6 +456,22 @@ class LeaveControllerTest {
                 .andExpect(jsonPath("$[0].leaveType").value("ANNUAL"));
     }
 
+    @Test
+    @org.junit.jupiter.api.DisplayName("EMPLOYEE can access their own leave balance")
+    void getLeaveBalance_employeeAccessingOwnBalance_returns200() throws Exception {
+        String employeeId = "00000000-0000-0000-0000-000000000001";
+        when(balanceService.getBalances(any(UUID.class), anyInt()))
+                .thenReturn(List.of(new LeaveBalanceResponse(
+                        UUID.fromString(employeeId), "ANNUAL", 2026,
+                        BigDecimal.valueOf(21), BigDecimal.ZERO, BigDecimal.ZERO,
+                        BigDecimal.valueOf(21), false)));
+        mockMvc.perform(get("/api/v1/leave/employees/{employeeId}/balances", employeeId)
+                        .header("X-User-ID", employeeId)
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isOk());
+    }
+
     // ------------------------------------------------------------------
     // GET /api/v1/leave/policies
     // ------------------------------------------------------------------

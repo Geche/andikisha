@@ -2,14 +2,17 @@ package com.andikisha.leave.unit;
 
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.leave.domain.model.LeaveBalance;
+import com.andikisha.leave.domain.model.LeavePolicy;
 import com.andikisha.leave.domain.model.LeaveType;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LeaveBalanceDomainTest {
@@ -133,5 +136,32 @@ class LeaveBalanceDomainTest {
         assertThat(balance.isFrozen()).isFalse();
         balance.freeze();
         assertThat(balance.isFrozen()).isTrue();
+    }
+
+    // ------------------------------------------------------------------
+    // LeavePolicy.validateMinimumDays
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("ANNUAL leave with fewer than 21 days throws exception")
+    void createLeavePolicy_annualWithTooFewDays_throwsException() {
+        assertThatThrownBy(() -> LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 15, 0, true, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ANNUAL leave must provide at least 21 days");
+    }
+
+    @Test
+    @DisplayName("MATERNITY leave with fewer than 90 days throws exception")
+    void createLeavePolicy_maternityWithTooFewDays_throwsException() {
+        assertThatThrownBy(() -> LeavePolicy.create(TENANT_ID, LeaveType.MATERNITY, 60, 0, true, false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("MATERNITY leave must provide at least 90 days");
+    }
+
+    @Test
+    @DisplayName("ANNUAL leave with exactly 21 days is valid")
+    void createLeavePolicy_annualWith21Days_valid() {
+        assertThatNoException().isThrownBy(() ->
+                LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 21, 0, true, false));
     }
 }

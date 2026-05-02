@@ -5,8 +5,10 @@ import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.document.application.dto.response.DocumentResponse;
 import com.andikisha.document.application.service.DocumentService;
+import com.andikisha.document.infrastructure.config.SecurityConfig;
 import com.andikisha.document.infrastructure.config.WebMvcConfig;
 import com.andikisha.document.presentation.controller.DocumentController;
+import com.andikisha.document.presentation.filter.TrustedHeaderAuthFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,7 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(DocumentController.class)
-@Import({GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({GlobalExceptionHandler.class, WebMvcConfig.class,
+        SecurityConfig.class, TrustedHeaderAuthFilter.class})
 class DocumentControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -48,7 +51,9 @@ class DocumentControllerTest {
 
     @Test
     void listAll_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/documents"))
+        mockMvc.perform(get("/api/v1/documents")
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -58,6 +63,8 @@ class DocumentControllerTest {
                 .thenReturn(new PageImpl<>(List.of(stubResponse()), PageRequest.of(0, 25), 1));
 
         mockMvc.perform(get("/api/v1/documents")
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -69,7 +76,9 @@ class DocumentControllerTest {
 
     @Test
     void getById_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/documents/{id}", DOC_ID))
+        mockMvc.perform(get("/api/v1/documents/{id}", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -79,6 +88,8 @@ class DocumentControllerTest {
         when(documentService.getById(DOC_ID)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/documents/{id}", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.documentType").value("PAYSLIP"));
@@ -90,6 +101,8 @@ class DocumentControllerTest {
                 .thenThrow(new ResourceNotFoundException("Document", DOC_ID));
 
         mockMvc.perform(get("/api/v1/documents/{id}", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("NOT_FOUND"));
@@ -101,7 +114,9 @@ class DocumentControllerTest {
 
     @Test
     void download_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID))
+        mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -113,6 +128,8 @@ class DocumentControllerTest {
         when(documentService.download(DOC_ID)).thenReturn(result);
 
         mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
@@ -127,6 +144,8 @@ class DocumentControllerTest {
                 .thenThrow(new ResourceNotFoundException("Document", DOC_ID));
 
         mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isNotFound());
     }
@@ -137,7 +156,9 @@ class DocumentControllerTest {
 
     @Test
     void forEmployee_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/documents/employees/{id}", EMPLOYEE_ID))
+        mockMvc.perform(get("/api/v1/documents/employees/{id}", EMPLOYEE_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -147,6 +168,8 @@ class DocumentControllerTest {
                 .thenReturn(new PageImpl<>(List.of(stubResponse()), PageRequest.of(0, 25), 1));
 
         mockMvc.perform(get("/api/v1/documents/employees/{id}", EMPLOYEE_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -163,6 +186,8 @@ class DocumentControllerTest {
                         "Unknown document type: BOGUS"));
 
         mockMvc.perform(get("/api/v1/documents/type/BOGUS")
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("INVALID_DOCUMENT_TYPE"));
@@ -174,6 +199,8 @@ class DocumentControllerTest {
                 .thenReturn(new PageImpl<>(List.of(stubResponse()), PageRequest.of(0, 25), 1));
 
         mockMvc.perform(get("/api/v1/documents/type/PAYSLIP")
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -185,7 +212,9 @@ class DocumentControllerTest {
 
     @Test
     void forPayrollRun_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/documents/payroll-runs/{id}", RUN_ID))
+        mockMvc.perform(get("/api/v1/documents/payroll-runs/{id}", RUN_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -195,9 +224,37 @@ class DocumentControllerTest {
                 .thenReturn(List.of(stubResponse()));
 
         mockMvc.perform(get("/api/v1/documents/payroll-runs/{id}", RUN_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    // -------------------------------------------------------------------------
+    // Security role tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("GET /api/v1/documents with EMPLOYEE role returns 403")
+    void listDocuments_withEmployeeRole_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/documents")
+                        .header("X-User-ID", "emp-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("GET /api/v1/documents with HR_MANAGER role returns 200")
+    void listDocuments_withHrManagerRole_returns200() throws Exception {
+        when(documentService.listAll(any()))
+                .thenReturn(new PageImpl<>(List.of(stubResponse()), PageRequest.of(0, 25), 1));
+        mockMvc.perform(get("/api/v1/documents")
+                        .header("X-User-ID", "hr-1")
+                        .header("X-User-Role", "HR_MANAGER")
+                        .header("X-Tenant-ID", "tenant-abc"))
+                .andExpect(status().isOk());
     }
 
     // -------------------------------------------------------------------------

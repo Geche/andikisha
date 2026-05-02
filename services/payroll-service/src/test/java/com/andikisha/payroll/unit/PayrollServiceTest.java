@@ -38,8 +38,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -85,8 +87,8 @@ class PayrollServiceTest {
 
     @Test
     void initiatePayroll_happyPath_savesAndPublishesEvent() {
-        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusNot(
-                TENANT_ID, PERIOD, PayFrequency.MONTHLY, PayrollStatus.CANCELLED))
+        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusIn(
+                any(), any(), any(), any()))
                 .thenReturn(false);
         when(payrollRunRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         PayrollRunResponse expected = minimalRunResponse();
@@ -102,8 +104,8 @@ class PayrollServiceTest {
 
     @Test
     void initiatePayroll_withNullFrequency_defaultsToMonthly() {
-        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusNot(
-                TENANT_ID, PERIOD, PayFrequency.MONTHLY, PayrollStatus.CANCELLED))
+        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusIn(
+                any(), any(), any(), any()))
                 .thenReturn(false);
         when(payrollRunRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(mapper.toResponse(any(PayrollRun.class))).thenReturn(minimalRunResponse());
@@ -111,14 +113,14 @@ class PayrollServiceTest {
         // payFrequency = null → should default to MONTHLY
         service.initiatePayroll(new RunPayrollRequest(PERIOD, null), "hr-admin");
 
-        verify(payrollRunRepository).existsByTenantIdAndPeriodAndPayFrequencyAndStatusNot(
-                TENANT_ID, PERIOD, PayFrequency.MONTHLY, PayrollStatus.CANCELLED);
+        verify(payrollRunRepository).existsByTenantIdAndPeriodAndPayFrequencyAndStatusIn(
+                eq(TENANT_ID), eq(PERIOD), eq(PayFrequency.MONTHLY), any());
     }
 
     @Test
     void initiatePayroll_whenDuplicatePeriodExists_throwsBusinessRuleException() {
-        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusNot(
-                TENANT_ID, PERIOD, PayFrequency.MONTHLY, PayrollStatus.CANCELLED))
+        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusIn(
+                any(), any(), any(), any()))
                 .thenReturn(true);
 
         assertThatThrownBy(() -> service.initiatePayroll(
@@ -128,6 +130,27 @@ class PayrollServiceTest {
 
         verify(payrollRunRepository, never()).save(any());
         verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void initiatePayroll_sameMonthNewFiscalYear_succeeds() {
+        // Only ACTIVE statuses block — COMPLETED from last year does not.
+        // The repository, queried with the active-status whitelist, returns false
+        // because no active run exists for the new period.
+        when(payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusIn(
+                any(), any(), any(), any()))
+                .thenReturn(false);
+        when(payrollRunRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(mapper.toResponse(any(PayrollRun.class))).thenReturn(minimalRunResponse());
+
+        // Should not throw — same calendar month, new fiscal year
+        assertThatNoException().isThrownBy(() ->
+                service.initiatePayroll(
+                        new RunPayrollRequest("2026-01", "MONTHLY"),
+                        "hr-admin"));
+
+        verify(payrollRunRepository).save(any(PayrollRun.class));
+        verify(eventPublisher).publishPayrollInitiated(any(PayrollRun.class));
     }
 
     // -------------------------------------------------------------------------

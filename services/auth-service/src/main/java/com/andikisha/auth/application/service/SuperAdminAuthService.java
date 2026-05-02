@@ -9,6 +9,7 @@ import com.andikisha.auth.domain.model.Role;
 import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
@@ -70,6 +71,7 @@ public class SuperAdminAuthService {
                 admin.getCreatedAt());
     }
 
+    @Transactional
     public SuperAdminTokenResponse login(SuperAdminLoginRequest request) {
         User admin = userRepository
                 .findByEmailAndTenantIdAndRole(
@@ -78,9 +80,20 @@ public class SuperAdminAuthService {
                 .orElseThrow(() -> new BusinessRuleException("INVALID_CREDENTIALS",
                         "Invalid credentials"));
 
+        admin.clearLockIfExpired();
+        if (admin.isLocked()) {
+            throw new AccountLockedException(
+                    "Super admin account is locked. Contact the system operator.");
+        }
+
         if (!passwordEncoder.matches(request.password(), admin.getPasswordHash())) {
+            admin.recordFailedLogin();
+            userRepository.save(admin);
             throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
         }
+
+        admin.recordSuccessfulLogin();
+        userRepository.save(admin);
 
         String accessToken = jwtTokenProvider.generateSuperAdminToken(
                 admin.getId().toString(), SUPER_ADMIN_TOKEN_TTL_MS);

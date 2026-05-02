@@ -80,19 +80,27 @@ public class PayrollService {
     public PayrollRunResponse initiatePayroll(RunPayrollRequest request, String initiatedBy) {
         String tenantId = TenantContext.requireTenantId();
 
-        if (payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusNot(
-                tenantId, request.period(),
-                request.payFrequency() != null
-                        ? PayFrequency.valueOf(request.payFrequency().toUpperCase())
-                        : PayFrequency.MONTHLY,
-                PayrollStatus.CANCELLED)) {
-            throw new BusinessRuleException(
-                    "DUPLICATE_PAYROLL", "A payroll run already exists for period " + request.period());
-        }
-
         PayFrequency frequency = request.payFrequency() != null
                 ? PayFrequency.valueOf(request.payFrequency().toUpperCase())
                 : PayFrequency.MONTHLY;
+
+        // Only ACTIVE statuses block a new run for the same period+frequency.
+        // COMPLETED / FAILED / CANCELLED runs from prior fiscal years (same calendar month
+        // string) must not block a fresh run.
+        List<PayrollStatus> activeStatuses = List.of(
+                PayrollStatus.DRAFT,
+                PayrollStatus.CALCULATING,
+                PayrollStatus.CALCULATED,
+                PayrollStatus.APPROVED,
+                PayrollStatus.PROCESSING
+        );
+        if (payrollRunRepository.existsByTenantIdAndPeriodAndPayFrequencyAndStatusIn(
+                tenantId, request.period(), frequency, activeStatuses)) {
+            throw new BusinessRuleException(
+                    "DUPLICATE_PAYROLL",
+                    "A payroll run already exists for period " + request.period()
+                            + " (active run already exists)");
+        }
 
         PayrollRun run = PayrollRun.create(tenantId, request.period(), frequency, initiatedBy);
         run = payrollRunRepository.save(run);

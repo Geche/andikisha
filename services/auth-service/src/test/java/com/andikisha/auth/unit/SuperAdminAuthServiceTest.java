@@ -10,6 +10,7 @@ import com.andikisha.auth.domain.model.Role;
 import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -154,6 +156,29 @@ class SuperAdminAuthServiceTest {
                 service.login(new SuperAdminLoginRequest("nobody@x.com", STRONG_PASSWORD)))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Invalid credentials");
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("SuperAdmin account locks after 5 failed login attempts")
+    void login_fiveFailedAttempts_accountLocked() {
+        User superAdmin = buildSuperAdmin();
+        when(userRepository.findByEmailAndTenantIdAndRole(EMAIL, SYSTEM, Role.SUPER_ADMIN))
+                .thenReturn(Optional.of(superAdmin));
+        when(passwordEncoder.matches(any(), any())).thenReturn(false);
+
+        // 5 failed attempts — mutates state on the real User object
+        for (int i = 0; i < 5; i++) {
+            assertThatThrownBy(() -> service.login(
+                    new SuperAdminLoginRequest(EMAIL, "wrongpassword")))
+                    .isInstanceOf(BusinessRuleException.class);
+        }
+
+        // 6th attempt — lock check fires before password check, so this stub is lenient
+        lenient().when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        assertThatThrownBy(() -> service.login(
+                new SuperAdminLoginRequest(EMAIL, "correctpassword")))
+                .isInstanceOf(AccountLockedException.class)
+                .hasMessageContaining("locked");
     }
 
     // ── impersonate ───────────────────────────────────────────────────────────

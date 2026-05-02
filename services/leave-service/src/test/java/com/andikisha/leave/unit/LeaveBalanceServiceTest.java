@@ -65,10 +65,10 @@ class LeaveBalanceServiceTest {
 
     @Test
     void initializeForNewEmployee_proRatesDaysFromCurrentMonth() {
-        // Policy: 12 days/year → 1 day/month. If called in January, employee gets 12 days.
-        // If called in December, employee gets 1 day (only December remaining).
-        // This test verifies the saved balance has accrued > 0 and <= daysPerYear.
-        LeavePolicy annual = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 12, 0, true, false);
+        // Policy: 24 days/year → 2 days/month (clean arithmetic for pro-rating test).
+        // Verifies the saved balance has accrued > 0 and <= daysPerYear.
+        // 24 days meets the Kenyan Employment Act 21-day minimum for ANNUAL leave.
+        LeavePolicy annual = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 24, 0, true, false);
 
         when(policyRepository.findByTenantIdAndActiveTrue(TENANT_ID))
                 .thenReturn(List.of(annual));
@@ -80,7 +80,7 @@ class LeaveBalanceServiceTest {
 
         BigDecimal accrued = captor.getValue().getAccrued();
         assertThat(accrued).isGreaterThan(BigDecimal.ZERO);
-        assertThat(accrued).isLessThanOrEqualTo(BigDecimal.valueOf(12));
+        assertThat(accrued).isLessThanOrEqualTo(BigDecimal.valueOf(24));
     }
 
     @Test

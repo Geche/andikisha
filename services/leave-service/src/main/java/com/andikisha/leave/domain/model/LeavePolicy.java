@@ -46,6 +46,7 @@ public class LeavePolicy extends BaseEntity {
                                      int daysPerYear, int carryOverMax,
                                      boolean requiresApproval,
                                      boolean requiresMedicalCert) {
+        validateMinimumDays(leaveType, daysPerYear);
         LeavePolicy policy = new LeavePolicy();
         policy.setTenantId(tenantId);
         policy.leaveType = leaveType;
@@ -54,6 +55,21 @@ public class LeavePolicy extends BaseEntity {
         policy.requiresApproval = requiresApproval;
         policy.requiresMedicalCert = requiresMedicalCert;
         return policy;
+    }
+
+    private static void validateMinimumDays(LeaveType type, int days) {
+        int minimum = switch (type) {
+            case ANNUAL    -> 21;
+            case SICK      -> 30;
+            case MATERNITY -> 90;
+            case PATERNITY -> 14;
+            default        -> 0;
+        };
+        if (days < minimum) {
+            throw new IllegalArgumentException(
+                    type.name() + " leave must provide at least " + minimum +
+                    " days per the Kenyan Employment Act Cap 226. Provided: " + days);
+        }
     }
 
     public void update(int daysPerYear, int carryOverMax,
