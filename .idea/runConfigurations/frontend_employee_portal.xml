@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="frontend: employee-portal" type="js.build_tools.npm" factoryName="npm">
+    <node-interpreter value="project" />
+    <package-json value="$PROJECT_DIR$/frontend/employee-portal/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="dev" />
+    </scripts>
+    <method v="2" />
+  </configuration>
+</component>

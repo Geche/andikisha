@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="time-attendance-service" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="andikisha.services.time-attendance-service.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.andikisha.timeattendance.TimeAttendanceServiceApplication" />
+    <option name="ACTIVE_PROFILES" value="dev" />
+    <envFilePaths>
+      <path value="$PROJECT_DIR$/config/env/time-attendance-service.env" />
+    </envFilePaths>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="compliance-service" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="andikisha.services.compliance-service.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.andikisha.compliance.ComplianceServiceApplication" />
+    <option name="ACTIVE_PROFILES" value="dev" />
+    <envFilePaths>
+      <path value="$PROJECT_DIR$/config/env/compliance-service.env" />
+    </envFilePaths>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

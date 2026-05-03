@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="document-service" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="andikisha.services.document-service.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.andikisha.document.DocumentServiceApplication" />
+    <option name="ACTIVE_PROFILES" value="dev" />
+    <envFilePaths>
+      <path value="$PROJECT_DIR$/config/env/document-service.env" />
+    </envFilePaths>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
