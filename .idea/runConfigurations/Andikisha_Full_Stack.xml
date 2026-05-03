@@ -1,24 +1,18 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="🚀 Andikisha Full Stack" type="CompoundRunConfigurationType">
-    <!-- Backend: Phase 1 (Foundation) — start first, others depend on these -->
+  <configuration default="false" name="Andikisha Full Stack" type="CompoundRunConfigurationType">
     <toRun name="auth-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="tenant-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="employee-service" type="SpringBootApplicationConfigurationType" />
-    <!-- Backend: Phase 2 (Core HR) -->
     <toRun name="compliance-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="payroll-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="leave-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="time-attendance-service" type="SpringBootApplicationConfigurationType" />
-    <!-- Backend: Phase 3 (Supporting) -->
     <toRun name="document-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="notification-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="integration-hub-service" type="SpringBootApplicationConfigurationType" />
-    <!-- Backend: Phase 4 (Intelligence) -->
     <toRun name="analytics-service" type="SpringBootApplicationConfigurationType" />
     <toRun name="audit-service" type="SpringBootApplicationConfigurationType" />
-    <!-- Gateway: starts last, routes to all services -->
     <toRun name="api-gateway" type="SpringBootApplicationConfigurationType" />
-    <!-- Frontend apps -->
     <toRun name="frontend: admin-portal" type="js.build_tools.npm" />
     <toRun name="frontend: employee-portal" type="js.build_tools.npm" />
     <toRun name="frontend: landing" type="js.build_tools.npm" />
