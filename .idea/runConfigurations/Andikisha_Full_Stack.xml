@@ -1,22 +1,22 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Andikisha Full Stack" type="CompoundRunConfigurationType">
-    <toRun name="auth-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="tenant-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="employee-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="compliance-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="payroll-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="leave-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="time-attendance-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="document-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="notification-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="integration-hub-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="analytics-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="audit-service" type="SpringBootApplicationConfigurationType" />
-    <toRun name="api-gateway" type="SpringBootApplicationConfigurationType" />
     <toRun name="frontend: admin-portal" type="js.build_tools.npm" />
     <toRun name="frontend: employee-portal" type="js.build_tools.npm" />
     <toRun name="frontend: landing" type="js.build_tools.npm" />
     <toRun name="frontend: superadmin-portal" type="js.build_tools.npm" />
+    <toRun name="analytics-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="api-gateway" type="SpringBootApplicationConfigurationType" />
+    <toRun name="audit-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="auth-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="compliance-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="document-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="employee-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="integration-hub-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="leave-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="notification-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="payroll-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="tenant-service" type="SpringBootApplicationConfigurationType" />
+    <toRun name="time-attendance-service" type="SpringBootApplicationConfigurationType" />
     <method v="2" />
   </configuration>
 </component>
