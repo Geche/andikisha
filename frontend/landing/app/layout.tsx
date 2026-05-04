@@ -1,22 +1,15 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, DM_Sans, DM_Mono } from "next/font/google";
+import { Montserrat, DM_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollProgress from "@/components/ui/ScrollProgress";
 import WhatsAppFloat from "@/components/ui/WhatsAppFloat";
 
-const bricolage = Bricolage_Grotesque({
+const manrope = Montserrat({
   subsets: ["latin"],
-  variable: "--font-bricolage",
-  weight: ["400", "600", "700", "800"],
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  weight: ["400", "500", "600"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -28,6 +21,9 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://andikishahr.com"
+  ),
   title: {
     default: "AndikishaHR — HR & Payroll for Kenyan Businesses",
     template: "%s | AndikishaHR",
@@ -55,6 +51,14 @@ export const metadata: Metadata = {
     title: "AndikishaHR — HR & Payroll for Kenyan Businesses",
     description:
       "Run payroll in 30 minutes. Full PAYE, NSSF, SHIF, and Housing Levy compliance built in. Trusted by 500+ Kenyan businesses.",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "AndikishaHR — HR & Payroll for Kenyan Businesses",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -81,7 +85,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${dmSans.variable} ${dmMono.variable}`}
+      suppressHydrationWarning
+      className={`${manrope.variable} ${dmMono.variable}`}
     >
       <body className="font-body text-neutral-900 bg-white">
         <ScrollProgress />

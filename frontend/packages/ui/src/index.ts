@@ -1,2 +1,2 @@
 export { cn } from "./utils";
-export { Button } from "./components/button";
+export { Button, LogoFull, Logomark } from "./components";

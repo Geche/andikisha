@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Linkedin, Twitter, Instagram } from "lucide-react";
-import { COMPANY, NAV_LINKS } from "@/lib/data";
+import { COMPANY } from "@/lib/data";
+import NewsletterForm from "@/components/ui/NewsletterForm";
+import { LogoFull } from "@andikisha/ui";
 
 const PRODUCT_LINKS = [
   { label: "Payroll & Compliance", href: "/features#payroll" },
@@ -33,13 +35,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand col */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 bg-brand-900 rounded-[8px] flex items-center justify-center font-display font-extrabold text-lg text-amber">
-                A
-              </div>
-              <span className="font-display font-bold text-xl text-white tracking-tight">
-                Andikisha<span className="text-amber">HR</span>
-              </span>
+            <Link href="/" aria-label="AndikishaHR home" className="mb-4 inline-block">
+              <LogoFull variant="white-mark" className="h-7 w-auto" />
             </Link>
             <p className="text-[14px] text-white/45 leading-relaxed mb-5 max-w-[240px]">
               {COMPANY.description}
@@ -77,7 +74,7 @@ export default function Footer() {
             </div>
 
             {/* Compliance badges */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-2">
               {["KRA Compliant", "GDPR Ready", "Data in East Africa"].map(
                 (badge) => (
                   <span
@@ -89,6 +86,9 @@ export default function Footer() {
                 )
               )}
             </div>
+
+            {/* Newsletter */}
+            <NewsletterForm />
           </div>
 
           {/* Product links */}

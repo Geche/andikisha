@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, X as XIcon, ArrowRight } from "lucide-react";
 import AnimatedSection from "@/components/ui/AnimatedSection";
-import { PRICING_PLANS, FAQ_ITEMS } from "@/lib/data";
+import { PRICING_PLANS } from "@/lib/data";
 import FAQSection from "@/components/home/FAQSection";
 import { cn } from "@/lib/utils";
 

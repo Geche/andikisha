@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { NAV_LINKS } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { LogoFull } from "@andikisha/ui";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -38,13 +39,8 @@ export default function Navbar() {
         <div className="max-w-[1320px] mx-auto px-6 md:px-12">
           <div className="flex items-center justify-between h-[72px]">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 shrink-0">
-              <div className="w-9 h-9 bg-brand-900 rounded-[8px] flex items-center justify-center font-display font-extrabold text-[18px] text-amber">
-                A
-              </div>
-              <span className="font-display font-bold text-[20px] text-brand-900 tracking-tight">
-                Andikisha<span className="text-amber">HR</span>
-              </span>
+            <Link href="/" className="shrink-0" aria-label="AndikishaHR home">
+              <LogoFull variant="default" className="h-7 w-auto" />
             </Link>
 
             {/* Desktop Nav Links */}
@@ -117,13 +113,8 @@ export default function Navbar() {
           )}
         >
           <div className="flex items-center justify-between p-6 border-b border-neutral-100">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-brand-900 rounded-lg flex items-center justify-center font-display font-extrabold text-base text-amber">
-                A
-              </div>
-              <span className="font-display font-bold text-[18px] text-brand-900">
-                Andikisha<span className="text-amber">HR</span>
-              </span>
+            <Link href="/" aria-label="AndikishaHR home">
+              <LogoFull variant="default" className="h-6 w-auto" />
             </Link>
             <button
               onClick={() => setMobileOpen(false)}

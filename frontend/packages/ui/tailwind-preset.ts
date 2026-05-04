@@ -1,13 +1,5 @@
-import type { Config } from "tailwindcss";
-import typography from "@tailwindcss/typography";
-
-const config: Config = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./content/**/*.mdx",
-  ],
+const preset = {
+  content: [] as string[],
   theme: {
     extend: {
       colors: {
@@ -68,33 +60,9 @@ const config: Config = {
         "hero-dots":
           "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,0.04)'/%3E%3C/svg%3E\")",
       },
-      typography: {
-        DEFAULT: {
-          css: {
-            maxWidth: "none",
-            color: "#4B5563",
-            lineHeight: "1.85",
-            p: { marginBottom: "1.25rem" },
-            h2: {
-              fontFamily: "var(--font-montserrat), sans-serif",
-              fontWeight: "700",
-              color: "#111111",
-            },
-            h3: {
-              fontFamily: "var(--font-montserrat), sans-serif",
-              fontWeight: "600",
-              color: "#111111",
-            },
-            strong: { color: "#111111" },
-            a: { color: "#0b3d2e", textDecoration: "underline" },
-            "ul > li::marker": { color: "#27a870" },
-            "ol > li::marker": { color: "#27a870" },
-          },
-        },
-      },
     },
   },
-  plugins: [typography],
+  plugins: [] as never[],
 };
 
-export default config;
+export default preset;
