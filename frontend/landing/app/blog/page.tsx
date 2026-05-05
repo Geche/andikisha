@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import AnimatedSection from "@/components/ui/AnimatedSection";
+import Container from "@/components/ui/Container";
+import Eyebrow from "@/components/ui/Eyebrow";
 import { getAllPosts } from "@/lib/blog";
 import BlogClient from "./BlogClient";
 
@@ -14,28 +15,24 @@ export default async function BlogPage() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="bg-hero-gradient py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(232,160,32,0.1)_0%,transparent_65%)] pointer-events-none" />
-        <div className="max-w-[1320px] mx-auto px-6 md:px-12 relative z-10">
+      <section className="bg-brand-900 py-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(232,160,32,0.08)_0%,transparent_65%)] pointer-events-none" aria-hidden />
+        <Container className="relative z-10">
           <div className="max-w-[620px]">
-            <AnimatedSection>
-              <p className="section-eyebrow-white">The Blog</p>
-            </AnimatedSection>
-            <AnimatedSection delay={100}>
-              <h1 className="font-display text-[46px] md:text-[56px] font-extrabold text-white mb-5">
-                Kenya HR and payroll, explained plainly.
-              </h1>
-            </AnimatedSection>
-            <AnimatedSection delay={200}>
-              <p className="text-[17px] text-white/70 leading-relaxed">
-                Compliance updates, payroll guides, and practical HR advice
-                written for people actually running Kenyan businesses — not
-                consultants billing by the hour.
-              </p>
-            </AnimatedSection>
+            <Eyebrow light className="mb-5">The Blog</Eyebrow>
+            <h1
+              className="font-display font-bold text-white mb-5"
+              style={{ fontSize: "clamp(2.5rem, 5vw, 3.75rem)", lineHeight: "1.08", letterSpacing: "-0.02em" }}
+            >
+              Kenya HR and payroll, explained plainly.
+            </h1>
+            <p className="text-[17px] text-brand-100/70 leading-relaxed max-w-[500px]">
+              Compliance updates, payroll guides, and practical HR advice written
+              for people actually running Kenyan businesses — not consultants
+              billing by the hour.
+            </p>
           </div>
-        </div>
+        </Container>
       </section>
 
       <BlogClient posts={posts} />

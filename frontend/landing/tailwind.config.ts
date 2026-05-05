@@ -29,63 +29,59 @@ const config: Config = {
           DEFAULT: "#ffffff",
           alt: "#f8f7f4",
         },
-        "near-black": "#02110c",
-        whatsapp: "#25d366",
+        ink: {
+          900: "#02110c",
+          700: "#374151",
+          600: "#4b5563",
+          400: "#9ca3af",
+          200: "#e5e7eb",
+          100: "#f3f4f6",
+        },
         error: "#ef4444",
+        info: "#60a5fa",
       },
       fontFamily: {
         display: ["var(--font-montserrat)", "sans-serif"],
         body: ["var(--font-montserrat)", "sans-serif"],
         mono: ["var(--font-dm-mono)", "monospace"],
       },
+      fontSize: {
+        "h1-display": ["clamp(3.5rem,6.5vw,5.5rem)", { lineHeight: "0.98", letterSpacing: "-0.02em" }],
+        "h2-display": ["clamp(2.25rem,4vw,3.5rem)", { lineHeight: "1.05", letterSpacing: "-0.015em" }],
+      },
       animation: {
         float: "float 4s ease-in-out infinite",
         "pulse-dot": "pulseDot 2s ease-in-out infinite",
         "fade-up": "fadeUp 0.6s ease forwards",
-        "slide-in-right": "slideInRight 0.5s ease forwards",
       },
       keyframes: {
         float: {
           "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-10px)" },
+          "50%": { transform: "translateY(-8px)" },
         },
         pulseDot: {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.6", transform: "scale(1.3)" },
         },
         fadeUp: {
-          from: { opacity: "0", transform: "translateY(24px)" },
+          from: { opacity: "0", transform: "translateY(20px)" },
           to: { opacity: "1", transform: "translateY(0)" },
-        },
-        slideInRight: {
-          from: { opacity: "0", transform: "translateX(20px)" },
-          to: { opacity: "1", transform: "translateX(0)" },
         },
       },
       backgroundImage: {
         "hero-gradient":
           "linear-gradient(135deg, #071e13 0%, #0b3d2e 45%, #0f5040 100%)",
-        "hero-dots":
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='1' fill='rgba(255,255,255,0.04)'/%3E%3C/svg%3E\")",
       },
       typography: {
         DEFAULT: {
           css: {
             maxWidth: "none",
-            color: "#4B5563",
+            color: "#4b5563",
             lineHeight: "1.85",
             p: { marginBottom: "1.25rem" },
-            h2: {
-              fontFamily: "var(--font-montserrat), sans-serif",
-              fontWeight: "700",
-              color: "#111111",
-            },
-            h3: {
-              fontFamily: "var(--font-montserrat), sans-serif",
-              fontWeight: "600",
-              color: "#111111",
-            },
-            strong: { color: "#111111" },
+            h2: { fontFamily: "var(--font-montserrat), sans-serif", fontWeight: "700", color: "#02110c" },
+            h3: { fontFamily: "var(--font-montserrat), sans-serif", fontWeight: "600", color: "#02110c" },
+            strong: { color: "#02110c" },
             a: { color: "#0b3d2e", textDecoration: "underline" },
             "ul > li::marker": { color: "#27a870" },
             "ol > li::marker": { color: "#27a870" },

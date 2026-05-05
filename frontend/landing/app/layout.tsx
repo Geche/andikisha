@@ -4,9 +4,8 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollProgress from "@/components/ui/ScrollProgress";
-import WhatsAppFloat from "@/components/ui/WhatsAppFloat";
 
-const manrope = Montserrat({
+const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
   weight: ["400", "500", "600", "700", "800"],
@@ -25,22 +24,12 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://andikishahr.com"
   ),
   title: {
-    default: "AndikishaHR — HR & Payroll for Kenyan Businesses",
+    default: "AndikishaHR — HR and payroll, calculated correctly",
     template: "%s | AndikishaHR",
   },
   description:
-    "AndikishaHR automates PAYE, NSSF, SHIF, Housing Levy, and KRA filings for Kenyan SMEs. Run payroll in 30 minutes. Stay compliant. Every month.",
-  keywords: [
-    "HR software Kenya",
-    "Payroll Kenya",
-    "PAYE Kenya",
-    "KRA compliance",
-    "NSSF Kenya",
-    "SHIF Kenya",
-    "HR management Africa",
-    "payroll automation",
-    "Kenyan SME HR",
-  ],
+    "Statutory deductions to the cent. Payslips on the phones your team already uses. Salary disbursement on M-Pesa. Built for modern African businesses.",
+  keywords: ["HR software Kenya", "Payroll Kenya", "PAYE", "KRA compliance", "NSSF", "SHIF", "M-Pesa payroll"],
   authors: [{ name: "AndikishaHR" }],
   creator: "AndikishaHR",
   openGraph: {
@@ -48,52 +37,62 @@ export const metadata: Metadata = {
     locale: "en_KE",
     url: "https://andikishahr.com",
     siteName: "AndikishaHR",
-    title: "AndikishaHR — HR & Payroll for Kenyan Businesses",
+    title: "AndikishaHR — HR and payroll, calculated correctly",
     description:
-      "Run payroll in 30 minutes. Full PAYE, NSSF, SHIF, and Housing Levy compliance built in. Trusted by 500+ Kenyan businesses.",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "AndikishaHR — HR & Payroll for Kenyan Businesses",
-      },
-    ],
+      "Statutory deductions to the cent. Payslips on the phones your team already uses. Salary disbursement on M-Pesa.",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "AndikishaHR" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AndikishaHR — HR & Payroll for Kenyan Businesses",
-    description:
-      "Run payroll in 30 minutes. Full Kenya statutory compliance built in.",
+    title: "AndikishaHR — HR and payroll, calculated correctly",
+    description: "Statutory deductions to the cent. Built for modern African businesses.",
     creator: "@andikishahr",
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-  },
+  robots: { index: true, follow: true },
+  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "AndikishaHR",
+  url: "https://andikishahr.com",
+  logo: "https://andikishahr.com/logomark.svg",
+  description:
+    "HR and payroll software built for modern African businesses. Statutory compliance, M-Pesa disbursement, and employee self-service.",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Westlands Business Park",
+    addressLocality: "Nairobi",
+    addressCountry: "KE",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: "hello@andikishahr.com",
+  },
+  sameAs: [
+    "https://twitter.com/andikishahr",
+    "https://linkedin.com/company/andikishahr",
+  ],
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${manrope.variable} ${dmMono.variable}`}
+      className={`${montserrat.variable} ${dmMono.variable}`}
     >
-      <body className="font-body text-neutral-900 bg-white">
+      <body className="font-body text-ink-900 bg-surface antialiased overflow-x-hidden">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <ScrollProgress />
         <Navbar />
         <main>{children}</main>
         <Footer />
-        <WhatsAppFloat />
       </body>
     </html>
   );

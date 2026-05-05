@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { Linkedin, Twitter, Instagram } from "lucide-react";
-import { COMPANY } from "@/lib/data";
-import NewsletterForm from "@/components/ui/NewsletterForm";
 import { LogoFull } from "@andikisha/ui";
+import NewsletterForm from "@/components/ui/NewsletterForm";
 
 const PRODUCT_LINKS = [
   { label: "Payroll & Compliance", href: "/features#payroll" },
@@ -16,7 +14,6 @@ const COMPANY_LINKS = [
   { label: "About Us", href: "/about" },
   { label: "Blog", href: "/blog" },
   { label: "Careers", href: "/about#careers" },
-  { label: "Partners", href: "/about#partners" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -29,80 +26,42 @@ const LEGAL_LINKS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#060f09] text-white/60">
-      <div className="max-w-[1320px] mx-auto px-6 md:px-12 pt-16 pb-8">
-        {/* Grid */}
+    <footer className="bg-brand-950 text-white/60">
+      <div className="mx-auto max-w-[1320px] px-6 md:px-12 pt-16 pb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          {/* Brand col */}
+          {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" aria-label="AndikishaHR home" className="mb-4 inline-block">
               <LogoFull variant="white-mark" className="h-7 w-auto" />
             </Link>
-            <p className="text-[14px] text-white/45 leading-relaxed mb-5 max-w-[240px]">
-              {COMPANY.description}
+            <p className="text-[14px] text-white/45 leading-relaxed mb-1 mt-4 max-w-[240px]">
+              HR and payroll built for modern African businesses.
             </p>
-
-            {/* Social links */}
-            <div className="flex gap-3 mb-6">
-              <a
-                href={COMPANY.social.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                className="w-9 h-9 bg-white/[0.07] rounded-lg flex items-center justify-center text-white/60 hover:bg-white/[0.12] hover:text-white transition-all duration-200"
-              >
-                <Linkedin size={16} />
-              </a>
-              <a
-                href={COMPANY.social.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Twitter / X"
-                className="w-9 h-9 bg-white/[0.07] rounded-lg flex items-center justify-center text-white/60 hover:bg-white/[0.12] hover:text-white transition-all duration-200"
-              >
-                <Twitter size={16} />
-              </a>
-              <a
-                href={COMPANY.social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="w-9 h-9 bg-white/[0.07] rounded-lg flex items-center justify-center text-white/60 hover:bg-white/[0.12] hover:text-white transition-all duration-200"
-              >
-                <Instagram size={16} />
-              </a>
-            </div>
-
-            {/* Compliance badges */}
+            <p className="text-[13px] text-white/30 leading-relaxed mb-5 max-w-[240px]">
+              Westlands Business Park<br />
+              Nairobi, Kenya<br />
+              hello@andikishahr.com
+            </p>
             <div className="flex flex-wrap gap-2 mb-2">
-              {["KRA Compliant", "GDPR Ready", "Data in East Africa"].map(
-                (badge) => (
-                  <span
-                    key={badge}
-                    className="text-[11px] font-semibold px-2.5 py-1 rounded border border-white/10 text-white/55"
-                  >
-                    {badge}
-                  </span>
-                )
-              )}
+              {["KRA Compliant", "KDPA Registered", "Data in East Africa"].map((badge) => (
+                <span
+                  key={badge}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded border border-white/10 text-white/45"
+                >
+                  {badge}
+                </span>
+              ))}
             </div>
-
-            {/* Newsletter */}
             <NewsletterForm />
           </div>
 
-          {/* Product links */}
+          {/* Product */}
           <div>
-            <div className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90 font-display mb-4">
-              Product
-            </div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/80 mb-4">Product</p>
             <ul className="flex flex-col gap-3">
               {PRODUCT_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-[14px] text-white/45 hover:text-white/85 transition-colors duration-200"
-                  >
+                  <Link href={link.href} className="text-[14px] text-white/45 hover:text-white/80 transition-colors duration-200">
                     {link.label}
                   </Link>
                 </li>
@@ -110,18 +69,13 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Company links */}
+          {/* Company */}
           <div>
-            <div className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90 font-display mb-4">
-              Company
-            </div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/80 mb-4">Company</p>
             <ul className="flex flex-col gap-3">
               {COMPANY_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-[14px] text-white/45 hover:text-white/85 transition-colors duration-200"
-                  >
+                  <Link href={link.href} className="text-[14px] text-white/45 hover:text-white/80 transition-colors duration-200">
                     {link.label}
                   </Link>
                 </li>
@@ -129,18 +83,13 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Legal links */}
+          {/* Legal */}
           <div>
-            <div className="text-[13px] font-bold uppercase tracking-[0.08em] text-white/90 font-display mb-4">
-              Legal
-            </div>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-white/80 mb-4">Legal</p>
             <ul className="flex flex-col gap-3">
               {LEGAL_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-[14px] text-white/45 hover:text-white/85 transition-colors duration-200"
-                  >
+                  <Link href={link.href} className="text-[14px] text-white/45 hover:text-white/80 transition-colors duration-200">
                     {link.label}
                   </Link>
                 </li>
@@ -149,15 +98,17 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="border-t border-white/[0.07] pt-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <p className="text-[13px] text-white/35">
-            © {new Date().getFullYear()} AndikishaHR Limited. All rights
-            reserved.
+        <div className="border-t border-white/[0.07] pt-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <p className="text-[13px] text-white/30">
+            © {new Date().getFullYear()} AndikishaHR Limited. All rights reserved.
+            {/* TODO: replace with real KDPA registration number */}
+            <span className="ml-3 text-white/20">KDPA Reg: [PENDING]</span>
           </p>
-          <p className="text-[13px] text-white/55 font-semibold">
-            Built in Kenya for Africa.
-          </p>
+          <div className="flex items-center gap-5">
+            <a href="https://twitter.com/andikishahr" target="_blank" rel="noopener noreferrer" className="text-[13px] text-white/35 hover:text-white/70 transition-colors">Twitter</a>
+            <a href="https://linkedin.com/company/andikishahr" target="_blank" rel="noopener noreferrer" className="text-[13px] text-white/35 hover:text-white/70 transition-colors">LinkedIn</a>
+            <Link href="/contact" className="text-[13px] text-white/35 hover:text-white/70 transition-colors">Contact support</Link>
+          </div>
         </div>
       </div>
     </footer>
