@@ -138,27 +138,37 @@ Faithful implementation of the Untitled UI dashboard template with full Andikish
 
 ## 5. Navigation Structure
 
-### Section grouping (B — approved)
+### Section grouping (final — approved)
 ```
-GENERAL
-  Dashboard
-  Tenants                    ← includes onboarding lifecycle
-  Onboarding
+Dashboard                    ← no section label, floats at top
 
 CUSTOMERS
+  Tenants              [48]  ← includes onboarding lifecycle as tab
   Plans & Licences
   Feature Flags
 
-PLATFORM
+PLATFORM                     ← active Phase 1
   Audit Log
   Platform Config
+                             ← Phase 2 locked, "Soon" badge, no section break
+  System Health        Soon
+  Security             Soon
+  Billing & Revenue    Soon
+  Communications       Soon
+  Support & Ops        Soon
+
+ADVANCED                     ← Phase 2, separate section
+  Data Migration       Soon
+  Backup & DR          Soon
 
 ──────────────── (pinned bottom)
-  Settings                   ← auth sessions, security
+  Settings                   ← auth sessions, JWT rotation
   Support        ● Online
-  Open in browser ↗
   [Account card — name + email + chevron]
 ```
+
+### Phase 2 locked items
+Items greyed out at 45% opacity with a "Soon" pill badge. No "Coming Soon" section label — the badge is self-explanatory. Zero sidebar restructuring required when Phase 2 ships — just remove the `locked` state.
 
 ---
 
