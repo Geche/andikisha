@@ -23,7 +23,12 @@ export async function middleware(request: NextRequest) {
       console.error("[middleware] JWT_SECRET is not set — rejecting request");
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    const secret = new TextEncoder().encode(rawSecret);
+    // Auth service base64-decodes the secret (JwtTokenProvider.decodeSecret).
+    // Mirror that here so both sides use the same key bytes.
+    const secret = Uint8Array.from(
+      atob(rawSecret.replace(/-/g, "+").replace(/_/g, "/")),
+      (c) => c.charCodeAt(0)
+    );
     const { payload } = await jwtVerify(token, secret);
 
     if (payload.role !== "SUPER_ADMIN" || payload.tenantId !== "SYSTEM") {
