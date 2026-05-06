@@ -4,9 +4,9 @@ import { useState } from "react";
 import type { TenantGrowthPoint } from "@/types/dashboard";
 
 const PERIODS = ["24h", "7d", "30d", "3m", "12m"] as const;
-type Period = (typeof PERIODS)[number];
+export type GrowthPeriod = (typeof PERIODS)[number];
 
-const PERIOD_LABELS: Record<Period, string> = {
+const PERIOD_LABELS: Record<GrowthPeriod, string> = {
   "24h": "24 hours",
   "7d": "7 days",
   "30d": "30 days",
@@ -16,11 +16,21 @@ const PERIOD_LABELS: Record<Period, string> = {
 
 interface Props {
   data: TenantGrowthPoint[];
+  onPeriodChange?: (period: GrowthPeriod) => void;
 }
 
-export function TenantGrowthChart({ data }: Props) {
-  const [period, setPeriod] = useState<Period>("12m");
-  const maxActive = Math.max(...data.map((d) => d.activeTenants), 1);
+export function TenantGrowthChart({ data, onPeriodChange }: Props) {
+  const [period, setPeriod] = useState<GrowthPeriod>("12m");
+
+  function selectPeriod(p: GrowthPeriod) {
+    setPeriod(p);
+    onPeriodChange?.(p);
+  }
+
+  const maxVal = data.reduce(
+    (m, d) => Math.max(m, d.activeTenants, d.newSignups),
+    1
+  );
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -37,7 +47,7 @@ export function TenantGrowthChart({ data }: Props) {
         {PERIODS.map((p) => (
           <button
             key={p}
-            onClick={() => setPeriod(p)}
+            onClick={() => selectPeriod(p)}
             className={[
               "text-[13px] font-medium px-4 py-1.5 border-b-2 transition-colors",
               period === p
@@ -52,8 +62,8 @@ export function TenantGrowthChart({ data }: Props) {
       <div className="px-6 py-5">
         <div className="flex items-end gap-0 h-[180px] border-l border-b border-gray-100">
           {data.map((point) => {
-            const activeH = Math.round((point.activeTenants / maxActive) * 160);
-            const newH = Math.round((point.newSignups / maxActive) * 160);
+            const activeH = Math.round((point.activeTenants / maxVal) * 160);
+            const newH = Math.round((point.newSignups / maxVal) * 160);
             return (
               <div key={point.month} className="flex-1 flex flex-col items-center gap-2">
                 <div className="flex items-end gap-1 flex-1">

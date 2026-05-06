@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { TenantSummary, TenantStatus } from "@/types/tenant";
-import { Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsUpDown, Search } from "lucide-react";
 
 const STATUS_STYLES: Record<TenantStatus, string> = {
   ACTIVE:     "bg-[#D1F5E6] text-[#0F5040]",
@@ -32,18 +33,52 @@ const AVATAR_COLORS = [
   "bg-gray-100 text-gray-600",
 ];
 
+type SortKey = "companyName" | "adminEmail" | "createdAt" | "status" | "employeeCount";
+type SortDir = "asc" | "desc";
+
 interface Props {
   tenants: TenantSummary[];
   total: number;
   page: number;
   pageSize: number;
   onPageChange: (p: number) => void;
+  onSort?: (key: SortKey, dir: SortDir) => void;
 }
 
-export function TenantTable({ tenants, total, page, pageSize, onPageChange }: Props) {
+function paginationPages(page: number, totalPages: number): (number | "…")[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i);
+  if (page < 4) return [0, 1, 2, 3, 4, "…", totalPages - 1];
+  if (page > totalPages - 5) return [0, "…", totalPages - 5, totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1];
+  return [0, "…", page - 1, page, page + 1, "…", totalPages - 1];
+}
+
+export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSort }: Props) {
+  const [sortKey, setSortKey] = useState<SortKey>("companyName");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  function handleSort(key: SortKey) {
+    const dir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+    setSortKey(key);
+    setSortDir(dir);
+    onSort?.(key, dir);
+  }
+
   const totalPages = Math.ceil(total / pageSize);
-  const from = page * pageSize + 1;
+  const from = total === 0 ? 0 : page * pageSize + 1;
   const to = Math.min((page + 1) * pageSize, total);
+
+  function SortHeader({ label, colKey }: { label: string; colKey: SortKey }) {
+    const active = sortKey === colKey;
+    return (
+      <button
+        onClick={() => handleSort(colKey)}
+        className={`flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.05em] hover:text-gray-700 transition-colors ${active ? "text-[#0B3D2E]" : "text-gray-500"}`}
+      >
+        {label}
+        <ChevronsUpDown size={11} className={active ? "text-[#0B3D2E]" : "text-gray-300"} />
+      </button>
+    );
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
@@ -54,9 +89,9 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange }: Pr
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-1.5 text-[13px] text-gray-400 w-[200px]">
-            <svg className="w-3.5 h-3.5 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            Search
-            <kbd className="ml-auto text-[10px] bg-gray-100 rounded px-1.5 py-0.5 text-gray-400">⌘K</kbd>
+            <Search size={13} className="opacity-40 flex-shrink-0" />
+            <span className="flex-1">Search</span>
+            <kbd className="text-[10px] bg-gray-100 rounded px-1.5 py-0.5 text-gray-400">⌘K</kbd>
           </div>
           <a
             href="/tenants/new"
@@ -70,11 +105,11 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange }: Pr
         <thead className="bg-[#FAFAFA]">
           <tr>
             <th className="w-11 px-4 h-11 text-left"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></th>
-            <th className="px-4 h-11 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.05em]">Company</th>
-            <th className="px-4 h-11 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.05em]">Admin email</th>
-            <th className="px-4 h-11 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.05em]">Created</th>
-            <th className="px-4 h-11 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.05em]">Status</th>
-            <th className="px-4 h-11 text-left text-[11px] font-bold text-gray-500 uppercase tracking-[0.05em]">Employees</th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Company" colKey="companyName" /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Admin email" colKey="adminEmail" /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Created" colKey="createdAt" /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Status" colKey="status" /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Employees" colKey="employeeCount" /></th>
             <th className="w-20 px-4 h-11" />
           </tr>
         </thead>
@@ -115,35 +150,43 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange }: Pr
       </table>
       <div className="flex items-center justify-between px-6 py-3.5 border-t border-gray-100">
         <p className="text-[13px] text-gray-500">
-          Showing <strong>{from}–{to}</strong> of <strong>{total}</strong> tenants
+          {total === 0
+            ? "No tenants"
+            : <>Showing <strong>{from}–{to}</strong> of <strong>{total}</strong> tenants</>}
         </p>
-        <div className="flex items-center gap-0.5">
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 0}
-            className="flex items-center gap-1 h-9 px-2.5 rounded-lg text-[13.5px] font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft size={14} /> Previous
-          </button>
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => (
+        {totalPages > 1 && (
+          <div className="flex items-center gap-0.5">
             <button
-              key={i}
-              onClick={() => onPageChange(i)}
-              className={`w-9 h-9 rounded-lg text-[13.5px] font-medium transition-colors ${
-                i === page ? "bg-[#0B3D2E] text-white" : "text-gray-600 hover:bg-gray-100"
-              }`}
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 0}
+              className="flex items-center gap-1 h-9 px-2.5 rounded-lg text-[13.5px] font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              {i + 1}
+              <ChevronLeft size={14} /> Previous
             </button>
-          ))}
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={page >= totalPages - 1}
-            className="flex items-center gap-1 h-9 px-2.5 rounded-lg text-[13.5px] font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Next <ChevronRight size={14} />
-          </button>
-        </div>
+            {paginationPages(page, totalPages).map((p, idx) =>
+              p === "…" ? (
+                <span key={`ellipsis-${idx}`} className="w-9 text-center text-gray-400 text-[13px]">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => onPageChange(p as number)}
+                  className={`w-9 h-9 rounded-lg text-[13.5px] font-medium transition-colors ${
+                    p === page ? "bg-[#0B3D2E] text-white" : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  {(p as number) + 1}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="flex items-center gap-1 h-9 px-2.5 rounded-lg text-[13.5px] font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
