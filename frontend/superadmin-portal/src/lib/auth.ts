@@ -16,11 +16,17 @@ export async function login(payload: LoginPayload): Promise<TokenResponse> {
     "/api/v1/superadmin/auth/login",
     payload
   );
-  document.cookie = `superadmin_token=${data.accessToken}; path=/; max-age=${data.expiresIn}; SameSite=Strict`;
+  if (typeof document !== "undefined") {
+    document.cookie = `superadmin_token=${data.accessToken}; path=/; max-age=${data.expiresIn}; SameSite=Strict; Secure`;
+  }
   return data;
 }
 
 export function logout() {
-  document.cookie = "superadmin_token=; path=/; max-age=0";
-  window.location.href = "/login";
+  if (typeof document !== "undefined") {
+    document.cookie = "superadmin_token=; path=/; max-age=0; SameSite=Strict; Secure";
+  }
+  if (typeof window !== "undefined") {
+    window.location.href = "/login";
+  }
 }

@@ -7,23 +7,27 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT from cookie on every request (client-side only)
 apiClient.interceptors.request.use((config) => {
   if (typeof document !== "undefined") {
     const token = document.cookie
       .split("; ")
       .find((row) => row.startsWith("superadmin_token="))
-      ?.split("=")[1];
+      ?.split("=")
+      .slice(1)
+      .join("=");
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Redirect to login on 401
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && typeof window !== "undefined") {
+    if (
+      err.response?.status === 401 &&
+      typeof window !== "undefined" &&
+      !err.config?.url?.includes("/auth/login")
+    ) {
       window.location.href = "/login";
     }
     return Promise.reject(err);
