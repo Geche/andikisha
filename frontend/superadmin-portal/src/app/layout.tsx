@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, DM_Mono } from "next/font/google";
+import { QueryProvider } from "@/components/layout/QueryProvider";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -17,23 +18,16 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "AndikishaHR Super Admin",
-    template: "%s | Super Admin",
-  },
+  title: { default: "AndikishaHR Super Admin", template: "%s | Super Admin" },
   description: "AndikishaHR platform administration portal",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${montserrat.variable} ${dmMono.variable}`}
-    >
-      <body className="font-body bg-surface text-neutral-900 antialiased">
-        {children}
+    <html lang="en" suppressHydrationWarning className={`${montserrat.variable} ${dmMono.variable}`}>
+      <body className="font-body antialiased">
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );
