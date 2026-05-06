@@ -4,8 +4,9 @@ import { LogoFull } from "@andikisha/ui";
 import {
   Home, Building2, CreditCard, Flag, FileSearch, Settings2,
   Activity, ShieldCheck, Briefcase, MessageSquare, Users,
-  FileInput, Database, Settings, LifeBuoy, ExternalLink,
+  FileInput, Database, UserCircle, Settings,
 } from "lucide-react";
+import { LogoutButton } from "./LogoutButton";
 
 interface NavItem {
   label: string;
@@ -98,7 +99,22 @@ function NavItemRow({
   return <Link href={item.href}>{inner}</Link>;
 }
 
-export function Sidebar({ activePath }: { activePath: string }) {
+function UserAvatar({ email }: { email: string }) {
+  const initials = "SA";
+  return (
+    <div className="w-8 h-8 rounded-full bg-[#0B3D2E] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
+      {initials}
+    </div>
+  );
+}
+
+export function Sidebar({
+  activePath,
+  userEmail,
+}: {
+  activePath: string;
+  userEmail: string;
+}) {
   return (
     <aside className="w-[280px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen">
       {/* Logo */}
@@ -126,35 +142,36 @@ export function Sidebar({ activePath }: { activePath: string }) {
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 px-3 py-3 space-y-0.5">
+      {/* Footer actions */}
+      <div className="border-t border-gray-200 px-3 pt-3 pb-0 space-y-0.5">
+        <Link
+          href="/profile"
+          className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
+          <UserCircle size={16} strokeWidth={2} className="text-gray-400" />
+          Profile
+        </Link>
         <Link
           href="/settings"
-          className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           <Settings size={16} strokeWidth={2} className="text-gray-400" />
-          Settings
+          Account settings
         </Link>
-        <div className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 cursor-pointer">
-          <LifeBuoy size={16} strokeWidth={2} className="text-gray-400" />
-          <span className="flex-1">Support</span>
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-[#27A870]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#27A870]" />
-            Online
-          </span>
+        <LogoutButton />
+      </div>
+
+      {/* User card */}
+      <div className="px-3 pb-4 pt-3 border-t border-gray-100 mt-1">
+        <div className="flex items-center gap-2.5">
+          <UserAvatar email={userEmail} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-gray-900 truncate">
+              Super Admin
+            </p>
+            <p className="text-[11.5px] text-gray-400 truncate">{userEmail}</p>
+          </div>
         </div>
-        {process.env.NEXT_PUBLIC_API_URL && (
-          <a
-            href={process.env.NEXT_PUBLIC_API_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50"
-          >
-            <ExternalLink size={16} strokeWidth={2} className="text-gray-400" />
-            <span className="flex-1">Open in browser</span>
-            <ExternalLink size={12} className="text-gray-300" />
-          </a>
-        )}
       </div>
     </aside>
   );

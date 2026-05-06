@@ -37,6 +37,9 @@ export async function middleware(request: NextRequest) {
 
     const response = NextResponse.next();
     response.headers.set("x-pathname", pathname);
+    if (typeof payload.email === "string") {
+      response.headers.set("x-user-email", payload.email);
+    }
     return response;
   } catch {
     return NextResponse.redirect(new URL("/login", request.url));

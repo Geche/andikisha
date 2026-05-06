@@ -11,10 +11,11 @@ export default async function DashboardLayout({
   if (!pathname) {
     console.warn("[DashboardLayout] x-pathname header missing — check middleware matcher config");
   }
+  const userEmail = headersList.get("x-user-email") ?? "superadmin@andikisha.com";
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
-      <Sidebar activePath={pathname ?? "/dashboard"} />
+      <Sidebar activePath={pathname ?? "/dashboard"} userEmail={userEmail} />
       <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
     </div>
   );
