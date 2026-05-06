@@ -7,11 +7,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const headersList = await headers();
-  const pathname = headersList.get("x-pathname") ?? "/dashboard";
+  const pathname = headersList.get("x-pathname");
+  if (!pathname) {
+    console.warn("[DashboardLayout] x-pathname header missing — check middleware matcher config");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
-      <Sidebar activePath={pathname} />
+      <Sidebar activePath={pathname ?? "/dashboard"} />
       <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
     </div>
   );

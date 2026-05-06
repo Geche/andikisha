@@ -25,7 +25,7 @@ export function AlertBanner({ count, onReview }: AlertBannerProps) {
       >
         Review now →
       </button>
-      <button onClick={() => setDismissed(true)} className="text-gray-400 hover:text-gray-600 ml-1">
+      <button onClick={() => setDismissed(true)} aria-label="Dismiss alert" className="text-gray-400 hover:text-gray-600 ml-1">
         <X size={14} />
       </button>
     </div>

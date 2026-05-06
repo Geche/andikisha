@@ -6,7 +6,7 @@ const PUBLIC_PATHS = ["/login"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_PATHS.some((p) => pathname === p)) {
     return NextResponse.next();
   }
 
@@ -18,9 +18,12 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET ?? ""
-    );
+    const rawSecret = process.env.JWT_SECRET;
+    if (!rawSecret) {
+      console.error("[middleware] JWT_SECRET is not set — rejecting request");
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    const secret = new TextEncoder().encode(rawSecret);
     const { payload } = await jwtVerify(token, secret);
 
     if (payload.role !== "SUPER_ADMIN" || payload.tenantId !== "SYSTEM") {
