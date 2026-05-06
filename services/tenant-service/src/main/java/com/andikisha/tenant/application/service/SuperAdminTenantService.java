@@ -4,9 +4,11 @@ import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.tenant.application.dto.request.CreateTenantWithLicenceRequest;
+import com.andikisha.tenant.application.dto.response.DashboardMetricsResponse;
 import com.andikisha.tenant.application.dto.response.LicenceResponse;
 import com.andikisha.tenant.application.dto.response.ProvisionedTenantResponse;
 import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
+import com.andikisha.tenant.application.dto.response.TenantGrowthPointResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
 import com.andikisha.tenant.application.port.AuthServiceClient;
 import com.andikisha.tenant.application.port.TenantEventPublisher;
@@ -24,6 +26,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -198,5 +204,52 @@ public class SuperAdminTenantService {
     @Transactional
     public void publishTenantCreatedEvent(Tenant tenant) {
         tenantEventPublisher.publishTenantCreated(tenant);
+    }
+
+    /**
+     * KPI counts for the SUPER_ADMIN dashboard. All counts are platform-wide
+     * and intentionally bypass per-tenant filtering.
+     * <p>
+     * Note: {@code trialEndsAt} is a {@link LocalDate} (no time component),
+     * so the "expiring in 48 hours" bucket is approximated as
+     * "trial end date is today through today+2 inclusive". The "in 7 days"
+     * bucket is "today through today+7 inclusive".
+     */
+    public DashboardMetricsResponse getDashboardMetrics() {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate in7Days = today.plusDays(7);
+        LocalDate in2Days = today.plusDays(2);
+        LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
+
+        long total = tenantRepository.count();
+        long active = tenantRepository.countByStatus(TenantStatus.ACTIVE);
+        long suspended = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
+        long trialsExpiring7 = tenantRepository.countByStatusAndTrialEndsAtBetween(
+                TenantStatus.TRIAL, today, in7Days);
+        long trialsExpiring48 = tenantRepository.countByStatusAndTrialEndsAtBetween(
+                TenantStatus.TRIAL, today, in2Days);
+        long tenantDelta = tenantRepository.countByCreatedAtAfter(startOfMonth);
+        long activeDelta = tenantRepository.countByStatusAndCreatedAtAfter(
+                TenantStatus.ACTIVE, startOfMonth);
+
+        return new DashboardMetricsResponse(
+                total, active, trialsExpiring7, trialsExpiring48,
+                suspended, tenantDelta, activeDelta);
+    }
+
+    /**
+     * Returns monthly tenant signup counts plus active-tenant counts for the
+     * trailing 365 days, grouped by calendar month. Empty months are omitted —
+     * the caller (frontend) is responsible for filling gaps if a continuous
+     * 12-point series is required.
+     */
+    public List<TenantGrowthPointResponse> getTenantGrowth12Months() {
+        LocalDateTime start = LocalDateTime.now(ZoneOffset.UTC).minus(365, ChronoUnit.DAYS);
+        return tenantRepository.findMonthlyGrowth(start).stream()
+                .map(row -> new TenantGrowthPointResponse(
+                        (String) row[0],
+                        ((Number) row[1]).longValue(),
+                        ((Number) row[2]).longValue()))
+                .toList();
     }
 }

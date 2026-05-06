@@ -22,7 +22,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/api/v1/tenants", "/api/v1/tenants/**")
                 // Plan listing is public (needed during signup before a tenant exists)
                 .excludePathPatterns("/api/v1/plans", "/api/v1/plans/**")
-                // SUPER_ADMIN endpoints operate platform-wide, not per-tenant
-                .excludePathPatterns("/api/v1/super-admin", "/api/v1/super-admin/**");
+                // SUPER_ADMIN endpoints operate platform-wide, not per-tenant.
+                // Both prefixes are excluded: legacy "/super-admin" (hyphenated,
+                // existing controller) and the cross-service "/superadmin" used
+                // by auth-service and the dashboard endpoints.
+                .excludePathPatterns("/api/v1/super-admin", "/api/v1/super-admin/**")
+                .excludePathPatterns("/api/v1/superadmin", "/api/v1/superadmin/**");
     }
 }
