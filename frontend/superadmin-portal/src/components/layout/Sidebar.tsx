@@ -1,3 +1,4 @@
+import type { ElementType } from "react";
 import Link from "next/link";
 import { LogoFull } from "@andikisha/ui";
 import {
@@ -9,7 +10,7 @@ import {
 interface NavItem {
   label: string;
   href?: string;
-  icon: React.ElementType;
+  icon: ElementType;
   badge?: string | number;
   locked?: boolean;
 }
@@ -66,7 +67,7 @@ function NavItemRow({
   const inner = (
     <span
       className={[
-        "flex items-center gap-2.5 w-[248px] h-[38px] px-2.5 rounded-md text-sm font-medium transition-colors",
+        "flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm font-medium transition-colors",
         item.locked
           ? "opacity-45 cursor-default text-gray-400"
           : active
@@ -108,7 +109,7 @@ export function Sidebar({ activePath }: { activePath: string }) {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-3">
         {NAV.map((section, si) => (
-          <div key={si}>
+          <div key={section.label ?? `root-${si}`}>
             {section.label && (
               <p className="text-[10.5px] font-bold text-[#166A50] uppercase tracking-[0.09em] px-2 pt-4 pb-1.5">
                 {section.label}
@@ -129,12 +130,12 @@ export function Sidebar({ activePath }: { activePath: string }) {
       <div className="border-t border-gray-200 px-3 py-3 space-y-0.5">
         <Link
           href="/settings"
-          className="flex items-center gap-2.5 w-[248px] h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900"
         >
           <Settings size={16} strokeWidth={2} className="text-gray-400" />
           Settings
         </Link>
-        <div className="flex items-center gap-2.5 w-[248px] h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 cursor-pointer">
+        <div className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50 cursor-pointer">
           <LifeBuoy size={16} strokeWidth={2} className="text-gray-400" />
           <span className="flex-1">Support</span>
           <span className="flex items-center gap-1 text-[11px] font-semibold text-[#27A870]">
@@ -142,16 +143,18 @@ export function Sidebar({ activePath }: { activePath: string }) {
             Online
           </span>
         </div>
-        <a
-          href={process.env.NEXT_PUBLIC_API_URL ?? "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2.5 w-[248px] h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50"
-        >
-          <ExternalLink size={16} strokeWidth={2} className="text-gray-400" />
-          <span className="flex-1">Open in browser</span>
-          <ExternalLink size={12} className="text-gray-300" />
-        </a>
+        {process.env.NEXT_PUBLIC_API_URL && (
+          <a
+            href={process.env.NEXT_PUBLIC_API_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-gray-50"
+          >
+            <ExternalLink size={16} strokeWidth={2} className="text-gray-400" />
+            <span className="flex-1">Open in browser</span>
+            <ExternalLink size={12} className="text-gray-300" />
+          </a>
+        )}
       </div>
     </aside>
   );
