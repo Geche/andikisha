@@ -124,7 +124,7 @@ class SuperAdminAuthServiceTest {
         when(userRepository.findByEmailAndTenantIdAndRole(EMAIL, SYSTEM, Role.SUPER_ADMIN))
                 .thenReturn(Optional.of(admin));
         when(passwordEncoder.matches(STRONG_PASSWORD, HASHED)).thenReturn(true);
-        when(jwtTokenProvider.generateSuperAdminToken(anyString(), anyLong()))
+        when(jwtTokenProvider.generateSuperAdminToken(anyString(), anyString(), anyLong()))
                 .thenReturn(ACCESS_TOKEN)
                 .thenReturn(REFRESH_TOKEN);
 

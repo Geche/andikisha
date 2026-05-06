@@ -104,7 +104,7 @@ public class SuperAdminAuthService {
         userRepository.save(admin);
 
         String accessToken = jwtTokenProvider.generateSuperAdminToken(
-                admin.getId().toString(), SUPER_ADMIN_TOKEN_TTL_MS);
+                admin.getId().toString(), admin.getEmail(), SUPER_ADMIN_TOKEN_TTL_MS);
         String refreshToken = jwtTokenProvider.generateSuperAdminRefreshToken(
                 admin.getId().toString(), SUPER_ADMIN_REFRESH_TTL_MS);
 

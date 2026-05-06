@@ -26,7 +26,7 @@ apiClient.interceptors.response.use(
     if (
       err.response?.status === 401 &&
       typeof window !== "undefined" &&
-      !err.config?.url?.includes("/auth/login")
+      !err.config?.url?.includes("/super-admin/login")
     ) {
       window.location.href = "/login";
     }

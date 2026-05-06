@@ -108,12 +108,13 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateSuperAdminToken(String userId, long expirationMs) {
+    public String generateSuperAdminToken(String userId, String email, long expirationMs) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId)
                 .claim("tenantId", "SYSTEM")
                 .claim("role", "SUPER_ADMIN")
+                .claim("email", email)
                 .claim("sessionType", "SUPER_ADMIN")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expirationMs)))

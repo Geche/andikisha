@@ -120,6 +120,14 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
           </tr>
         </thead>
         <tbody>
+          {tenants.length === 0 && (
+            <tr>
+              <td colSpan={7} className="px-6 py-12 text-center">
+                <p className="text-[13.5px] font-semibold text-gray-500">No tenants yet</p>
+                <p className="text-[12px] text-gray-400 mt-1">Provision your first tenant to get started.</p>
+              </td>
+            </tr>
+          )}
           {tenants.map((t, i) => (
             <tr key={t.tenantId} className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer group transition-colors">
               <td className="px-4 h-[72px]"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></td>
@@ -130,7 +138,7 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
                   </div>
                   <div>
                     <p className="text-[13.5px] font-semibold text-[#101828]">{t.organisationName}</p>
-                    <p className="text-[11.5px] text-gray-400">{t.adminEmail}</p>
+                    <p className="text-[11.5px] text-gray-400">{t.planName}</p>
                   </div>
                 </div>
               </td>

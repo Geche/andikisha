@@ -1,6 +1,5 @@
 package com.andikisha.tenant.presentation.controller;
 
-import com.andikisha.common.domain.model.LicenceStatus;
 import com.andikisha.tenant.application.dto.request.CreateTenantWithLicenceRequest;
 import com.andikisha.tenant.application.dto.request.RenewLicenceRequest;
 import com.andikisha.tenant.application.dto.request.SuspendTenantRequest;
@@ -14,7 +13,6 @@ import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
 import com.andikisha.tenant.application.service.LicencePlanService;
 import com.andikisha.tenant.application.service.LicenceStateMachineService;
-import com.andikisha.tenant.domain.model.TenantLicence;
 import com.andikisha.tenant.application.service.SuperAdminTenantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +34,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.andikisha.tenant.domain.model.TenantStatus;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,8 +82,14 @@ public class SuperAdminController {
             @RequestParam(required = false) UUID planId,
             @RequestParam(required = false) String search,
             Pageable pageable) {
-        // Filtering by status / planId / search is delegated to the service
-        // when implemented; today the simple list call covers the read use case.
+        if (status != null && !status.isBlank()) {
+            List<TenantStatus> statuses = Arrays.stream(status.split(","))
+                    .map(String::trim)
+                    .map(String::toUpperCase)
+                    .map(TenantStatus::valueOf)
+                    .toList();
+            return superAdminTenantService.filterTenants(statuses, pageable);
+        }
         return superAdminTenantService.listTenants(pageable);
     }
 
