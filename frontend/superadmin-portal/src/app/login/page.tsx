@@ -20,6 +20,7 @@ export default function LoginPage() {
       await login({ email, password });
       router.replace("/dashboard");
     } catch (err: unknown) {
+      console.error("[login error]", err);
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? "Invalid credentials";
@@ -41,11 +42,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            <label htmlFor="email" className="block text-[13px] font-semibold text-gray-700 mb-1.5">
               Email address
             </label>
             <input
+              id="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -54,11 +57,13 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">
+            <label htmlFor="password" className="block text-[13px] font-semibold text-gray-700 mb-1.5">
               Password
             </label>
             <input
+              id="password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}

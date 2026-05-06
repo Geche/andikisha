@@ -17,6 +17,9 @@ export async function login(payload: LoginPayload): Promise<TokenResponse> {
     payload
   );
   if (typeof document !== "undefined") {
+    // NOTE: HttpOnly cannot be set from client JS. This token is readable by scripts.
+    // Mitigation: short-lived JWT (expiresIn from server), SameSite=Strict, Secure flag set.
+    // TODO: Move to a server-side route handler that sets HttpOnly via Set-Cookie header.
     document.cookie = `superadmin_token=${data.accessToken}; path=/; max-age=${data.expiresIn}; SameSite=Strict; Secure`;
   }
   return data;
