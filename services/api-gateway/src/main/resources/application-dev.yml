@@ -1,8 +1,3 @@
-app:
-  jwt:
-    # Dev-only secret — never use in production. Set JWT_SECRET env var for prod.
-    secret: dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1kZXYtb25seS1jaGFuZ2UtaW4tcHJvZA==
-
 spring:
   data:
     redis:
