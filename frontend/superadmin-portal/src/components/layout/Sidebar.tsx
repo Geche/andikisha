@@ -100,10 +100,14 @@ function NavItemRow({
 }
 
 function UserAvatar({ email }: { email: string }) {
-  const initials = "SA";
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[._-]/);
+  const initials = parts.length >= 2
+    ? (parts[0][0] ?? "") + (parts[1][0] ?? "")
+    : local.slice(0, 2);
   return (
-    <div className="w-8 h-8 rounded-full bg-[#0B3D2E] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0">
-      {initials}
+    <div className="w-8 h-8 rounded-full bg-[#0B3D2E] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 uppercase">
+      {initials || "SA"}
     </div>
   );
 }

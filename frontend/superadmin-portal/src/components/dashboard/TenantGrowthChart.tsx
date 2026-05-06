@@ -60,7 +60,12 @@ export function TenantGrowthChart({ data, onPeriodChange }: Props) {
         ))}
       </div>
       <div className="px-6 py-5">
-        <div className="flex items-end gap-0 h-[180px] border-l border-b border-gray-100">
+        {data.length === 0 ? (
+          <div className="flex items-center justify-center h-[180px] border border-dashed border-gray-200 rounded-lg">
+            <p className="text-[13px] text-gray-400">No growth data yet — provision your first tenant to start tracking.</p>
+          </div>
+        ) : null}
+        <div className={`flex items-end gap-0 h-[180px] border-l border-b border-gray-100 ${data.length === 0 ? "hidden" : ""}`}>
           {data.map((point) => {
             const activeH = Math.round((point.activeTenants / maxVal) * 160);
             const newH = Math.round((point.newSignups / maxVal) * 160);

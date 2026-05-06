@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { TenantSummary, TenantStatus } from "@/types/tenant";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsUpDown, Search } from "lucide-react";
 
@@ -49,6 +50,7 @@ interface Props {
   pageSize: number;
   onPageChange: (p: number) => void;
   onSort?: (key: SortKey, dir: SortDir) => void;
+  isLoading?: boolean;
 }
 
 function paginationPages(page: number, totalPages: number): (number | "…")[] {
@@ -58,7 +60,8 @@ function paginationPages(page: number, totalPages: number): (number | "…")[] {
   return [0, "…", page - 1, page, page + 1, "…", totalPages - 1];
 }
 
-export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSort }: Props) {
+export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSort, isLoading }: Props) {
+  const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("organisationName");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -120,7 +123,25 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
           </tr>
         </thead>
         <tbody>
-          {tenants.length === 0 && (
+          {isLoading && Array.from({ length: 5 }).map((_, i) => (
+            <tr key={`skeleton-${i}`} className="border-t border-gray-50">
+              <td className="px-4 h-[72px]"><div className="w-4 h-4 bg-gray-100 rounded animate-pulse" /></td>
+              <td className="px-4 h-[72px]">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 bg-gray-100 rounded w-32 animate-pulse" />
+                    <div className="h-2.5 bg-gray-100 rounded w-20 animate-pulse" />
+                  </div>
+                </div>
+              </td>
+              {[100, 80, 60, 40].map((w) => (
+                <td key={w} className="px-4 h-[72px]"><div className={`h-3 bg-gray-100 rounded w-${w === 100 ? "36" : w === 80 ? "28" : w === 60 ? "16" : "8"} animate-pulse`} /></td>
+              ))}
+              <td className="px-4 h-[72px]" />
+            </tr>
+          ))}
+          {!isLoading && tenants.length === 0 && (
             <tr>
               <td colSpan={7} className="px-6 py-12 text-center">
                 <p className="text-[13.5px] font-semibold text-gray-500">No tenants yet</p>
@@ -129,7 +150,11 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
             </tr>
           )}
           {tenants.map((t, i) => (
-            <tr key={t.tenantId} className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer group transition-colors">
+            <tr
+              key={t.tenantId}
+              onClick={() => router.push(`/tenants/${t.tenantId}`)}
+              className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer group transition-colors"
+            >
               <td className="px-4 h-[72px]"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></td>
               <td className="px-4 h-[72px]">
                 <div className="flex items-center gap-3">

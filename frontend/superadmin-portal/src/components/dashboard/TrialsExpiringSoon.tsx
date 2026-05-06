@@ -18,7 +18,18 @@ interface Props {
 }
 
 export function TrialsExpiringSoon({ tenants }: Props) {
-  if (tenants.length === 0) return null;
+  if (tenants.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-gray-100">
+          <p className="text-[13.5px] font-bold text-[#101828]">Trials Expiring Soon</p>
+        </div>
+        <div className="flex items-center justify-center px-5 py-10 text-center">
+          <p className="text-[12.5px] text-gray-400">No trials expiring in the next 7 days.</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between px-[18px] py-3.5 border-b border-gray-100">
