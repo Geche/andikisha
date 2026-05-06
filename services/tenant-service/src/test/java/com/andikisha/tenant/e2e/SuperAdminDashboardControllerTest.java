@@ -41,7 +41,7 @@ class SuperAdminDashboardControllerTest {
                 .thenReturn(new DashboardMetricsResponse(
                         42L, 30L, 5L, 2L, 4L, 7L, 5L));
 
-        mockMvc.perform(get("/api/v1/superadmin/dashboard/metrics")
+        mockMvc.perform(get("/api/v1/super-admin/dashboard/metrics")
                         .header("X-User-ID", "system")
                         .header("X-User-Role", "SUPER_ADMIN"))
                 .andExpect(status().isOk())
@@ -62,7 +62,7 @@ class SuperAdminDashboardControllerTest {
                         new TenantGrowthPointResponse("May 2026", 5L, 4L)
                 ));
 
-        mockMvc.perform(get("/api/v1/superadmin/dashboard/growth")
+        mockMvc.perform(get("/api/v1/super-admin/dashboard/growth")
                         .header("X-User-ID", "system")
                         .header("X-User-Role", "SUPER_ADMIN"))
                 .andExpect(status().isOk())
@@ -79,19 +79,19 @@ class SuperAdminDashboardControllerTest {
     // the existing TenantControllerTest (listAll_withoutAuth_returns403) confirms 403.
     @Test
     void getMetrics_withoutAuth_returns403() throws Exception {
-        mockMvc.perform(get("/api/v1/superadmin/dashboard/metrics"))
+        mockMvc.perform(get("/api/v1/super-admin/dashboard/metrics"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void getGrowth_withoutAuth_returns403() throws Exception {
-        mockMvc.perform(get("/api/v1/superadmin/dashboard/growth"))
+        mockMvc.perform(get("/api/v1/super-admin/dashboard/growth"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void getMetrics_asNonSuperAdmin_returns403() throws Exception {
-        mockMvc.perform(get("/api/v1/superadmin/dashboard/metrics")
+        mockMvc.perform(get("/api/v1/super-admin/dashboard/metrics")
                         .header("X-User-ID", "user-1")
                         .header("X-User-Role", "TENANT_ADMIN"))
                 .andExpect(status().isForbidden());

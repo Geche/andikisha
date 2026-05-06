@@ -41,14 +41,14 @@ export default function DashboardPage() {
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
     queryKey: ["dashboard-metrics"],
-    queryFn: () => apiClient.get("/api/v1/superadmin/dashboard/metrics").then((r) => r.data),
+    queryFn: () => apiClient.get("/api/v1/super-admin/dashboard/metrics").then((r) => r.data),
   });
 
   const { data: growth, isLoading: growthLoading } = useQuery<TenantGrowthPoint[]>({
     queryKey: ["tenant-growth", growthPeriod],
     queryFn: () =>
       apiClient
-        .get("/api/v1/superadmin/dashboard/growth", { params: { period: growthPeriod } })
+        .get("/api/v1/super-admin/dashboard/growth", { params: { period: growthPeriod } })
         .then((r) => r.data),
   });
 

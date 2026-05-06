@@ -24,7 +24,7 @@ import java.util.List;
  * reconciled in a follow-up cleanup.
  */
 @RestController
-@RequestMapping("/api/v1/superadmin/dashboard")
+@RequestMapping("/api/v1/super-admin/dashboard")
 @PreAuthorize("hasRole('SUPER_ADMIN')")
 @Tag(name = "Super Admin Dashboard", description = "Platform-wide KPI aggregations")
 public class SuperAdminDashboardController {
