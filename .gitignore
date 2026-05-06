@@ -57,3 +57,4 @@ frontend/**/.env.local
 # Local Docker env — never commit real credentials
 infrastructure/docker/.env.env.local
 config/env/.env
+.worktrees/
