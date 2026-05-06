@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -41,8 +42,9 @@ public class SuperAdminDashboardController {
     }
 
     @GetMapping("/growth")
-    @Operation(summary = "Tenant signup and active counts grouped by month for the trailing 12 months")
-    public ResponseEntity<List<TenantGrowthPointResponse>> getGrowth() {
-        return ResponseEntity.ok(superAdminTenantService.getTenantGrowth12Months());
+    @Operation(summary = "Tenant signup and active counts grouped by month for the requested period")
+    public ResponseEntity<List<TenantGrowthPointResponse>> getGrowth(
+            @RequestParam(defaultValue = "12m") String period) {
+        return ResponseEntity.ok(superAdminTenantService.getTenantGrowth(period));
     }
 }

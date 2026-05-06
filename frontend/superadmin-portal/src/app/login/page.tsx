@@ -20,7 +20,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login({ email, password });
+      await login({ email, password, remember });
       router.replace("/dashboard");
     } catch (err: unknown) {
       console.error("[login error]", err);

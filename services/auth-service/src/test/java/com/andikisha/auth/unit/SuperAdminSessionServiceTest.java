@@ -18,6 +18,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +41,7 @@ class SuperAdminSessionServiceTest {
             .expiresAt(Instant.now().plusSeconds(3600))
             .ipAddress("127.0.0.1")
             .build();
-        when(sessionRepository.findByAdminUserIdAndRevokedAtIsNull(adminUserId))
+        when(sessionRepository.findByAdminUserIdAndRevokedAtIsNullAndExpiresAtAfter(eq(adminUserId), any(Instant.class)))
             .thenReturn(List.of(session));
 
         var result = superAdminAuthService.listActiveSessions(adminUserId, sessionId);
@@ -60,7 +62,7 @@ class SuperAdminSessionServiceTest {
 
         superAdminAuthService.revokeSession(id);
 
-        assertThat(session.getRevokedAt()).isNotNull();
+        assertThat(session.isActive()).isFalse();
         verify(sessionRepository).save(session);
     }
 }

@@ -22,6 +22,8 @@ public class SuperAdminSessionController {
     @GetMapping("/sessions")
     public ResponseEntity<List<SuperAdminSessionResponse>> listSessions(Authentication authentication) {
         UUID adminUserId = UUID.fromString(authentication.getName());
+        // currentSessionId is null until the JWT embeds a session UUID — the `current` flag
+        // on each response will always be false until that is wired in the login flow.
         return ResponseEntity.ok(superAdminAuthService.listActiveSessions(adminUserId, null));
     }
 

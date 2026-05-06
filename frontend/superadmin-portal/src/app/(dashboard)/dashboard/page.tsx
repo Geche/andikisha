@@ -44,7 +44,7 @@ export default function DashboardPage() {
     queryFn: () => apiClient.get("/api/v1/superadmin/dashboard/metrics").then((r) => r.data),
   });
 
-  const { data: growth } = useQuery<TenantGrowthPoint[]>({
+  const { data: growth, isLoading: growthLoading } = useQuery<TenantGrowthPoint[]>({
     queryKey: ["tenant-growth", growthPeriod],
     queryFn: () =>
       apiClient
@@ -56,7 +56,7 @@ export default function DashboardPage() {
     queryKey: ["tenants-list", page],
     queryFn: () =>
       apiClient
-        .get("/api/v1/superadmin/tenants", { params: { page, size: 10 } })
+        .get("/api/v1/super-admin/tenants", { params: { page, size: 10 } })
         .then((r) => r.data),
   });
 
@@ -64,7 +64,7 @@ export default function DashboardPage() {
     queryKey: ["expiring-trials"],
     queryFn: () =>
       apiClient
-        .get("/api/v1/superadmin/tenants", { params: { status: "TRIAL", sort: "trialExpiresAt", size: 5 } })
+        .get("/api/v1/super-admin/tenants", { params: { status: "TRIAL", sort: "endDate", size: 5 } })
         .then((r) => r.data.content),
   });
 
@@ -157,9 +157,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Growth chart */}
-        {growth !== undefined && (
+        {growthLoading ? (
+          <div className="bg-white border border-gray-200 rounded-xl h-[320px] animate-pulse" />
+        ) : growth ? (
           <TenantGrowthChart data={growth} onPeriodChange={setGrowthPeriod} />
-        )}
+        ) : null}
 
         {/* Table + trials */}
         <div className="grid grid-cols-3 gap-5">

@@ -282,6 +282,9 @@ importers:
 
   frontend/superadmin-portal:
     dependencies:
+      '@andikisha/ui':
+        specifier: workspace:*
+        version: link:../packages/ui
       '@tanstack/react-query':
         specifier: ^5.62.0
         version: 5.96.0(react@19.2.4)

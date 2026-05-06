@@ -56,7 +56,7 @@ class SuperAdminDashboardControllerTest {
 
     @Test
     void getGrowth_asSuperAdmin_returns200WithJsonArray() throws Exception {
-        when(superAdminTenantService.getTenantGrowth12Months())
+        when(superAdminTenantService.getTenantGrowth(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(List.of(
                         new TenantGrowthPointResponse("Apr 2026", 3L, 2L),
                         new TenantGrowthPointResponse("May 2026", 5L, 4L)

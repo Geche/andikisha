@@ -10,7 +10,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "superadmin_sessions")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -19,6 +18,10 @@ public class SuperAdminSession {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Version
+    @Column(nullable = false)
+    private Integer version;
 
     @Column(name = "admin_user_id", nullable = false)
     private UUID adminUserId;
@@ -41,5 +44,9 @@ public class SuperAdminSession {
 
     public boolean isActive() {
         return revokedAt == null && Instant.now().isBefore(expiresAt);
+    }
+
+    public void revoke() {
+        this.revokedAt = Instant.now();
     }
 }

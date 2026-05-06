@@ -7,9 +7,10 @@ function urgencyClass(daysLeft: number) {
 }
 
 function daysUntil(isoDate: string) {
-  return Math.ceil(
-    (new Date(isoDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
+  // isoDate is "YYYY-MM-DD" from the backend (LocalDate serialized)
+  const expiry = new Date(isoDate + "T00:00:00Z").getTime();
+  const now = Date.now();
+  return Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
 }
 
 interface Props {
@@ -27,15 +28,15 @@ export function TrialsExpiringSoon({ tenants }: Props) {
         </a>
       </div>
       {tenants.map((t) => {
-        const days = t.trialExpiresAt ? daysUntil(t.trialExpiresAt) : null;
+        const days = t.endDate ? daysUntil(t.endDate) : null;
         return (
           <div
-            key={t.id}
+            key={t.tenantId}
             className="flex items-center justify-between px-[18px] py-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
           >
             <div>
-              <p className="text-[13px] font-semibold text-[#101828]">{t.companyName}</p>
-              <p className="text-[11px] text-gray-500">{t.plan} · {t.employeeCount ?? "—"} employees</p>
+              <p className="text-[13px] font-semibold text-[#101828]">{t.organisationName}</p>
+              <p className="text-[11px] text-gray-500">{t.planName} · {t.seatCount ?? "—"} employees</p>
             </div>
             {days !== null && (
               <p className={`text-[11.5px] font-bold ${urgencyClass(days)}`}>

@@ -111,7 +111,7 @@ class AuthControllerTest {
                                 }
                                 """))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("DUPLICATE_RESOURCE"));
+                .andExpect(jsonPath("$.error").value("DUPLICATE"));
     }
 
     // ------------------------------------------------------------------

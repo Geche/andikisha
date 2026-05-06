@@ -14,6 +14,8 @@ public interface TenantLicenceRepository extends JpaRepository<TenantLicence, UU
 
     Optional<TenantLicence> findByTenantIdAndStatusIn(String tenantId, List<LicenceStatus> statuses);
 
+    List<TenantLicence> findByTenantIdInAndStatusIn(List<String> tenantIds, List<LicenceStatus> statuses);
+
     List<TenantLicence> findByStatusIn(List<LicenceStatus> statuses);
 
     List<TenantLicence> findByStatusAndEndDateBefore(LicenceStatus status, LocalDate date);

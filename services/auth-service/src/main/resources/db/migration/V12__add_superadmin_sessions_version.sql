@@ -1,0 +1,1 @@
+ALTER TABLE superadmin_sessions ADD COLUMN version INTEGER NOT NULL DEFAULT 0;

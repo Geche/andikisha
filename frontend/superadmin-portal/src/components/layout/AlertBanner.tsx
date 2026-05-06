@@ -1,7 +1,9 @@
 "use client";
 
 import { AlertCircle, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const DISMISS_KEY = "sa-alert-dismissed";
 
 interface AlertBannerProps {
   count: number;
@@ -10,6 +12,16 @@ interface AlertBannerProps {
 
 export function AlertBanner({ count, onReview }: AlertBannerProps) {
   const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    setDismissed(sessionStorage.getItem(DISMISS_KEY) === "1");
+  }, []);
+
+  function dismiss() {
+    sessionStorage.setItem(DISMISS_KEY, "1");
+    setDismissed(true);
+  }
+
   if (dismissed || count === 0) return null;
 
   return (
@@ -25,7 +37,7 @@ export function AlertBanner({ count, onReview }: AlertBannerProps) {
       >
         Review now →
       </button>
-      <button onClick={() => setDismissed(true)} aria-label="Dismiss alert" className="text-gray-400 hover:text-gray-600 ml-1">
+      <button onClick={dismiss} aria-label="Dismiss alert" className="text-gray-400 hover:text-gray-600 ml-1">
         <X size={14} />
       </button>
     </div>

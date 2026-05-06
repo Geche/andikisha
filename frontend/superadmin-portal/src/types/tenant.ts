@@ -1,15 +1,14 @@
-export type TenantStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "ONBOARDING" | "CANCELLED";
+export type TenantStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "CANCELLED" | "DELETED";
 
 export interface TenantSummary {
-  id: string;
-  companyName: string;
-  slug: string;
-  adminEmail: string;
-  plan: string;
+  tenantId: string;
+  organisationName: string;
   status: TenantStatus;
-  employeeCount: number | null;
+  planName: string;
+  seatCount: number | null;
+  endDate: string | null;
+  adminEmail: string;
   createdAt: string;
-  trialExpiresAt: string | null;
 }
 
 export interface PagedResponse<T> {

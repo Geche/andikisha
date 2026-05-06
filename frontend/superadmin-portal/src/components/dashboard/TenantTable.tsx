@@ -5,11 +5,11 @@ import type { TenantSummary, TenantStatus } from "@/types/tenant";
 import { Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsUpDown, Search } from "lucide-react";
 
 const STATUS_STYLES: Record<TenantStatus, string> = {
-  ACTIVE:     "bg-[#D1F5E6] text-[#0F5040]",
-  TRIAL:      "bg-[#E8F5F0] text-[#166A50] border border-[#D1F5E6]",
-  ONBOARDING: "bg-[#FEF3DC] text-[#C98510]",
-  SUSPENDED:  "bg-[#FEE2E2] text-[#991B1B]",
-  CANCELLED:  "bg-gray-100 text-gray-500",
+  ACTIVE:    "bg-[#D1F5E6] text-[#0F5040]",
+  TRIAL:     "bg-[#E8F5F0] text-[#166A50] border border-[#D1F5E6]",
+  SUSPENDED: "bg-[#FEE2E2] text-[#991B1B]",
+  CANCELLED: "bg-gray-100 text-gray-500",
+  DELETED:   "bg-gray-100 text-gray-400",
 };
 
 function StatusBadge({ status }: { status: TenantStatus }) {
@@ -22,7 +22,13 @@ function StatusBadge({ status }: { status: TenantStatus }) {
 }
 
 function initials(name: string) {
-  return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w?.[0] ?? "")
+    .filter(Boolean)
+    .join("")
+    .toUpperCase() || "?";
 }
 
 const AVATAR_COLORS = [
@@ -33,7 +39,7 @@ const AVATAR_COLORS = [
   "bg-gray-100 text-gray-600",
 ];
 
-type SortKey = "companyName" | "adminEmail" | "createdAt" | "status" | "employeeCount";
+type SortKey = "organisationName" | "adminEmail" | "createdAt" | "status" | "seatCount";
 type SortDir = "asc" | "desc";
 
 interface Props {
@@ -53,7 +59,7 @@ function paginationPages(page: number, totalPages: number): (number | "…")[] {
 }
 
 export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSort }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("companyName");
+  const [sortKey, setSortKey] = useState<SortKey>("organisationName");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   function handleSort(key: SortKey) {
@@ -105,26 +111,26 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
         <thead className="bg-[#FAFAFA]">
           <tr>
             <th className="w-11 px-4 h-11 text-left"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Company" colKey="companyName" /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Company" colKey="organisationName" /></th>
             <th className="px-4 h-11 text-left"><SortHeader label="Admin email" colKey="adminEmail" /></th>
             <th className="px-4 h-11 text-left"><SortHeader label="Created" colKey="createdAt" /></th>
             <th className="px-4 h-11 text-left"><SortHeader label="Status" colKey="status" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Employees" colKey="employeeCount" /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Employees" colKey="seatCount" /></th>
             <th className="w-20 px-4 h-11" />
           </tr>
         </thead>
         <tbody>
           {tenants.map((t, i) => (
-            <tr key={t.id} className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer group transition-colors">
+            <tr key={t.tenantId} className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer group transition-colors">
               <td className="px-4 h-[72px]"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></td>
               <td className="px-4 h-[72px]">
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
-                    {initials(t.companyName)}
+                    {initials(t.organisationName)}
                   </div>
                   <div>
-                    <p className="text-[13.5px] font-semibold text-[#101828]">{t.companyName}</p>
-                    <p className="text-[11.5px] text-gray-400">@{t.slug}</p>
+                    <p className="text-[13.5px] font-semibold text-[#101828]">{t.organisationName}</p>
+                    <p className="text-[11.5px] text-gray-400">{t.adminEmail}</p>
                   </div>
                 </div>
               </td>
@@ -133,7 +139,7 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
                 {new Date(t.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
               </td>
               <td className="px-4 h-[72px]"><StatusBadge status={t.status} /></td>
-              <td className="px-4 h-[72px] text-[13.5px] text-gray-600">{t.employeeCount ?? "—"}</td>
+              <td className="px-4 h-[72px] text-[13.5px] text-gray-600">{t.seatCount ?? "—"}</td>
               <td className="px-4 h-[72px]">
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button aria-label="Delete tenant" className="w-8 h-8 rounded-md flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors">

@@ -29,9 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -141,7 +141,9 @@ public class SuperAdminTenantService {
     }
 
     public Page<TenantSummaryResponse> listTenants(Pageable pageable) {
-        return tenantRepository.findAll(pageable).map(this::toSummary);
+        Page<Tenant> tenantPage = tenantRepository.findAll(pageable);
+        Map<String, LicenceResponse> licences = batchLoadLicences(tenantPage);
+        return tenantPage.map(t -> toSummaryWithLicence(t, licences.get(t.getTenantId())));
     }
 
     public TenantDetailResponse getTenantDetail(UUID tenantId) {
@@ -164,15 +166,19 @@ public class SuperAdminTenantService {
         }
     }
 
-    private TenantSummaryResponse toSummary(Tenant tenant) {
-        LicenceResponse current = safeGetCurrentLicence(tenant.getTenantId());
+    private Map<String, LicenceResponse> batchLoadLicences(Page<Tenant> tenantPage) {
+        List<String> tenantIds = tenantPage.map(Tenant::getTenantId).toList();
+        return licencePlanService.batchGetCurrentLicences(tenantIds);
+    }
+
+    private TenantSummaryResponse toSummaryWithLicence(Tenant tenant, LicenceResponse licence) {
         return new TenantSummaryResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
                 tenant.getStatus().name(),
-                current != null ? current.planName() : tenant.getPlan().getName(),
-                current != null ? current.seatCount() : null,
-                current != null ? current.endDate() : null,
+                licence != null ? licence.planName() : tenant.getPlan().getName(),
+                licence != null ? licence.seatCount() : null,
+                licence != null ? licence.endDate() : null,
                 tenant.getAdminEmail(),
                 tenant.getCreatedAt());
     }
@@ -181,7 +187,9 @@ public class SuperAdminTenantService {
         if (statuses == null || statuses.isEmpty()) {
             return listTenants(pageable);
         }
-        return tenantRepository.findByStatusIn(statuses, pageable).map(this::toSummary);
+        Page<Tenant> tenantPage = tenantRepository.findByStatusIn(statuses, pageable);
+        Map<String, LicenceResponse> licences = batchLoadLicences(tenantPage);
+        return tenantPage.map(t -> toSummaryWithLicence(t, licences.get(t.getTenantId())));
     }
 
     private static final String PASSWORD_CHARSET =
@@ -199,11 +207,6 @@ public class SuperAdminTenantService {
             sb.append(PASSWORD_CHARSET.charAt(SECURE_RANDOM.nextInt(PASSWORD_CHARSET.length())));
         }
         return sb.toString();
-    }
-
-    @Transactional
-    public void publishTenantCreatedEvent(Tenant tenant) {
-        tenantEventPublisher.publishTenantCreated(tenant);
     }
 
     /**
@@ -239,12 +242,23 @@ public class SuperAdminTenantService {
 
     /**
      * Returns monthly tenant signup counts plus active-tenant counts for the
-     * trailing 365 days, grouped by calendar month. Empty months are omitted —
+     * requested period, grouped by calendar month. Empty months are omitted —
      * the caller (frontend) is responsible for filling gaps if a continuous
-     * 12-point series is required.
+     * series is required.
+     * <p>
+     * Note: the underlying query always groups by month, so sub-month periods
+     * ("24h", "7d", "30d") will still return one row per calendar month that
+     * contains any activity in the window.
      */
-    public List<TenantGrowthPointResponse> getTenantGrowth12Months() {
-        LocalDateTime start = LocalDateTime.now(ZoneOffset.UTC).minus(365, ChronoUnit.DAYS);
+    public List<TenantGrowthPointResponse> getTenantGrowth(String period) {
+        long days = switch (period) {
+            case "24h" -> 1;
+            case "7d"  -> 7;
+            case "30d" -> 30;
+            case "3m"  -> 90;
+            default    -> 365; // "12m" or unknown
+        };
+        LocalDateTime start = LocalDateTime.now(ZoneOffset.UTC).minusDays(days);
         return tenantRepository.findMonthlyGrowth(start).stream()
                 .map(row -> new TenantGrowthPointResponse(
                         (String) row[0],

@@ -133,9 +133,8 @@ public class SuperAdminAuthService {
     }
 
     public List<SuperAdminSessionResponse> listActiveSessions(UUID adminUserId, UUID currentSessionId) {
-        return sessionRepository.findByAdminUserIdAndRevokedAtIsNull(adminUserId)
+        return sessionRepository.findByAdminUserIdAndRevokedAtIsNullAndExpiresAtAfter(adminUserId, Instant.now())
             .stream()
-            .filter(SuperAdminSession::isActive)
             .map(s -> new SuperAdminSessionResponse(
                 s.getId(), s.getCreatedAt(), s.getExpiresAt(),
                 s.getIpAddress(), s.getUserAgent(),
@@ -147,8 +146,8 @@ public class SuperAdminAuthService {
     @Transactional
     public void revokeSession(UUID sessionId) {
         SuperAdminSession session = sessionRepository.findById(sessionId)
-            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Session not found: " + sessionId));
-        session.setRevokedAt(Instant.now());
+            .orElseThrow(() -> new ResourceNotFoundException("SuperAdminSession", sessionId));
+        session.revoke();
         sessionRepository.save(session);
     }
 
