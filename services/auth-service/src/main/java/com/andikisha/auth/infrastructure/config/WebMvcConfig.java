@@ -17,7 +17,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // tenantInterceptor() returns the Spring-managed bean via CGLIB proxy
+        // Superadmin paths are SYSTEM-scoped and carry no X-Tenant-ID header
         registry.addInterceptor(tenantInterceptor())
-                .addPathPatterns("/api/**");
+                .addPathPatterns("/api/**")
+                .excludePathPatterns(
+                        "/api/v1/auth/super-admin/**",
+                        "/api/v1/superadmin/**"
+                );
     }
 }

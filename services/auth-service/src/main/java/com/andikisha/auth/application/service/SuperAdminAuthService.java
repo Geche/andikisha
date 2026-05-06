@@ -4,9 +4,12 @@ import com.andikisha.auth.application.dto.request.SuperAdminLoginRequest;
 import com.andikisha.auth.application.dto.request.SuperAdminProvisionRequest;
 import com.andikisha.auth.application.dto.response.ImpersonationResponse;
 import com.andikisha.auth.application.dto.response.SuperAdminProvisionResponse;
+import com.andikisha.auth.application.dto.response.SuperAdminSessionResponse;
 import com.andikisha.auth.application.dto.response.SuperAdminTokenResponse;
 import com.andikisha.auth.domain.model.Role;
+import com.andikisha.auth.domain.model.SuperAdminSession;
 import com.andikisha.auth.domain.model.User;
+import com.andikisha.auth.domain.repository.SuperAdminSessionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
 import com.andikisha.auth.domain.exception.AccountLockedException;
@@ -19,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Service
@@ -36,13 +41,16 @@ public class SuperAdminAuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final SuperAdminSessionRepository sessionRepository;
 
     public SuperAdminAuthService(UserRepository userRepository,
                                  JwtTokenProvider jwtTokenProvider,
-                                 PasswordEncoder passwordEncoder) {
+                                 PasswordEncoder passwordEncoder,
+                                 SuperAdminSessionRepository sessionRepository) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
+        this.sessionRepository = sessionRepository;
     }
 
     @Transactional
@@ -122,5 +130,38 @@ public class SuperAdminAuthService {
                 requestingUserId, targetTenantId, IMPERSONATION_TOKEN_TTL_MS);
 
         return new ImpersonationResponse(token, expiresAt, targetTenantId);
+    }
+
+    public List<SuperAdminSessionResponse> listActiveSessions(UUID adminUserId, UUID currentSessionId) {
+        return sessionRepository.findByAdminUserIdAndRevokedAtIsNull(adminUserId)
+            .stream()
+            .filter(SuperAdminSession::isActive)
+            .map(s -> new SuperAdminSessionResponse(
+                s.getId(), s.getCreatedAt(), s.getExpiresAt(),
+                s.getIpAddress(), s.getUserAgent(),
+                s.getId().equals(currentSessionId)
+            ))
+            .toList();
+    }
+
+    @Transactional
+    public void revokeSession(UUID sessionId) {
+        SuperAdminSession session = sessionRepository.findById(sessionId)
+            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Session not found: " + sessionId));
+        session.setRevokedAt(Instant.now());
+        sessionRepository.save(session);
+    }
+
+    @Transactional
+    public SuperAdminSession createSession(UUID adminUserId, Instant expiresAt,
+                                           String ipAddress, String userAgent) {
+        return sessionRepository.save(
+            SuperAdminSession.builder()
+                .adminUserId(adminUserId)
+                .expiresAt(expiresAt)
+                .ipAddress(ipAddress)
+                .userAgent(userAgent)
+                .build()
+        );
     }
 }

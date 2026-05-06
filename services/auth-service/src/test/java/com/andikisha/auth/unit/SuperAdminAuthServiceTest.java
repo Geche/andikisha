@@ -8,6 +8,7 @@ import com.andikisha.auth.application.dto.response.SuperAdminTokenResponse;
 import com.andikisha.auth.application.service.SuperAdminAuthService;
 import com.andikisha.auth.domain.model.Role;
 import com.andikisha.auth.domain.model.User;
+import com.andikisha.auth.domain.repository.SuperAdminSessionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
 import com.andikisha.auth.domain.exception.AccountLockedException;
@@ -40,6 +41,7 @@ class SuperAdminAuthServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private SuperAdminSessionRepository sessionRepository;
 
     private SuperAdminAuthService service;
 
@@ -53,7 +55,7 @@ class SuperAdminAuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SuperAdminAuthService(userRepository, jwtTokenProvider, passwordEncoder);
+        service = new SuperAdminAuthService(userRepository, jwtTokenProvider, passwordEncoder, sessionRepository);
     }
 
     private User buildSuperAdmin() {
