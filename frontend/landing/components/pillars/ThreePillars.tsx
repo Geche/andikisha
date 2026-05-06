@@ -1,46 +1,85 @@
+import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
 
-const PILLARS = [
+const REASONS = [
   {
-    number: "01",
-    title: "Compliance is a product, not a setting.",
-    body: "The compliance engine is its own first-class part of the platform, not a configuration page a developer set up once. The team monitors the KRA legislative cycle, NSSF tribunal decisions, and Cabinet Secretary notices. When rates change, we ship the update on the day it takes effect — not when someone remembers to check the gazette. PAYE bands, NSSF tiers, SHIF, Housing Levy: all maintained as auditable, versioned code.",
+    n: "01",
+    title: "Compliance you can prove.",
+    body: "Every Kenyan statutory rule, in writing and in code. PAYE bands, the KSh 2,400 personal relief, NSSF Tier I at KSh 480 and Tier II at KSh 3,840, SHIF at 2.75% of gross, the Housing Levy at 1.5% matched, NITA and HELB. P9 and P10 generated in the format KRA expects. When the law changes, we ship the same day.",
   },
   {
-    number: "02",
-    title: "Built for the phones your team actually owns.",
-    body: "Employees open payslips on mid-range Android devices, sometimes on 3G, sometimes offline. The employee portal is a PWA that caches the last payslip locally. Notifications reach employees on SMS and WhatsApp — the platforms they already use for everything else. Login is a six-digit PIN. No password complexity rules. No forgotten credentials. No support tickets asking how to reset a password.",
+    n: "02",
+    title: "One pay run. M-Pesa and bank.",
+    body: "Disburse to a mix of M-Pesa wallets and bank accounts in a single approved batch. Native Daraja API integration. Direct file integration with Equity, KCB, Co-op, Stanbic, NCBA, ABSA and DTB. No re-keying, no second platform.",
   },
   {
-    number: "03",
-    title: "One stack from gross to net to filed.",
-    body: "Attendance data flows into the payroll run. Leave balances are already deducted before the run starts. Once the HR manager approves, payslips go out, M-Pesa disbursement is triggered, and statutory returns are queued for filing with KRA, NSSF, and SHIF. No spreadsheet in the middle. No export-import cycle. The loop closes inside one platform, and the audit trail covers every step.",
+    n: "03",
+    title: "Mobile-first for your real workforce.",
+    body: "Security guards, drivers, field officers and shop staff get payslips, leave requests and profile updates on their phone. Works on entry-level Android. Falls back to USSD where bandwidth is poor.",
+  },
+  {
+    n: "04",
+    title: "Your data stays in Kenya.",
+    body: "A serving copy of your personal data sits on infrastructure inside Kenya, in line with Section 50 of the Data Protection Act 2019. Tenant isolation by architecture. Encrypted in transit and at rest with AES-256 and TLS 1.3.",
+  },
+  {
+    n: "05",
+    title: "Founders who answer the phone.",
+    body: "We are pre-launch on purpose. Our first 50 customers shape the roadmap, lock in pricing for 24 months, and get a named account lead who knows their payroll inside out. When the cohort fills, this offer closes.",
   },
 ];
 
-export default function ThreePillars() {
+export default function FiveReasons() {
   return (
-    <section className="py-24 bg-white">
+    <section className="bg-surface-alt py-24 border-b border-ink-100">
       <Container>
-        <Eyebrow className="mb-12">Why AndikishaHR</Eyebrow>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 mb-16">
+          <div className="lg:col-span-4">
+            <Eyebrow className="mb-4">Why AndikishaHR</Eyebrow>
+            <h2
+              className="font-display font-bold text-ink-900 mb-5 leading-[1.05]"
+              style={{ fontSize: "clamp(2rem, 3.5vw, 3rem)", letterSpacing: "-0.02em" }}
+            >
+              Five reasons your monthly payroll stops being a crisis.
+            </h2>
+            <p className="text-[16px] text-ink-600 leading-[1.7]">
+              Built for the Finance Act 2025 reality, the NSSF Tier II transition and the workforce you actually have.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-ink-200">
-          {PILLARS.map((pillar) => (
-            <div key={pillar.number} className="py-8 lg:py-0 lg:px-10 first:lg:pl-0 last:lg:pr-0">
-              <p
-                className="font-display font-bold text-brand-700 mb-5 leading-none"
-                style={{ fontSize: "clamp(2.5rem, 4vw, 3.5rem)" }}
-                aria-hidden
-              >
-                {pillar.number}
-              </p>
-              <h3 className="text-[20px] font-semibold text-ink-900 mb-4 leading-snug">
-                {pillar.title}
-              </h3>
-              <p className="text-[16px] text-ink-600 leading-[1.7]">{pillar.body}</p>
+          <div className="lg:col-span-8">
+            <div className="flex flex-col divide-y divide-ink-100">
+              {REASONS.map((r) => (
+                <div key={r.n} className="grid grid-cols-12 gap-6 py-8 first:pt-0 last:pb-0 group">
+                  <div className="col-span-2 sm:col-span-1">
+                    <span
+                      className="font-mono font-medium text-ink-200 leading-none select-none"
+                      style={{ fontSize: "clamp(1.5rem, 2.5vw, 2rem)" }}
+                      aria-hidden
+                    >
+                      {r.n}
+                    </span>
+                  </div>
+                  <div className="col-span-10 sm:col-span-11">
+                    <h3 className="text-[18px] font-semibold text-ink-900 mb-2.5 leading-snug">
+                      {r.title}
+                    </h3>
+                    <p className="text-[15px] text-ink-600 leading-[1.75]">{r.body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+        </div>
+
+        <div className="text-center pt-4">
+          <Link
+            href="/demo"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-brand-900 text-white font-semibold text-[15px] hover:bg-brand-800 transition-colors duration-200"
+          >
+            Book your discovery call
+          </Link>
         </div>
       </Container>
     </section>

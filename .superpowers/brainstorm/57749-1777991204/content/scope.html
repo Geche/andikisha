@@ -1,0 +1,208 @@
+<h2>Which sections should the superadmin portal cover first?</h2>
+<p class="subtitle">185 responsibilities across 14 domains. Pick the ones to build in v1. You can select multiple.</p>
+
+<style>
+.scope-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.scope-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #fff;
+}
+.scope-card:hover {
+  border-color: #6366f1;
+  background: #f5f3ff;
+}
+.scope-card.selected {
+  border-color: #6366f1;
+  background: #eef2ff;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+.scope-card h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #1e293b;
+}
+.scope-card p {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+.scope-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.02em;
+}
+.badge-done { background: #dcfce7; color: #16a34a; }
+.badge-partial { background: #fef9c3; color: #a16207; }
+.badge-none { background: #fee2e2; color: #dc2626; }
+.badge-count { background: #f1f5f9; color: #475569; }
+</style>
+
+<div class="scope-grid" id="scope-grid">
+
+  <div class="scope-card" data-choice="auth" onclick="toggleCard(this)">
+    <h3>1. Auth & Sessions</h3>
+    <p>Login, refresh tokens, session list, revoke sessions, rotate JWT secret</p>
+    <div class="scope-badges">
+      <span class="badge badge-done">2 done</span>
+      <span class="badge badge-none">4 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="onboarding" onclick="toggleCard(this)">
+    <h3>2. Tenant Onboarding</h3>
+    <p>Provision trial tenant, schema setup, invite admin team, onboarding checklist, bulk import</p>
+    <div class="scope-badges">
+      <span class="badge badge-done">4 done</span>
+      <span class="badge badge-partial">3 partial</span>
+      <span class="badge badge-none">18 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="lifecycle" onclick="toggleCard(this)">
+    <h3>3. Tenant Lifecycle</h3>
+    <p>List/filter/search tenants, suspend, reactivate, impersonate, upgrade/downgrade plan</p>
+    <div class="scope-badges">
+      <span class="badge badge-done">9 done</span>
+      <span class="badge badge-partial">3 partial</span>
+      <span class="badge badge-none">12 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="plans" onclick="toggleCard(this)">
+    <h3>4. Plans & Licences</h3>
+    <p>Subscription plans, licence status, seat limits, billing cycles, overrides</p>
+    <div class="scope-badges">
+      <span class="badge badge-done">2 done</span>
+      <span class="badge badge-partial">3 partial</span>
+      <span class="badge badge-none">8 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="flags" onclick="toggleCard(this)">
+    <h3>5. Feature Flags</h3>
+    <p>Enable/disable features per tenant, global defaults, plan-to-flag mapping, rollout %</p>
+    <div class="scope-badges">
+      <span class="badge badge-done">3 done</span>
+      <span class="badge badge-none">7 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="monitoring" onclick="toggleCard(this)">
+    <h3>6. System Health</h3>
+    <p>Service status, queues, Redis, DB health, circuit breakers, dead-letter replay</p>
+    <div class="scope-badges">
+      <span class="badge badge-partial">2 partial</span>
+      <span class="badge badge-none">13 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="audit" onclick="toggleCard(this)">
+    <h3>7. Audit & Compliance</h3>
+    <p>Cross-tenant audit log search/filter, export reports, suspicious activity alerts</p>
+    <div class="scope-badges">
+      <span class="badge badge-partial">7 partial</span>
+      <span class="badge badge-none">7 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="billing" onclick="toggleCard(this)">
+    <h3>8. Billing & Revenue</h3>
+    <p>MRR/ARR dashboard, invoices, payment history, refunds, payment gateway config</p>
+    <div class="scope-badges">
+      <span class="badge badge-none">13 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="support" onclick="toggleCard(this)">
+    <h3>9. Support & Ops</h3>
+    <p>Active users, engagement score, broadcast messages, GDPR export/purge</p>
+    <div class="scope-badges">
+      <span class="badge badge-none">15 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="security" onclick="toggleCard(this)">
+    <h3>10. Security & Incidents</h3>
+    <p>Force logout, lock accounts, block IPs, failed login history, security incidents</p>
+    <div class="scope-badges">
+      <span class="badge badge-partial">2 partial</span>
+      <span class="badge badge-none">13 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="comms" onclick="toggleCard(this)">
+    <h3>11. Communications</h3>
+    <p>In-app messages, email campaigns, broadcast scheduling, email templates</p>
+    <div class="scope-badges">
+      <span class="badge badge-none">8 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="migration" onclick="toggleCard(this)">
+    <h3>12. Data Migration</h3>
+    <p>Upload competitor exports, schema mapping, preview, run & rollback migrations</p>
+    <div class="scope-badges">
+      <span class="badge badge-none">8 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="config" onclick="toggleCard(this)">
+    <h3>13. Platform Config</h3>
+    <p>Update statutory rates (PAYE, NSSF, SHIF), public holidays, country support</p>
+    <div class="scope-badges">
+      <span class="badge badge-partial">4 partial</span>
+      <span class="badge badge-none">7 missing</span>
+    </div>
+  </div>
+
+  <div class="scope-card" data-choice="backup" onclick="toggleCard(this)">
+    <h3>14. Backup & DR</h3>
+    <p>Manual DB backups, restore from backup, archive cold tenants, DR testing</p>
+    <div class="scope-badges">
+      <span class="badge badge-none">8 missing</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const selected = new Set();
+function toggleCard(el) {
+  const choice = el.dataset.choice;
+  if (selected.has(choice)) {
+    selected.delete(choice);
+    el.classList.remove('selected');
+  } else {
+    selected.add(choice);
+    el.classList.add('selected');
+  }
+  // Fire selection event for each currently selected card
+  if (typeof window.recordSelections === 'function') {
+    window.recordSelections([...selected]);
+  } else {
+    // Fallback: use toggleSelect on a synthetic element
+    const synth = { dataset: { choice: [...selected].join(',') }, classList: { contains: () => false, add: () => {}, remove: () => {} } };
+    if (typeof toggleSelect === 'function') toggleSelect({ dataset: { choice: [...selected].join(',') } });
+  }
+  // Also dispatch a custom event the helper script can pick up
+  document.dispatchEvent(new CustomEvent('card-selection', { detail: { selections: [...selected] } }));
+}
+</script>

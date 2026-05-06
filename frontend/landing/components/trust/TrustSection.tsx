@@ -1,5 +1,4 @@
 import Container from "@/components/ui/Container";
-import Eyebrow from "@/components/ui/Eyebrow";
 
 const CHECKLIST: { item: string; status: string }[] = [
   { item: "KDPA registered", status: "Yes" },
@@ -14,12 +13,12 @@ const CHECKLIST: { item: string; status: string }[] = [
 
 export default function TrustSection() {
   return (
-    <section className="bg-brand-950 py-24">
+    <section className="bg-[#111111] py-24">
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
           {/* Left */}
           <div>
-            <Eyebrow light className="mb-6">Security & compliance</Eyebrow>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-white/40 mb-6">Security & compliance</p>
             <h2
               className="font-display font-bold text-white mb-6"
               style={{ fontSize: "clamp(2.25rem, 4vw, 3.5rem)", lineHeight: "1.05", letterSpacing: "-0.015em" }}
@@ -40,14 +39,14 @@ export default function TrustSection() {
               {CHECKLIST.map(({ item, status }) => (
                 <div key={item} className="flex items-center justify-between py-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="w-[6px] h-[6px] rounded-full bg-brand-500 shrink-0" aria-hidden />
-                    <span className="text-[15px] text-white">{item}</span>
+                    <div className="w-[5px] h-[5px] rounded-full bg-amber shrink-0" aria-hidden />
+                    <span className="text-[15px] text-white/85">{item}</span>
                   </div>
                   <span
                     className={`font-mono text-[13px] ${
                       status === "Yes"
-                        ? "text-brand-500 font-semibold"
-                        : "text-brand-100"
+                        ? "text-amber font-semibold"
+                        : "text-white/45"
                     }`}
                     style={{ fontFeatureSettings: '"tnum" 1' }}
                   >

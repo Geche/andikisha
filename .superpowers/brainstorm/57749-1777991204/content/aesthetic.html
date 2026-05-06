@@ -1,0 +1,165 @@
+<h2>Which visual style fits the superadmin portal?</h2>
+<p class="subtitle">This is an internal ops tool — pick the aesthetic that feels right for the people running it.</p>
+
+<style>
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 20px; }
+.card { border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.15s; background: #fff; }
+.card:hover { border-color: #6366f1; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
+.card.selected { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+.card-body { padding: 14px; }
+.card-body h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin: 10px 0 4px 0; }
+.card-body p { font-size: 12px; color: #64748b; margin: 0; line-height: 1.5; }
+
+/* Style A - Dark sidebar, light content (professional ops) */
+.mock-a { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.mock-a-top { background: #0f172a; height: 26px; display: flex; align-items: center; padding: 0 10px; gap: 6px; }
+.mock-a-logo { width: 50px; height: 8px; background: #6366f1; border-radius: 2px; }
+.mock-a-avatar { width: 16px; height: 16px; background: #334155; border-radius: 50%; margin-left: auto; }
+.mock-a-body { display: flex; height: 120px; }
+.mock-a-nav { background: #0f172a; width: 80px; padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+.mock-a-item { height: 12px; border-radius: 3px; background: #1e293b; }
+.mock-a-item.on { background: #6366f1; }
+.mock-a-content { flex: 1; background: #f8fafc; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mock-a-stat-row { display: flex; gap: 5px; }
+.mock-a-stat { flex: 1; height: 28px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; }
+.mock-a-row { height: 8px; background: #e2e8f0; border-radius: 2px; }
+.mock-a-row.hdr { background: #cbd5e1; }
+
+/* Style B - Full dark (operator console) */
+.mock-b { border: 1px solid #334155; border-radius: 6px; overflow: hidden; }
+.mock-b-top { background: #0f172a; height: 26px; display: flex; align-items: center; padding: 0 10px; gap: 6px; border-bottom: 1px solid #1e293b; }
+.mock-b-logo { width: 50px; height: 8px; background: #818cf8; border-radius: 2px; }
+.mock-b-badge { width: 30px; height: 8px; background: #16a34a; border-radius: 2px; margin-left: auto; }
+.mock-b-body { display: flex; height: 120px; background: #0f172a; }
+.mock-b-nav { background: #0f172a; width: 80px; padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #1e293b; }
+.mock-b-item { height: 12px; border-radius: 3px; background: #1e293b; }
+.mock-b-item.on { background: #818cf8; }
+.mock-b-content { flex: 1; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mock-b-stat-row { display: flex; gap: 5px; }
+.mock-b-stat { flex: 1; height: 28px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; }
+.mock-b-row { height: 8px; background: #1e293b; border-radius: 2px; }
+.mock-b-row.hdr { background: #334155; }
+
+/* Style C - Light + accent (clean SaaS) */
+.mock-c { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.mock-c-top { background: #fff; height: 26px; display: flex; align-items: center; padding: 0 10px; gap: 6px; border-bottom: 1px solid #e2e8f0; }
+.mock-c-logo { width: 50px; height: 8px; background: #6366f1; border-radius: 2px; }
+.mock-c-avatar { width: 16px; height: 16px; background: #e0e7ff; border-radius: 50%; margin-left: auto; }
+.mock-c-body { display: flex; height: 120px; }
+.mock-c-nav { background: #f8fafc; width: 80px; padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #e2e8f0; }
+.mock-c-item { height: 12px; border-radius: 3px; background: #e2e8f0; }
+.mock-c-item.on { background: #6366f1; }
+.mock-c-content { flex: 1; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.mock-c-stat-row { display: flex; gap: 5px; }
+.mock-c-stat { flex: 1; height: 28px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; }
+.mock-c-row { height: 8px; background: #f1f5f9; border-radius: 2px; }
+.mock-c-row.hdr { background: #e2e8f0; }
+
+.letter { width: 26px; height: 26px; background: #6366f1; color: #fff; font-weight: 700; font-size: 13px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 14px 14px 0 14px; }
+</style>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="card-body">
+      <div class="mock-a">
+        <div class="mock-a-top">
+          <div class="mock-a-logo"></div>
+          <div class="mock-a-avatar"></div>
+        </div>
+        <div class="mock-a-body">
+          <div class="mock-a-nav">
+            <div class="mock-a-item on"></div>
+            <div class="mock-a-item"></div>
+            <div class="mock-a-item"></div>
+            <div class="mock-a-item"></div>
+            <div class="mock-a-item"></div>
+          </div>
+          <div class="mock-a-content">
+            <div class="mock-a-stat-row">
+              <div class="mock-a-stat"></div>
+              <div class="mock-a-stat"></div>
+              <div class="mock-a-stat"></div>
+            </div>
+            <div class="mock-a-row hdr"></div>
+            <div class="mock-a-row"></div>
+            <div class="mock-a-row"></div>
+            <div class="mock-a-row"></div>
+          </div>
+        </div>
+      </div>
+      <h3>Dark Nav + Light Content</h3>
+      <p>Dark sidebar, clean white workspace. The industry standard for ops dashboards. High contrast, comfortable for long sessions.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="card-body">
+      <div class="mock-b">
+        <div class="mock-b-top">
+          <div class="mock-b-logo"></div>
+          <div class="mock-b-badge"></div>
+        </div>
+        <div class="mock-b-body">
+          <div class="mock-b-nav">
+            <div class="mock-b-item on"></div>
+            <div class="mock-b-item"></div>
+            <div class="mock-b-item"></div>
+            <div class="mock-b-item"></div>
+            <div class="mock-b-item"></div>
+          </div>
+          <div class="mock-b-content">
+            <div class="mock-b-stat-row">
+              <div class="mock-b-stat"></div>
+              <div class="mock-b-stat"></div>
+              <div class="mock-b-stat"></div>
+            </div>
+            <div class="mock-b-row hdr"></div>
+            <div class="mock-b-row"></div>
+            <div class="mock-b-row"></div>
+            <div class="mock-b-row"></div>
+          </div>
+        </div>
+      </div>
+      <h3>Full Dark Mode</h3>
+      <p>Everything dark. Feels like a control room — serious, focused, zero distraction. Good for monitoring-heavy workflows. Harder to read tables at a glance.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="card-body">
+      <div class="mock-c">
+        <div class="mock-c-top">
+          <div class="mock-c-logo"></div>
+          <div class="mock-c-avatar"></div>
+        </div>
+        <div class="mock-c-body">
+          <div class="mock-c-nav">
+            <div class="mock-c-item on"></div>
+            <div class="mock-c-item"></div>
+            <div class="mock-c-item"></div>
+            <div class="mock-c-item"></div>
+            <div class="mock-c-item"></div>
+          </div>
+          <div class="mock-c-content">
+            <div class="mock-c-stat-row">
+              <div class="mock-c-stat"></div>
+              <div class="mock-c-stat"></div>
+              <div class="mock-c-stat"></div>
+            </div>
+            <div class="mock-c-row hdr"></div>
+            <div class="mock-c-row"></div>
+            <div class="mock-c-row"></div>
+            <div class="mock-c-row"></div>
+          </div>
+        </div>
+      </div>
+      <h3>Full Light — Clean SaaS</h3>
+      <p>All white, light grey nav. Bright and airy — easy to scan tables and data. Feels more like a product than a console. Can feel too "soft" for an admin tool.</p>
+    </div>
+  </div>
+
+</div>

@@ -168,14 +168,14 @@ export default function ProductWalkthrough() {
                 onClick={() => setActive(i)}
                 className={`text-left border-l-2 pl-6 py-5 transition-all duration-200 ${
                   active === i
-                    ? "border-brand-700"
-                    : "border-ink-200 hover:border-ink-400"
+                    ? "border-amber"
+                    : "border-ink-200 hover:border-ink-300"
                 }`}
                 aria-current={active === i ? "true" : undefined}
               >
                 <p
                   className={`text-[11px] font-semibold uppercase tracking-[0.12em] mb-2 ${
-                    active === i ? "text-brand-700" : "text-ink-400"
+                    active === i ? "text-amber" : "text-ink-300"
                   }`}
                 >
                   0{i + 1}

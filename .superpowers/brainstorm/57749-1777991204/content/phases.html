@@ -1,0 +1,166 @@
+<h2>Recommended 2-Phase Split</h2>
+<p class="subtitle">Phase 1 = everything needed to run the platform. Phase 2 = intelligence, revenue, and advanced ops.</p>
+
+<style>
+.phase-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 24px;
+}
+.phase-block {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.phase-block.p1 { border-color: #6366f1; }
+.phase-block.p2 { border-color: #64748b; }
+.phase-header {
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+}
+.phase-block.p1 .phase-header { background: #6366f1; }
+.phase-block.p2 .phase-header { background: #64748b; }
+.phase-sub {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+.phase-items {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.phase-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.phase-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.phase-item-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.rationale {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border-left: 4px solid #6366f1;
+}
+.rationale h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+.rationale p {
+  font-size: 12px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.5;
+}
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 99px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.badge-api { background: #dcfce7; color: #15803d; }
+.badge-ui  { background: #e0e7ff; color: #4338ca; }
+</style>
+
+<div class="phase-grid">
+
+  <div class="phase-block p1">
+    <div class="phase-header">
+      Phase 1 — Platform Operations
+      <div class="phase-sub">Build this first · 7 domains · ship a working portal</div>
+    </div>
+    <div class="phase-items">
+      <div class="phase-item">
+        <div class="phase-item-title">Auth &amp; Sessions <span class="badge badge-api">API exists</span></div>
+        <div class="phase-item-desc">Login, token refresh, session list &amp; revoke</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Tenant Lifecycle <span class="badge badge-api">API exists</span></div>
+        <div class="phase-item-desc">List, filter, search, view, suspend, reactivate, impersonate, upgrade plan</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Tenant Onboarding <span class="badge badge-ui">UI gaps</span></div>
+        <div class="phase-item-desc">Provision trial, schema setup, invite admin team, onboarding checklist</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Plans &amp; Licences <span class="badge badge-api">API exists</span></div>
+        <div class="phase-item-desc">View/create/edit plans, licence status, seat overrides, trial extension</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Feature Flags <span class="badge badge-api">API exists</span></div>
+        <div class="phase-item-desc">Enable/disable per tenant, global defaults, plan-to-flag mapping</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Audit &amp; Compliance <span class="badge badge-ui">UI gaps</span></div>
+        <div class="phase-item-desc">Cross-tenant log search, filter by domain/action/actor, export reports</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Platform Config <span class="badge badge-ui">UI gaps</span></div>
+        <div class="phase-item-desc">Update PAYE/NSSF/SHIF/Housing Levy rates, public holidays, country support</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-block p2">
+    <div class="phase-header">
+      Phase 2 — Intelligence &amp; Advanced Ops
+      <div class="phase-sub">Build after Phase 1 ships · 7 domains · mostly backend work</div>
+    </div>
+    <div class="phase-items">
+      <div class="phase-item">
+        <div class="phase-item-title">System Health &amp; Monitoring</div>
+        <div class="phase-item-desc">Service status aggregator, queue health, Redis, circuit breakers, dead-letter replay</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Security &amp; Incidents</div>
+        <div class="phase-item-desc">Force logout, lock accounts, block IPs, failed login history, incident response</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Billing &amp; Revenue</div>
+        <div class="phase-item-desc">MRR/ARR dashboard, invoices, payment history, gateway config, refunds</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Support &amp; Ops</div>
+        <div class="phase-item-desc">Active users, engagement score, broadcast messages, GDPR export/purge</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Communications</div>
+        <div class="phase-item-desc">In-app messages, email campaigns, broadcast scheduling, email templates</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Data Migration</div>
+        <div class="phase-item-desc">Competitor import, schema mapping, preview, run &amp; rollback</div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-item-title">Backup &amp; DR</div>
+        <div class="phase-item-desc">Manual backups, restore from backup, archive cold tenants, DR testing</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="rationale">
+  <h3>Why this split?</h3>
+  <p>Phase 1 covers everything you need to onboard a customer, manage their lifecycle, control their plan and features, and stay audit-compliant — with most backend APIs already in place. Phase 2 is mostly net-new backend work (billing, monitoring aggregation, security event tracking) — ship Phase 1 first and have a usable portal while Phase 2 is built.</p>
+</div>

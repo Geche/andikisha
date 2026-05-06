@@ -1,0 +1,164 @@
+<h2>What goes in the nav?</h2>
+<p class="subtitle">Phase 1 has 7 domains. Three ways to group them into a sidebar. Onboarding is folded into Tenants in all options.</p>
+
+<style>
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+.card { border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.15s; background: #fff; }
+.card:hover { border-color: #6366f1; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
+.card.selected { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+.letter { width: 26px; height: 26px; background: #6366f1; color: #fff; font-weight: 700; font-size: 13px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 14px 14px 0 14px; }
+
+/* Nav mockup */
+.nav-mock { display: flex; height: 220px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin: 10px 0 14px 0; }
+.nav-panel { background: #0f172a; width: 110px; display: flex; flex-direction: column; padding: 10px 8px; gap: 2px; flex-shrink: 0; }
+.nav-section-label { font-size: 9px; font-weight: 700; color: #475569; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 4px 3px 4px; }
+.nav-item { height: 22px; border-radius: 5px; display: flex; align-items: center; padding: 0 6px; gap: 6px; }
+.nav-item.active { background: #312e81; }
+.nav-item.active .nav-dot { background: #818cf8; }
+.nav-dot { width: 8px; height: 8px; border-radius: 2px; background: #1e293b; flex-shrink: 0; }
+.nav-label { height: 7px; border-radius: 2px; background: #334155; flex: 1; }
+.nav-item.active .nav-label { background: #818cf8; opacity: 0.7; }
+.nav-content { flex: 1; background: #f8fafc; padding: 12px; display: flex; flex-direction: column; gap: 5px; }
+.nav-page-title { height: 11px; background: #1e293b; border-radius: 3px; width: 55%; }
+.nav-table-hdr { height: 9px; background: #e2e8f0; border-radius: 2px; margin-top: 4px; }
+.nav-table-row { height: 8px; background: #f1f5f9; border-radius: 2px; }
+.nav-stat-row { display: flex; gap: 5px; }
+.nav-stat { flex: 1; height: 26px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; }
+
+.card-desc { padding: 0 14px 14px 14px; }
+.card-desc h3 { font-size: 13px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; }
+.card-desc p { font-size: 11px; color: #64748b; margin: 0; line-height: 1.5; }
+
+.rec-badge { display: inline-block; background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Flat — 6 top-level items -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="card-desc" style="padding-top:12px">
+      <h3>Flat — 6 top-level items</h3>
+      <p>Every domain is a direct nav item. Simple, no grouping, no sub-menus.</p>
+    </div>
+    <div style="padding: 0 14px;">
+      <div class="nav-mock">
+        <div class="nav-panel">
+          <div class="nav-item active"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Dashboard -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Tenants -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Plans & Licences -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Feature Flags -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Audit Log -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Platform Config -->
+        </div>
+        <div class="nav-content">
+          <div class="nav-stat-row">
+            <div class="nav-stat"></div><div class="nav-stat"></div><div class="nav-stat"></div>
+          </div>
+          <div class="nav-table-hdr"></div>
+          <div class="nav-table-row"></div>
+          <div class="nav-table-row"></div>
+          <div class="nav-table-row"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-desc">
+      <p><strong>Nav items:</strong> Dashboard · Tenants · Plans &amp; Licences · Feature Flags · Audit Log · Platform Config</p>
+    </div>
+  </div>
+
+  <!-- Option B: Grouped with section headers -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="card-desc" style="padding-top:12px">
+      <h3>Grouped — section headers <span class="rec-badge">recommended</span></h3>
+      <p>Items grouped under quiet section labels. Scales gracefully when Phase 2 items are added.</p>
+    </div>
+    <div style="padding: 0 14px;">
+      <div class="nav-mock">
+        <div class="nav-panel">
+          <div class="nav-item active"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Dashboard -->
+          <div class="nav-section-label" style="color:#475569">CUSTOMERS</div>
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Tenants -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Plans & Licences -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Feature Flags -->
+          <div class="nav-section-label" style="color:#475569">PLATFORM</div>
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Audit Log -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Platform Config -->
+        </div>
+        <div class="nav-content">
+          <div class="nav-stat-row">
+            <div class="nav-stat"></div><div class="nav-stat"></div><div class="nav-stat"></div>
+          </div>
+          <div class="nav-table-hdr"></div>
+          <div class="nav-table-row"></div>
+          <div class="nav-table-row"></div>
+          <div class="nav-table-row"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-desc">
+      <p><strong>Customers:</strong> Tenants · Plans &amp; Licences · Feature Flags<br>
+      <strong>Platform:</strong> Audit Log · Platform Config<br>
+      <strong>Top:</strong> Dashboard &nbsp;|&nbsp; <strong>Bottom:</strong> Settings (auth/sessions)</p>
+    </div>
+  </div>
+
+  <!-- Option C: Grouped differently -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="card-desc" style="padding-top:12px">
+      <h3>Grouped — entity-first</h3>
+      <p>Groups by what you manage, not by function. Plans &amp; Flags live under Tenants conceptually.</p>
+    </div>
+    <div style="padding: 0 14px;">
+      <div class="nav-mock">
+        <div class="nav-panel">
+          <div class="nav-item active"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Dashboard -->
+          <div class="nav-section-label" style="color:#475569">TENANTS</div>
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- All Tenants -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Plans & Licences -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Feature Flags -->
+          <div class="nav-section-label" style="color:#475569">SYSTEM</div>
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Audit Log -->
+          <div class="nav-item"><div class="nav-dot"></div><div class="nav-label"></div></div>
+          <!-- Platform Config -->
+        </div>
+        <div class="nav-content">
+          <div class="nav-stat-row">
+            <div class="nav-stat"></div><div class="nav-stat"></div><div class="nav-stat"></div>
+          </div>
+          <div class="nav-table-hdr"></div>
+          <div class="nav-table-row"></div>
+          <div class="nav-table-row"></div>
+          <div class="nav-table-row"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-desc">
+      <p><strong>Tenants:</strong> All Tenants · Plans &amp; Licences · Feature Flags<br>
+      <strong>System:</strong> Audit Log · Platform Config<br>
+      <strong>Top:</strong> Dashboard &nbsp;|&nbsp; <strong>Bottom:</strong> Settings</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:20px; font-size:12px;">In all options: Auth &amp; Sessions lives in a <strong>Settings</strong> item pinned to the bottom of the sidebar — it's not a daily-use section, no need to pollute the main nav.</p>

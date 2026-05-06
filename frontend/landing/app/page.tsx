@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import Hero from "@/components/hero/Hero";
 import SocialProofStrip from "@/components/social-proof/SocialProofStrip";
-import ComplianceProofStrip from "@/components/compliance/ComplianceProofStrip";
+import FiveReasons from "@/components/pillars/ThreePillars";
+import HowItWorks from "@/components/how-it-works/HowItWorks";
+import Personas from "@/components/personas/Personas";
 import PayrollCalculator from "@/components/calculator/PayrollCalculator";
-import ThreePillars from "@/components/pillars/ThreePillars";
 import ProductWalkthrough from "@/components/walkthrough/ProductWalkthrough";
+import FoundingCustomer from "@/components/founding/FoundingCustomer";
 import Testimonials from "@/components/testimonials/Testimonials";
-import PricingTable from "@/components/pricing/PricingTable";
+import ComplianceAuthority from "@/components/compliance/ComplianceAuthority";
 import TrustSection from "@/components/trust/TrustSection";
+import FinalCTABanner from "@/components/cta/FinalCTABanner";
 import FaqList from "@/components/faq/FaqList";
 
 export const metadata: Metadata = {
-  title: "AndikishaHR — HR and payroll, calculated correctly",
+  title: "AndikishaHR — Kenyan HR and payroll, built statute-first",
   description:
-    "Statutory deductions to the cent. Payslips on the phones your team already uses. Salary disbursement on M-Pesa. Built for modern African businesses.",
+    "One platform for HR, payroll and compliance, designed around PAYE, NSSF, SHIF, the Housing Levy, NITA and HELB. Monthly close on time. KRA filings before the 9th.",
 };
 
 export default function HomePage() {
@@ -21,13 +24,16 @@ export default function HomePage() {
     <>
       <Hero />
       <SocialProofStrip />
-      <ComplianceProofStrip />
+      <FiveReasons />
+      <HowItWorks />
+      <Personas />
       <PayrollCalculator />
-      <ThreePillars />
       <ProductWalkthrough />
+      <FoundingCustomer />
       <Testimonials />
-      <PricingTable />
+      <ComplianceAuthority />
       <TrustSection />
+      <FinalCTABanner />
       <FaqList />
     </>
   );

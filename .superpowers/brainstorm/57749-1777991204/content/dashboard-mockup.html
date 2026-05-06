@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuperAdmin Portal — Dashboard Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F8F7F4; display: flex; flex-direction: column; height: 100vh; font-size: 13px; }
+
+  /* Top bar — brand-950 deepest dark */
+  .topbar { background: #071E13; height: 48px; display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0; border-bottom: 1px solid #0B3D2E; z-index: 10; }
+  .topbar-logo { display: flex; align-items: center; gap: 8px; }
+  .topbar-logo-mark { width: 28px; height: 28px; background: #0B3D2E; border: 2px solid #E8A020; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #E8A020; }
+  .topbar-logo-text { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+  .topbar-badge { font-size: 9px; font-weight: 700; background: #0B3D2E; color: #E8A020; padding: 2px 7px; border-radius: 99px; letter-spacing: 0.05em; text-transform: uppercase; margin-left: 2px; border: 1px solid #166A50; }
+  .topbar-spacer { flex: 1; }
+  .topbar-health { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #9CA3AF; }
+  .health-dot { width: 7px; height: 7px; border-radius: 50%; background: #27A870; box-shadow: 0 0 6px #27A870; }
+  .topbar-divider { width: 1px; height: 20px; background: #0B3D2E; margin: 0 4px; }
+  .topbar-avatar { width: 30px; height: 30px; background: #0F5040; border: 1px solid #166A50; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #D1F5E6; cursor: pointer; }
+
+  /* Shell */
+  .shell { display: flex; flex: 1; overflow: hidden; }
+
+  /* Sidebar — brand-900 */
+  .sidebar { background: #0B3D2E; width: 240px; flex-shrink: 0; display: flex; flex-direction: column; padding: 16px 10px; border-right: 1px solid #0F5040; overflow-y: auto; }
+  .nav-section-label { font-size: 10px; font-weight: 700; color: #166A50; letter-spacing: 0.08em; text-transform: uppercase; padding: 14px 10px 5px 10px; }
+  .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 7px; cursor: pointer; color: #9CA3AF; transition: all 0.12s; margin-bottom: 2px; }
+  .nav-item:hover { background: #0F5040; color: #D1F5E6; }
+  .nav-item.active { background: #0F5040; color: #fff; border-left: 3px solid #E8A020; padding-left: 9px; }
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-label { font-size: 13.5px; font-weight: 500; }
+  .nav-spacer { flex: 1; }
+  .nav-bottom { border-top: 1px solid #0F5040; padding-top: 10px; margin-top: 10px; }
+
+  /* Main */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+  /* Page header */
+  .page-header { background: #fff; padding: 16px 24px; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .page-title { font-size: 18px; font-weight: 700; color: #02110C; }
+  .page-sub { font-size: 12px; color: #4B5563; margin-top: 2px; }
+  .page-date { font-size: 11px; color: #9CA3AF; }
+
+  /* Content */
+  .content { padding: 20px 24px; flex: 1; }
+
+  /* Stat cards */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; padding: 16px; }
+  .stat-label { font-size: 11px; color: #4B5563; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 800; color: #02110C; line-height: 1; }
+  .stat-delta { font-size: 11px; margin-top: 5px; display: flex; align-items: center; gap: 3px; }
+  .delta-up { color: #27A870; }
+  .delta-down { color: #EF4444; }
+  .stat-card.alert { border-color: #E8A020; background: #FEF3DC; }
+  .stat-card.alert .stat-value { color: #C98510; }
+  .stat-card.danger { border-color: #EF4444; background: #FEF2F2; }
+  .stat-card.danger .stat-value { color: #991B1B; }
+
+  /* Grid layout */
+  .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Panels */
+  .panel { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; overflow: hidden; }
+  .panel-header { padding: 12px 16px; border-bottom: 1px solid #F3F4F6; display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 13px; font-weight: 700; color: #02110C; }
+  .panel-action { font-size: 11px; color: #166A50; font-weight: 600; cursor: pointer; }
+  .panel-body { padding: 0; }
+
+  /* Tenant table */
+  .table { width: 100%; }
+  .table th { font-size: 10.5px; font-weight: 700; color: #4B5563; text-transform: uppercase; letter-spacing: 0.04em; padding: 9px 16px; background: #F8F7F4; border-bottom: 1px solid #F3F4F6; text-align: left; }
+  .table td { padding: 10px 16px; border-bottom: 1px solid #F8F7F4; vertical-align: middle; font-size: 12px; color: #374151; }
+  .table tr:last-child td { border-bottom: none; }
+  .table tr:hover td { background: #E8F5F0; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .badge-active { background: #D1F5E6; color: #0F5040; }
+  .badge-trial { background: #E8F5F0; color: #166A50; }
+  .badge-suspended { background: #FEE2E2; color: #991B1B; }
+  .badge-onboarding { background: #FEF3DC; color: #C98510; }
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* Activity feed */
+  .activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #F3F4F6; }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .activity-icon.green { background: #D1F5E6; }
+  .activity-icon.blue { background: #E8F5F0; }
+  .activity-icon.yellow { background: #FEF3DC; }
+  .activity-icon.red { background: #FEE2E2; }
+  .activity-text { flex: 1; }
+  .activity-main { font-size: 12px; color: #374151; line-height: 1.4; }
+  .activity-time { font-size: 10px; color: #9CA3AF; margin-top: 2px; }
+
+  /* Expiry list */
+  .expiry-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 16px; border-bottom: 1px solid #F3F4F6; }
+  .expiry-item:last-child { border-bottom: none; }
+  .expiry-name { font-size: 12px; font-weight: 600; color: #02110C; }
+  .expiry-plan { font-size: 10px; color: #4B5563; }
+  .expiry-days { font-size: 11px; font-weight: 700; }
+  .expiry-days.urgent { color: #EF4444; }
+  .expiry-days.warn { color: #C98510; }
+  .expiry-days.ok { color: #27A870; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-mark">A</div>
+    <div class="topbar-logo-text">AndikishaHR</div>
+    <div class="topbar-badge">Superadmin</div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-health"><div class="health-dot"></div> All systems operational</div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-avatar">LC</div>
+</div>
+
+<!-- Shell -->
+<div class="shell">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="nav-item active">
+      <div class="nav-icon">⬛</div>
+      <div class="nav-label">Dashboard</div>
+    </div>
+
+    <div class="nav-section-label">Customers</div>
+    <div class="nav-item">
+      <div class="nav-icon">🏢</div>
+      <div class="nav-label">Tenants</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">Plans &amp; Licences</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🚩</div>
+      <div class="nav-label">Feature Flags</div>
+    </div>
+
+    <div class="nav-section-label">Platform</div>
+    <div class="nav-item">
+      <div class="nav-icon">🔍</div>
+      <div class="nav-label">Audit Log</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Platform Config</div>
+    </div>
+
+    <div class="nav-spacer"></div>
+    <div class="nav-bottom">
+      <div class="nav-item">
+        <div class="nav-icon">🔐</div>
+        <div class="nav-label">Settings</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Platform overview · AndikishaHR Production</div>
+      </div>
+      <div class="page-date">Tuesday, 5 May 2026 · 14:32 EAT</div>
+    </div>
+
+    <div class="content">
+
+      <!-- Stat cards -->
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="stat-label">Total Tenants</div>
+          <div class="stat-value">48</div>
+          <div class="stat-delta delta-up">↑ 3 this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active</div>
+          <div class="stat-value">34</div>
+          <div class="stat-delta delta-up">↑ 2 from last month</div>
+        </div>
+        <div class="stat-card alert">
+          <div class="stat-label">Trials Expiring (7d)</div>
+          <div class="stat-value">5</div>
+          <div class="stat-delta" style="color:#92400e;">⚠ Action needed</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">Suspended</div>
+          <div class="stat-value">2</div>
+          <div class="stat-delta delta-down">↑ 1 this week</div>
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div class="grid-2">
+
+        <!-- Recent tenants table -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Recent Tenants</div>
+            <div class="panel-action">View all →</div>
+          </div>
+          <div class="panel-body">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th>Employees</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Safiri Tech Ltd</strong><br><span style="color:#94a3b8;font-size:10px">safiritechltd</span></td>
+                  <td>Growth</td>
+                  <td><span class="badge badge-active"><span class="badge-dot"></span>Active</span></td>
+                  <td>143</td>
+                </tr>
+                <tr>
+                  <td><strong>Nairobi Feeds Co.</strong><br><span style="color:#94a3b8;font-size:10px">nbifeedsco</span></td>
+                  <td>Starter</td>
+                  <td><span class="badge badge-trial"><span class="badge-dot"></span>Trial</span></td>
+                  <td>12</td>
+                </tr>
+                <tr>
+                  <td><strong>Equity Micro Finance</strong><br><span style="color:#94a3b8;font-size:10px">equitymf</span></td>
+                  <td>Enterprise</td>
+                  <td><span class="badge badge-onboarding"><span class="badge-dot"></span>Onboarding</span></td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><strong>Reli Logistics</strong><br><span style="color:#94a3b8;font-size:10px">relilogistics</span></td>
+                  <td>Growth</td>
+                  <td><span class="badge badge-suspended"><span class="badge-dot"></span>Suspended</span></td>
+                  <td>67</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Trials expiring -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Trials Expiring Soon</div>
+            <div class="panel-action">Manage →</div>
+          </div>
+          <div class="panel-body">
+            <div class="expiry-item">
+              <div><div class="expiry-name">Nairobi Feeds Co.</div><div class="expiry-plan">Starter · 12 employees</div></div>
+              <div class="expiry-days urgent">2 days</div>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">Mwenda &amp; Sons Ltd</div><div class="expiry-plan">Growth · 34 employees</div></div>
+              <div class="expiry-days urgent">3 days</div>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">Kipawa Insurance</div><div class="expiry-plan">Starter · 8 employees</div></div>
+              <div class="expiry-days warn">5 days</div>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">AgroVet Kenya</div><div class="expiry-plan">Growth · 55 employees</div></div>
+              <div class="expiry-days warn">6 days</div>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">Uhuru Digital</div><div class="expiry-plan">Starter · 5 employees</div></div>
+              <div class="expiry-days ok">7 days</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Activity + Onboarding Progress -->
+      <div class="grid-2-equal">
+
+        <!-- Activity feed -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Recent Activity</div>
+            <div class="panel-action">View audit log →</div>
+          </div>
+          <div class="panel-body">
+            <div class="activity-item">
+              <div class="activity-icon green">✓</div>
+              <div class="activity-text">
+                <div class="activity-main"><strong>Safiri Tech Ltd</strong> converted from Trial to Growth plan</div>
+                <div class="activity-time">Today at 11:04</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon blue">👤</div>
+              <div class="activity-text">
+                <div class="activity-main">Tenant admin invited for <strong>Equity Micro Finance</strong></div>
+                <div class="activity-time">Today at 09:22</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon yellow">⚠</div>
+              <div class="activity-text">
+                <div class="activity-main"><strong>Reli Logistics</strong> suspended — payment failure</div>
+                <div class="activity-time">Yesterday at 16:45</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon blue">🚩</div>
+              <div class="activity-text">
+                <div class="activity-main">M-Pesa disbursement enabled for <strong>Mwenda &amp; Sons</strong></div>
+                <div class="activity-time">Yesterday at 14:10</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-icon green">📋</div>
+              <div class="activity-text">
+                <div class="activity-main">PAYE brackets updated — Finance Act 2026</div>
+                <div class="activity-time">2 May at 09:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onboarding pipeline -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Onboarding Pipeline</div>
+            <div class="panel-action">View all →</div>
+          </div>
+          <div class="panel-body">
+            <div class="expiry-item">
+              <div><div class="expiry-name">Equity Micro Finance</div><div class="expiry-plan">Step 2/5 · Profile set · Awaiting employees</div></div>
+              <span class="badge badge-onboarding">In Progress</span>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">KCB Micro Finance</div><div class="expiry-plan">Step 4/5 · Payroll ready · Final review</div></div>
+              <span class="badge" style="background:#D1F5E6;color:#0F5040;">Almost done</span>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">Summit Logistics</div><div class="expiry-plan">Step 1/5 · Provisioned · Awaiting profile</div></div>
+              <span class="badge badge-trial">New</span>
+            </div>
+            <div class="expiry-item">
+              <div><div class="expiry-name">TechBridge Africa</div><div class="expiry-plan">Step 1/5 · Provisioned · No activity (4d)</div></div>
+              <span class="badge badge-suspended">Stalled</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="http://localhost:62756/helper.js"></script>
+</body>
+</html>
