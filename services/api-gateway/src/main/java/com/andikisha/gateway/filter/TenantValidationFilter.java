@@ -30,6 +30,8 @@ public class TenantValidationFilter implements GlobalFilter, Ordered {
 
     // Path prefixes exempt from tenant validation
     private static final List<String> EXEMPT_PREFIX_PATHS = List.of(
+            "/api/v1/auth/super-admin/",  // superadmin auth (login, provision, sessions)
+            "/api/v1/super-admin/",       // superadmin tenant/dashboard endpoints (SYSTEM-scoped)
             "/api/v1/callbacks/",
             "/actuator/",
             "/swagger-ui",
