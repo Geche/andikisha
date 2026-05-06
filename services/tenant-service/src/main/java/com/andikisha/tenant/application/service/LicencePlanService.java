@@ -236,6 +236,23 @@ public class LicencePlanService {
     }
 
     /**
+     * Batch-load current active-ish licences for the supplied tenant IDs and
+     * return a map keyed by tenantId. Used by SUPER_ADMIN list endpoints to
+     * avoid an N+1 query per page.
+     */
+    public Map<String, LicenceResponse> batchGetCurrentLicences(List<String> tenantIds) {
+        if (tenantIds == null || tenantIds.isEmpty()) {
+            return Map.of();
+        }
+        return licenceRepository.findByTenantIdInAndStatusIn(tenantIds, ACTIVE_LIKE)
+                .stream()
+                .collect(Collectors.toMap(
+                        TenantLicence::getTenantId,
+                        this::toResponse,
+                        (a, b) -> a));
+    }
+
+    /**
      * Get the current active-ish licence as a response DTO.
      */
     public LicenceResponse getCurrentLicence(String tenantId) {

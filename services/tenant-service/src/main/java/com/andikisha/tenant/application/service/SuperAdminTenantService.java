@@ -4,9 +4,11 @@ import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.tenant.application.dto.request.CreateTenantWithLicenceRequest;
+import com.andikisha.tenant.application.dto.response.DashboardMetricsResponse;
 import com.andikisha.tenant.application.dto.response.LicenceResponse;
 import com.andikisha.tenant.application.dto.response.ProvisionedTenantResponse;
 import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
+import com.andikisha.tenant.application.dto.response.TenantGrowthPointResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
 import com.andikisha.tenant.application.port.AuthServiceClient;
 import com.andikisha.tenant.application.port.TenantEventPublisher;
@@ -24,8 +26,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -135,7 +141,9 @@ public class SuperAdminTenantService {
     }
 
     public Page<TenantSummaryResponse> listTenants(Pageable pageable) {
-        return tenantRepository.findAll(pageable).map(this::toSummary);
+        Page<Tenant> tenantPage = tenantRepository.findAll(pageable);
+        Map<String, LicenceResponse> licences = batchLoadLicences(tenantPage);
+        return tenantPage.map(t -> toSummaryWithLicence(t, licences.get(t.getTenantId())));
     }
 
     public TenantDetailResponse getTenantDetail(UUID tenantId) {
@@ -158,15 +166,19 @@ public class SuperAdminTenantService {
         }
     }
 
-    private TenantSummaryResponse toSummary(Tenant tenant) {
-        LicenceResponse current = safeGetCurrentLicence(tenant.getTenantId());
+    private Map<String, LicenceResponse> batchLoadLicences(Page<Tenant> tenantPage) {
+        List<String> tenantIds = tenantPage.map(Tenant::getTenantId).toList();
+        return licencePlanService.batchGetCurrentLicences(tenantIds);
+    }
+
+    private TenantSummaryResponse toSummaryWithLicence(Tenant tenant, LicenceResponse licence) {
         return new TenantSummaryResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
                 tenant.getStatus().name(),
-                current != null ? current.planName() : tenant.getPlan().getName(),
-                current != null ? current.seatCount() : null,
-                current != null ? current.endDate() : null,
+                licence != null ? licence.planName() : tenant.getPlan().getName(),
+                licence != null ? licence.seatCount() : null,
+                licence != null ? licence.endDate() : null,
                 tenant.getAdminEmail(),
                 tenant.getCreatedAt());
     }
@@ -175,7 +187,9 @@ public class SuperAdminTenantService {
         if (statuses == null || statuses.isEmpty()) {
             return listTenants(pageable);
         }
-        return tenantRepository.findByStatusIn(statuses, pageable).map(this::toSummary);
+        Page<Tenant> tenantPage = tenantRepository.findByStatusIn(statuses, pageable);
+        Map<String, LicenceResponse> licences = batchLoadLicences(tenantPage);
+        return tenantPage.map(t -> toSummaryWithLicence(t, licences.get(t.getTenantId())));
     }
 
     private static final String PASSWORD_CHARSET =
@@ -195,8 +209,61 @@ public class SuperAdminTenantService {
         return sb.toString();
     }
 
-    @Transactional
-    public void publishTenantCreatedEvent(Tenant tenant) {
-        tenantEventPublisher.publishTenantCreated(tenant);
+    /**
+     * KPI counts for the SUPER_ADMIN dashboard. All counts are platform-wide
+     * and intentionally bypass per-tenant filtering.
+     * <p>
+     * Note: {@code trialEndsAt} is a {@link LocalDate} (no time component),
+     * so the "expiring in 48 hours" bucket is approximated as
+     * "trial end date is today through today+2 inclusive". The "in 7 days"
+     * bucket is "today through today+7 inclusive".
+     */
+    public DashboardMetricsResponse getDashboardMetrics() {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate in7Days = today.plusDays(7);
+        LocalDate in2Days = today.plusDays(2);
+        LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
+
+        long total = tenantRepository.count();
+        long active = tenantRepository.countByStatus(TenantStatus.ACTIVE);
+        long suspended = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
+        long trialsExpiring7 = tenantRepository.countByStatusAndTrialEndsAtBetween(
+                TenantStatus.TRIAL, today, in7Days);
+        long trialsExpiring48 = tenantRepository.countByStatusAndTrialEndsAtBetween(
+                TenantStatus.TRIAL, today, in2Days);
+        long tenantDelta = tenantRepository.countByCreatedAtAfter(startOfMonth);
+        long activeDelta = tenantRepository.countByStatusAndCreatedAtAfter(
+                TenantStatus.ACTIVE, startOfMonth);
+
+        return new DashboardMetricsResponse(
+                total, active, trialsExpiring7, trialsExpiring48,
+                suspended, tenantDelta, activeDelta);
+    }
+
+    /**
+     * Returns monthly tenant signup counts plus active-tenant counts for the
+     * requested period, grouped by calendar month. Empty months are omitted —
+     * the caller (frontend) is responsible for filling gaps if a continuous
+     * series is required.
+     * <p>
+     * Note: the underlying query always groups by month, so sub-month periods
+     * ("24h", "7d", "30d") will still return one row per calendar month that
+     * contains any activity in the window.
+     */
+    public List<TenantGrowthPointResponse> getTenantGrowth(String period) {
+        long days = switch (period) {
+            case "24h" -> 1;
+            case "7d"  -> 7;
+            case "30d" -> 30;
+            case "3m"  -> 90;
+            default    -> 365; // "12m" or unknown
+        };
+        LocalDateTime start = LocalDateTime.now(ZoneOffset.UTC).minusDays(days);
+        return tenantRepository.findMonthlyGrowth(start).stream()
+                .map(row -> new TenantGrowthPointResponse(
+                        (String) row[0],
+                        ((Number) row[1]).longValue(),
+                        ((Number) row[2]).longValue()))
+                .toList();
     }
 }
