@@ -123,18 +123,6 @@ spring:
                 name: leaveServiceCB
                 fallbackUri: forward:/fallback/leave-service
 
-        # ── Phase 2 New ─────────────────────────────────────────────────────
-        - id: expense-service
-          uri: ${EXPENSE_SERVICE_URL:http://localhost:8093}
-          predicates:
-            - Path=/api/v1/expenses/**
-          filters:
-            - TenantLicenceFilter
-            - name: CircuitBreaker
-              args:
-                name: expenseServiceCB
-                fallbackUri: forward:/fallback/expense-service
-
         # ── Phase 3: Supporting ─────────────────────────────────────────────
         - id: document-service
           uri: ${DOCUMENT_SERVICE_URL:http://localhost:8088}
@@ -172,40 +160,6 @@ spring:
           uri: ${INTEGRATION_SERVICE_URL:http://localhost:8090}
           predicates:
             - Path=/api/v1/callbacks/**
-
-        # ── Phase 3 New ─────────────────────────────────────────────────────
-        - id: recruitment-service
-          uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8094}
-          predicates:
-            - Path=/api/v1/recruitment/**
-          filters:
-            - TenantLicenceFilter
-            - name: CircuitBreaker
-              args:
-                name: recruitmentServiceCB
-                fallbackUri: forward:/fallback/recruitment-service
-
-        - id: performance-service
-          uri: ${PERFORMANCE_SERVICE_URL:http://localhost:8095}
-          predicates:
-            - Path=/api/v1/performance/**
-          filters:
-            - TenantLicenceFilter
-            - name: CircuitBreaker
-              args:
-                name: performanceServiceCB
-                fallbackUri: forward:/fallback/performance-service
-
-        - id: asset-service
-          uri: ${ASSET_SERVICE_URL:http://localhost:8096}
-          predicates:
-            - Path=/api/v1/assets/**
-          filters:
-            - TenantLicenceFilter
-            - name: CircuitBreaker
-              args:
-                name: assetServiceCB
-                fallbackUri: forward:/fallback/asset-service
 
         # ── Phase 4: Intelligence ────────────────────────────────────────────
         - id: analytics-service
