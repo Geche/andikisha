@@ -4,7 +4,7 @@ import { HeroBrowserMockup } from "./HeroBrowserMockup";
 
 export default function Hero() {
   return (
-    <section className="bg-white pt-20 pb-0 overflow-hidden">
+    <section className="relative bg-white pt-20 pb-0 overflow-hidden">
       {/* Centered text block */}
       <div className="mx-auto max-w-[760px] px-6 text-center">
 
