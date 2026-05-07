@@ -66,12 +66,19 @@ public class LeaveGrpcClient {
     }
 
     public List<EmployeeLeaveBalances> getLeaveBalancesBatch(String tenantId, List<String> employeeIds, int year) {
-        var response = stub.getLeaveBalancesBatch(
-                GetLeaveBalancesBatchRequest.newBuilder()
-                        .setTenantId(tenantId)
-                        .addAllEmployeeIds(employeeIds)
-                        .setYear(year)
-                        .build());
-        return response.getResultsList();
+        try {
+            var response = stub.getLeaveBalancesBatch(
+                    GetLeaveBalancesBatchRequest.newBuilder()
+                            .setTenantId(tenantId)
+                            .addAllEmployeeIds(employeeIds)
+                            .setYear(year)
+                            .build());
+            return response.getResultsList();
+        } catch (StatusRuntimeException e) {
+            log.warn("Failed to fetch batch leave balances for tenant {} ({}): {}",
+                    tenantId, employeeIds.size() + " employees", e.getStatus());
+            // safe fallback: return empty list so payroll run continues with zero leave deductions
+            return Collections.emptyList();
+        }
     }
 }
