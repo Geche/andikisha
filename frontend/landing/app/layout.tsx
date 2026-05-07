@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
-import { Montserrat, DM_Mono } from "next/font/google";
+import { Montserrat, DM_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ScrollProgress from "@/components/ui/ScrollProgress";
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  weight: ["600", "700", "800"],
+  display: "swap",
+});
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -82,7 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${montserrat.variable} ${dmMono.variable}`}
+      className={`${bricolage.variable} ${montserrat.variable} ${dmMono.variable}`}
     >
       <body className="font-body text-ink-900 bg-surface antialiased overflow-x-hidden">
         <script
