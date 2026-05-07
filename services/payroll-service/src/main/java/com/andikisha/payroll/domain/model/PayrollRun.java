@@ -10,7 +10,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -21,8 +20,7 @@ import java.util.UUID;
 
 @Getter
 @Entity
-@Table(name = "payroll_runs",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "period", "pay_frequency"}))
+@Table(name = "payroll_runs")
 public class PayrollRun extends BaseEntity {
 
     @Column(nullable = false, length = 7)
