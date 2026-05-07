@@ -8,6 +8,7 @@ service LeaveService {
   rpc GetLeaveBalance(GetLeaveBalanceRequest) returns (LeaveBalanceResponse);
   rpc GetLeaveBalances(GetLeaveBalancesRequest) returns (LeaveBalancesResponse);
   rpc GetLeaveBalancesBatch(GetLeaveBalancesBatchRequest) returns (GetLeaveBalancesBatchResponse);
+  rpc GetUnpaidLeaveDaysForPeriod(GetUnpaidLeaveDaysForPeriodRequest) returns (GetUnpaidLeaveDaysForPeriodResponse);
 }
 
 message GetLeaveBalanceRequest {
@@ -50,4 +51,20 @@ message EmployeeLeaveBalances {
 
 message GetLeaveBalancesBatchResponse {
   repeated EmployeeLeaveBalances results = 1;
+}
+
+message GetUnpaidLeaveDaysForPeriodRequest {
+  string tenant_id             = 1;
+  repeated string employee_ids = 2;
+  int32 year                   = 3;
+  int32 month                  = 4;
+}
+
+message EmployeeUnpaidDays {
+  string employee_id = 1;
+  string unpaid_days = 2;
+}
+
+message GetUnpaidLeaveDaysForPeriodResponse {
+  repeated EmployeeUnpaidDays results = 1;
 }

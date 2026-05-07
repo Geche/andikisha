@@ -11,5 +11,8 @@ public record SuperAdminProvisionRequest(
 
         @NotBlank(message = "Password is required")
         @Size(min = 12, message = "Password must be at least 12 characters")
-        String password
+        String password,
+
+        @NotBlank(message = "Provision secret is required")
+        String provisionSecret
 ) {}

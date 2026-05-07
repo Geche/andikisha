@@ -42,3 +42,4 @@ app:
     secret: QW5kaWtpc2hhSFJUZXN0Snd0U2VjcmV0S2V5MTIzNDU=
     expiration-ms: 3600000
     refresh-expiration-ms: 604800000
+  provision-secret: test-provision-secret

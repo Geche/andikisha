@@ -3,6 +3,7 @@ package com.andikisha.leave.unit;
 import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeaveType;
 import com.andikisha.leave.domain.repository.LeaveBalanceRepository;
+import com.andikisha.leave.domain.repository.LeaveRequestRepository;
 import com.andikisha.leave.infrastructure.grpc.LeaveGrpcService;
 import com.andikisha.proto.leave.GetLeaveBalanceRequest;
 import com.andikisha.proto.leave.GetLeaveBalancesRequest;
@@ -38,7 +39,8 @@ class LeaveGrpcServiceTest {
     private static final UUID   EMPLOYEE_ID = UUID.randomUUID();
     private static final int    YEAR        = 2024;
 
-    @Mock LeaveBalanceRepository balanceRepository;
+    @Mock LeaveBalanceRepository  balanceRepository;
+    @Mock LeaveRequestRepository  requestRepository;
     @Mock StreamObserver<LeaveBalanceResponse>  singleObserver;
     @Mock StreamObserver<LeaveBalancesResponse> listObserver;
 
@@ -46,7 +48,7 @@ class LeaveGrpcServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new LeaveGrpcService(balanceRepository);
+        service = new LeaveGrpcService(balanceRepository, requestRepository);
     }
 
     // -------------------------------------------------------------------------

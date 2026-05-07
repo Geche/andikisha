@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -57,4 +58,21 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, UUID
     BigDecimal sumDaysByStatus(String tenantId, UUID employeeId,
                                LeaveType leaveType, LeaveRequestStatus status,
                                LocalDate yearStart, LocalDate yearEnd);
+
+    @Query("""
+        SELECT lr.employeeId, COALESCE(SUM(lr.days), 0)
+        FROM LeaveRequest lr
+        WHERE lr.tenantId = :tenantId
+        AND lr.employeeId IN :employeeIds
+        AND lr.leaveType = com.andikisha.leave.domain.model.LeaveType.UNPAID
+        AND lr.status = com.andikisha.leave.domain.model.LeaveRequestStatus.APPROVED
+        AND lr.startDate >= :periodStart
+        AND lr.startDate <= :periodEnd
+        GROUP BY lr.employeeId
+        """)
+    List<Object[]> sumApprovedUnpaidDaysByPeriod(
+            @Param("tenantId") String tenantId,
+            @Param("employeeIds") List<UUID> employeeIds,
+            @Param("periodStart") LocalDate periodStart,
+            @Param("periodEnd") LocalDate periodEnd);
 }

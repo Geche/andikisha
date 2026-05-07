@@ -4,6 +4,7 @@ import com.andikisha.proto.leave.EmployeeLeaveBalances;
 import com.andikisha.proto.leave.GetLeaveBalanceRequest;
 import com.andikisha.proto.leave.GetLeaveBalancesBatchRequest;
 import com.andikisha.proto.leave.GetLeaveBalancesRequest;
+import com.andikisha.proto.leave.GetUnpaidLeaveDaysForPeriodRequest;
 import com.andikisha.proto.leave.LeaveBalanceResponse;
 import com.andikisha.proto.leave.LeaveBalancesResponse;
 import com.andikisha.proto.leave.LeaveServiceGrpc;
@@ -14,9 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 public class LeaveGrpcClient {
@@ -79,6 +83,25 @@ public class LeaveGrpcClient {
                     tenantId, employeeIds.size() + " employees", e.getStatus());
             // safe fallback: return empty list so payroll run continues with zero leave deductions
             return Collections.emptyList();
+        }
+    }
+
+    public Map<String, BigDecimal> getUnpaidLeaveDaysForPeriod(String tenantId, List<String> employeeIds, int year, int month) {
+        try {
+            var response = stub.getUnpaidLeaveDaysForPeriod(
+                    GetUnpaidLeaveDaysForPeriodRequest.newBuilder()
+                            .setTenantId(tenantId)
+                            .addAllEmployeeIds(employeeIds)
+                            .setYear(year)
+                            .setMonth(month)
+                            .build());
+            return response.getResultsList().stream()
+                    .collect(Collectors.toMap(
+                            com.andikisha.proto.leave.EmployeeUnpaidDays::getEmployeeId,
+                            r -> new BigDecimal(r.getUnpaidDays())));
+        } catch (StatusRuntimeException e) {
+            log.warn("Failed to fetch unpaid leave days for period {}/{} tenant {}: {}", year, month, tenantId, e.getStatus());
+            return Collections.emptyMap();
         }
     }
 }

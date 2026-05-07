@@ -4,11 +4,15 @@ import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeaveType;
 import com.andikisha.leave.domain.repository.LeaveBalanceRepository;
+import com.andikisha.leave.domain.repository.LeaveRequestRepository;
 import com.andikisha.proto.leave.EmployeeLeaveBalances;
+import com.andikisha.proto.leave.EmployeeUnpaidDays;
 import com.andikisha.proto.leave.GetLeaveBalanceRequest;
 import com.andikisha.proto.leave.GetLeaveBalancesBatchRequest;
 import com.andikisha.proto.leave.GetLeaveBalancesBatchResponse;
 import com.andikisha.proto.leave.GetLeaveBalancesRequest;
+import com.andikisha.proto.leave.GetUnpaidLeaveDaysForPeriodRequest;
+import com.andikisha.proto.leave.GetUnpaidLeaveDaysForPeriodResponse;
 import com.andikisha.proto.leave.LeaveBalanceResponse;
 import com.andikisha.proto.leave.LeaveBalancesResponse;
 import com.andikisha.proto.leave.LeaveServiceGrpc;
@@ -18,6 +22,8 @@ import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,9 +36,12 @@ public class LeaveGrpcService extends LeaveServiceGrpc.LeaveServiceImplBase {
     private static final Logger log = LoggerFactory.getLogger(LeaveGrpcService.class);
 
     private final LeaveBalanceRepository balanceRepository;
+    private final LeaveRequestRepository requestRepository;
 
-    public LeaveGrpcService(LeaveBalanceRepository balanceRepository) {
+    public LeaveGrpcService(LeaveBalanceRepository balanceRepository,
+                             LeaveRequestRepository requestRepository) {
         this.balanceRepository = balanceRepository;
+        this.requestRepository = requestRepository;
     }
 
     @Override
@@ -147,6 +156,52 @@ public class LeaveGrpcService extends LeaveServiceGrpc.LeaveServiceImplBase {
         } catch (Exception e) {
             log.error("GetLeaveBalancesBatch failed for tenant {}", request.getTenantId(), e);
             observer.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Override
+    public void getUnpaidLeaveDaysForPeriod(GetUnpaidLeaveDaysForPeriodRequest request,
+                                             StreamObserver<GetUnpaidLeaveDaysForPeriodResponse> observer) {
+        if (request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asRuntimeException());
+            return;
+        }
+        try {
+            TenantContext.setTenantId(request.getTenantId());
+            LocalDate periodStart = LocalDate.of(request.getYear(), request.getMonth(), 1);
+            LocalDate periodEnd = periodStart.withDayOfMonth(periodStart.lengthOfMonth());
+
+            List<UUID> employeeIds = request.getEmployeeIdsList().stream()
+                    .map(UUID::fromString).toList();
+
+            List<Object[]> rows = requestRepository.sumApprovedUnpaidDaysByPeriod(
+                    request.getTenantId(), employeeIds, periodStart, periodEnd);
+
+            Map<String, String> daysByEmployee = rows.stream()
+                    .collect(Collectors.toMap(
+                            r -> ((UUID) r[0]).toString(),
+                            r -> ((BigDecimal) r[1]).toPlainString()));
+
+            List<EmployeeUnpaidDays> results = employeeIds.stream()
+                    .map(id -> EmployeeUnpaidDays.newBuilder()
+                            .setEmployeeId(id.toString())
+                            .setUnpaidDays(daysByEmployee.getOrDefault(id.toString(), "0"))
+                            .build())
+                    .toList();
+
+            observer.onNext(GetUnpaidLeaveDaysForPeriodResponse.newBuilder()
+                    .addAllResults(results)
+                    .build());
+            observer.onCompleted();
+        } catch (IllegalArgumentException e) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("Invalid argument: " + e.getMessage()).asRuntimeException());
+        } catch (Exception e) {
+            log.error("GetUnpaidLeaveDaysForPeriod failed for tenant {}", request.getTenantId(), e);
+            observer.onError(Status.INTERNAL.withDescription("Internal error").asRuntimeException());
         } finally {
             TenantContext.clear();
         }

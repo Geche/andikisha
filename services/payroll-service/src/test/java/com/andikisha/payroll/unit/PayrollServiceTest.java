@@ -21,7 +21,6 @@ import com.andikisha.payroll.infrastructure.grpc.LeaveGrpcClient;
 import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.proto.employee.SalaryStructureResponse;
 import com.andikisha.proto.leave.EmployeeLeaveBalances;
-import com.andikisha.proto.leave.LeaveBalanceResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,7 +37,9 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -318,6 +319,8 @@ class PayrollServiceTest {
         when(employeeClient.getActiveEmployees(TENANT_ID)).thenReturn(employees);
         when(employeeClient.getSalaryStructuresBatch(anyString(), anyList())).thenReturn(salaryBatch);
         when(leaveClient.getLeaveBalancesBatch(anyString(), anyList(), anyInt())).thenReturn(leaveBatch);
+        when(leaveClient.getUnpaidLeaveDaysForPeriod(anyString(), anyList(), anyInt(), anyInt()))
+                .thenReturn(Collections.emptyMap());
 
         // Tax calculator stub — return a minimal DeductionResult
         DeductionResult deductions = new DeductionResult(
@@ -344,39 +347,26 @@ class PayrollServiceTest {
 
     // -------------------------------------------------------------------------
     // computeUnpaidLeaveDeduction (private — tested via ReflectionTestUtils)
+    // The method now takes the per-period unpaid day count directly (GRPC-003 fix).
     // -------------------------------------------------------------------------
 
     @Test
     void computeUnpaidLeaveDeduction_noUnpaidLeave_returnsZero() {
-        List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("ANNUAL").setUsed("5.0").build(),
-                LeaveBalanceResponse.newBuilder().setLeaveType("SICK").setUsed("2.0").build()
-        );
-
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), balances);
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), BigDecimal.ZERO);
         assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void computeUnpaidLeaveDeduction_unpaidDaysUsed_deductsCorrectly() {
         // basicPay=100_000, unpaid=11 days, daily rate=100_000/22=4_545.4545, deduction=50_000.00
-        List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("11.0").build()
-        );
-
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), balances);
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), BigDecimal.valueOf(11));
         assertThat(result).isEqualByComparingTo(new BigDecimal("50000.00"));
     }
 
     @Test
     void computeUnpaidLeaveDeduction_multipleUnpaidEntries_sumsAllUsed() {
-        // Two UNPAID entries: 5 + 3 = 8 days; daily rate = 50_000/22
-        List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("5.0").build(),
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("3.0").build()
-        );
-
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(50_000), balances);
+        // 5 + 3 = 8 days (caller already aggregated); daily rate = 50_000/22
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(50_000), BigDecimal.valueOf(8));
         BigDecimal expected = BigDecimal.valueOf(50_000)
                 .divide(BigDecimal.valueOf(22), 4, java.math.RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(8))
@@ -386,24 +376,20 @@ class PayrollServiceTest {
 
     @Test
     void computeUnpaidLeaveDeduction_zeroUnpaidUsed_returnsZero() {
-        List<LeaveBalanceResponse> balances = List.of(
-                LeaveBalanceResponse.newBuilder().setLeaveType("UNPAID").setUsed("0.0").build()
-        );
-
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(80_000), balances);
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(80_000), BigDecimal.ZERO);
         assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void computeUnpaidLeaveDeduction_emptyBalances_returnsZero() {
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(60_000), List.of());
+        // Zero days passed — equivalent to an employee with no unpaid leave this period
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(60_000), BigDecimal.ZERO);
         assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
-    @SuppressWarnings("unchecked")
-    private BigDecimal invokeDeduction(BigDecimal basicPay, List<LeaveBalanceResponse> balances) {
+    private BigDecimal invokeDeduction(BigDecimal basicPay, BigDecimal unpaidDaysThisPeriod) {
         return (BigDecimal) ReflectionTestUtils.invokeMethod(
-                service, "computeUnpaidLeaveDeduction", basicPay, balances);
+                service, "computeUnpaidLeaveDeduction", basicPay, unpaidDaysThisPeriod);
     }
 
     // -------------------------------------------------------------------------

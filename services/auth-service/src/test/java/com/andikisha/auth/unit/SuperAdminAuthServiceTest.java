@@ -52,10 +52,11 @@ class SuperAdminAuthServiceTest {
     private static final String ACCESS_TOKEN = "access.jwt";
     private static final String REFRESH_TOKEN = "refresh.jwt";
     private static final String IMPERSONATION_TOKEN = "impersonation.jwt";
+    private static final String PROVISION_SECRET = "test-secret";
 
     @BeforeEach
     void setUp() {
-        service = new SuperAdminAuthService(userRepository, jwtTokenProvider, passwordEncoder, sessionRepository);
+        service = new SuperAdminAuthService(userRepository, jwtTokenProvider, passwordEncoder, sessionRepository, PROVISION_SECRET);
     }
 
     private User buildSuperAdmin() {
@@ -80,7 +81,7 @@ class SuperAdminAuthServiceTest {
         when(userRepository.save(any())).thenReturn(saved);
 
         SuperAdminProvisionResponse response = service.provision(
-                new SuperAdminProvisionRequest(EMAIL, STRONG_PASSWORD));
+                new SuperAdminProvisionRequest(EMAIL, STRONG_PASSWORD, PROVISION_SECRET));
 
         assertThat(response.email()).isEqualTo(EMAIL);
         assertThat(response.role()).isEqualTo("SUPER_ADMIN");
@@ -92,7 +93,7 @@ class SuperAdminAuthServiceTest {
         when(userRepository.existsByRoleAndTenantId(Role.SUPER_ADMIN, SYSTEM)).thenReturn(true);
 
         assertThatThrownBy(() ->
-                service.provision(new SuperAdminProvisionRequest(EMAIL, STRONG_PASSWORD)))
+                service.provision(new SuperAdminProvisionRequest(EMAIL, STRONG_PASSWORD, PROVISION_SECRET)))
                 .isInstanceOf(DuplicateResourceException.class);
         verify(userRepository, never()).save(any());
     }
@@ -102,7 +103,7 @@ class SuperAdminAuthServiceTest {
         when(userRepository.existsByRoleAndTenantId(Role.SUPER_ADMIN, SYSTEM)).thenReturn(false);
 
         assertThatThrownBy(() ->
-                service.provision(new SuperAdminProvisionRequest(EMAIL, "weak")))
+                service.provision(new SuperAdminProvisionRequest(EMAIL, "weak", PROVISION_SECRET)))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Password must be at least 12 characters");
     }
@@ -112,7 +113,7 @@ class SuperAdminAuthServiceTest {
         when(userRepository.existsByRoleAndTenantId(Role.SUPER_ADMIN, SYSTEM)).thenReturn(false);
 
         assertThatThrownBy(() ->
-                service.provision(new SuperAdminProvisionRequest(EMAIL, "NoSpecialChar1234")))
+                service.provision(new SuperAdminProvisionRequest(EMAIL, "NoSpecialChar1234", PROVISION_SECRET)))
                 .isInstanceOf(BusinessRuleException.class);
     }
 

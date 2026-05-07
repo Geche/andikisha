@@ -16,6 +16,7 @@ import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,19 +43,26 @@ public class SuperAdminAuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final SuperAdminSessionRepository sessionRepository;
+    private final String provisionSecret;
 
     public SuperAdminAuthService(UserRepository userRepository,
                                  JwtTokenProvider jwtTokenProvider,
                                  PasswordEncoder passwordEncoder,
-                                 SuperAdminSessionRepository sessionRepository) {
+                                 SuperAdminSessionRepository sessionRepository,
+                                 @Value("${app.provision-secret}") String provisionSecret) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.sessionRepository = sessionRepository;
+        this.provisionSecret = provisionSecret;
     }
 
     @Transactional
     public SuperAdminProvisionResponse provision(SuperAdminProvisionRequest request) {
+        if (!provisionSecret.equals(request.provisionSecret())) {
+            throw new BusinessRuleException("INVALID_SECRET", "Invalid provision secret");
+        }
+
         if (userRepository.existsByRoleAndTenantId(Role.SUPER_ADMIN, SYSTEM_TENANT)) {
             throw new DuplicateResourceException("SuperAdmin", "role",
                     "SUPER_ADMIN account has already been provisioned");

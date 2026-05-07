@@ -152,8 +152,9 @@ public class PayrollService {
             throw new BusinessRuleException("NO_EMPLOYEES", "No active employees found for this tenant");
         }
 
-        // Parse period year for leave balance lookup (period format: YYYY-MM)
+        // Parse period year and month for leave lookup (period format: YYYY-MM)
         int periodYear = Integer.parseInt(period.substring(0, 4));
+        int periodMonth = Integer.parseInt(period.substring(5, 7));
 
         // Collect all employee IDs for batch calls
         List<String> employeeIds = employees.stream().map(EmployeeResponse::getId).toList();
@@ -171,6 +172,9 @@ public class PayrollService {
                         EmployeeLeaveBalances::getEmployeeId,
                         EmployeeLeaveBalances::getBalancesList));
 
+        Map<String, BigDecimal> unpaidDaysMap = leaveClient
+                .getUnpaidLeaveDaysForPeriod(tenantId, employeeIds, periodYear, periodMonth);
+
         List<EmployeeSalaryData> salaryData = new ArrayList<>();
         for (EmployeeResponse employee : employees) {
             SalaryStructureResponse salary = salaryMap.get(employee.getId());
@@ -179,7 +183,8 @@ public class PayrollService {
                 continue;
             }
             List<LeaveBalanceResponse> leaveBalances = leaveMap.getOrDefault(employee.getId(), List.of());
-            salaryData.add(new EmployeeSalaryData(employee, salary, leaveBalances));
+            BigDecimal unpaidDays = unpaidDaysMap.getOrDefault(employee.getId(), BigDecimal.ZERO);
+            salaryData.add(new EmployeeSalaryData(employee, salary, leaveBalances, unpaidDays));
         }
 
         int skipped = employees.size() - salaryData.size();
@@ -227,7 +232,7 @@ public class PayrollService {
 
                     // Unpaid leave deduction: daily rate × unpaid days used this period
                     BigDecimal unpaidLeaveDeduction = computeUnpaidLeaveDeduction(
-                            basicPay, data.leaveBalances());
+                            basicPay, data.unpaidDaysThisPeriod());
                     BigDecimal rawNetPay = deductions.netPay().subtract(unpaidLeaveDeduction);
                     BigDecimal netPay = rawNetPay.max(BigDecimal.ZERO);
                     // If unpaid leave pushes netPay below zero, cap total deductions to gross
@@ -415,23 +420,18 @@ public class PayrollService {
 
     /**
      * Deducts unpaid leave at a daily rate of basicPay / 22 working days.
-     * Only UNPAID leave type is deducted; all other leave types (annual, sick, etc.)
-     * are paid entitlements and do not affect the payslip.
+     * Only days taken in the current pay period are deducted; the caller
+     * passes the per-period count fetched via gRPC to avoid YTD double-deduction.
      */
-    private BigDecimal computeUnpaidLeaveDeduction(BigDecimal basicPay,
-                                                    List<LeaveBalanceResponse> balances) {
-        BigDecimal unpaidDaysUsed = balances.stream()
-                .filter(b -> "UNPAID".equals(b.getLeaveType()))
-                .map(b -> new BigDecimal(b.getUsed()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        if (unpaidDaysUsed.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
+    private BigDecimal computeUnpaidLeaveDeduction(BigDecimal basicPay, BigDecimal unpaidDaysThisPeriod) {
+        if (unpaidDaysThisPeriod.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
 
         BigDecimal dailyRate = basicPay.divide(
                 BigDecimal.valueOf(STANDARD_WORKING_DAYS_PER_MONTH), 4, RoundingMode.HALF_UP);
-        return dailyRate.multiply(unpaidDaysUsed).setScale(2, RoundingMode.HALF_UP);
+        return dailyRate.multiply(unpaidDaysThisPeriod).setScale(2, RoundingMode.HALF_UP);
     }
 
     private record EmployeeSalaryData(EmployeeResponse employee, SalaryStructureResponse salary,
-                                      List<LeaveBalanceResponse> leaveBalances) {}
+                                      List<LeaveBalanceResponse> leaveBalances,
+                                      BigDecimal unpaidDaysThisPeriod) {}
 }
