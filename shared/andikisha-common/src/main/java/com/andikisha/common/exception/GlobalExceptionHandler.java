@@ -1,6 +1,7 @@
 package com.andikisha.common.exception;
 
 import com.andikisha.common.dto.ErrorResponse;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,18 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .map(f -> new ErrorResponse.FieldError(f.getField(), f.getDefaultMessage()))
+                .toList();
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("VALIDATION_FAILED", errors));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        List<ErrorResponse.FieldError> errors = ex.getConstraintViolations().stream()
+                .map(v -> new ErrorResponse.FieldError(
+                        // strip method name prefix from propertyPath: "methodName.paramName" -> "paramName"
+                        v.getPropertyPath().toString().replaceFirst("^[^.]+\\.", ""),
+                        v.getMessage()))
                 .toList();
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("VALIDATION_FAILED", errors));
