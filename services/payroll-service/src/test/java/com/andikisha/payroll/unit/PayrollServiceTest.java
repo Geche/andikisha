@@ -326,8 +326,8 @@ class PayrollServiceTest {
                 BigDecimal.valueOf(412), BigDecimal.valueOf(25_200),
                 BigDecimal.valueOf(2_160), BigDecimal.valueOf(2_160),
                 BigDecimal.valueOf(2_750), BigDecimal.valueOf(1_500),
-                BigDecimal.valueOf(1_500), BigDecimal.valueOf(31_610),
-                BigDecimal.valueOf(68_390));
+                BigDecimal.valueOf(1_500), BigDecimal.valueOf(50),
+                BigDecimal.valueOf(31_610), BigDecimal.valueOf(68_390));
         when(taxCalculator.calculate(any(), any())).thenReturn(deductions);
 
         when(mapper.toResponse(any(PayrollRun.class))).thenReturn(minimalRunResponse());
