@@ -1,5 +1,6 @@
 package com.andikisha.integration.infrastructure.config;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import org.slf4j.Logger;
@@ -15,8 +16,8 @@ import java.util.Base64;
 
 /**
  * Transparently encrypts/decrypts API credentials at rest using AES-256-GCM.
- * The key is loaded from the CREDENTIAL_ENCRYPTION_KEY environment variable (32 bytes, Base64).
- * If the key is absent (local dev), values are stored unencrypted with a warning.
+ * The key is loaded from {@code app.credential-encryption-key} (32 bytes, Base64-encoded).
+ * Spring will fail to start if the property is absent — there is no insecure fallback.
  */
 @Converter
 @Component
@@ -26,23 +27,27 @@ public class CredentialEncryptor implements AttributeConverter<String, String> {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
+    private static final int REQUIRED_KEY_BYTES = 32;
 
     private final byte[] keyBytes;
 
     public CredentialEncryptor(
-            @Value("${app.credential-encryption-key:}") String base64Key) {
-        if (base64Key == null || base64Key.isBlank()) {
-            log.warn("CREDENTIAL_ENCRYPTION_KEY not set — credentials stored unencrypted. " +
-                     "Set app.credential-encryption-key in production.");
-            this.keyBytes = null;
-        } else {
-            this.keyBytes = Base64.getDecoder().decode(base64Key);
+            @Value("${app.credential-encryption-key}") String base64Key) {
+        this.keyBytes = Base64.getDecoder().decode(base64Key);
+    }
+
+    @PostConstruct
+    void validateKey() {
+        if (keyBytes.length != REQUIRED_KEY_BYTES) {
+            throw new IllegalStateException(
+                    "CREDENTIAL_ENCRYPTION_KEY must be 32 bytes (256-bit) when Base64-decoded, got "
+                            + keyBytes.length);
         }
     }
 
     @Override
     public String convertToDatabaseColumn(String plaintext) {
-        if (plaintext == null || keyBytes == null) return plaintext;
+        if (plaintext == null) return null;
         try {
             byte[] iv = new byte[GCM_IV_LENGTH];
             new SecureRandom().nextBytes(iv);
@@ -62,7 +67,7 @@ public class CredentialEncryptor implements AttributeConverter<String, String> {
 
     @Override
     public String convertToEntityAttribute(String ciphertext) {
-        if (ciphertext == null || keyBytes == null) return ciphertext;
+        if (ciphertext == null) return null;
         try {
             byte[] combined = Base64.getDecoder().decode(ciphertext);
             byte[] iv = new byte[GCM_IV_LENGTH];
