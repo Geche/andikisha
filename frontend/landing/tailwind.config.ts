@@ -41,7 +41,13 @@ const config: Config = {
         info: "#60a5fa",
       },
       fontFamily: {
-        display: ["var(--font-bricolage)", "var(--font-montserrat)", "sans-serif"],
+        display: [
+          "var(--font-bricolage)",
+          "Bricolage Grotesque",
+          "var(--font-montserrat)",
+          "Montserrat",
+          "sans-serif",
+        ],
         body: ["var(--font-montserrat)", "sans-serif"],
         mono: ["var(--font-dm-mono)", "monospace"],
       },
