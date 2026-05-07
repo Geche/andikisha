@@ -19,7 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.flyway.enabled=false",
-        "app.credential-encryption-key=",
+        "app.credential-encryption-key=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
         "spring.rabbitmq.host=localhost",
         "spring.rabbitmq.port=5672",
         "spring.rabbitmq.username=guest",

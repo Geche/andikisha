@@ -2,8 +2,10 @@ package com.andikisha.analytics.e2e;
 
 import com.andikisha.analytics.application.dto.response.DashboardResponse;
 import com.andikisha.analytics.application.service.AnalyticsService;
+import com.andikisha.analytics.infrastructure.config.SecurityConfig;
 import com.andikisha.analytics.infrastructure.config.WebMvcConfig;
 import com.andikisha.analytics.presentation.controller.DashboardController;
+import com.andikisha.analytics.presentation.filter.TrustedHeaderAuthFilter;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.common.tenant.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DashboardController.class)
-@Import({GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({SecurityConfig.class, TrustedHeaderAuthFilter.class, GlobalExceptionHandler.class, WebMvcConfig.class})
 class DashboardControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -36,8 +38,9 @@ class DashboardControllerTest {
     // @EnableJpaAuditing requires this mock in @WebMvcTest
     @MockitoBean JpaMetamodelMappingContext jpaMetamodelMappingContext;
 
-    private static final String TENANT = "e2e-tenant";
-    private static final String USER_ID = "admin-user";
+    private static final String TENANT    = "e2e-tenant";
+    private static final String USER_ID   = "admin-user";
+    private static final String USER_ROLE = "ADMIN";
 
     @BeforeEach
     void setUp() {
@@ -51,7 +54,8 @@ class DashboardControllerTest {
 
     @Test
     void dashboard_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/analytics/dashboard"))
+        mockMvc.perform(get("/api/v1/analytics/dashboard")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE))
                 .andExpect(status().isBadRequest());
     }
 
@@ -69,6 +73,7 @@ class DashboardControllerTest {
         when(analyticsService.getDashboard()).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/analytics/dashboard")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.headcount.totalHeadcount").value(12))
@@ -102,6 +107,7 @@ class DashboardControllerTest {
         when(analyticsService.getDashboard()).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/analytics/dashboard")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.headcount.totalHeadcount").value(0))

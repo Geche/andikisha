@@ -3,7 +3,9 @@ package com.andikisha.attendance.e2e;
 import com.andikisha.attendance.application.dto.response.AttendanceResponse;
 import com.andikisha.attendance.application.dto.response.MonthlySummaryResponse;
 import com.andikisha.attendance.application.service.AttendanceService;
+import com.andikisha.attendance.infrastructure.config.SecurityConfig;
 import com.andikisha.attendance.infrastructure.config.WebMvcConfig;
+import com.andikisha.attendance.presentation.filter.TrustedHeaderAuthFilter;
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.attendance.presentation.controller.AttendanceController;
@@ -32,7 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AttendanceController.class)
-@Import({GlobalExceptionHandler.class, WebMvcConfig.class})
+@Import({SecurityConfig.class, TrustedHeaderAuthFilter.class, GlobalExceptionHandler.class, WebMvcConfig.class})
 class AttendanceControllerTest {
 
     @Autowired MockMvc mockMvc;
@@ -43,6 +45,8 @@ class AttendanceControllerTest {
 
     private static final String TENANT_ID   = "e2e-tenant";
     private static final UUID   EMPLOYEE_ID = UUID.randomUUID();
+    private static final String USER_ID     = "user-1";
+    private static final String USER_ROLE   = "ADMIN";
 
     // -------------------------------------------------------------------------
     // POST /api/v1/attendance/clock-in
@@ -50,8 +54,9 @@ class AttendanceControllerTest {
 
     @Test
     void clockIn_missingTenantHeader_returns400() throws Exception {
-        // TenantInterceptor rejects requests without X-Tenant-ID
+        // Security passes (auth headers present); TenantInterceptor rejects missing X-Tenant-ID → 400
         mockMvc.perform(post("/api/v1/attendance/clock-in")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -63,6 +68,7 @@ class AttendanceControllerTest {
     @Test
     void clockIn_missingClockInTime_returns400WithValidationError() throws Exception {
         mockMvc.perform(post("/api/v1/attendance/clock-in")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,6 +82,7 @@ class AttendanceControllerTest {
         when(attendanceService.clockIn(eq(EMPLOYEE_ID), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/attendance/clock-in")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,6 +99,7 @@ class AttendanceControllerTest {
                 .thenThrow(new BusinessRuleException("ALREADY_CLOCKED_IN", "Already clocked in for today"));
 
         mockMvc.perform(post("/api/v1/attendance/clock-in")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,6 +116,7 @@ class AttendanceControllerTest {
     @Test
     void clockOut_missingClockOutTime_returns400() throws Exception {
         mockMvc.perform(post("/api/v1/attendance/clock-out")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,6 +130,7 @@ class AttendanceControllerTest {
         when(attendanceService.clockOut(eq(EMPLOYEE_ID), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/attendance/clock-out")
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -137,16 +147,18 @@ class AttendanceControllerTest {
 
     @Test
     void getEmployeeAttendance_missingTenantHeader_returns400() throws Exception {
-        mockMvc.perform(get("/api/v1/attendance/employees/{id}", EMPLOYEE_ID))
+        mockMvc.perform(get("/api/v1/attendance/employees/{id}", EMPLOYEE_ID)
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void getEmployeeAttendance_happyPath_returns200WithPage() throws Exception {
-        when(attendanceService.getEmployeeAttendance(eq(EMPLOYEE_ID), any()))
+        when(attendanceService.getEmployeeAttendance(eq(EMPLOYEE_ID), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(stubAttendanceResponse()), PageRequest.of(0, 25), 1));
 
         mockMvc.perform(get("/api/v1/attendance/employees/{id}", EMPLOYEE_ID)
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(1));
@@ -159,9 +171,10 @@ class AttendanceControllerTest {
     @Test
     void getMonthlySummary_happyPath_returns200() throws Exception {
         MonthlySummaryResponse response = stubSummaryResponse();
-        when(attendanceService.getMonthlySummary(eq(EMPLOYEE_ID), eq("2024-04"))).thenReturn(response);
+        when(attendanceService.getMonthlySummary(eq(EMPLOYEE_ID), eq("2024-04"), any())).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/attendance/employees/{id}/monthly-summary", EMPLOYEE_ID)
+                        .header("X-User-ID", USER_ID).header("X-User-Role", USER_ROLE)
                         .header("X-Tenant-ID", TENANT_ID)
                         .param("period", "2024-04"))
                 .andExpect(status().isOk())

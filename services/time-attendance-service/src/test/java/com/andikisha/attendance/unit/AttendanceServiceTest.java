@@ -302,7 +302,7 @@ class AttendanceServiceTest {
         when(recordRepository.sumHolidayHours(TENANT_ID, EMPLOYEE_ID, start, end))
                 .thenReturn(new BigDecimal("8.00"));
 
-        MonthlySummaryResponse result = service.getMonthlySummary(EMPLOYEE_ID, "2024-04");
+        MonthlySummaryResponse result = service.getMonthlySummary(EMPLOYEE_ID, "2024-04", null);
 
         assertThat(result.daysPresent()).isEqualTo(18);
         assertThat(result.daysAbsent()).isEqualTo(2);
