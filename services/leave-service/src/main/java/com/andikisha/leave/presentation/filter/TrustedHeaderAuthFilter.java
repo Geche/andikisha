@@ -39,6 +39,7 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
                         List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                MDC.put("userId", userId);
 
                 if (tenantId != null) {
                     TenantContext.setTenantId(tenantId);
@@ -53,6 +54,7 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
             TenantContext.clear();
             MDC.remove("tenantId");
             MDC.remove("requestId");
+            MDC.remove("userId");
         }
     }
 }
