@@ -70,6 +70,7 @@ public class RabbitMqConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(messageConverter);
         factory.setDefaultRequeueRejected(false);
+        factory.setPrefetchCount(5);
         return factory;
     }
 }
