@@ -1,39 +1,41 @@
 import type { Metadata } from "next";
-import Hero from "@/components/hero/Hero";
-import SocialProofStrip from "@/components/social-proof/SocialProofStrip";
-import FiveReasons from "@/components/pillars/ThreePillars";
-import HowItWorks from "@/components/how-it-works/HowItWorks";
-import Personas from "@/components/personas/Personas";
-import PayrollCalculator from "@/components/calculator/PayrollCalculator";
-import ProductWalkthrough from "@/components/walkthrough/ProductWalkthrough";
-import FoundingCustomer from "@/components/founding/FoundingCustomer";
-import Testimonials from "@/components/testimonials/Testimonials";
-import ComplianceAuthority from "@/components/compliance/ComplianceAuthority";
-import TrustSection from "@/components/trust/TrustSection";
-import FinalCTABanner from "@/components/cta/FinalCTABanner";
-import FaqList from "@/components/faq/FaqList";
+import Hero                  from "@/components/hero/Hero";
+import LogosRow              from "@/components/logos/LogosRow";
+import FeaturePayrollRun     from "@/components/features/FeaturePayrollRun";
+import FeatureDisbursement   from "@/components/features/FeatureDisbursement";
+import FeatureComplianceGrid from "@/components/features/FeatureComplianceGrid";
+import PayrollCalculator     from "@/components/calculator/PayrollCalculator";
+import ProductWalkthrough    from "@/components/walkthrough/ProductWalkthrough";
+import ComplianceTimeline    from "@/components/compliance/ComplianceTimeline";
+import StatsBand             from "@/components/stats/StatsBand";
+import TrustSection          from "@/components/trust/TrustSection";
+import JoinCTA               from "@/components/cta/JoinCTA";
+import NewsletterSection     from "@/components/layout/NewsletterSection";
+import FaqList               from "@/components/faq/FaqList";
 
 export const metadata: Metadata = {
-  title: "AndikishaHR — Kenyan HR and payroll, built statute-first",
+  title: "AndikishaHR — Kenyan HR and payroll, calculated correctly",
   description:
-    "One platform for HR, payroll and compliance, designed around PAYE, NSSF, SHIF, the Housing Levy, NITA and HELB. Monthly close on time. KRA filings before the 9th.",
+    "Statutory deductions to the cent. Payslips on the phones your team already uses. Salary disbursement on M-Pesa. Built for modern African businesses.",
 };
 
 export default function HomePage() {
   return (
     <>
       <Hero />
-      <SocialProofStrip />
-      <FiveReasons />
-      <HowItWorks />
-      <Personas />
-      <PayrollCalculator />
+      <LogosRow />
+      <FeaturePayrollRun />
+      <FeatureDisbursement />
+      <FeatureComplianceGrid />
+      <div id="calculator">
+        <PayrollCalculator />
+      </div>
       <ProductWalkthrough />
-      <FoundingCustomer />
-      <Testimonials />
-      <ComplianceAuthority />
+      <ComplianceTimeline />
+      <StatsBand />
       <TrustSection />
-      <FinalCTABanner />
+      <JoinCTA />
+      <NewsletterSection />
       <FaqList />
     </>
   );
