@@ -7,6 +7,7 @@ import com.andikisha.analytics.domain.model.PayrollSummary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -29,6 +30,7 @@ public class ReportsController {
     }
 
     @GetMapping("/payroll-trend")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Get payroll cost trend over a period range")
     public List<PayrollSummary> payrollTrend(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -38,6 +40,7 @@ public class ReportsController {
     }
 
     @GetMapping("/headcount-trend")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Get headcount trend over a date range")
     public List<HeadcountSnapshot> headcountTrend(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -47,6 +50,7 @@ public class ReportsController {
     }
 
     @GetMapping("/leave-breakdown/{period}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Get leave breakdown by type for a period")
     public List<LeaveAnalytics> leaveBreakdown(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -55,6 +59,7 @@ public class ReportsController {
     }
 
     @GetMapping("/leave-trend/{leaveType}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Get leave trend over time for a specific leave type")
     public List<LeaveAnalytics> leaveTrend(
             @RequestHeader("X-Tenant-ID") String tenantId,

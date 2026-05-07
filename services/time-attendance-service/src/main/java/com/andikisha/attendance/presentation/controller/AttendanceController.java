@@ -8,6 +8,7 @@ import com.andikisha.attendance.application.service.AttendanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -30,6 +31,7 @@ public class AttendanceController {
 
     @PostMapping("/clock-in")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Record a clock-in")
     public AttendanceResponse clockIn(
             @RequestHeader("X-Employee-ID") String employeeId,
@@ -38,6 +40,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/clock-out")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Record a clock-out")
     public AttendanceResponse clockOut(
             @RequestHeader("X-Employee-ID") String employeeId,
@@ -46,6 +49,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
     @Operation(summary = "Get attendance history for an employee")
     public Page<AttendanceResponse> getEmployeeAttendance(
             @PathVariable UUID employeeId,
@@ -54,6 +58,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/daily")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @Operation(summary = "Get all attendance for a specific date")
     public Page<AttendanceResponse> getDailyAttendance(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -62,6 +67,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}/monthly-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
     @Operation(summary = "Get monthly attendance summary for payroll")
     public MonthlySummaryResponse getMonthlySummary(
             @PathVariable UUID employeeId,
