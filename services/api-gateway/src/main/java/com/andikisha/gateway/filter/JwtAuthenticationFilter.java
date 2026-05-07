@@ -18,10 +18,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import com.andikisha.gateway.config.GatewayPublicPaths;
+
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Set;
 
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
@@ -29,29 +29,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final SecretKey key;
-
-    // Exact paths that require no authentication
-    private static final Set<String> PUBLIC_EXACT_PATHS = Set.of(
-            "/api/v1/auth/login",
-            "/api/v1/auth/register",
-            "/api/v1/auth/refresh",
-            "/api/v1/auth/super-admin/provision",
-            "/api/v1/auth/super-admin/login",
-            "/api/v1/auth/ussd/validate",
-            "/api/v1/plans",
-            "/api/v1/tenants"
-    );
-
-    // Path prefixes that require no authentication (all sub-paths)
-    private static final List<String> PUBLIC_PREFIX_PATHS = List.of(
-            "/api/v1/callbacks/",
-            "/actuator/health",
-            "/actuator/info",
-            "/swagger-ui",
-            "/v3/api-docs",
-            "/webjars/",
-            "/services/"
-    );
 
     public JwtAuthenticationFilter(@Value("${app.jwt.secret}") String jwtSecret) {
         this.key = Keys.hmacShaKeyFor(decodeSecret(jwtSecret));
@@ -136,8 +113,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_EXACT_PATHS.contains(path)
-                || PUBLIC_PREFIX_PATHS.stream().anyMatch(path::startsWith);
+        return GatewayPublicPaths.EXACT.contains(path)
+                || GatewayPublicPaths.PREFIXES.stream().anyMatch(path::startsWith);
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
