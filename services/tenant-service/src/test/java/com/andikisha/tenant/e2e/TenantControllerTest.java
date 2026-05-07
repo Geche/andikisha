@@ -55,7 +55,7 @@ class TenantControllerTest {
 
         mockMvc.perform(post("/api/v1/tenants")
                         .header("X-User-ID", "system")
-                        .header("X-User-Role", "SYSTEM")
+                        .header("X-User-Role", "SUPER_ADMIN")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
@@ -117,7 +117,7 @@ class TenantControllerTest {
 
         mockMvc.perform(post("/api/v1/tenants")
                         .header("X-User-ID", "system")
-                        .header("X-User-Role", "SYSTEM")
+                        .header("X-User-Role", "SUPER_ADMIN")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {

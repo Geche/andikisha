@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class LeaveExceptionHandler {
 
     @ExceptionHandler(LeaveRequestNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(LeaveRequestNotFoundException ex) {
