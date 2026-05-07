@@ -1,23 +1,10 @@
 import axios from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
-
+// All API calls go through the Next.js proxy route which attaches
+// the HttpOnly token server-side. The token is never readable by JS.
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: "/api/proxy",
   headers: { "Content-Type": "application/json" },
-});
-
-apiClient.interceptors.request.use((config) => {
-  if (typeof document !== "undefined") {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("superadmin_token="))
-      ?.split("=")
-      .slice(1)
-      .join("=");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
 });
 
 apiClient.interceptors.response.use(
