@@ -37,6 +37,7 @@ public class TenantController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @Operation(summary = "Register a new tenant (company)")
     public TenantResponse create(@Valid @RequestBody CreateTenantRequest request) {
         return tenantService.create(request);
