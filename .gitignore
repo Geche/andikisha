@@ -58,3 +58,4 @@ frontend/**/.env.local
 infrastructure/docker/.env.env.local
 config/env/.env
 .worktrees/
+.superpowers/
