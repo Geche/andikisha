@@ -18,6 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -154,7 +157,9 @@ public class AttendanceService {
         return mapper.toResponse(record);
     }
 
-    public Page<AttendanceResponse> getEmployeeAttendance(UUID employeeId, Pageable pageable) {
+    public Page<AttendanceResponse> getEmployeeAttendance(UUID employeeId, Pageable pageable,
+                                                           Authentication authentication) {
+        enforceAttendanceOwnership(employeeId, authentication);
         String tenantId = TenantContext.requireTenantId();
         return recordRepository
                 .findByTenantIdAndEmployeeIdOrderByAttendanceDateDesc(tenantId, employeeId, pageable)
@@ -168,7 +173,9 @@ public class AttendanceService {
                 .map(mapper::toResponse);
     }
 
-    public MonthlySummaryResponse getMonthlySummary(UUID employeeId, String period) {
+    public MonthlySummaryResponse getMonthlySummary(UUID employeeId, String period,
+                                                     Authentication authentication) {
+        enforceAttendanceOwnership(employeeId, authentication);
         String tenantId = TenantContext.requireTenantId();
         YearMonth ym = YearMonth.parse(period);
         LocalDate startDate = ym.atDay(1);
@@ -209,6 +216,37 @@ public class AttendanceService {
         if (existing.isEmpty()) {
             AttendanceRecord record = AttendanceRecord.markOnLeave(tenantId, employeeId, date);
             recordRepository.save(record);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private static final SimpleGrantedAuthority ROLE_ADMIN      = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority ROLE_HR_MANAGER = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
+    private static final SimpleGrantedAuthority ROLE_HR         = new SimpleGrantedAuthority("ROLE_HR");
+
+    /**
+     * Employees may only read their own attendance records.
+     * ADMIN, HR_MANAGER, and HR roles may read any employee's records within the tenant.
+     * A null authentication indicates a trusted internal/gRPC caller — access is allowed.
+     */
+    private void enforceAttendanceOwnership(UUID targetEmployeeId, Authentication authentication) {
+        if (authentication == null) {
+            // Internal gRPC callers (e.g. payroll-service) carry no user Authentication;
+            // they are already tenant-scoped and implicitly trusted.
+            return;
+        }
+        boolean isPrivileged = authentication.getAuthorities().contains(ROLE_ADMIN)
+                || authentication.getAuthorities().contains(ROLE_HR_MANAGER)
+                || authentication.getAuthorities().contains(ROLE_HR);
+        if (isPrivileged) {
+            return;
+        }
+        // EMPLOYEE role: authentication.getName() carries the employee UUID set by TrustedHeaderAuthFilter
+        if (!targetEmployeeId.toString().equals(authentication.getName())) {
+            throw new AccessDeniedException("Access denied: you may only view your own attendance records");
         }
     }
 }
