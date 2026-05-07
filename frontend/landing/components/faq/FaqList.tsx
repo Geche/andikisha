@@ -46,51 +46,53 @@ const FAQS = [
 
 export default function FaqList() {
   return (
-    <section className="py-24 bg-white">
+    <section className="bg-surface-alt py-[88px]">
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Left — heading */}
-          <div className="lg:col-span-4">
-            <Eyebrow className="mb-4">FAQ</Eyebrow>
-            <h2
-              className="font-display font-bold text-ink-900 mb-4"
-              style={{ fontSize: "clamp(2.25rem, 4vw, 3.5rem)", lineHeight: "1.05", letterSpacing: "-0.015em" }}
-            >
-              Real questions from real buyers.
-            </h2>
-            <p className="text-[16px] text-ink-600">
-              Still have questions?{" "}
-              <a href="/contact" className="text-brand-700 underline underline-offset-2 hover:text-brand-900 transition-colors">
-                Contact the team.
-              </a>
-            </p>
-          </div>
+        <Eyebrow className="mb-4">FAQ</Eyebrow>
+        <h2
+          className="font-display font-black text-ink-900 leading-[1.06] tracking-[-0.02em] mb-12"
+          style={{ fontSize: "clamp(28px, 3.2vw, 42px)" }}
+        >
+          Everything buyers actually ask.
+        </h2>
 
-          {/* Right — accordion */}
-          <div className="lg:col-span-8">
-            {FAQS.map(({ q, a }, i) => (
+        <div className="grid grid-cols-2">
+          {FAQS.map(({ q, a }, i) => {
+            const isOdd = i % 2 === 0;
+            return (
               <details
                 key={i}
-                className="group border-b border-ink-200 last:border-b-0"
+                className={[
+                  "group border-b border-ink-200",
+                  isOdd ? "border-r border-ink-200 pr-8" : "pl-8",
+                ].join(" ")}
               >
                 <summary className="flex items-center justify-between gap-4 py-5 cursor-pointer list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm">
-                  <span className="text-[16px] font-semibold text-ink-900 leading-snug">{q}</span>
+                  <span className="text-[14px] font-bold text-ink-900 leading-snug">{q}</span>
                   <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
+                    width="16" height="16" viewBox="0 0 16 16" fill="none"
                     className="shrink-0 transition-transform duration-200 group-open:rotate-180 text-ink-400"
                     aria-hidden
                   >
-                    <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 6l5 5 5-5" stroke="currentColor" strokeWidth="1.5"
+                      strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </summary>
-                <p className="pb-5 text-[15px] text-ink-600 leading-[1.75]">{a}</p>
+                <p className="pb-5 text-[14px] text-ink-600 leading-[1.7]">{a}</p>
               </details>
-            ))}
-          </div>
+            );
+          })}
         </div>
+
+        <p className="text-[14px] text-ink-600 mt-10">
+          Still have questions?{" "}
+          <a
+            href="/contact"
+            className="text-brand-700 underline underline-offset-2 hover:text-brand-900 transition-colors"
+          >
+            Contact the team.
+          </a>
+        </p>
       </Container>
     </section>
   );
