@@ -3,6 +3,7 @@ package com.andikisha.attendance.infrastructure.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
@@ -20,6 +21,11 @@ public class RabbitMqConfig {
     public static final String LEAVE_EXCHANGE = "leave.events";
     public static final String TENANT_EXCHANGE = "tenant.events";
 
+    // Dead-letter exchange and queues — messages rejected after retry are routed here
+    private static final String DLX_EXCHANGE    = "dlx.attendance";
+    private static final String DLQ_LEAVE       = "attendance.leave-events.dlq";
+    private static final String DLQ_TENANT      = "attendance.tenant-events.dlq";
+
     @Bean TopicExchange attendanceExchange() {
         return new TopicExchange(ATTENDANCE_EXCHANGE, true, false);
     }
@@ -32,14 +38,40 @@ public class RabbitMqConfig {
         return new TopicExchange(TENANT_EXCHANGE, true, false);
     }
 
+    @Bean DirectExchange dlxAttendanceExchange() {
+        return new DirectExchange(DLX_EXCHANGE, true, false);
+    }
+
     @Bean Queue attendanceLeaveEventsQueue() {
         return QueueBuilder.durable("attendance.leave-events")
-                .withArgument("x-dead-letter-exchange", "dlx.attendance").build();
+                .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", DLQ_LEAVE)
+                .build();
     }
 
     @Bean Queue attendanceTenantEventsQueue() {
         return QueueBuilder.durable("attendance.tenant-events")
-                .withArgument("x-dead-letter-exchange", "dlx.attendance").build();
+                .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", DLQ_TENANT)
+                .build();
+    }
+
+    @Bean Queue attendanceLeaveDeadLetterQueue() {
+        return QueueBuilder.durable(DLQ_LEAVE).build();
+    }
+
+    @Bean Queue attendanceTenantDeadLetterQueue() {
+        return QueueBuilder.durable(DLQ_TENANT).build();
+    }
+
+    @Bean Binding bindLeaveDeadLetterQueue() {
+        return BindingBuilder.bind(attendanceLeaveDeadLetterQueue())
+                .to(dlxAttendanceExchange()).with(DLQ_LEAVE);
+    }
+
+    @Bean Binding bindTenantDeadLetterQueue() {
+        return BindingBuilder.bind(attendanceTenantDeadLetterQueue())
+                .to(dlxAttendanceExchange()).with(DLQ_TENANT);
     }
 
     @Bean Binding bindLeaveEvents() {
