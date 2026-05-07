@@ -13,7 +13,7 @@ const CHECKLIST: { item: string; status: string }[] = [
 
 export default function TrustSection() {
   return (
-    <section className="bg-[#111111] py-24">
+    <section className="bg-brand-950 py-[88px]">
       <Container>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
           {/* Left */}
