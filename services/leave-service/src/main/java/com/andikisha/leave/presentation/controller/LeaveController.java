@@ -54,7 +54,7 @@ public class LeaveController {
     }
 
     @PostMapping("/requests/{id}/approve")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER')")
     @Operation(summary = "Approve a leave request")
     public LeaveRequestResponse approve(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -66,7 +66,7 @@ public class LeaveController {
     }
 
     @PostMapping("/requests/{id}/reject")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER')")
     @Operation(summary = "Reject a leave request")
     public LeaveRequestResponse reject(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -105,7 +105,7 @@ public class LeaveController {
     }
 
     @GetMapping("/requests")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER')")
     @Operation(summary = "List leave requests (filterable by status)")
     public Page<LeaveRequestResponse> listRequests(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -115,7 +115,7 @@ public class LeaveController {
     }
 
     @GetMapping("/requests/{id}")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER')")
     @Operation(summary = "Get a leave request by ID")
     public LeaveRequestResponse getRequest(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -124,7 +124,7 @@ public class LeaveController {
     }
 
     @GetMapping("/employees/{employeeId}/requests")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER') or #employeeId.toString().equals(authentication.name)")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER') or #employeeId.toString().equals(authentication.name)")
     @Operation(summary = "Get leave requests for a specific employee")
     public Page<LeaveRequestResponse> employeeRequests(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -134,7 +134,7 @@ public class LeaveController {
     }
 
     @GetMapping("/employees/{employeeId}/balances")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'MANAGER') or #employeeId.toString().equals(authentication.name)")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER') or #employeeId.toString().equals(authentication.name)")
     @Operation(summary = "Get leave balances for an employee")
     public List<LeaveBalanceResponse> balances(
             @RequestHeader("X-Tenant-ID") String tenantId,

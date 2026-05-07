@@ -1,5 +1,6 @@
 package com.andikisha.gateway.filter;
 
+import com.andikisha.gateway.config.GatewayPublicPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -11,34 +12,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Set;
 
 @Component
 public class TenantValidationFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(TenantValidationFilter.class);
-
-    // Exact paths exempt from tenant validation (must match JWT filter's PUBLIC_EXACT_PATHS)
-    private static final Set<String> EXEMPT_EXACT_PATHS = Set.of(
-            "/api/v1/auth/login",
-            "/api/v1/auth/register",
-            "/api/v1/auth/refresh",
-            "/api/v1/plans",
-            "/api/v1/tenants"
-    );
-
-    // Path prefixes exempt from tenant validation
-    private static final List<String> EXEMPT_PREFIX_PATHS = List.of(
-            "/api/v1/auth/super-admin/",  // superadmin auth (login, provision, sessions)
-            "/api/v1/super-admin/",       // superadmin tenant/dashboard endpoints (SYSTEM-scoped)
-            "/api/v1/callbacks/",
-            "/actuator/",
-            "/swagger-ui",
-            "/v3/api-docs",
-            "/webjars/",
-            "/services/"
-    );
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -69,7 +47,7 @@ public class TenantValidationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isExemptPath(String path) {
-        return EXEMPT_EXACT_PATHS.contains(path)
-                || EXEMPT_PREFIX_PATHS.stream().anyMatch(path::startsWith);
+        return GatewayPublicPaths.EXACT.contains(path)
+                || GatewayPublicPaths.PREFIXES.stream().anyMatch(path::startsWith);
     }
 }

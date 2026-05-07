@@ -28,7 +28,7 @@ spec:
       containers:
         - name: integration-hub-service
           image: andikisha/integration-hub-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8090

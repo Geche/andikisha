@@ -28,7 +28,7 @@ spec:
       containers:
         - name: notification-service
           image: andikisha/notification-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8089

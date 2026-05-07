@@ -28,7 +28,7 @@ spec:
       containers:
         - name: employee-service
           image: andikisha/employee-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8082

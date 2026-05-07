@@ -1,5 +1,6 @@
 package com.andikisha.integration.presentation.filter;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,6 +17,13 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
 
+/**
+ * Validates the source IP of M-Pesa callbacks against the Safaricom CIDR allowlist.
+ *
+ * <p>IP validation uses the direct TCP connection address ({@code remoteAddr}).
+ * {@code X-Forwarded-For} is NOT trusted — Safaricom IP allowlist enforcement must be
+ * configured at the ingress/load balancer level for production deployments.</p>
+ */
 @Component
 public class MpesaSourceIpFilter implements Filter {
 
@@ -32,6 +40,13 @@ public class MpesaSourceIpFilter implements Filter {
             @Value("${mpesa.callback.ip-validation-disabled:false}") boolean disabled) {
         this.allowedCidrs = List.of(cidrs.split(","));
         this.disabled = disabled;
+    }
+
+    @PostConstruct
+    void warnIfDisabled() {
+        if (disabled) {
+            log.warn("M-Pesa callback IP validation is DISABLED — ensure ingress-level IP allowlisting is configured");
+        }
     }
 
     /** Secondary constructor for use in unit tests. */
@@ -65,10 +80,6 @@ public class MpesaSourceIpFilter implements Filter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
         return request.getRemoteAddr();
     }
 

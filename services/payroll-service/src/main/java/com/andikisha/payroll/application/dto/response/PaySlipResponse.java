@@ -24,6 +24,7 @@ public record PaySlipResponse(
         BigDecimal housingLevy,
         BigDecimal housingLevyEmployer,
         BigDecimal helb,
+        BigDecimal nita,
         BigDecimal personalRelief,
         BigDecimal insuranceRelief,
         BigDecimal totalDeductions,

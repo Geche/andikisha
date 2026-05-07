@@ -74,6 +74,9 @@ public class PaySlip extends BaseEntity {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal helb;
 
+    @Column(name = "nita", nullable = false, precision = 10, scale = 2)
+    private BigDecimal nita;
+
     @Column(name = "other_deductions", nullable = false, precision = 15, scale = 2)
     private BigDecimal otherDeductions;
 
@@ -144,6 +147,7 @@ public class PaySlip extends BaseEntity {
         public Builder housingLevy(BigDecimal v) { slip.housingLevy = v; return this; }
         public Builder housingLevyEmployer(BigDecimal v) { slip.housingLevyEmployer = v; return this; }
         public Builder helb(BigDecimal v) { slip.helb = v; return this; }
+        public Builder nita(BigDecimal v) { slip.nita = v; return this; }
         public Builder otherDeductions(BigDecimal v) { slip.otherDeductions = v; return this; }
         public Builder totalDeductions(BigDecimal v) { slip.totalDeductions = v; return this; }
         public Builder personalRelief(BigDecimal v) { slip.personalRelief = v; return this; }

@@ -30,7 +30,7 @@ public class AttendanceGrpcService
         TenantContext.setTenantId(request.getTenantId());
         try {
             MonthlySummaryResponse summary = attendanceService.getMonthlySummary(
-                    UUID.fromString(request.getEmployeeId()), request.getPeriod());
+                    UUID.fromString(request.getEmployeeId()), request.getPeriod(), null);
 
             observer.onNext(MonthlyHoursResponse.newBuilder()
                     .setEmployeeId(summary.employeeId().toString())

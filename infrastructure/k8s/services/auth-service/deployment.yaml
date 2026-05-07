@@ -28,7 +28,7 @@ spec:
       containers:
         - name: auth-service
           image: andikisha/auth-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8081

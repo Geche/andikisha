@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,12 +29,14 @@ public class FeatureFlagController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @Operation(summary = "List all feature flags for current tenant")
     public List<FeatureFlagResponse> list() {
         return featureFlagService.getAllForTenant();
     }
 
     @PutMapping("/{featureKey}/enable")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Enable a feature flag (idempotent)")
     public FeatureFlagResponse enable(
             @PathVariable @Size(max = 100) @Pattern(regexp = "[a-zA-Z0-9_.-]+",
@@ -43,6 +46,7 @@ public class FeatureFlagController {
     }
 
     @PutMapping("/{featureKey}/disable")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Disable a feature flag (idempotent)")
     public FeatureFlagResponse disable(
             @PathVariable @Size(max = 100) @Pattern(regexp = "[a-zA-Z0-9_.-]+",

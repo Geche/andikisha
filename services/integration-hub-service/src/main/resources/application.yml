@@ -98,7 +98,7 @@ springdoc:
 
 logging:
   pattern:
-    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-},%X{tenantId:-},%X{userId:-}]"
 
 mpesa:
   callback:

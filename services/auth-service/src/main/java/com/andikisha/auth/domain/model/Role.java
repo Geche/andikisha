@@ -13,16 +13,15 @@ public enum Role {
     // Payroll & Finance
     PAYROLL_MANAGER,
     PAYROLL_OFFICER,
-    FINANCE_OFFICER,
+    FINANCE_OFFICER, // Reserved for future use
 
     // Management
     LINE_MANAGER,
-    MANAGER,
-    CHIEF_MANAGER,
-    CHIEF_OFFICER,
+    CHIEF_MANAGER,   // Reserved for future use
+    CHIEF_OFFICER,   // Reserved for future use
 
     // Audit & Integration
-    AUDITOR,
+    AUDITOR,         // Reserved for future use
 
     // Self-service
     EMPLOYEE
