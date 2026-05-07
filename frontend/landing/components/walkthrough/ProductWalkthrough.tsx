@@ -155,9 +155,15 @@ export default function ProductWalkthrough() {
   const step = STEPS[active];
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-[88px] bg-surface-alt">
       <Container>
-        <Eyebrow className="mb-12">Product walkthrough</Eyebrow>
+        <Eyebrow className="mb-4">Product walkthrough</Eyebrow>
+        <h2
+          className="font-display font-black text-ink-900 leading-[1.06] tracking-[-0.02em] mb-12"
+          style={{ fontSize: "clamp(28px, 3.2vw, 42px)" }}
+        >
+          The full loop — gross pay to filed return.
+        </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
           {/* Left — text steps */}
@@ -168,7 +174,7 @@ export default function ProductWalkthrough() {
                 onClick={() => setActive(i)}
                 className={`text-left border-l-2 pl-6 py-5 transition-all duration-200 ${
                   active === i
-                    ? "border-amber"
+                    ? "border-amber bg-white rounded-r-lg"
                     : "border-ink-200 hover:border-ink-300"
                 }`}
                 aria-current={active === i ? "true" : undefined}
