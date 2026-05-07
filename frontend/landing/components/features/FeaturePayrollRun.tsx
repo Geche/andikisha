@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
@@ -53,12 +52,6 @@ export default function FeaturePayrollRun() {
                     {title}
                   </p>
                   <p className="text-[14px] text-ink-600 leading-[1.65] pl-[15px]">{body}</p>
-                  <Link
-                    href="/product"
-                    className="flex items-center gap-1 text-[13px] font-bold text-brand-900 hover:text-brand-700 transition-colors pl-[15px] mt-1.5"
-                  >
-                    Learn more <ChevronRight size={12} aria-hidden />
-                  </Link>
                 </div>
               ))}
             </div>
@@ -100,7 +93,7 @@ export default function FeaturePayrollRun() {
                   </div>
                 </div>
               ))}
-              <button className="mt-4 w-full flex items-center justify-center gap-1.5 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[13px] py-3 rounded-xl transition-colors">
+              <button type="button" className="mt-4 w-full flex items-center justify-center gap-1.5 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[13px] py-3 rounded-xl transition-colors">
                 Approve payroll run <ChevronRight size={14} aria-hidden />
               </button>
             </div>

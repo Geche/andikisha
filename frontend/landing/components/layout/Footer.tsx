@@ -42,7 +42,7 @@ function FooterCol({ title, links }: { title: string; links: { label: string; hr
       </p>
       <ul className="flex flex-col gap-3">
         {links.map(({ label, href }) => (
-          <li key={href}>
+          <li key={label}>
             <Link
               href={href}
               className="text-[13px] text-white/50 hover:text-white/85 transition-colors duration-200"

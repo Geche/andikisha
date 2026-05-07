@@ -8,6 +8,11 @@ const EVENTS = [
     desc: "2.75% rate, new remittance target. Shipped same day.",
   },
   {
+    date: "Sep 2024",
+    title: "Finance Bill 2024",
+    desc: "PAYE band amendments applied across all pay runs.",
+  },
+  {
     date: "Mar 2024",
     title: "Housing Levy 1.5%",
     desc: "Employer match applied automatically from March payroll.",
@@ -16,11 +21,6 @@ const EVENTS = [
     date: "Feb 2024",
     title: "NSSF Tier II uplift",
     desc: "New employer contribution tiers, live on effective date.",
-  },
-  {
-    date: "Sep 2024",
-    title: "Finance Bill 2024",
-    desc: "PAYE band amendments applied across all pay runs.",
   },
   {
     date: "Jan 2024",

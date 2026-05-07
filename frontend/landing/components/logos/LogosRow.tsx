@@ -19,7 +19,7 @@ export default function LogosRow() {
             key={name}
             className="flex items-center gap-2 opacity-55 hover:opacity-80 transition-opacity"
           >
-            <div className="w-[22px] h-[22px] rounded-[5px] bg-ink-200 flex items-center justify-center text-[10px] font-black text-ink-600 shrink-0">
+            <div className="w-[22px] h-[22px] rounded-[5px] bg-ink-200 flex items-center justify-center text-[10px] font-black text-ink-600 shrink-0" aria-hidden>
               {initial}
             </div>
             <span className="text-[14px] font-bold text-ink-400 tracking-[-0.01em]">

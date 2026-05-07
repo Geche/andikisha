@@ -58,10 +58,10 @@ export default function FaqList() {
 
         <div className="grid grid-cols-2">
           {FAQS.map(({ q, a }, i) => {
-            const isOdd = i % 2 === 0;
+            const isOdd  = i % 2 === 0;
             return (
               <details
-                key={i}
+                key={q}
                 className={[
                   "group border-b border-ink-200",
                   isOdd ? "border-r border-ink-200 pr-8" : "pl-8",

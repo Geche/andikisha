@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { FileText, Smartphone, CreditCard, Shield, ChevronRight } from "lucide-react";
+import { FileText, Smartphone, CreditCard, Shield } from "lucide-react";
+import type { ComponentType } from "react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
 
@@ -8,13 +8,11 @@ const LEFT_CARDS = [
     icon: FileText,
     title: "Automatic statutory filings",
     body: "P10A, NSSF schedule, SHIF remittance, Housing Levy — generated and submitted automatically after payroll approval.",
-    href: "/product",
   },
   {
     icon: Smartphone,
     title: "Mobile-first for every employee",
     body: "Payslips on entry-level Android. PIN login, no password rules. Works on 3G — USSD fallback where bandwidth is poor.",
-    href: "/product",
   },
 ];
 
@@ -23,32 +21,24 @@ const RIGHT_CARDS = [
     icon: CreditCard,
     title: "M-Pesa and bank in one run",
     body: "Native Daraja API. Direct integration with Equity, KCB, Co-op, NCBA, Stanbic. No re-keying, no second platform.",
-    href: "/product",
   },
   {
     icon: Shield,
     title: "Data hosted in Kenya",
     body: "KDPA compliant. Tenant isolation at the PostgreSQL schema level. AES-256 at rest, TLS 1.3 in transit.",
-    href: "/security",
   },
 ];
 
 function Card({
-  icon: Icon, title, body, href,
-}: { icon: React.ComponentType<{ size?: number; className?: string }>; title: string; body: string; href: string }) {
+  icon: Icon, title, body,
+}: { icon: ComponentType<{ size?: number; className?: string }>; title: string; body: string }) {
   return (
     <div className="bg-white border border-ink-200 rounded-2xl p-6 flex flex-col gap-3">
       <div className="w-10 h-10 rounded-[10px] bg-brand-50 flex items-center justify-center">
         <Icon size={20} className="text-brand-900" />
       </div>
       <p className="text-[14px] font-bold text-ink-900">{title}</p>
-      <p className="text-[13px] text-ink-600 leading-[1.65] flex-1">{body}</p>
-      <Link
-        href={href}
-        className="flex items-center gap-1 text-[13px] font-bold text-brand-900 hover:text-brand-700 transition-colors mt-auto"
-      >
-        Learn more <ChevronRight size={12} aria-hidden />
-      </Link>
+      <p className="text-[13px] text-ink-600 leading-[1.65]">{body}</p>
     </div>
   );
 }
