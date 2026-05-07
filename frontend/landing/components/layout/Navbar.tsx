@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -23,6 +23,7 @@ export default function Navbar() {
 
   const [scrolled, setScrolled]   = useState(!hasDarkHero);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setScrolled(!hasDarkHero);
@@ -43,6 +44,9 @@ export default function Navbar() {
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
+    if (mobileOpen) {
+      closeButtonRef.current?.focus();
+    }
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
@@ -136,6 +140,7 @@ export default function Navbar() {
                 <LogoFull variant="white-mark" className="h-7 w-auto" />
               </Link>
               <button
+                ref={closeButtonRef}
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
                 className="p-2 text-white/60 hover:text-white transition-colors"
@@ -162,7 +167,7 @@ export default function Navbar() {
               <Link
                 href="/demo"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center h-12 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-semibold text-[15px] transition-colors"
+                className="flex items-center justify-center h-12 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-semibold text-[15px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
               >
                 Schedule a demo
               </Link>
