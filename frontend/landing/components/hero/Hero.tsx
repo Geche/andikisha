@@ -1,87 +1,68 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import Container from "@/components/ui/Container";
-import HeroPayslipCard from "./HeroPayslipCard";
+import { ChevronRight } from "lucide-react";
+import { HeroBrowserMockup } from "./HeroBrowserMockup";
 
 export default function Hero() {
   return (
-    <section className="bg-brand-900 min-h-[calc(100vh-68px)] flex items-center relative overflow-hidden">
-      {/* Subtle dot texture */}
+    <section className="bg-white pt-20 pb-0 overflow-hidden">
+      {/* Centered text block */}
+      <div className="mx-auto max-w-[760px] px-6 text-center">
+
+        {/* Pill — links to calculator */}
+        <a
+          href="#calculator"
+          className="inline-flex items-center gap-2 border border-ink-200 rounded-full px-3.5 py-2 mb-8 hover:border-ink-300 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+        >
+          <span className="bg-brand-50 text-brand-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+            New
+          </span>
+          <span className="text-[13px] text-ink-600 font-medium">
+            Payroll calculator — try live KES rates
+          </span>
+          <ChevronRight size={13} className="text-ink-400" aria-hidden />
+        </a>
+
+        {/* H1 */}
+        <h1
+          className="font-display font-black text-ink-900 leading-[1.05] tracking-[-0.025em] mb-5"
+          style={{ fontSize: "clamp(38px, 5.5vw, 62px)" }}
+        >
+          Kenyan HR and payroll,<br />calculated correctly.
+        </h1>
+
+        {/* Subheadline */}
+        <p className="text-[18px] text-ink-600 leading-[1.7] max-w-[500px] mx-auto mb-10">
+          Statutory deductions to the cent. Payslips on the phones your team already uses.
+          M-Pesa and bank in one approved batch.
+        </p>
+
+        {/* Single CTA */}
+        <Link
+          href="/demo"
+          className="inline-flex items-center gap-2 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] px-7 py-3.5 rounded-lg transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+        >
+          Schedule a demo
+          <ChevronRight size={15} aria-hidden />
+        </Link>
+      </div>
+
+      {/* Browser mockup — clips at bottom into logos row */}
+      <div className="mx-auto max-w-[960px] px-6 mt-16 relative">
+        <HeroBrowserMockup />
+        {/* Fade gradient blends mockup into white */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-28 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, transparent, white)" }}
+          aria-hidden
+        />
+      </div>
+
+      {/* Sentinel — Navbar IntersectionObserver watches this */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.025]"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='1' fill='white'/%3E%3C/svg%3E\")",
-        }}
+        id="hero-sentinel"
+        className="absolute bottom-0 left-0 w-full h-px pointer-events-none"
         aria-hidden
       />
-
-      <Container className="py-20 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          {/* Left — cols 1-7 */}
-          <div className="lg:col-span-7">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-brand-300 mb-6">
-              Built in Nairobi for Kenyan and East African businesses
-            </p>
-
-            <h1
-              className="font-display font-bold text-white leading-[0.97] mb-6"
-              style={{ fontSize: "clamp(3rem, 6vw, 5.25rem)", letterSpacing: "-0.025em" }}
-            >
-              Kenyan HR and payroll,{" "}
-              <span className="text-amber block">built statute-first.</span>
-            </h1>
-
-            <p className="text-[17px] text-brand-100/75 leading-[1.7] mb-10 max-w-[520px]">
-              One platform for HR, payroll and compliance, designed around PAYE, NSSF, SHIF,
-              the Housing Levy, NITA and HELB — so your monthly close ends on time and your
-              filings reach KRA before the 9th.
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 mb-10">
-              <Link
-                href="/demo"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-amber text-ink-900 font-semibold text-[15px] hover:bg-amber-dark transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
-              >
-                Book a Demo
-              </Link>
-              <Link
-                href="/contact"
-                className="inline-flex items-center gap-2 px-5 py-3.5 text-[15px] font-medium text-white/70 hover:text-white border border-white/20 rounded-lg hover:border-white/40 transition-all duration-200"
-              >
-                Talk to a Founder <ArrowRight size={14} aria-hidden />
-              </Link>
-            </div>
-
-            {/* Statutory trust marks */}
-            <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-7">
-              {[
-                { label: "PAYE", detail: "Bands 2025" },
-                { label: "NSSF", detail: "Tier I & II" },
-                { label: "SHIF", detail: "2.75%" },
-                { label: "Housing Levy", detail: "1.5%" },
-                { label: "HELB", detail: "Supported" },
-              ].map(({ label, detail }) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <div className="w-[5px] h-[5px] rounded-full bg-amber shrink-0" aria-hidden />
-                  <span className="text-[12px] text-white/50">
-                    <span className="font-semibold text-white/75">{label}</span>
-                    {" "}
-                    <span className="font-mono">{detail}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right — payslip card, cols 8-12 */}
-          <div className="lg:col-span-5">
-            <HeroPayslipCard />
-          </div>
-        </div>
-      </Container>
-
-      <div id="hero-sentinel" className="absolute bottom-0 left-0 w-full h-px pointer-events-none" aria-hidden />
     </section>
   );
 }
