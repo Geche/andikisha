@@ -37,7 +37,7 @@ public class PayrollController {
         this.payrollService = payrollService;
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER')")
     @PostMapping("/runs")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Initiate a new payroll run")
@@ -48,7 +48,7 @@ public class PayrollController {
         return payrollService.initiatePayroll(request, userId);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER')")
     @PostMapping("/runs/{id}/calculate")
     @Operation(summary = "Calculate payroll for all active employees")
     public PayrollRunResponse calculate(
@@ -57,7 +57,7 @@ public class PayrollController {
         return payrollService.calculatePayroll(id);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER')")
     @PostMapping("/runs/{id}/approve")
     @Operation(summary = "Approve a calculated payroll run")
     public PayrollRunResponse approve(
