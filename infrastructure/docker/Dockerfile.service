@@ -14,7 +14,7 @@
 #   --build-arg SERVICE_NAME=leave-service
 
 # ── Stage 1: Build ─────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:21.0.5_11-jdk-alpine AS builder
 WORKDIR /app
 
 # Copy Gradle wrapper and root build files first.
@@ -36,7 +36,7 @@ RUN chmod +x gradlew
 RUN ./gradlew :services:${SERVICE_NAME}:bootJar -x test --no-daemon
 
 # ── Stage 2: Runtime ───────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21.0.5_11-jre-alpine
 WORKDIR /app
 
 # Create a non-root user and group to run the service.

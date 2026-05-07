@@ -28,7 +28,7 @@ spec:
       containers:
         - name: analytics-service
           image: andikisha/analytics-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8091

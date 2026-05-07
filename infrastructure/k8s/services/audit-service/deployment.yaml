@@ -28,7 +28,7 @@ spec:
       containers:
         - name: audit-service
           image: andikisha/audit-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8092

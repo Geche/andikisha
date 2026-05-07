@@ -28,7 +28,7 @@ spec:
       containers:
         - name: time-attendance-service
           image: andikisha/time-attendance-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8086

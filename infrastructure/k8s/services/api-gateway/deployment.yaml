@@ -28,7 +28,7 @@ spec:
       containers:
         - name: api-gateway
           image: andikisha/api-gateway:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
