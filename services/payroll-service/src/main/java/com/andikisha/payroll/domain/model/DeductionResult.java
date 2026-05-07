@@ -14,6 +14,7 @@ public record DeductionResult(
         BigDecimal shif,
         BigDecimal housingLevyEmployee,
         BigDecimal housingLevyEmployer,
+        BigDecimal nita,
         BigDecimal totalDeductions,
         BigDecimal netPay
 ) {}

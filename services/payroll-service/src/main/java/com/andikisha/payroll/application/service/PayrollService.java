@@ -255,6 +255,7 @@ public class PayrollService {
                             .housingLevy(deductions.housingLevyEmployee())
                             .housingLevyEmployer(deductions.housingLevyEmployer())
                             .helb(BigDecimal.ZERO)
+                            .nita(deductions.nita())
                             .otherDeductions(unpaidLeaveDeduction)
                             .personalRelief(deductions.personalRelief())
                             .insuranceRelief(deductions.insuranceRelief())

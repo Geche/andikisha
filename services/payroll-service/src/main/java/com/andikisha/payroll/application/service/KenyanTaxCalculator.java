@@ -38,6 +38,9 @@ public class KenyanTaxCalculator {
     // Housing Levy (Affordable Housing Levy, Finance Act 2023)
     private static final BigDecimal HOUSING_LEVY_RATE = bd("0.015");
 
+    // NITA (National Industrial Training Authority) — KES 50/employee/month employer levy
+    private static final BigDecimal NITA_LEVY = new BigDecimal("50.00");
+
     /**
      * Single-argument form: treats basic pay equal to gross pay.
      * Use for employees with no allowances, or when basic/gross distinction is not needed.
@@ -129,6 +132,7 @@ public class KenyanTaxCalculator {
                 shif,
                 housingLevyEmployee,
                 housingLevyEmployer,
+                NITA_LEVY,
                 totalDeductions,
                 netPay
         );
