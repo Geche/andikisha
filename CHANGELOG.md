@@ -4,6 +4,33 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-05-08
+
+### frontend/landing — Secondary pages full redesign
+
+All 8 secondary pages updated to match home page visual language (Bricolage Grotesque headlines, brand-900/950 hero backgrounds, amber accents, single primary CTA, JoinCTA or NewsletterSection closing every page).
+
+#### Wave 1 — Form pages
+- `/contact`: two hero stat chips (2hr response time, Mon–Fri 8am–6pm EAT); `NewsletterSection` at bottom
+- `/demo`: social proof chip in hero ("240+ companies onboarded"); `LogosRow` trust strip; `JoinCTA` at bottom
+- `/early-access`: amber urgency counter ("42 of 50 spots remaining"); Lucide icons on perks (Lock/Database/UserCircle/Map/LayoutGrid); testimonial quote section
+
+#### Wave 2 — Content pages
+- `/product`: `StatsBand` with product stats (9 modules, 6 obligations, <1d setup, 100% accuracy); colored status dots on dark mockup panels; monogram integration tiles with status badge; `JoinCTA` replaces old CTA band
+- `/about`: `StatsBand` (platform stats) below hero; partners stub section removed; `JoinCTA` at bottom
+- `/pricing`: "30-day free trial" and "No credit card required" chips in hero; spreadsheet vs AndikishaHR comparison table; two ROI testimonial quotes; `JoinCTA` replaces old CTA band
+
+#### Wave 3 — New builds
+- `/partners`: full new page — hero, who-qualifies (3 partner types with icons), benefits grid (4 cards), 3-step how-it-works, dark apply CTA section
+- `/blog`: PostCard upgraded to dark gradient header with amber category badge; active category pill changed to amber; inline newsletter replaced with shared `NewsletterSection`; `line-clamp-2` handles title truncation
+- `/blog/[slug]`: `ReadingProgress` bar (amber, fixed top); `ShareBar` (LinkedIn/Twitter/WhatsApp); related posts now filtered by category with recency fallback; `NewsletterSection` between article CTA and related posts; related posts heading shows category name
+
+#### Shared component updates
+- `StatsBand`: extended to accept optional `stats` prop; existing home page stats become the default — no breaking change
+- New components: `components/blog/ReadingProgress.tsx` (with initial-position sync on mount), `components/blog/ShareBar.tsx` (links memoized, WhatsApp inline SVG)
+
+---
+
 ## [Unreleased] — 2026-04-21
 
 ### document-service — 100% complete (Phase 3)
