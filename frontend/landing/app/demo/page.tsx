@@ -39,7 +39,7 @@ export default function DemoPage() {
         <Container className="text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white/75 text-[13px] font-medium mb-5">
             <CheckCircle size={13} className="text-amber" aria-hidden="true" />
-            100+ companies onboarded across Kenya
+            240+ companies onboarded across Kenya
           </div>
           <Eyebrow light className="mb-4">
             Live Demo
