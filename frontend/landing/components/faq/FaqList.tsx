@@ -44,7 +44,7 @@ const FAQS = [
   },
 ];
 
-export default function FaqList() {
+export default function FaqList({ columns = 2 }: { columns?: 1 | 2 }) {
   return (
     <section className="bg-surface-alt py-[88px]">
       <Container>
@@ -56,7 +56,7 @@ export default function FaqList() {
           Everything buyers actually ask.
         </h2>
 
-        <div className="grid grid-cols-2">
+        <div className={columns === 1 ? "grid grid-cols-1" : "grid grid-cols-2"}>
           {FAQS.map(({ q, a }, i) => {
             const isOdd  = i % 2 === 0;
             return (
@@ -64,8 +64,8 @@ export default function FaqList() {
                 key={q}
                 className={[
                   "group border-b border-ink-200",
-                  isOdd ? "border-r border-ink-200 pr-8" : "pl-8",
-                ].join(" ")}
+                  columns === 2 ? (isOdd ? "border-r border-ink-200 pr-8" : "pl-8") : "",
+                ].filter(Boolean).join(" ")}
               >
                 <summary className="flex items-center justify-between gap-4 py-5 cursor-pointer list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm">
                   <span className="text-[14px] font-bold text-ink-900 leading-snug">{q}</span>
