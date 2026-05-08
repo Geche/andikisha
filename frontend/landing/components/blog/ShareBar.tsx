@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Linkedin, Twitter } from "lucide-react";
 
-interface Props {
-  title: string;
-}
-
-export default function ShareBar({ title }: Props) {
+export default function ShareBar({ title }: { title: string }) {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
@@ -16,7 +12,7 @@ export default function ShareBar({ title }: Props) {
 
   const encode = (s: string) => encodeURIComponent(s);
 
-  const links = [
+  const links = useMemo(() => [
     {
       label: "Share on LinkedIn",
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encode(url)}`,
@@ -36,7 +32,7 @@ export default function ShareBar({ title }: Props) {
         </svg>
       ),
     },
-  ];
+  ], [url, title]);
 
   return (
     <div className="flex items-center gap-3 py-5 border-t border-b border-ink-200 my-8">
