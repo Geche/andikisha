@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
+import StatsBand from "@/components/stats/StatsBand";
+import JoinCTA from "@/components/cta/JoinCTA";
 
 export const metadata: Metadata = {
   title: "About",
@@ -80,6 +82,8 @@ export default function AboutPage() {
           </div>
         </Container>
       </section>
+
+      <StatsBand />
 
       {/* Mission */}
       <section className="py-24 bg-white">
@@ -235,41 +239,7 @@ export default function AboutPage() {
         </Container>
       </section>
 
-      {/* Partners */}
-      <section id="partners" className="py-24 bg-surface-alt">
-        <Container>
-          <div className="max-w-[600px]">
-            <Eyebrow className="mb-5">Partners</Eyebrow>
-            <h2
-              className="font-display font-extrabold text-ink-900 mb-6"
-              style={{
-                fontSize: "clamp(2.25rem, 4vw, 3.5rem)",
-                lineHeight: "1.05",
-                letterSpacing: "-0.015em",
-              }}
-            >
-              Build on AndikishaHR with our partner program.
-            </h2>
-            <p className="text-[17px] text-ink-600 leading-[1.8] mb-4">
-              We work with accountants, HR consultancies, and payroll bureaus
-              who serve Kenyan SMEs. Partners get early access to new
-              compliance features, co-marketing, and a revenue share on
-              referrals that convert.
-            </p>
-            <p className="text-[17px] text-ink-600 leading-[1.8] mb-8">
-              The partner program is currently in invite-only beta. If you
-              manage payroll or HR for multiple clients and want to explore a
-              partnership, reach out directly.
-            </p>
-            <Link
-              href="/contact"
-              className="btn-outline-dark"
-            >
-              Enquire about partnerships <ArrowRight size={15} aria-hidden="true" />
-            </Link>
-          </div>
-        </Container>
-      </section>
+      <JoinCTA />
     </>
   );
 }
