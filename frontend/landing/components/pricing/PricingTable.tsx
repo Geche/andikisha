@@ -2,67 +2,97 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Check, ChevronDown } from "lucide-react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PLANS = [
+interface Plan {
+  name: string;
+  monthlyPrice: number;
+  annualPrice: number;
+  unit: string;
+  headcount: string;
+  cta: string;
+  href: string;
+  featured: boolean;
+  badge?: string;
+  highlights: string[];
+}
+
+const PLANS: Plan[] = [
   {
     name: "Starter",
-    price: "KES 350",
+    monthlyPrice: 350,
+    annualPrice: 298,
     unit: "per employee / month",
     headcount: "Up to 25 employees",
     cta: "Start free trial",
-    href: "/pricing",
+    href: "/early-access",
     featured: false,
+    highlights: [
+      "Full payroll & statutory filings",
+      "M-Pesa salary disbursement",
+      "Employee self-service portal",
+      "KRA one-click filing · SMS payslips",
+    ],
   },
   {
     name: "Growth",
-    price: "KES 280",
+    monthlyPrice: 280,
+    annualPrice: 238,
     unit: "per employee / month",
     headcount: "26 – 200 employees",
     cta: "Start free trial",
-    href: "/pricing",
+    href: "/early-access",
     featured: true,
     badge: "Most popular",
+    highlights: [
+      "Everything in Starter, plus:",
+      "WhatsApp payslip delivery",
+      "Leave & absence management",
+      "Basic analytics & reporting",
+    ],
   },
   {
     name: "Scale",
-    price: "KES 220",
-    unit: "per employee / month (annual)",
+    monthlyPrice: 220,
+    annualPrice: 187,
+    unit: "per employee / month",
     headcount: "200+ employees",
     cta: "Talk to sales",
     href: "/contact",
     featured: false,
+    highlights: [
+      "Everything in Growth, plus:",
+      "Advanced analytics dashboard",
+      "Dedicated success manager",
+      "Custom API integrations · SLA",
+    ],
   },
 ];
 
-type CellValue = boolean | string;
-
-interface Row {
+interface FeatureRow {
   feature: string;
-  starter: CellValue;
-  growth: CellValue;
-  scale: CellValue;
+  starter: boolean | string;
+  growth: boolean | string;
+  scale: boolean | string;
+  section?: string;
 }
 
-const CORE_ROWS: Row[] = [
-  { feature: "Full payroll & statutory filings (PAYE, NSSF, SHIF, Housing Levy)", starter: true, growth: true, scale: true },
+const FEATURE_ROWS: FeatureRow[] = [
+  { feature: "Full payroll & statutory filings (PAYE, NSSF, SHIF, Housing Levy)", starter: true, growth: true, scale: true, section: "Core — included on all plans" },
   { feature: "Employee self-service portal (PWA)", starter: true, growth: true, scale: true },
   { feature: "M-Pesa salary disbursement", starter: true, growth: true, scale: true },
   { feature: "KRA one-click filing", starter: true, growth: true, scale: true },
   { feature: "SMS payslip delivery", starter: true, growth: true, scale: true },
-];
-
-const EXTENDED_ROWS: Row[] = [
-  { feature: "WhatsApp payslip delivery", starter: false, growth: true, scale: true },
+  { feature: "WhatsApp payslip delivery", starter: false, growth: true, scale: true, section: "Growth & Scale only" },
   { feature: "Leave & absence management", starter: false, growth: true, scale: true },
   { feature: "Time & attendance tracking", starter: false, growth: true, scale: true },
   { feature: "Expense management", starter: false, growth: true, scale: true },
   { feature: "Multi-approver workflows", starter: false, growth: true, scale: true },
   { feature: "Basic analytics & reporting", starter: false, growth: true, scale: true },
-  { feature: "Advanced analytics dashboard", starter: false, growth: false, scale: true },
+  { feature: "Advanced analytics dashboard", starter: false, growth: false, scale: true, section: "Scale only" },
   { feature: "Custom API integrations", starter: false, growth: false, scale: true },
   { feature: "Dedicated success manager", starter: false, growth: false, scale: true },
   { feature: "Multi-branch / multi-county payroll", starter: false, growth: false, scale: true },
@@ -71,124 +101,266 @@ const EXTENDED_ROWS: Row[] = [
   { feature: "Support channel", starter: "Email", growth: "Chat + phone", scale: "Dedicated manager" },
 ];
 
-function Cell({ value }: { value: CellValue }) {
-  if (typeof value === "string") {
-    return <span className="font-mono text-[13px] text-ink-700">{value}</span>;
-  }
-  if (value) {
-    return <span className="text-[13px] font-semibold text-brand-500">Yes</span>;
-  }
-  return <span className="text-[13px] text-ink-300 select-none">—</span>;
-}
+const CORE_ROW_COUNT = 5;
 
-function FeatureRow({ row, index }: { row: Row; index: number }) {
+const TRUST_ITEMS = [
+  "30-day free trial",
+  "No credit card required",
+  "Cancel any time",
+  "Annual billing saves 15%",
+];
+
+function Cell({ value }: { value: boolean | string }) {
+  if (value === true) {
+    return <Check size={15} className="text-brand-500 mx-auto" aria-label="Included" />;
+  }
+  if (value === false) {
+    return (
+      <span className="text-ink-200 text-[18px] select-none leading-none" aria-label="Not included">
+        —
+      </span>
+    );
+  }
   return (
-    <div
-      className={cn(
-        "grid items-center border-b border-ink-100 last:border-0",
-        "grid-cols-[1fr_100px_100px_100px] lg:grid-cols-[1fr_140px_140px_140px]"
-      )}
-      style={{ background: index % 2 === 0 ? "transparent" : "rgba(248,247,244,0.5)" }}
-    >
-      <div className="py-3 pr-4 text-[14px] text-ink-700 leading-snug">{row.feature}</div>
-      <div className="py-3 text-center"><Cell value={row.starter} /></div>
-      <div className="py-3 text-center"><Cell value={row.growth} /></div>
-      <div className="py-3 text-center"><Cell value={row.scale} /></div>
-    </div>
+    <span className="font-mono text-[12px] text-ink-600 bg-surface-alt px-2 py-0.5 rounded border border-ink-100">
+      {value}
+    </span>
   );
 }
 
 export default function PricingTable() {
+  const [annual, setAnnual] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  const visibleRows = expanded ? FEATURE_ROWS : FEATURE_ROWS.slice(0, CORE_ROW_COUNT);
 
   return (
     <section className="py-24 bg-surface-alt" id="pricing">
       <Container>
-        <div className="mb-12">
+        {/* Heading */}
+        <div className="mb-10">
           <Eyebrow className="mb-4">Pricing</Eyebrow>
           <h2
             className="font-display font-bold text-ink-900 mb-3"
             style={{ fontSize: "clamp(2.25rem, 4vw, 3.5rem)", lineHeight: "1.05", letterSpacing: "-0.015em" }}
           >
             Simple pricing.
-            <br />No surprises.
+            <br />
+            No surprises.
           </h2>
           <p className="text-[17px] text-ink-600">
-            All prices in KES. Annual billing saves 15%. VAT applied where applicable.
+            All prices in KES. VAT applied where applicable.
           </p>
         </div>
 
-        {/* Plan headers — CSS grid, column widths match the rows below */}
-        <div className={cn(
-          "grid mb-1",
-          "grid-cols-[1fr_100px_100px_100px] lg:grid-cols-[1fr_140px_140px_140px]"
-        )}>
-          <div /> {/* feature label column spacer */}
-          {PLANS.map((plan) => (
-            <div key={plan.name} className="px-2 pb-4">
-              <div className={cn(
-                "rounded-xl p-4 border",
-                plan.featured
-                  ? "bg-brand-900 border-brand-900"
-                  : "bg-white border-ink-200"
-              )}>
-                {plan.badge && (
-                  <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-amber mb-1">{plan.badge}</p>
+        {/* Billing toggle */}
+        <div className="flex items-center gap-3 mb-10">
+          <span
+            className={cn(
+              "text-[14px] font-medium transition-colors duration-200",
+              !annual ? "text-ink-900" : "text-ink-400"
+            )}
+          >
+            Monthly
+          </span>
+          <button
+            role="switch"
+            aria-checked={annual}
+            aria-label="Toggle annual billing"
+            onClick={() => setAnnual((v) => !v)}
+            className="relative w-11 h-6 rounded-full bg-brand-900 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 shrink-0"
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
+                annual ? "translate-x-[22px]" : "translate-x-0.5"
+              )}
+            />
+          </button>
+          <span
+            className={cn(
+              "text-[14px] font-medium transition-colors duration-200",
+              annual ? "text-ink-900" : "text-ink-400"
+            )}
+          >
+            Annual
+          </span>
+          <span className="bg-amber-light text-amber-dark text-[11px] font-bold px-2.5 py-1 rounded-full border border-amber">
+            Save 15%
+          </span>
+        </div>
+
+        {/* Plan cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
+          {PLANS.map((plan) => {
+            const price = annual ? plan.annualPrice : plan.monthlyPrice;
+            return (
+              <div
+                key={plan.name}
+                className={cn(
+                  "rounded-2xl p-7",
+                  plan.featured
+                    ? "bg-brand-900 border border-brand-900"
+                    : "bg-white border border-ink-200 shadow-[0_4px_20px_rgba(11,61,46,0.04)]"
                 )}
-                <p className={cn("font-display font-bold text-[15px] mb-1", plan.featured ? "text-white" : "text-ink-900")}>
+              >
+                {plan.badge && (
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber mb-2">
+                    {plan.badge}
+                  </p>
+                )}
+                <p
+                  className={cn(
+                    "font-display font-bold text-[17px] mb-2",
+                    plan.featured ? "text-white" : "text-ink-900"
+                  )}
+                >
                   {plan.name}
                 </p>
-                <p className={cn("font-bold text-[18px] font-mono tabular-nums leading-tight", plan.featured ? "text-amber" : "text-ink-900")}
-                  style={{ fontFeatureSettings: '"tnum" 1' }}>
-                  {plan.price}
+                <p
+                  className={cn(
+                    "font-display font-black leading-none tracking-[-0.03em] mb-1",
+                    plan.featured ? "text-amber" : "text-ink-900"
+                  )}
+                  style={{ fontSize: "clamp(2rem, 3.5vw, 2.75rem)" }}
+                >
+                  <span className="text-[18px] font-semibold">KES </span>
+                  {price}
                 </p>
-                <p className={cn("text-[10px] mb-3 leading-tight", plan.featured ? "text-white/50" : "text-ink-400")}>
+                <p
+                  className={cn(
+                    "text-[12px] mb-1",
+                    plan.featured ? "text-white/40" : "text-ink-400"
+                  )}
+                >
                   {plan.unit}
                 </p>
-                <p className={cn("text-[10px] mb-3", plan.featured ? "text-white/60" : "text-ink-500")}>
+                <p
+                  className={cn(
+                    "text-[13px] mb-6",
+                    plan.featured ? "text-white/50" : "text-ink-600"
+                  )}
+                >
                   {plan.headcount}
                 </p>
                 <Link
                   href={plan.href}
                   className={cn(
-                    "block text-center py-1.5 rounded-lg text-[11px] font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2",
+                    "block text-center py-3 rounded-lg text-[14px] font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2",
                     plan.featured
-                      ? "bg-amber text-ink-900 hover:bg-amber-dark"
-                      : "bg-ink-900 text-white hover:bg-ink-700"
+                      ? "bg-amber hover:bg-amber-dark text-ink-900"
+                      : plan.cta === "Talk to sales"
+                        ? "border border-ink-200 text-ink-700 hover:bg-surface-alt"
+                        : "bg-ink-900 hover:bg-ink-700 text-white"
                   )}
                 >
                   {plan.cta}
                 </Link>
+
+                {/* Highlights */}
+                <div
+                  className={cn(
+                    "mt-6 pt-5 border-t flex flex-col gap-2.5",
+                    plan.featured ? "border-white/10" : "border-ink-100"
+                  )}
+                >
+                  {plan.highlights.map((item) =>
+                    item.startsWith("Everything in") ? (
+                      <span
+                        key={item}
+                        className={cn(
+                          "text-[13px] italic leading-relaxed",
+                          plan.featured ? "text-white/50" : "text-ink-400"
+                        )}
+                      >
+                        {item}
+                      </span>
+                    ) : (
+                      <div key={item} className="flex items-start gap-2">
+                        <Check
+                          size={13}
+                          className={cn(
+                            "shrink-0 mt-0.5",
+                            plan.featured ? "text-brand-500" : "text-brand-700"
+                          )}
+                          aria-hidden="true"
+                        />
+                        <span
+                          className={cn(
+                            "text-[13px] leading-relaxed",
+                            plan.featured ? "text-white/75" : "text-ink-600"
+                          )}
+                        >
+                          {item}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
+            );
+          })}
+        </div>
+
+        {/* Trust strip */}
+        <div className="flex items-center justify-center gap-6 flex-wrap bg-white border border-ink-200 rounded-xl py-3.5 px-6 mb-10">
+          {TRUST_ITEMS.map((item) => (
+            <div key={item} className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
+                <Check size={9} strokeWidth={3} className="text-brand-700" aria-hidden="true" />
+              </div>
+              <span className="text-[13px] text-ink-600 font-medium">{item}</span>
             </div>
           ))}
         </div>
 
-        {/* Core feature rows */}
-        <div className="bg-white rounded-xl border border-ink-200 overflow-hidden">
-          <div className={cn(
-            "grid border-b border-ink-200 bg-ink-100/50",
-            "grid-cols-[1fr_100px_100px_100px] lg:grid-cols-[1fr_140px_140px_140px]"
-          )}>
-            <div className="py-2.5 px-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-400">Features</div>
+        {/* Feature grid */}
+        <div className="bg-white border border-ink-200 rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr] lg:grid-cols-[3fr_140px_140px_140px] bg-surface-alt border-b border-ink-200">
+            <div className="py-3 pl-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-400">
+              Features
+            </div>
             {PLANS.map((p) => (
-              <div key={p.name} className="py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-400">
+              <div
+                key={p.name}
+                className="py-3 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-400"
+              >
                 {p.name}
               </div>
             ))}
           </div>
 
-          {CORE_ROWS.map((row, i) => <FeatureRow key={row.feature} row={row} index={i} />)}
-
-          {/* Expanded rows */}
-          {expanded && EXTENDED_ROWS.map((row, i) => (
-            <FeatureRow key={row.feature} row={row} index={CORE_ROWS.length + i} />
+          {/* Rows */}
+          {visibleRows.map((row) => (
+            <div key={row.feature}>
+              {row.section && (
+                <div className="bg-ink-100 border-t border-ink-200 py-2 px-5 text-[11px] font-bold uppercase tracking-[0.08em] text-ink-400">
+                  {row.section}
+                </div>
+              )}
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr] lg:grid-cols-[3fr_140px_140px_140px] border-t border-ink-100 hover:bg-surface-alt transition-colors duration-100">
+                <div className="py-3.5 pl-5 pr-4 text-[14px] text-ink-700 leading-snug">
+                  {row.feature}
+                </div>
+                <div className="py-3.5 flex items-center justify-center">
+                  <Cell value={row.starter} />
+                </div>
+                <div className="py-3.5 flex items-center justify-center">
+                  <Cell value={row.growth} />
+                </div>
+                <div className="py-3.5 flex items-center justify-center">
+                  <Cell value={row.scale} />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
 
+        {/* Expand toggle */}
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="mt-5 flex items-center gap-2 text-[14px] font-medium text-brand-700 hover:text-brand-900 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm"
+          className="mt-4 flex items-center gap-1.5 text-[14px] font-medium text-brand-700 hover:text-brand-900 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm"
           aria-expanded={expanded}
         >
           {expanded ? "Show less" : "Compare all features"}
