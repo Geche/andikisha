@@ -3,6 +3,8 @@ import DemoForm from "./DemoForm";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { CheckCircle, Clock, FileText, HelpCircle, TrendingUp } from "lucide-react";
+import LogosRow from "@/components/logos/LogosRow";
+import JoinCTA from "@/components/cta/JoinCTA";
 
 export const metadata: Metadata = {
   title: "Request a Demo",
@@ -35,6 +37,10 @@ export default function DemoPage() {
       {/* Hero */}
       <section className="bg-brand-900 py-20">
         <Container className="text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white/75 text-[13px] font-medium mb-5">
+            <CheckCircle size={13} className="text-amber" aria-hidden="true" />
+            100+ companies onboarded across Kenya
+          </div>
           <Eyebrow light className="mb-4">
             Live Demo
           </Eyebrow>
@@ -47,6 +53,8 @@ export default function DemoPage() {
           </p>
         </Container>
       </section>
+
+      <LogosRow />
 
       {/* Two-column: left = form, right = what to expect */}
       <section className="py-20 bg-surface-alt">
@@ -109,6 +117,8 @@ export default function DemoPage() {
           </div>
         </Container>
       </section>
+
+      <JoinCTA />
     </>
   );
 }
