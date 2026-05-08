@@ -164,6 +164,7 @@ export default function PricingTable() {
             Monthly
           </span>
           <button
+            type="button"
             role="switch"
             aria-checked={annual}
             aria-label="Toggle annual billing"
@@ -359,6 +360,7 @@ export default function PricingTable() {
 
         {/* Expand toggle */}
         <button
+          type="button"
           onClick={() => setExpanded((v) => !v)}
           className="mt-4 flex items-center gap-1.5 text-[14px] font-medium text-brand-700 hover:text-brand-900 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm"
           aria-expanded={expanded}
