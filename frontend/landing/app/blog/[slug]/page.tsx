@@ -5,6 +5,9 @@ import { ArrowLeft, Clock, Tag } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllPosts, getPost } from "@/lib/blog";
 import Container from "@/components/ui/Container";
+import ReadingProgress from "@/components/blog/ReadingProgress";
+import ShareBar from "@/components/blog/ShareBar";
+import NewsletterSection from "@/components/layout/NewsletterSection";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -33,10 +36,18 @@ export default async function BlogPostPage({ params }: Props) {
   const post = getPost(slug);
   if (!post) notFound();
 
-  const related = getAllPosts().filter((p) => p.slug !== slug).slice(0, 3);
+  const allPosts = getAllPosts();
+  const sameCategory = allPosts.filter((p) => p.slug !== slug && p.category === post.category).slice(0, 3);
+  const fillCount = 3 - sameCategory.length;
+  const otherPosts = fillCount > 0
+    ? allPosts.filter((p) => p.slug !== slug && p.category !== post.category).slice(0, fillCount)
+    : [];
+  const related = [...sameCategory, ...otherPosts];
 
   return (
     <>
+      <ReadingProgress />
+
       {/* Hero */}
       <section className="bg-brand-900 py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(232,160,32,0.07)_0%,transparent_70%)] pointer-events-none" aria-hidden />
@@ -77,8 +88,10 @@ export default async function BlogPostPage({ params }: Props) {
             <MDXRemote source={post.content} />
           </div>
 
+          <ShareBar title={post.title} />
+
           {/* Inline CTA */}
-          <div className="mt-12 bg-brand-50 border border-brand-100 rounded-2xl p-7">
+          <div className="mt-4 bg-brand-50 border border-brand-100 rounded-2xl p-7">
             <h3 className="font-display font-bold text-[20px] text-ink-900 mb-3">
               Tired of tracking this manually?
             </h3>
@@ -94,11 +107,15 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </article>
 
+      <NewsletterSection />
+
       {/* Related posts */}
       {related.length > 0 && (
         <section className="py-16 bg-surface-alt border-t border-ink-200">
           <Container>
-            <h2 className="font-display font-bold text-[22px] text-ink-900 mb-8">More from the blog</h2>
+            <h2 className="font-display font-bold text-[22px] text-ink-900 mb-8">
+              More from {post.category}
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {related.map((p) => (
                 <div key={p.slug} className="card flex flex-col gap-3">
