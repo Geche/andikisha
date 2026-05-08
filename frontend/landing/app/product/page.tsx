@@ -159,7 +159,7 @@ export default function ProductPage() {
                           ) : (
                             <div className="flex items-center gap-2">
                               <div className={`w-2 h-2 rounded-full shrink-0 ${
-                                i === 0 ? "bg-brand-500" : i === 1 ? "bg-amber" : "bg-brand-400"
+                                i === 0 ? "bg-brand-500" : i === 1 ? "bg-amber" : "bg-brand-500/40"
                               }`} aria-hidden="true" />
                               <span className="text-[13px] font-semibold text-white">{row.value}</span>
                             </div>
@@ -215,24 +215,24 @@ export default function ProductPage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {INTEGRATIONS.map((integ) => (
-              <div key={integ.name} className="bg-white rounded-xl border border-ink-200 p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-[13px] shrink-0 ${
-                    integ.status === "Live" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"
-                  }`} aria-hidden="true">
-                    {integ.name.slice(0, 2).toUpperCase()}
+            {INTEGRATIONS.map((integ) => {
+              const statusCls = integ.status === "Live" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark";
+              const monogram = integ.name.replace(/[^A-Z0-9]/gi, "").slice(0, 2).toUpperCase();
+              return (
+                <div key={integ.name} className="bg-white rounded-xl border border-ink-200 p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-[13px] shrink-0 ${statusCls}`} aria-hidden="true">
+                      {monogram}
+                    </div>
+                    <div>
+                      <p className="font-display font-bold text-[14px] text-ink-900 leading-tight">{integ.name}</p>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${statusCls}`}>{integ.status}</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-display font-bold text-[14px] text-ink-900 leading-tight">{integ.name}</p>
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                      integ.status === "Live" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"
-                    }`}>{integ.status}</span>
-                  </div>
+                  <p className="text-[13px] text-ink-600 leading-relaxed">{integ.description}</p>
                 </div>
-                <p className="text-[13px] text-ink-600 leading-relaxed">{integ.description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Container>
       </section>
