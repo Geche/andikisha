@@ -17,6 +17,7 @@ export default function StatsBand({ stats = DEFAULT_STATS }: { stats?: Stat[] })
   return (
     <section className="bg-white border-t border-ink-100 border-b border-ink-100 py-16">
       <Container>
+        {/* Layout assumes exactly 4 stats — grid-cols-4 is intentional */}
         <div className="grid grid-cols-4 max-w-[900px] mx-auto">
           {stats.map(({ num, suffix, label }, i) => (
             <div
