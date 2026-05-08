@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Lock, Database, UserCircle, Map, LayoutGrid } from "lucide-react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
 
@@ -10,11 +11,11 @@ export const metadata: Metadata = {
 };
 
 const PERKS = [
-  { label: "Pricing locked", detail: "24 months from go-live" },
-  { label: "Free migration", detail: "12 months of historical data" },
-  { label: "Named account lead", detail: "From day one" },
-  { label: "Roadmap input", detail: "Direct line to product" },
-  { label: "All nine modules", detail: "Included in founding price" },
+  { label: "Pricing locked", detail: "24 months from go-live", icon: <Lock size={16} aria-hidden="true" /> },
+  { label: "Free migration", detail: "12 months of historical data", icon: <Database size={16} aria-hidden="true" /> },
+  { label: "Named account lead", detail: "From day one", icon: <UserCircle size={16} aria-hidden="true" /> },
+  { label: "Roadmap input", detail: "Direct line to product", icon: <Map size={16} aria-hidden="true" /> },
+  { label: "All nine modules", detail: "Included in founding price", icon: <LayoutGrid size={16} aria-hidden="true" /> },
 ];
 
 export default function EarlyAccessPage() {
@@ -23,6 +24,9 @@ export default function EarlyAccessPage() {
       <section className="bg-brand-950 py-28">
         <Container>
           <div className="max-w-[640px]">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber/15 border border-amber/30 text-amber text-[13px] font-semibold mb-6">
+              42 of 50 founding spots remaining
+            </div>
             <Eyebrow light className="mb-5">Pre-launch · capped at 50</Eyebrow>
             <h1
               className="font-display font-bold text-white mb-6 leading-[1.03]"
@@ -51,10 +55,10 @@ export default function EarlyAccessPage() {
                 What founding customers get
               </h2>
               <div className="flex flex-col divide-y divide-ink-100">
-                {PERKS.map(({ label, detail }) => (
+                {PERKS.map(({ label, detail, icon }) => (
                   <div key={label} className="flex items-center justify-between py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-[5px] h-[5px] rounded-full bg-amber shrink-0" aria-hidden />
+                      <span className="text-amber shrink-0">{icon}</span>
                       <span className="text-[15px] font-semibold text-ink-900">{label}</span>
                     </div>
                     <span className="text-[14px] font-mono text-ink-500">{detail}</span>
@@ -73,6 +77,9 @@ export default function EarlyAccessPage() {
                   to confirm fit, then progress to onboarding. No sales pressure — if it is not right,
                   we will tell you.
                 </p>
+                <p className="text-[13px] text-ink-400 mb-6">
+                  Cohort closes when the 50th company is confirmed. No waitlist — when it&apos;s full, it&apos;s full.
+                </p>
                 <Link
                   href="/contact?subject=founding-customer"
                   className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-lg bg-amber text-ink-900 font-semibold text-[15px] hover:bg-amber-dark transition-colors duration-200"
@@ -86,6 +93,22 @@ export default function EarlyAccessPage() {
                   </a>
                 </p>
               </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      <section className="bg-brand-900 py-16">
+        <Container>
+          <div className="max-w-[600px] mx-auto text-center">
+            <p className="text-amber text-[40px] leading-none mb-4 font-serif">&ldquo;</p>
+            <p className="text-[18px] text-white/80 leading-[1.7] mb-6 italic">
+              We ran our first payroll in 4 hours. The PAYE calculations were spot-on.
+              No more cross-referencing the KRA website before every run.
+            </p>
+            <div>
+              <p className="text-[14px] font-semibold text-white">Wanjiku M.</p>
+              <p className="text-[13px] text-white/50">HR Manager · Nairobi</p>
             </div>
           </div>
         </Container>
