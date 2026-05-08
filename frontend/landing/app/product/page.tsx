@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, ArrowRight } from "lucide-react";
+import { Check } from "lucide-react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
 import { FEATURES_TABS } from "@/lib/data";
+import StatsBand from "@/components/stats/StatsBand";
+import JoinCTA from "@/components/cta/JoinCTA";
+import type { Stat } from "@/components/stats/StatsBand";
 
 export const metadata: Metadata = {
   title: "Product",
@@ -76,6 +79,13 @@ const SECTION_COPY: Record<string, { headline: string; sub: string }> = {
   },
 };
 
+const PRODUCT_STATS: Stat[] = [
+  { num: "9", suffix: "", label: "HR modules in one platform" },
+  { num: "6", suffix: "", label: "Statutory obligations handled" },
+  { num: "<1", suffix: "d", label: "Average setup time" },
+  { num: "100", suffix: "%", label: "Compliance accuracy" },
+];
+
 export default function ProductPage() {
   return (
     <>
@@ -100,6 +110,8 @@ export default function ProductPage() {
           </div>
         </Container>
       </section>
+
+      <StatsBand stats={PRODUCT_STATS} />
 
       {FEATURES_TABS.map((tab, idx) => {
         const copy = SECTION_COPY[tab.id];
@@ -145,7 +157,12 @@ export default function ProductPage() {
                               : "bg-info/20 text-info"
                             }`}>{row.badge}</span>
                           ) : (
-                            <span className="text-[13px] font-semibold text-white">{row.value}</span>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${
+                                i === 0 ? "bg-brand-500" : i === 1 ? "bg-amber" : "bg-brand-400"
+                              }`} aria-hidden="true" />
+                              <span className="text-[13px] font-semibold text-white">{row.value}</span>
+                            </div>
                           )}
                         </div>
                       ))}
@@ -199,32 +216,28 @@ export default function ProductPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {INTEGRATIONS.map((integ) => (
-              <div key={integ.name} className="bg-white rounded-xl border border-ink-200 p-5 text-center">
-                <p className="font-display font-bold text-[17px] text-ink-900 mb-1">{integ.name}</p>
-                <p className="text-[14px] text-ink-600 mb-4">{integ.description}</p>
-                <span className={`text-[11px] font-bold px-2.5 py-1 rounded ${
-                  integ.status === "Live" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"
-                }`}>{integ.status}</span>
+              <div key={integ.name} className="bg-white rounded-xl border border-ink-200 p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-[13px] shrink-0 ${
+                    integ.status === "Live" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"
+                  }`} aria-hidden="true">
+                    {integ.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-display font-bold text-[14px] text-ink-900 leading-tight">{integ.name}</p>
+                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                      integ.status === "Live" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"
+                    }`}>{integ.status}</span>
+                  </div>
+                </div>
+                <p className="text-[13px] text-ink-600 leading-relaxed">{integ.description}</p>
               </div>
             ))}
           </div>
         </Container>
       </section>
 
-      <section className="bg-brand-50 py-16 border-y border-brand-100">
-        <Container>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="font-display font-bold text-[26px] text-ink-900 mb-2">Ready to see it in action?</h3>
-              <p className="text-[16px] text-ink-600">Set up takes less than a day. Your first payroll run is on us.</p>
-            </div>
-            <div className="flex gap-3 shrink-0">
-              <Link href="/demo" className="btn-primary">Book a Demo</Link>
-              <Link href="/pricing" className="btn-outline-dark">See pricing <ArrowRight size={15} aria-hidden="true" /></Link>
-            </div>
-          </div>
-        </Container>
-      </section>
+      <JoinCTA />
     </>
   );
 }
