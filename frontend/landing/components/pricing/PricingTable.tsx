@@ -112,7 +112,7 @@ const TRUST_ITEMS = [
 
 function Cell({ value }: { value: boolean | string }) {
   if (value === true) {
-    return <Check size={15} className="text-brand-500 mx-auto" aria-label="Included" />;
+    return <Check size={15} className="text-brand-500" aria-label="Included" />;
   }
   if (value === false) {
     return (
@@ -339,7 +339,7 @@ export default function PricingTable() {
                   {row.section}
                 </div>
               )}
-              <div className="grid grid-cols-[2fr_1fr_1fr_1fr] lg:grid-cols-[3fr_140px_140px_140px] border-t border-ink-100 hover:bg-surface-alt transition-colors duration-100">
+              <div className="grid grid-cols-[2fr_1fr_1fr_1fr] lg:grid-cols-[3fr_140px_140px_140px] border-t border-ink-100">
                 <div className="py-3.5 pl-5 pr-4 text-[14px] text-ink-700 leading-snug">
                   {row.feature}
                 </div>
@@ -367,7 +367,7 @@ export default function PricingTable() {
           <ChevronDown
             size={15}
             className={cn("transition-transform duration-200", expanded && "rotate-180")}
-            aria-hidden
+            aria-hidden="true"
           />
         </button>
       </Container>
