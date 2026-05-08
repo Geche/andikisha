@@ -211,7 +211,7 @@ export default function PartnersPage() {
               </Link>
               <a
                 href="mailto:partners@andikishahr.com"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 font-medium text-[14px] transition-colors duration-200"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 font-medium text-[14px] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/50 focus-visible:outline-offset-2"
               >
                 partners@andikishahr.com
               </a>
