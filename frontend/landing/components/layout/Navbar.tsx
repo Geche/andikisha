@@ -3,19 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
-  { label: "Product",    href: "/product",  chevron: true },
-  { label: "Compliance", href: "/security", chevron: true },
-  { label: "Pricing",    href: "/pricing",  chevron: false },
-  { label: "Resources",  href: "/blog",     chevron: true },
-  { label: "About",      href: "/about",    chevron: false },
+  { label: "Product",    href: "/product"  },
+  { label: "Compliance", href: "/security" },
+  { label: "Pricing",    href: "/pricing"  },
+  { label: "Resources",  href: "/blog"     },
+  { label: "About",      href: "/about"    },
 ];
 
-const DARK_HERO_PAGES = ["/"];
+const DARK_HERO_PAGES: string[] = [];
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -74,19 +74,18 @@ export default function Navbar() {
               </Link>
 
               <nav className="hidden lg:flex items-center gap-7" aria-label="Main">
-                {NAV_LINKS.map(({ label, href, chevron }) => (
+                {NAV_LINKS.map(({ label, href }) => (
                   <Link
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-1 text-[14px] font-medium transition-colors duration-200",
+                      "text-[14px] font-medium transition-colors duration-200",
                       transparent
                         ? "text-white/75 hover:text-white"
                         : "text-ink-600 hover:text-ink-900"
                     )}
                   >
                     {label}
-                    {chevron && <ChevronDown size={14} className="opacity-60" aria-hidden />}
                   </Link>
                 ))}
               </nav>
