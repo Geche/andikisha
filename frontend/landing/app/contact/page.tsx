@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import ContactForm from "./ContactForm";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Calendar } from "lucide-react";
 import { COMPANY } from "@/lib/data";
+import NewsletterSection from "@/components/layout/NewsletterSection";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -44,10 +45,20 @@ export default function ContactPage() {
           <h1 className="font-display text-[clamp(36px,5vw,56px)] font-extrabold text-white max-w-[580px] mx-auto mb-5 leading-[1.1]">
             We are based in Nairobi. We respond fast.
           </h1>
-          <p className="text-[18px] text-white/70 max-w-[480px] mx-auto">
+          <p className="text-[18px] text-white/70 max-w-[480px] mx-auto mb-7">
             Sales, support, partnerships, or a general question — send a message
             and we will get back to you within 2 hours on business days.
           </p>
+          <div className="flex justify-center gap-3 flex-wrap">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white/80 text-[13px] font-medium">
+              <Clock size={13} className="text-amber" aria-hidden="true" />
+              2hr response time
+            </span>
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white/80 text-[13px] font-medium">
+              <Calendar size={13} className="text-amber" aria-hidden="true" />
+              Mon–Fri 8am–6pm EAT
+            </span>
+          </div>
         </Container>
       </section>
 
@@ -136,6 +147,8 @@ export default function ContactPage() {
           </div>
         </Container>
       </section>
+
+      <NewsletterSection />
     </>
   );
 }
