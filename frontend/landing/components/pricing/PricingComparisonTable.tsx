@@ -31,9 +31,9 @@ export default function PricingComparisonTable() {
           <table className="w-full text-[14px]">
             <thead>
               <tr className="border-b border-ink-200">
-                <th className="text-left py-3 pr-6 font-semibold text-ink-400 w-[45%]">Capability</th>
-                <th className="text-center py-3 px-4 font-semibold text-ink-400 w-[27%]">Spreadsheet</th>
-                <th className="text-center py-3 px-4 font-bold text-brand-900 w-[27%]">AndikishaHR</th>
+                <th scope="col" className="text-left py-3 pr-6 font-semibold text-ink-400 w-[45%]">Capability</th>
+                <th scope="col" className="text-center py-3 px-4 font-semibold text-ink-400 w-[27%]">Spreadsheet</th>
+                <th scope="col" className="text-center py-3 px-4 font-bold text-brand-900 w-[27%]">AndikishaHR</th>
               </tr>
             </thead>
             <tbody>
