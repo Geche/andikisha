@@ -1,21 +1,25 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { PostMeta } from "@/lib/blog";
+import NewsletterSection from "@/components/layout/NewsletterSection";
 
 const CATEGORIES = ["All", "Compliance", "Payroll", "HR Management"];
 
 function PostCard({ post, featured = false }: { post: PostMeta; featured?: boolean }) {
   return (
     <article className={`card flex flex-col gap-4 ${featured ? "lg:flex-row lg:gap-8" : ""}`}>
-      <div className={`bg-brand-50 rounded-xl flex items-center justify-center shrink-0 ${featured ? "lg:w-64 h-44" : "h-44"}`}>
-        <div className="text-center px-6">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 block mb-1">
-            {post.category}
-          </span>
-          <span className="text-[13px] font-mono text-brand-900 font-medium">{post.date}</span>
+      <div className={`bg-gradient-to-br from-brand-900 to-brand-800 rounded-xl flex flex-col items-start justify-between p-5 shrink-0 ${featured ? "lg:w-64 h-44" : "h-36"}`}>
+        <span className="inline-block px-2.5 py-1 rounded-full bg-amber/20 text-amber text-[11px] font-bold uppercase tracking-wider">
+          {post.category}
+        </span>
+        <div>
+          <p className="font-display font-bold text-white text-[13px] leading-snug line-clamp-2">
+            {post.title.slice(0, 55)}
+          </p>
+          <p className="text-[11px] text-white/40 font-mono mt-1">{post.date}</p>
         </div>
       </div>
 
@@ -44,70 +48,6 @@ function PostCard({ post, featured = false }: { post: PostMeta; featured?: boole
   );
 }
 
-function NewsletterForm() {
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-    setError(null);
-    startTransition(async () => {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const result = await res.json();
-      if (result.ok) setSubscribed(true);
-      else setError(result.error ?? "Something went wrong. Please try again.");
-    });
-  };
-
-  if (subscribed) {
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center gap-2 text-brand-700 font-semibold text-[15px]">
-          <CheckCircle size={18} aria-hidden /> You&apos;re subscribed.
-        </div>
-        <p className="text-[13px] text-ink-400">We&apos;ll only email when something in Kenya payroll compliance changes.</p>
-      </div>
-    );
-  }
-
-  return (
-    <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleSubmit} noValidate>
-      <div className="flex-1">
-        <input
-          type="email"
-          placeholder="your@email.co.ke"
-          className="form-input w-full"
-          aria-label="Email address"
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
-        />
-        {error && (
-          <p className="flex items-center gap-1.5 mt-1.5 text-[13px] text-error">
-            <AlertCircle size={13} aria-hidden /> {error}
-          </p>
-        )}
-      </div>
-      <button
-        type="submit"
-        disabled={isPending}
-        className="btn-primary shrink-0 disabled:opacity-70 disabled:cursor-not-allowed"
-      >
-        {isPending ? "Subscribing..." : "Subscribe"}
-      </button>
-    </form>
-  );
-}
-
 export default function BlogClient({ posts }: { posts: PostMeta[] }) {
   const [activeCategory, setActiveCategory] = useState("All");
 
@@ -127,7 +67,7 @@ export default function BlogClient({ posts }: { posts: PostMeta[] }) {
                 aria-pressed={activeCategory === cat}
                 className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 ${
                   activeCategory === cat
-                    ? "bg-brand-900 text-white"
+                    ? "bg-amber text-ink-900"
                     : "bg-white border border-ink-200 text-ink-600 hover:border-brand-700 hover:text-brand-900"
                 }`}
               >
@@ -154,19 +94,7 @@ export default function BlogClient({ posts }: { posts: PostMeta[] }) {
         </div>
       </section>
 
-      {/* Newsletter strip */}
-      <section className="py-16 bg-brand-50 border-t border-brand-100">
-        <div className="max-w-[1320px] mx-auto px-6 md:px-12">
-          <div className="max-w-[560px] mx-auto text-center">
-            <h2 className="font-display font-bold text-[26px] text-ink-900 mb-3">Stay ahead of KRA changes.</h2>
-            <p className="text-[15px] text-ink-600 mb-6">
-              We send one email when something changes that affects your payroll. No newsletters. No marketing.
-            </p>
-            <NewsletterForm />
-            <p className="text-[12px] text-ink-400 mt-3">Unsubscribe any time. We respect your inbox.</p>
-          </div>
-        </div>
-      </section>
+      <NewsletterSection />
     </>
   );
 }
