@@ -32,8 +32,8 @@ export default function PricingTestimonials() {
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[900px]">
-          {TESTIMONIALS.map(({ quote, name, role }) => (
-            <div key={name} className="bg-surface-alt border border-ink-200 rounded-2xl p-7">
+          {TESTIMONIALS.map(({ quote, name, role }, i) => (
+            <div key={i} className="bg-surface-alt border border-ink-200 rounded-2xl p-7">
               <p className="text-amber text-[28px] leading-none mb-3 font-serif">&ldquo;</p>
               <p className="text-[15px] text-ink-700 leading-[1.8] mb-5">{quote}</p>
               <div>
