@@ -17,7 +17,7 @@ function PostCard({ post, featured = false }: { post: PostMeta; featured?: boole
         </span>
         <div>
           <p className="font-display font-bold text-white text-[13px] leading-snug line-clamp-2">
-            {post.title.slice(0, 55)}
+            {post.title}
           </p>
           <p className="text-[11px] text-white/40 font-mono mt-1">{post.date}</p>
         </div>
