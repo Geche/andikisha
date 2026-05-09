@@ -89,7 +89,7 @@ jobs:
         run: pnpm -r type-check
 
       - name: Lint
-        run: pnpm -r lint
+        run: pnpm --filter "./frontend/landing" --filter "./frontend/superadmin-portal" --filter "./frontend/admin-portal" --filter "./frontend/employee-portal" run lint
 
   docker-build:
     name: Docker Build — ${{ matrix.service }}

@@ -19,8 +19,9 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: production
-    if: ${{ github.event.inputs.confirm == 'DEPLOY' }}
+    if: github.event.inputs.confirm == 'DEPLOY'
     permissions:
       id-token: write
       contents: read

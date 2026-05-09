@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 concurrency:
-  group: cd-staging-${{ github.ref }}
+  group: cd-staging-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 env:
@@ -20,7 +20,7 @@ jobs:
     name: Push Images & Deploy to Staging
     runs-on: ubuntu-latest
     environment: staging
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: github.event.workflow_run.conclusion == 'success'
     permissions:
       id-token: write
       contents: read
