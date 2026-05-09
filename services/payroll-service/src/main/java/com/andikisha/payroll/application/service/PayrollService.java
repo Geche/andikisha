@@ -32,6 +32,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -111,7 +113,8 @@ public class PayrollService {
         PayrollRun run = PayrollRun.create(tenantId, request.period(), frequency, initiatedBy);
         run = payrollRunRepository.save(run);
 
-        eventPublisher.publishPayrollInitiated(run);
+        final PayrollRun committed = run;
+        publishAfterCommit(() -> eventPublisher.publishPayrollInitiated(committed));
         log.info("Payroll run initiated for tenant {} period {}", tenantId, request.period());
 
         return mapper.toResponse(run);
@@ -276,7 +279,7 @@ public class PayrollService {
                 run.finishCalculation();
                 PayrollRun saved = payrollRunRepository.save(run);
 
-                eventPublisher.publishPayrollCalculated(saved);
+                publishAfterCommit(() -> eventPublisher.publishPayrollCalculated(saved));
 
                 return mapper.toResponse(saved);
             });
@@ -306,7 +309,8 @@ public class PayrollService {
         run.approve(approvedBy, LocalDateTime.now(clock));
         run = payrollRunRepository.save(run);
 
-        eventPublisher.publishPayrollApproved(run);
+        final PayrollRun approved = run;
+        publishAfterCommit(() -> eventPublisher.publishPayrollApproved(approved));
 
         log.info("Payroll approved for period {} by {}", run.getPeriod(), approvedBy);
         return mapper.toResponse(run);
@@ -434,4 +438,22 @@ public class PayrollService {
     private record EmployeeSalaryData(EmployeeResponse employee, SalaryStructureResponse salary,
                                       List<LeaveBalanceResponse> leaveBalances,
                                       BigDecimal unpaidDaysThisPeriod) {}
+
+    /**
+     * Defers event publication until after the current transaction commits.
+     * If no transaction is active, publishes immediately.
+     */
+    private void publishAfterCommit(Runnable publishAction) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            publishAction.run();
+                        }
+                    });
+        } else {
+            publishAction.run();
+        }
+    }
 }

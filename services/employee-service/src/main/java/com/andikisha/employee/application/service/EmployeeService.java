@@ -25,6 +25,8 @@ import com.andikisha.employee.domain.repository.EmployeeRepository;
 import com.andikisha.employee.domain.repository.PositionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -122,7 +124,8 @@ public class EmployeeService {
         historyRepository.save(EmployeeHistory.record(
                 tenantId, employee.getId(), "CREATED", null, null, null, createdBy));
 
-        eventPublisher.publishEmployeeCreated(employee);
+        final Employee created = employee;
+        publishAfterCommit(() -> eventPublisher.publishEmployeeCreated(created));
 
         return mapper.toDetailResponse(employee);
     }
@@ -162,7 +165,8 @@ public class EmployeeService {
         }
 
         employee = employeeRepository.save(employee);
-        eventPublisher.publishEmployeeUpdated(employee, updatedBy);
+        final Employee updated = employee;
+        publishAfterCommit(() -> eventPublisher.publishEmployeeUpdated(updated, updatedBy));
 
         return mapper.toDetailResponse(employee);
     }
@@ -193,7 +197,9 @@ public class EmployeeService {
                 tenantId, employeeId, "SALARY_CHANGE", "basicSalary",
                 oldSalary.toPlainString(), request.basicSalary().toPlainString(), changedBy));
 
-        eventPublisher.publishSalaryChanged(employee, oldSalary, request.basicSalary(), changedBy);
+        final Employee salaryUpdated = employee;
+        final BigDecimal newBasicSalary = request.basicSalary();
+        publishAfterCommit(() -> eventPublisher.publishSalaryChanged(salaryUpdated, oldSalary, newBasicSalary, changedBy));
 
         return mapper.toDetailResponse(employee);
     }
@@ -213,7 +219,8 @@ public class EmployeeService {
                 tenantId, employeeId, "TERMINATED", "status",
                 previousStatus, "TERMINATED", terminatedBy));
 
-        eventPublisher.publishEmployeeTerminated(employee, reason, terminatedBy);
+        final Employee terminated = employee;
+        publishAfterCommit(() -> eventPublisher.publishEmployeeTerminated(terminated, reason, terminatedBy));
     }
 
     @Transactional
@@ -238,6 +245,24 @@ public class EmployeeService {
             return Enum.valueOf(type, value.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid value '" + value + "' for " + type.getSimpleName());
+        }
+    }
+
+    /**
+     * Defers event publication until after the current transaction commits.
+     * If no transaction is active, publishes immediately.
+     */
+    private void publishAfterCommit(Runnable publishAction) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            publishAction.run();
+                        }
+                    });
+        } else {
+            publishAction.run();
         }
     }
 }
