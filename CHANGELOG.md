@@ -6,6 +6,49 @@ All notable changes to AndikishaHR are documented here.
 
 ## [Unreleased] — 2026-05-09
 
+### superadmin-portal + tenant-service — Tenants section (Plan 2)
+
+Full Tenants section of the superadmin portal backed by 5 new backend endpoints.
+
+#### tenant-service — New backend endpoints
+
+- `PATCH /api/v1/super-admin/tenants/{id}/extend-trial` — extend trial period by 1–90 days; guarded by `BusinessRuleException` if tenant is not in TRIAL status
+- `DELETE /api/v1/super-admin/tenants/{id}` — soft-cancel a tenant (returns 204); rejects if already CANCELLED
+- `GET /api/v1/super-admin/tenants/{id}/feature-flags` — list all feature flags for a specific tenant
+- `PUT /api/v1/super-admin/tenants/{id}/feature-flags/{key}/enable` — enable a named flag; creates it if absent
+- `PUT /api/v1/super-admin/tenants/{id}/feature-flags/{key}/disable` — disable a named flag; creates it if absent; `{key}` validated with `@Pattern` + `@Size`
+
+#### tenant-service — Domain changes
+
+- `Tenant.extendTrial(int additionalDays)` — new domain method; throws `BusinessRuleException("INVALID_STATE")` for non-TRIAL tenants
+- `ExtendTrialRequest` record — `@Min(1)` / `@Max(90)` validated DTO
+- `TenantDetailResponse` enriched with `adminPhone`, `kraPin`, `nssfNumber`, `shifNumber`, `payFrequency`, `payDay`, `suspensionReason`, `trialEndsAt`
+- `SuperAdminTenantService` — added `extendTrial()` and `cancelTenant()` service methods
+- `FeatureFlagService` — added `getAllForTenantById()`, `enableForTenant()`, `disableForTenant()` (tenant-scoped, no reliance on `TenantContext`)
+- `SuperAdminController` — `FeatureFlagService` injected; all 5 new endpoints wired; 9 new `@WebMvcTest` e2e tests
+
+#### superadmin-portal — Frontend
+
+- `types/tenant.ts` — expanded with `TenantDetail`, `LicenceDetail`, `LicenceHistory`, `FeatureFlag`, `Plan`, `ProvisionedTenant`, `PagedResponse<T>`
+- `components/ui/Toaster.tsx` — new: context-based toast system (`ToastProvider`, `useToast` hook); three variants (success/error/warning) with 4-second auto-dismiss
+- `app/layout.tsx` — `ToastProvider` wraps children inside `QueryProvider`
+- `app/tenants/page.tsx` — replaced stub: status filter tabs (All/Active/Trial/Suspended/Cancelled), `TenantTable` reuse, pagination, error state
+- `app/tenants/new/page.tsx` — new: tenant provisioning form (organisation, admin contact, licence sections); on success switches to credentials reveal card with eye-toggle and clipboard copy for the temporary password
+- `app/tenants/[tenantId]/page.tsx` — replaced stub: 6-tab shell (Overview / Onboarding† / Employees† / Licence / Feature Flags / Audit†); loading skeleton and error state; `TenantActionMenu` in header
+- `components/tenants/detail/OverviewTab.tsx` — 2-column grid: Organisation (status pill, suspension reason, trial end), Admin Contact, Statutory Registrations (KRA/NSSF/SHIF), Pay Schedule
+- `components/tenants/detail/LicenceTab.tsx` — current licence card (plan, status, billing, seats, price, dates, licence key) + history table; Renew and Upgrade action buttons
+- `components/tenants/detail/RenewModal.tsx` — plan picker, billing cycle, seats, price, end date; posts to `/licences/renew`
+- `components/tenants/detail/UpgradeModal.tsx` — plan picker, seats, price; posts to `/licences/upgrade`
+- `components/tenants/detail/FeatureFlagsTab.tsx` — toggle switches with optimistic UI; rollback on error; loading skeleton
+- `components/tenants/detail/TenantActionMenu.tsx` — dropdown gated by tenant status: Suspend (ACTIVE/TRIAL), Reactivate (SUSPENDED), Extend Trial (TRIAL), Cancel Tenant (not CANCELLED/DELETED)
+- `components/tenants/detail/ConfirmModal.tsx` — reusable confirm dialog (danger/amber/primary variants)
+- `components/tenants/detail/SuspendModal.tsx` — reason textarea, submit disabled until non-empty
+- `components/tenants/detail/ExtendTrialModal.tsx` — numeric input 1–90 days with live button label
+
+† Placeholder — Phase 2
+
+---
+
 ### frontend/landing — /pricing page enhancement
 
 Structural cleanup and UX upgrade across all pricing page components.
