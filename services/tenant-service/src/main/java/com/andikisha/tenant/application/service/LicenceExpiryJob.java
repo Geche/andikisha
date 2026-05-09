@@ -1,9 +1,7 @@
 package com.andikisha.tenant.application.service;
 
 import com.andikisha.common.domain.model.LicenceStatus;
-import com.andikisha.tenant.domain.model.LicenceHistory;
 import com.andikisha.tenant.domain.model.TenantLicence;
-import com.andikisha.tenant.domain.repository.LicenceHistoryRepository;
 import com.andikisha.tenant.domain.repository.TenantLicenceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +29,11 @@ public class LicenceExpiryJob {
     private static final String SYSTEM_ACTOR = "SYSTEM";
 
     private final TenantLicenceRepository licenceRepository;
-    private final LicenceHistoryRepository historyRepository;
     private final LicenceStateMachineService stateMachine;
 
     public LicenceExpiryJob(TenantLicenceRepository licenceRepository,
-                            LicenceHistoryRepository historyRepository,
                             LicenceStateMachineService stateMachine) {
         this.licenceRepository = licenceRepository;
-        this.historyRepository = historyRepository;
         this.stateMachine = stateMachine;
     }
 
@@ -73,20 +68,14 @@ public class LicenceExpiryJob {
     }
 
     private int transitionLapsedGraceToSuspended() {
-        List<TenantLicence> graceLicences = licenceRepository.findByStatusIn(
-                List.of(LicenceStatus.GRACE_PERIOD));
+        // grace_period_entered_at is stamped on the entity when the state machine
+        // enters GRACE_PERIOD, so we can filter in SQL without querying licence_history
+        // per licence (eliminates N+1 history lookups).
         LocalDateTime cutoff = LocalDateTime.now().minusDays(GRACE_PERIOD_DAYS);
+        List<TenantLicence> lapsedGrace = licenceRepository
+                .findByStatusAndGracePeriodEnteredAtBefore(LicenceStatus.GRACE_PERIOD, cutoff);
         int moved = 0;
-        for (TenantLicence licence : graceLicences) {
-            // Find the original transition INTO GRACE_PERIOD to measure how long
-            // the licence has been in this state.
-            LicenceHistory firstGrace = historyRepository
-                    .findFirstByLicenceIdAndNewStatusOrderByChangedAtAsc(
-                            licence.getId(), LicenceStatus.GRACE_PERIOD)
-                    .orElse(null);
-            if (firstGrace == null || firstGrace.getChangedAt().isAfter(cutoff)) {
-                continue;
-            }
+        for (TenantLicence licence : lapsedGrace) {
             try {
                 stateMachine.transition(licence.getId(), LicenceStatus.SUSPENDED,
                         SYSTEM_ACTOR,

@@ -33,9 +33,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -246,11 +248,21 @@ public class LicencePlanService {
         if (tenantIds == null || tenantIds.isEmpty()) {
             return Map.of();
         }
-        return licenceRepository.findByTenantIdInAndStatusIn(tenantIds, ACTIVE_LIKE)
-                .stream()
+        List<TenantLicence> licences = licenceRepository.findByTenantIdInAndStatusIn(tenantIds, ACTIVE_LIKE);
+        if (licences.isEmpty()) {
+            return Map.of();
+        }
+        // Pre-fetch all needed plans in one query to avoid N+1 per licence.
+        Set<UUID> planIds = licences.stream()
+                .map(TenantLicence::getPlanId)
+                .collect(Collectors.toSet());
+        Map<UUID, Plan> planById = planRepository.findAllById(planIds).stream()
+                .collect(Collectors.toMap(Plan::getId, p -> p, (a, b) -> a));
+
+        return licences.stream()
                 .collect(Collectors.toMap(
                         TenantLicence::getTenantId,
-                        this::toResponse,
+                        l -> toResponse(l, planById),
                         (a, b) -> a));
     }
 
@@ -279,49 +291,60 @@ public class LicencePlanService {
     /**
      * Aggregate platform-wide subscription metrics for the SUPER_ADMIN dashboard.
      *
+     * Replaces the original findAll() + in-heap aggregation with targeted SQL
+     * aggregation queries so this method is O(1) in DB round-trips regardless
+     * of tenant volume.
+     *
      * MRR computation:
      *   MONTHLY licence -> agreedPriceKes
      *   ANNUAL licence  -> agreedPriceKes / 12
      */
     public SuperAdminAnalyticsResponse getSuperAdminAnalytics() {
-        List<TenantLicence> all = licenceRepository.findAll();
+        // Single query: counts and MRR per status across all licences.
+        Map<LicenceStatus, long[]>       statusCounts = new HashMap<>();
+        Map<LicenceStatus, BigDecimal>   statusMrr    = new HashMap<>();
+        for (Object[] row : licenceRepository.aggregateCountAndMrrByStatus()) {
+            LicenceStatus s   = (LicenceStatus) row[0];
+            long          cnt = ((Number) row[1]).longValue();
+            BigDecimal    mrr = row[2] != null ? (BigDecimal) row[2] : BigDecimal.ZERO;
+            statusCounts.put(s, new long[]{cnt});
+            statusMrr.put(s, mrr);
+        }
 
-        long active     = countByStatus(all, LicenceStatus.ACTIVE);
-        long trial      = countByStatus(all, LicenceStatus.TRIAL);
-        long suspended  = countByStatus(all, LicenceStatus.SUSPENDED);
-        long expired    = countByStatus(all, LicenceStatus.EXPIRED);
-        long cancelled  = countByStatus(all, LicenceStatus.CANCELLED);
+        long active    = countFromMap(statusCounts, LicenceStatus.ACTIVE);
+        long trial     = countFromMap(statusCounts, LicenceStatus.TRIAL);
+        long suspended = countFromMap(statusCounts, LicenceStatus.SUSPENDED);
+        long expired   = countFromMap(statusCounts, LicenceStatus.EXPIRED);
+        long cancelled = countFromMap(statusCounts, LicenceStatus.CANCELLED);
 
-        BigDecimal mrr = all.stream()
-                .filter(l -> l.getStatus() == LicenceStatus.ACTIVE
-                          || l.getStatus() == LicenceStatus.GRACE_PERIOD)
-                .map(this::monthlyRevenue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal mrr = statusMrr.getOrDefault(LicenceStatus.ACTIVE, BigDecimal.ZERO)
+                .add(statusMrr.getOrDefault(LicenceStatus.GRACE_PERIOD, BigDecimal.ZERO));
+        BigDecimal arr = mrr.multiply(MONTHS_PER_YEAR).setScale(4, RoundingMode.HALF_UP);
 
-        BigDecimal arr = mrr.multiply(MONTHS_PER_YEAR);
+        // Single query: per-plan counts, MRR, and seat totals for revenue-bearing statuses.
+        List<LicenceStatus> revenueStatuses = List.of(
+                LicenceStatus.ACTIVE, LicenceStatus.TRIAL, LicenceStatus.GRACE_PERIOD);
+        List<Object[]> planRows = licenceRepository.aggregatePlanBreakdown(revenueStatuses);
 
-        long totalSeats = all.stream()
-                .filter(l -> l.getStatus() == LicenceStatus.ACTIVE
-                          || l.getStatus() == LicenceStatus.TRIAL
-                          || l.getStatus() == LicenceStatus.GRACE_PERIOD)
-                .mapToLong(TenantLicence::getSeatCount)
-                .sum();
+        // Collect distinct planIds from results and fetch names in one query.
+        Set<UUID> planIds = planRows.stream()
+                .map(r -> (UUID) r[0])
+                .collect(Collectors.toSet());
+        Map<UUID, String> planNames = planRepository.findAllById(planIds).stream()
+                .collect(Collectors.toMap(Plan::getId, Plan::getName, (a, b) -> a));
 
-        // Map planId -> Plan once to avoid N+1 lookups.
-        Map<UUID, Plan> planById = planRepository.findAll().stream()
-                .collect(Collectors.toMap(Plan::getId, p -> p, (a, b) -> a));
-
-        Map<String, long[]> planCounts = new HashMap<>();
-        Map<String, BigDecimal> planMrr = new HashMap<>();
-        for (TenantLicence licence : all) {
-            if (licence.getStatus() != LicenceStatus.ACTIVE
-                    && licence.getStatus() != LicenceStatus.GRACE_PERIOD) {
-                continue;
-            }
-            Plan plan = planById.get(licence.getPlanId());
-            String planName = plan != null ? plan.getName() : "unknown";
-            planCounts.computeIfAbsent(planName, k -> new long[]{0})[0]++;
-            planMrr.merge(planName, monthlyRevenue(licence), BigDecimal::add);
+        long totalSeats = 0;
+        Map<String, long[]>       planCounts = new HashMap<>();
+        Map<String, BigDecimal>   planMrr    = new HashMap<>();
+        for (Object[] row : planRows) {
+            UUID   planId    = (UUID) row[0];
+            long   cnt       = ((Number) row[1]).longValue();
+            BigDecimal rowMrr = row[2] != null ? (BigDecimal) row[2] : BigDecimal.ZERO;
+            long   seats     = ((Number) row[3]).longValue();
+            String name      = planNames.getOrDefault(planId, "unknown");
+            planCounts.computeIfAbsent(name, k -> new long[]{0})[0] += cnt;
+            planMrr.merge(name, rowMrr, BigDecimal::add);
+            totalSeats += seats;
         }
         List<PlanBreakdown> breakdown = planCounts.entrySet().stream()
                 .map(e -> new PlanBreakdown(
@@ -330,21 +353,11 @@ public class LicencePlanService {
                         planMrr.getOrDefault(e.getKey(), BigDecimal.ZERO)))
                 .toList();
 
-        LocalDate firstOfMonth = LocalDate.now().withDayOfMonth(1);
-        long newThisMonth = all.stream()
-                .filter(l -> l.getStartDate() != null
-                        && !l.getStartDate().isBefore(firstOfMonth))
-                .map(TenantLicence::getTenantId)
-                .distinct()
-                .count();
-        long churnsThisMonth = all.stream()
-                .filter(l -> l.getStatus() == LicenceStatus.CANCELLED
-                          || l.getStatus() == LicenceStatus.EXPIRED)
-                .filter(l -> l.getUpdatedAt() != null
-                        && !l.getUpdatedAt().toLocalDate().isBefore(firstOfMonth))
-                .map(TenantLicence::getTenantId)
-                .distinct()
-                .count();
+        // Two targeted count queries replace stream aggregation over the full table.
+        LocalDate      firstOfMonth    = LocalDate.now().withDayOfMonth(1);
+        LocalDateTime  firstOfMonthDt  = firstOfMonth.atStartOfDay();
+        long newThisMonth    = licenceRepository.countDistinctTenantsStartedSince(firstOfMonth);
+        long churnsThisMonth = licenceRepository.countDistinctChurnedSince(firstOfMonthDt);
 
         return new SuperAdminAnalyticsResponse(
                 active, trial, suspended, expired, cancelled,
@@ -353,16 +366,9 @@ public class LicencePlanService {
                 breakdown, newThisMonth, churnsThisMonth);
     }
 
-    private BigDecimal monthlyRevenue(TenantLicence licence) {
-        BigDecimal price = licence.getAgreedPriceKes();
-        if (price == null) return BigDecimal.ZERO;
-        return licence.getBillingCycle() == BillingCycle.ANNUAL
-                ? price.divide(MONTHS_PER_YEAR, 4, RoundingMode.HALF_UP)
-                : price;
-    }
-
-    private long countByStatus(List<TenantLicence> all, LicenceStatus status) {
-        return all.stream().filter(l -> l.getStatus() == status).count();
+    private long countFromMap(Map<LicenceStatus, long[]> map, LicenceStatus status) {
+        long[] arr = map.get(status);
+        return arr != null ? arr[0] : 0L;
     }
 
     private void writePlanTierToCache(String tenantId, String planName) {
@@ -374,13 +380,27 @@ public class LicencePlanService {
         }
     }
 
+    /** Single-licence context: tolerated single-row plan lookup. */
     public LicenceResponse toResponse(TenantLicence licence) {
         Plan plan = planRepository.findById(licence.getPlanId()).orElse(null);
+        return buildLicenceResponse(licence, plan != null ? plan.getName() : null);
+    }
+
+    /**
+     * Batch context: caller supplies a pre-fetched planId → Plan map so that
+     * plan resolution costs O(1) per licence instead of a DB round-trip each.
+     */
+    LicenceResponse toResponse(TenantLicence licence, Map<UUID, Plan> planById) {
+        Plan plan = planById.get(licence.getPlanId());
+        return buildLicenceResponse(licence, plan != null ? plan.getName() : null);
+    }
+
+    private LicenceResponse buildLicenceResponse(TenantLicence licence, String planName) {
         return new LicenceResponse(
                 licence.getId(),
                 licence.getTenantId(),
                 licence.getPlanId(),
-                plan != null ? plan.getName() : null,
+                planName,
                 licence.getLicenceKey(),
                 licence.getBillingCycle(),
                 licence.getSeatCount(),
@@ -415,12 +435,14 @@ public class LicencePlanService {
             return List.of();
         }
 
-        // Build plan-id → plan-name lookup once.
-        Map<UUID, String> planNames = planRepository.findAll().stream()
+        // Collect the IDs we actually need, then fetch only those rows.
+        Set<UUID>   neededPlanIds   = expiring.stream().map(TenantLicence::getPlanId).collect(Collectors.toSet());
+        List<String> neededTenantIds = expiring.stream().map(TenantLicence::getTenantId).distinct().toList();
+
+        Map<UUID, String> planNames = planRepository.findAllById(neededPlanIds).stream()
                 .collect(Collectors.toMap(Plan::getId, Plan::getName, (a, b) -> a));
 
-        // Build tenant-id → tenant lookup once.
-        Map<String, Tenant> tenants = tenantRepository.findAll().stream()
+        Map<String, Tenant> tenants = tenantRepository.findByTenantIdIn(neededTenantIds).stream()
                 .collect(Collectors.toMap(Tenant::getTenantId, t -> t, (a, b) -> a));
 
         return expiring.stream()

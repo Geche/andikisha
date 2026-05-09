@@ -126,6 +126,8 @@ public class LicenceStateMachineService {
             licence.clearSuspendedAt();
         } else if (targetStatus == LicenceStatus.CANCELLED) {
             licence.setCancelledReason(reason);
+        } else if (targetStatus == LicenceStatus.GRACE_PERIOD) {
+            licence.markGracePeriodEnteredAt(LocalDateTime.now());
         }
 
         TenantLicence saved = licenceRepository.save(licence);

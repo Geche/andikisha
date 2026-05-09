@@ -38,6 +38,9 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     long countByStatusAndCreatedAtAfter(TenantStatus status, LocalDateTime after);
 
+    /** Fetch only the tenants whose tenantId appears in the supplied list. */
+    List<Tenant> findByTenantIdIn(List<String> tenantIds);
+
     /**
      * Monthly tenant signup + active counts since {@code start}.
      * <p>

@@ -58,6 +58,11 @@ public class TenantLicence extends BaseEntity {
     @Column(name = "suspended_at")
     private LocalDateTime suspendedAt;
 
+    /** Set when the licence first enters GRACE_PERIOD so the expiry job
+     *  can compare elapsed time without querying licence_history. */
+    @Column(name = "grace_period_entered_at")
+    private LocalDateTime gracePeriodEnteredAt;
+
     @Column(name = "cancelled_reason", columnDefinition = "TEXT")
     private String cancelledReason;
 
@@ -105,6 +110,10 @@ public class TenantLicence extends BaseEntity {
         this.suspendedAt = null;
     }
 
+    public void markGracePeriodEnteredAt(LocalDateTime when) {
+        this.gracePeriodEnteredAt = when;
+    }
+
     public void setCancelledReason(String cancelledReason) {
         this.cancelledReason = cancelledReason;
     }
@@ -143,6 +152,7 @@ public class TenantLicence extends BaseEntity {
     public LocalDate getEndDate() { return endDate; }
     public LicenceStatus getStatus() { return status; }
     public LocalDateTime getSuspendedAt() { return suspendedAt; }
+    public LocalDateTime getGracePeriodEnteredAt() { return gracePeriodEnteredAt; }
     public String getCancelledReason() { return cancelledReason; }
     public String getCreatedBy() { return createdBy; }
     public String getLastModifiedBy() { return lastModifiedBy; }
