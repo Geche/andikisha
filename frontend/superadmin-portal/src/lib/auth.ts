@@ -1,3 +1,5 @@
+import { ApiError } from "./api-error";
+
 export interface LoginPayload {
   email: string;
   password: string;
@@ -18,7 +20,7 @@ export async function login(payload: LoginPayload): Promise<LoginResult> {
   });
   const data = await res.json();
   if (!res.ok) {
-    throw { response: { data } };
+    throw new ApiError(data?.message ?? "Login failed", data, res.status);
   }
   return data as LoginResult;
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
 import { login } from "@/lib/auth";
+import { ApiError } from "@/lib/api-error";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,9 +25,7 @@ export default function LoginPage() {
       router.replace("/dashboard");
     } catch (err: unknown) {
       console.error("[login error]", err);
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Invalid credentials. Please try again.";
+      const msg = err instanceof ApiError ? err.message : "Invalid credentials. Please try again.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -38,12 +37,6 @@ export default function LoginPage() {
       {/* Logo + heading above card */}
       <div className="flex flex-col items-center mb-8">
         <LogoFull className="h-8 w-auto mb-6" />
-        <h1 className="text-[28px] font-bold text-[#101828] tracking-tight text-center">
-          Log in to your account
-        </h1>
-        <p className="mt-2 text-[15px] text-gray-500 text-center">
-          Welcome back! Please enter your details.
-        </p>
       </div>
 
       {/* Card */}
@@ -95,21 +88,21 @@ export default function LoginPage() {
 
           {/* Remember + Forgot */}
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 accent-[#0B3D2E] cursor-pointer"
-              />
-              <span className="text-[14px] text-gray-700">Remember for 30 days</span>
-            </label>
-            <button
-              type="button"
-              className="text-[14px] font-semibold text-[#166A50] hover:text-[#0B3D2E] transition-colors"
-            >
-              Forgot password
-            </button>
+            {/*<label className="flex items-center gap-2 cursor-pointer">*/}
+            {/*  <input*/}
+            {/*    type="checkbox"*/}
+            {/*    checked={remember}*/}
+            {/*    onChange={(e) => setRemember(e.target.checked)}*/}
+            {/*    className="w-4 h-4 rounded border-gray-300 accent-[#0B3D2E] cursor-pointer"*/}
+            {/*  />*/}
+            {/*  <span className="text-[14px] text-gray-700">Remember for 30 days</span>*/}
+            {/*</label>*/}
+            {/*<button*/}
+            {/*  type="button"*/}
+            {/*  className="text-[14px] font-semibold text-[#166A50] hover:text-[#0B3D2E] transition-colors"*/}
+            {/*>*/}
+            {/*  Forgot password*/}
+            {/*</button>*/}
           </div>
 
           {/* Error */}

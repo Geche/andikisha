@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { BaseModal } from "@/components/ui/BaseModal";
 
 interface Props {
   isPending?: boolean;
@@ -13,10 +14,10 @@ export function ExtendTrialModal({ isPending, onConfirm, onClose }: Props) {
   const [days, setDays] = useState(14);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <BaseModal labelId="extend-trial-modal-title" onClose={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[380px] p-6">
         <div className="flex items-start justify-between mb-4">
-          <h3 className="text-[16px] font-bold text-[#02110C]">Extend Trial</h3>
+          <h3 id="extend-trial-modal-title" className="text-[16px] font-bold text-[#02110C]">Extend Trial</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
         </div>
         <p className="text-[13.5px] text-gray-600 mb-4">Add additional days to the current trial period.</p>
@@ -39,6 +40,6 @@ export function ExtendTrialModal({ isPending, onConfirm, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

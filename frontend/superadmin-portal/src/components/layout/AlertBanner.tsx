@@ -3,22 +3,21 @@
 import { AlertCircle, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const DISMISS_KEY = "sa-alert-dismissed";
-
 interface AlertBannerProps {
   count: number;
   onReview: () => void;
 }
 
 export function AlertBanner({ count, onReview }: AlertBannerProps) {
+  const dismissKey = `sa-alert-dismissed-${count}`;
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    setDismissed(sessionStorage.getItem(DISMISS_KEY) === "1");
-  }, []);
+    setDismissed(sessionStorage.getItem(dismissKey) === "1");
+  }, [dismissKey]);
 
   function dismiss() {
-    sessionStorage.setItem(DISMISS_KEY, "1");
+    sessionStorage.setItem(dismissKey, "1");
     setDismissed(true);
   }
 

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useToast } from "@/components/ui/Toaster";
+import { BaseModal } from "@/components/ui/BaseModal";
 import type { Plan } from "@/types/tenant";
 
 interface Props {
@@ -40,16 +41,19 @@ export function UpgradeModal({ tenantId, currentPlanId, currentSeatCount, onClos
       onClose();
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Upgrade failed";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Upgrade failed";
       toast(msg, "error");
     },
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <BaseModal labelId="upgrade-modal-title" onClose={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[420px] p-6">
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-[16px] font-bold text-[#02110C]">Upgrade Plan</h3>
+          <h3 id="upgrade-modal-title" className="text-[16px] font-bold text-[#02110C]">Upgrade Plan</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
         </div>
         <div className="space-y-4">
@@ -81,6 +85,6 @@ export function UpgradeModal({ tenantId, currentPlanId, currentSeatCount, onClos
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

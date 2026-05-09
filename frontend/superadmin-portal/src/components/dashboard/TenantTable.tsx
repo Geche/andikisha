@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TenantSummary, TenantStatus } from "@/types/tenant";
-import { Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsUpDown, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, Search } from "lucide-react";
 
 const STATUS_STYLES: Record<TenantStatus, string> = {
   ACTIVE:    "bg-[#D1F5E6] text-[#0F5040]",
@@ -43,6 +43,26 @@ const AVATAR_COLORS = [
 type SortKey = "organisationName" | "adminEmail" | "createdAt" | "status" | "seatCount";
 type SortDir = "asc" | "desc";
 
+interface SortHeaderProps {
+  label: string;
+  colKey: SortKey;
+  activeSortKey: SortKey;
+  onSort: (key: SortKey) => void;
+}
+
+function SortHeader({ label, colKey, activeSortKey, onSort }: SortHeaderProps) {
+  const active = activeSortKey === colKey;
+  return (
+    <button
+      onClick={() => onSort(colKey)}
+      className={`flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.05em] hover:text-gray-700 transition-colors ${active ? "text-[#0B3D2E]" : "text-gray-500"}`}
+    >
+      {label}
+      <ChevronsUpDown size={11} className={active ? "text-[#0B3D2E]" : "text-gray-300"} />
+    </button>
+  );
+}
+
 interface Props {
   tenants: TenantSummary[];
   total: number;
@@ -76,19 +96,6 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
   const from = total === 0 ? 0 : page * pageSize + 1;
   const to = Math.min((page + 1) * pageSize, total);
 
-  function SortHeader({ label, colKey }: { label: string; colKey: SortKey }) {
-    const active = sortKey === colKey;
-    return (
-      <button
-        onClick={() => handleSort(colKey)}
-        className={`flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.05em] hover:text-gray-700 transition-colors ${active ? "text-[#0B3D2E]" : "text-gray-500"}`}
-      >
-        {label}
-        <ChevronsUpDown size={11} className={active ? "text-[#0B3D2E]" : "text-gray-300"} />
-      </button>
-    );
-  }
-
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -113,19 +120,16 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
       <table className="w-full border-collapse">
         <thead className="bg-[#FAFAFA]">
           <tr>
-            <th className="w-11 px-4 h-11 text-left"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Company" colKey="organisationName" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Admin email" colKey="adminEmail" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Created" colKey="createdAt" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Status" colKey="status" /></th>
-            <th className="px-4 h-11 text-left"><SortHeader label="Employees" colKey="seatCount" /></th>
-            <th className="w-20 px-4 h-11" />
+            <th className="px-4 h-11 text-left"><SortHeader label="Company" colKey="organisationName" activeSortKey={sortKey} onSort={handleSort} /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Admin email" colKey="adminEmail" activeSortKey={sortKey} onSort={handleSort} /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Created" colKey="createdAt" activeSortKey={sortKey} onSort={handleSort} /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Status" colKey="status" activeSortKey={sortKey} onSort={handleSort} /></th>
+            <th className="px-4 h-11 text-left"><SortHeader label="Employees" colKey="seatCount" activeSortKey={sortKey} onSort={handleSort} /></th>
           </tr>
         </thead>
         <tbody>
           {isLoading && Array.from({ length: 5 }).map((_, i) => (
             <tr key={`skeleton-${i}`} className="border-t border-gray-50">
-              <td className="px-4 h-[72px]"><div className="w-4 h-4 bg-gray-100 rounded animate-pulse" /></td>
               <td className="px-4 h-[72px]">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
@@ -138,12 +142,11 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
               {[100, 80, 60, 40].map((w) => (
                 <td key={w} className="px-4 h-[72px]"><div className={`h-3 bg-gray-100 rounded w-${w === 100 ? "36" : w === 80 ? "28" : w === 60 ? "16" : "8"} animate-pulse`} /></td>
               ))}
-              <td className="px-4 h-[72px]" />
             </tr>
           ))}
           {!isLoading && tenants.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-6 py-12 text-center">
+              <td colSpan={5} className="px-6 py-12 text-center">
                 <p className="text-[13.5px] font-semibold text-gray-500">No tenants yet</p>
                 <p className="text-[12px] text-gray-400 mt-1">Provision your first tenant to get started.</p>
               </td>
@@ -153,9 +156,8 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
             <tr
               key={t.tenantId}
               onClick={() => router.push(`/tenants/${t.tenantId}`)}
-              className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer group transition-colors"
+              className="border-t border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors"
             >
-              <td className="px-4 h-[72px]"><input type="checkbox" className="rounded accent-[#0B3D2E]" /></td>
               <td className="px-4 h-[72px]">
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
@@ -173,16 +175,6 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
               </td>
               <td className="px-4 h-[72px]"><StatusBadge status={t.status} /></td>
               <td className="px-4 h-[72px] text-[13.5px] text-gray-600">{t.seatCount ?? "—"}</td>
-              <td className="px-4 h-[72px]">
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button aria-label="Delete tenant" className="w-8 h-8 rounded-md flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors">
-                    <Trash2 size={14} />
-                  </button>
-                  <button aria-label="Edit tenant" className="w-8 h-8 rounded-md flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors">
-                    <Pencil size={14} />
-                  </button>
-                </div>
-              </td>
             </tr>
           ))}
         </tbody>

@@ -40,6 +40,9 @@ export function FeatureFlagsTab({ tenantId }: Props) {
     onSuccess: (_, { enable, key }) => {
       toast(`${key} ${enable ? "enabled" : "disabled"}`, "success");
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-flags", tenantId] });
+    },
   });
 
   if (isLoading) {

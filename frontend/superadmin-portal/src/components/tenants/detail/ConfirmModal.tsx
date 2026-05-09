@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { BaseModal } from "@/components/ui/BaseModal";
 
 interface Props {
   title: string;
@@ -22,10 +23,10 @@ export function ConfirmModal({
   }[confirmVariant];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <BaseModal labelId="confirm-modal-title" onClose={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-[400px] p-6">
         <div className="flex items-start justify-between mb-4">
-          <h3 className="text-[16px] font-bold text-[#02110C] pr-4">{title}</h3>
+          <h3 id="confirm-modal-title" className="text-[16px] font-bold text-[#02110C] pr-4">{title}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 flex-shrink-0"><X size={18} /></button>
         </div>
         <p className="text-[13.5px] text-gray-600 mb-6">{message}</p>
@@ -42,6 +43,6 @@ export function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

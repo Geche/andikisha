@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Eye, EyeOff, Copy, CheckCircle2 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-error";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useToast } from "@/components/ui/Toaster";
 import type { Plan, ProvisionedTenant } from "@/types/tenant";
@@ -82,9 +83,7 @@ export default function NewTenantPage() {
       toast("Tenant provisioned successfully", "success");
     },
     onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message ?? "Failed to provision tenant";
+      const msg = err instanceof ApiError ? err.message : "Failed to provision tenant";
       toast(msg, "error");
     },
   });

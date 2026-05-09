@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
@@ -55,12 +56,12 @@ export default function TenantsPage() {
         title="Tenants"
         subtitle={`${data?.totalElements ?? "…"} total tenants across all plans`}
         actions={
-          <a
+          <Link
             href="/tenants/new"
             className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + New Tenant
-          </a>
+          </Link>
         }
       />
 
