@@ -253,7 +253,7 @@ public class EmployeeService {
      * If no transaction is active, publishes immediately.
      */
     private void publishAfterCommit(Runnable publishAction) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
                         @Override
