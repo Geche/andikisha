@@ -58,17 +58,20 @@ public class SuperAdminTenantService {
     private final LicencePlanService licencePlanService;
     private final AuthServiceClient authServiceClient;
     private final TenantEventPublisher tenantEventPublisher;
+    private final PasswordGenerator passwordGenerator;
 
     public SuperAdminTenantService(TenantRepository tenantRepository,
                                    PlanRepository planRepository,
                                    LicencePlanService licencePlanService,
                                    AuthServiceClient authServiceClient,
-                                   TenantEventPublisher tenantEventPublisher) {
+                                   TenantEventPublisher tenantEventPublisher,
+                                   PasswordGenerator passwordGenerator) {
         this.tenantRepository = tenantRepository;
         this.planRepository = planRepository;
         this.licencePlanService = licencePlanService;
         this.authServiceClient = authServiceClient;
         this.tenantEventPublisher = tenantEventPublisher;
+        this.passwordGenerator = passwordGenerator;
     }
 
     @Transactional
@@ -107,9 +110,9 @@ public class SuperAdminTenantService {
                 request.trialDays(),
                 createdBy);
 
-        // 3. Generate a one-time admin password. UUID-based so it's
-        //    cryptographically random and trivially shareable over a secure channel.
-        String temporaryPassword = generateTemporaryPassword();
+        // 3. Generate a one-time admin password — cryptographically random,
+        //    shareable over a secure channel.
+        String temporaryPassword = passwordGenerator.generate();
 
         // 4. Provision admin user in Auth Service via gRPC.
         try {
@@ -197,7 +200,7 @@ public class SuperAdminTenantService {
 
     @Transactional
     public TenantSummaryResponse extendTrial(UUID tenantId, int additionalDays, String updatedBy) {
-        Tenant tenant = tenantRepository.findById(tenantId)
+        Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
         tenant.extendTrial(additionalDays);
         Tenant saved = tenantRepository.save(tenant);
@@ -207,7 +210,7 @@ public class SuperAdminTenantService {
 
     @Transactional
     public void cancelTenant(UUID tenantId, String updatedBy) {
-        Tenant tenant = tenantRepository.findById(tenantId)
+        Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
         if (tenant.getStatus() == TenantStatus.CANCELLED) {
             throw new BusinessRuleException("INVALID_STATE", "Tenant is already cancelled");
@@ -228,11 +231,6 @@ public class SuperAdminTenantService {
         return tenantPage.map(t -> toSummaryWithLicence(t, licences.get(t.getTenantId())));
     }
 
-    private static final String PASSWORD_CHARSET =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final int PASSWORD_LENGTH = 20;
-    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
-
     private void publishAfterCommit(Runnable action) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(
@@ -245,18 +243,6 @@ public class SuperAdminTenantService {
         } else {
             action.run();
         }
-    }
-
-    /**
-     * Generates a temporary password using a base62 charset via SecureRandom.
-     * 20 characters gives ~119 bits of entropy (log2(62^20)).
-     */
-    static String generateTemporaryPassword() {
-        StringBuilder sb = new StringBuilder(PASSWORD_LENGTH);
-        for (int i = 0; i < PASSWORD_LENGTH; i++) {
-            sb.append(PASSWORD_CHARSET.charAt(SECURE_RANDOM.nextInt(PASSWORD_CHARSET.length())));
-        }
-        return sb.toString();
     }
 
     /**

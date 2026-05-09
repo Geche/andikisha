@@ -162,13 +162,14 @@ public class KenyanTaxCalculator {
         remaining = remaining.subtract(band4Width).max(BigDecimal.ZERO);
 
         // Band 5: above 800,000 at 35%
-        tax = tax.add(remaining.multiply(RATE_5));
+        tax = tax.add(remaining.multiply(RATE_5).setScale(4, RoundingMode.HALF_UP));
 
         return tax.setScale(2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal applyBand(BigDecimal remaining, BigDecimal bandWidth, BigDecimal rate) {
-        return remaining.min(bandWidth).max(BigDecimal.ZERO).multiply(rate);
+        return remaining.min(bandWidth).max(BigDecimal.ZERO).multiply(rate)
+                .setScale(4, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal bd(long value) {

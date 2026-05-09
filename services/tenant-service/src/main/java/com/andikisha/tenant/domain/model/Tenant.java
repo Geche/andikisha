@@ -146,7 +146,7 @@ public class Tenant extends BaseEntity {
 
     public void updatePaySchedule(String payFrequency, int payDay) {
         if (payDay < 1 || payDay > 28) {
-            throw new BusinessRuleException("Pay day must be between 1 and 28");
+            throw new BusinessRuleException("INVALID_PAY_DAY", "Pay day must be between 1 and 28");
         }
         this.payFrequency = payFrequency;
         this.payDay = payDay;

@@ -1,5 +1,6 @@
 package com.andikisha.payroll.presentation.controller;
 
+import com.andikisha.payroll.application.dto.request.CancelPayrollRequest;
 import com.andikisha.payroll.application.dto.request.RunPayrollRequest;
 import com.andikisha.payroll.application.dto.response.PaySlipResponse;
 import com.andikisha.payroll.application.dto.response.PayrollRunResponse;
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -122,8 +122,8 @@ public class PayrollController {
     public void cancel(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @PathVariable UUID id,
-            @RequestBody(required = false) Map<String, String> body) {
-        payrollService.cancelPayroll(id,
-                body != null ? body.getOrDefault("reason", "Cancelled") : "Cancelled");
+            @Valid @RequestBody(required = false) CancelPayrollRequest request) {
+        String reason = (request != null && request.reason() != null) ? request.reason() : "Cancelled";
+        payrollService.cancelPayroll(id, reason);
     }
 }

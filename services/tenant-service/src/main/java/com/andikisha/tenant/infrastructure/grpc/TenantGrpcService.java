@@ -110,9 +110,10 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
             observer.onNext(VerifyTenantResponse.newBuilder().setActive(false).build());
             observer.onCompleted();
         } catch (Exception e) {
-            log.error("VerifyTenantActive failed", e);
-            observer.onNext(VerifyTenantResponse.newBuilder().setActive(false).build());
-            observer.onCompleted();
+            log.error("Unexpected error verifying tenant {}", request.getTenantId(), e);
+            observer.onError(Status.INTERNAL
+                    .withDescription("Internal error verifying tenant status")
+                    .asRuntimeException());
         } finally {
             TenantContext.clear();
         }

@@ -203,12 +203,6 @@ public class LicencePlanService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "TenantLicence", "tenantId=" + tenantId));
 
-        if (current.getStatus() != LicenceStatus.ACTIVE
-                && current.getStatus() != LicenceStatus.TRIAL) {
-            throw new BusinessRuleException("INVALID_LICENCE_STATE",
-                    "Plan upgrade requires ACTIVE or TRIAL licence; current=" + current.getStatus());
-        }
-
         Plan newPlan = planRepository.findById(newPlanId)
                 .orElseThrow(() -> new ResourceNotFoundException("Plan", newPlanId));
         Plan previousPlan = planRepository.findById(current.getPlanId())
