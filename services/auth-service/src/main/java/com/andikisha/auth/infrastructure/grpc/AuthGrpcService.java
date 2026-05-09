@@ -213,9 +213,9 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
                     .build());
             observer.onCompleted();
         } catch (Exception e) {
-            log.error("Failed to provision tenant admin for tenantId={}", request.getTenantId(), e);
+            log.error("Failed to provision tenant admin for tenant {}", request.getTenantId(), e);
             observer.onError(io.grpc.Status.INTERNAL
-                    .withDescription(e.getMessage())
+                    .withDescription("Failed to provision tenant admin")
                     .asRuntimeException());
         }
     }

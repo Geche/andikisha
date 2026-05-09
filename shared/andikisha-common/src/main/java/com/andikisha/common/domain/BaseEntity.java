@@ -46,7 +46,7 @@ public abstract class BaseEntity {
         return tenantId;
     }
 
-    public void setTenantId(String tenantId) {
+    protected void setTenantId(String tenantId) {
         this.tenantId = tenantId;
     }
 

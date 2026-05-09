@@ -2,7 +2,7 @@ package com.andikisha.common.tenant;
 
 public final class TenantContext {
 
-    private static final InheritableThreadLocal<String> CURRENT_TENANT = new InheritableThreadLocal<>();
+    private static final ThreadLocal<String> CURRENT_TENANT = new ThreadLocal<>();
 
     private TenantContext() {}
 
