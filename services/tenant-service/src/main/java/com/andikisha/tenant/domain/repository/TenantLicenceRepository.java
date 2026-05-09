@@ -77,10 +77,11 @@ public interface TenantLicenceRepository extends JpaRepository<TenantLicence, UU
     @Query("""
             SELECT COUNT(DISTINCT l.tenantId)
             FROM TenantLicence l
-            WHERE l.status IN ('CANCELLED', 'EXPIRED')
+            WHERE l.status IN :statuses
               AND l.updatedAt >= :from
             """)
-    long countDistinctChurnedSince(@Param("from") LocalDateTime from);
+    long countDistinctChurnedSince(@Param("statuses") List<LicenceStatus> statuses,
+                                   @Param("from") LocalDateTime from);
 
     /**
      * Find GRACE_PERIOD licences where grace_period_entered_at is before the cutoff,

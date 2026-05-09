@@ -357,7 +357,8 @@ public class LicencePlanService {
         LocalDate      firstOfMonth    = LocalDate.now().withDayOfMonth(1);
         LocalDateTime  firstOfMonthDt  = firstOfMonth.atStartOfDay();
         long newThisMonth    = licenceRepository.countDistinctTenantsStartedSince(firstOfMonth);
-        long churnsThisMonth = licenceRepository.countDistinctChurnedSince(firstOfMonthDt);
+        long churnsThisMonth = licenceRepository.countDistinctChurnedSince(
+                List.of(LicenceStatus.CANCELLED, LicenceStatus.EXPIRED), firstOfMonthDt);
 
         return new SuperAdminAnalyticsResponse(
                 active, trial, suspended, expired, cancelled,
