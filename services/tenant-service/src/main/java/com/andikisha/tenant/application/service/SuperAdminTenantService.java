@@ -147,7 +147,7 @@ public class SuperAdminTenantService {
     }
 
     public TenantDetailResponse getTenantDetail(UUID tenantId) {
-        Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
+        Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
         LicenceResponse currentLicence = safeGetCurrentLicence(tenant.getTenantId());
         return new TenantDetailResponse(
@@ -155,6 +155,15 @@ public class SuperAdminTenantService {
                 tenant.getCompanyName(),
                 tenant.getStatus().name(),
                 tenant.getCreatedAt(),
+                tenant.getAdminEmail(),
+                tenant.getAdminPhone(),
+                tenant.getKraPin(),
+                tenant.getNssfNumber(),
+                tenant.getShifNumber(),
+                tenant.getPayFrequency(),
+                tenant.getPayDay(),
+                tenant.getSuspensionReason(),
+                tenant.getTrialEndsAt(),
                 currentLicence);
     }
 

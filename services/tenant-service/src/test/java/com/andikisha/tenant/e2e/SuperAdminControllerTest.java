@@ -146,4 +146,26 @@ class SuperAdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(false));
     }
+
+    // ── tenant detail ─────────────────────────────────────────────────────────
+
+    @Test
+    void getTenantDetail_returns200WithEnrichedFields() throws Exception {
+        com.andikisha.tenant.application.dto.response.TenantDetailResponse detail =
+                new com.andikisha.tenant.application.dto.response.TenantDetailResponse(
+                        TENANT_ID, "Acme Corp", "ACTIVE",
+                        java.time.LocalDateTime.of(2026, 1, 15, 10, 0),
+                        "admin@acme.com", "+254700000001",
+                        "P051234567A", "6000001", "SH/001/001",
+                        "MONTHLY", 28, null, null, null);
+
+        when(superAdminTenantService.getTenantDetail(TENANT_ID)).thenReturn(detail);
+
+        mockMvc.perform(get("/api/v1/super-admin/tenants/{id}", TENANT_ID)
+                        .header("X-User-ID", "system").header("X-User-Role", SA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.adminEmail").value("admin@acme.com"))
+                .andExpect(jsonPath("$.kraPin").value("P051234567A"))
+                .andExpect(jsonPath("$.payDay").value(28));
+    }
 }
