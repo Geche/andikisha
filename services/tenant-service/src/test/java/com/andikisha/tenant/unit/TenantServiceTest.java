@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -236,5 +237,30 @@ class TenantServiceTest {
                 .thenReturn(Optional.of(tenant));
 
         assertThat(tenantService.isActive(id)).isFalse();
+    }
+
+    @Test
+    void extendTrial_addsDaysToTrialEndsAt() {
+        Tenant tenant = buildTrialTenant();
+        LocalDate original = tenant.getTrialEndsAt();
+
+        tenant.extendTrial(14);
+
+        assertThat(tenant.getTrialEndsAt()).isEqualTo(original.plusDays(14));
+        assertThat(tenant.getStatus()).isEqualTo(TenantStatus.TRIAL);
+    }
+
+    @Test
+    void extendTrial_whenNotTrial_throwsBusinessRuleException() {
+        Tenant tenant = buildTrialTenant();
+        tenant.activate();
+
+        assertThatThrownBy(() -> tenant.extendTrial(14))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("TRIAL");
+    }
+
+    private Tenant buildTrialTenant() {
+        return Tenant.create("Trial Co", "KE", "KES", "trial@co.ke", "+254722000099", mock(Plan.class));
     }
 }

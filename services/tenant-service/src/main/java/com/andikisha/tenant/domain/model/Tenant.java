@@ -112,6 +112,15 @@ public class Tenant extends BaseEntity {
         this.suspensionReason = null;
     }
 
+    public void extendTrial(int additionalDays) {
+        if (this.status != TenantStatus.TRIAL) {
+            throw new BusinessRuleException("INVALID_STATE",
+                    "Can only extend trial for tenants in TRIAL status");
+        }
+        LocalDate base = this.trialEndsAt != null ? this.trialEndsAt : LocalDate.now();
+        this.trialEndsAt = base.plusDays(additionalDays);
+    }
+
     public void changePlan(Plan newPlan) {
         if (this.status == TenantStatus.CANCELLED) {
             throw new BusinessRuleException("INVALID_STATE",
