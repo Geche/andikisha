@@ -56,6 +56,9 @@ jobs:
 
       - name: Monitor rollout
         run: |
-          for SVC in api-gateway auth-service payroll-service leave-service; do
+          for SVC in api-gateway auth-service tenant-service employee-service \
+                     payroll-service compliance-service time-attendance-service \
+                     leave-service document-service notification-service \
+                     integration-hub-service analytics-service audit-service; do
             kubectl rollout status deployment/${SVC} -n andikisha --timeout=10m
           done
