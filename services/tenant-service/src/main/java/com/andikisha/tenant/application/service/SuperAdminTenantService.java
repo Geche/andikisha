@@ -183,6 +183,28 @@ public class SuperAdminTenantService {
                 tenant.getCreatedAt());
     }
 
+    @Transactional
+    public TenantSummaryResponse extendTrial(UUID tenantId, int additionalDays, String updatedBy) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
+        tenant.extendTrial(additionalDays);
+        Tenant saved = tenantRepository.save(tenant);
+        LicenceResponse licence = safeGetCurrentLicence(saved.getTenantId());
+        return toSummaryWithLicence(saved, licence);
+    }
+
+    @Transactional
+    public void cancelTenant(UUID tenantId, String updatedBy) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
+        if (tenant.getStatus() == TenantStatus.CANCELLED) {
+            throw new BusinessRuleException("INVALID_STATE", "Tenant is already cancelled");
+        }
+        tenant.cancel();
+        tenantRepository.save(tenant);
+        log.info("Tenant {} cancelled by {}", tenantId, updatedBy);
+    }
+
     public Page<TenantSummaryResponse> filterTenants(List<TenantStatus> statuses, Pageable pageable) {
         if (statuses == null || statuses.isEmpty()) {
             return listTenants(pageable);

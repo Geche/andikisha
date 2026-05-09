@@ -50,4 +50,27 @@ public class FeatureFlagService {
         flag.disable();
         return mapper.toResponse(repository.save(flag));
     }
+
+    // ── Super-Admin methods (bypass TenantContext, accept explicit tenantId) ──
+
+    public List<FeatureFlagResponse> getAllForTenantById(String tenantId) {
+        return repository.findByTenantId(tenantId).stream()
+                .map(mapper::toResponse).toList();
+    }
+
+    @Transactional
+    public FeatureFlagResponse enableForTenant(String tenantId, String featureKey) {
+        FeatureFlag flag = repository.findByTenantIdAndFeatureKey(tenantId, featureKey)
+                .orElseGet(() -> FeatureFlag.create(tenantId, featureKey, false, null));
+        flag.enable();
+        return mapper.toResponse(repository.save(flag));
+    }
+
+    @Transactional
+    public FeatureFlagResponse disableForTenant(String tenantId, String featureKey) {
+        FeatureFlag flag = repository.findByTenantIdAndFeatureKey(tenantId, featureKey)
+                .orElseGet(() -> FeatureFlag.create(tenantId, featureKey, false, null));
+        flag.disable();
+        return mapper.toResponse(repository.save(flag));
+    }
 }

@@ -11,6 +11,9 @@ import com.andikisha.tenant.application.dto.response.ProvisionedTenantResponse;
 import com.andikisha.tenant.application.dto.response.SuperAdminAnalyticsResponse;
 import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
+import com.andikisha.tenant.application.dto.request.ExtendTrialRequest;
+import com.andikisha.tenant.application.dto.response.FeatureFlagResponse;
+import com.andikisha.tenant.application.service.FeatureFlagService;
 import com.andikisha.tenant.application.service.LicencePlanService;
 import com.andikisha.tenant.application.service.LicenceStateMachineService;
 import com.andikisha.tenant.application.service.SuperAdminTenantService;
@@ -24,10 +27,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -58,13 +66,16 @@ public class SuperAdminController {
     private final SuperAdminTenantService superAdminTenantService;
     private final LicencePlanService licencePlanService;
     private final LicenceStateMachineService stateMachine;
+    private final FeatureFlagService featureFlagService;
 
     public SuperAdminController(SuperAdminTenantService superAdminTenantService,
                                 LicencePlanService licencePlanService,
-                                LicenceStateMachineService stateMachine) {
+                                LicenceStateMachineService stateMachine,
+                                FeatureFlagService featureFlagService) {
         this.superAdminTenantService = superAdminTenantService;
         this.licencePlanService = licencePlanService;
         this.stateMachine = stateMachine;
+        this.featureFlagService = featureFlagService;
     }
 
     @PostMapping("/tenants")
@@ -162,6 +173,51 @@ public class SuperAdminController {
             return ResponseEntity.badRequest().build();
         }
         return ResponseEntity.ok(licencePlanService.getExpiringLicences(daysAhead));
+    }
+
+    @PatchMapping("/tenants/{tenantId}/extend-trial")
+    @Operation(summary = "Extend trial period for a TRIAL-status tenant")
+    public TenantSummaryResponse extendTrial(
+            @PathVariable UUID tenantId,
+            @Valid @RequestBody ExtendTrialRequest request) {
+        return superAdminTenantService.extendTrial(tenantId, request.additionalDays(), currentUserId());
+    }
+
+    @DeleteMapping("/tenants/{tenantId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Cancel (soft-delete) a tenant")
+    public void cancelTenant(@PathVariable UUID tenantId) {
+        superAdminTenantService.cancelTenant(tenantId, currentUserId());
+    }
+
+    @GetMapping("/tenants/{tenantId}/feature-flags")
+    @Operation(summary = "Get all feature flags for a specific tenant")
+    public List<FeatureFlagResponse> getTenantFeatureFlags(@PathVariable UUID tenantId) {
+        return featureFlagService.getAllForTenantById(tenantId.toString());
+    }
+
+    @PutMapping("/tenants/{tenantId}/feature-flags/{featureKey}/enable")
+    @Validated
+    @Operation(summary = "Enable a feature flag for a specific tenant")
+    public FeatureFlagResponse enableTenantFeatureFlag(
+            @PathVariable UUID tenantId,
+            @PathVariable @Size(max = 100)
+            @Pattern(regexp = "[a-zA-Z0-9_.-]+",
+                    message = "featureKey may only contain letters, digits, underscores, dots, and hyphens")
+            String featureKey) {
+        return featureFlagService.enableForTenant(tenantId.toString(), featureKey);
+    }
+
+    @PutMapping("/tenants/{tenantId}/feature-flags/{featureKey}/disable")
+    @Validated
+    @Operation(summary = "Disable a feature flag for a specific tenant")
+    public FeatureFlagResponse disableTenantFeatureFlag(
+            @PathVariable UUID tenantId,
+            @PathVariable @Size(max = 100)
+            @Pattern(regexp = "[a-zA-Z0-9_.-]+",
+                    message = "featureKey may only contain letters, digits, underscores, dots, and hyphens")
+            String featureKey) {
+        return featureFlagService.disableForTenant(tenantId.toString(), featureKey);
     }
 
     private String currentUserId() {
