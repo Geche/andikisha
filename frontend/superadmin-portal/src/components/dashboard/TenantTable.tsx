@@ -109,12 +109,6 @@ export function TenantTable({ tenants, total, page, pageSize, onPageChange, onSo
             <span className="flex-1">Search</span>
             <kbd className="text-[10px] bg-gray-100 rounded px-1.5 py-0.5 text-gray-400">⌘K</kbd>
           </div>
-          <a
-            href="/tenants/new"
-            className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-semibold text-[13px] px-3.5 h-9 rounded-lg transition-colors"
-          >
-            + New Tenant
-          </a>
         </div>
       </div>
       <table className="w-full border-collapse">
