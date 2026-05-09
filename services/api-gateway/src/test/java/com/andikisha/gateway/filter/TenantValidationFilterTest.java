@@ -64,9 +64,14 @@ class TenantValidationFilterTest {
     }
 
     @Test
-    void exactTenantsPath_bypassesTenantCheck() {
+    void tenantsPath_withTenantIdHeader_allowsThrough() {
+        // /api/v1/tenants now requires JWT (JwtAuthenticationFilter rejects unauthenticated
+        // requests before they reach this filter). In practice JwtAuthenticationFilter injects
+        // X-Tenant-ID from the super-admin token, so TenantValidationFilter sees the header.
         var exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.post("/api/v1/tenants").build());
+                MockServerHttpRequest.post("/api/v1/tenants")
+                        .header("X-Tenant-ID", "SYSTEM")
+                        .build());
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
         when(chain.filter(exchange)).thenReturn(Mono.empty());
 

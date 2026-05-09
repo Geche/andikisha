@@ -15,14 +15,11 @@ public final class GatewayPublicPaths {
         "/api/v1/auth/super-admin/provision",
         "/api/v1/auth/super-admin/login",
         "/api/v1/auth/ussd/validate",
-        "/api/v1/plans",
-        "/api/v1/tenants"
+        "/api/v1/plans"
     );
 
     /** Path prefixes requiring no JWT and no tenant header. */
     public static final List<String> PREFIXES = List.of(
-        "/api/v1/auth/super-admin/",
-        "/api/v1/super-admin/",
         "/api/v1/callbacks/",
         "/actuator/health",
         "/actuator/info",

@@ -121,15 +121,15 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    void exactTenantsPath_bypassesAuth() {
+    void tenantsPath_requiresAuth() {
+        // /api/v1/tenants is no longer a public path — unauthenticated tenant creation is blocked.
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.post("/api/v1/tenants").build());
         GatewayFilterChain chain = mock(GatewayFilterChain.class);
-        when(chain.filter(any())).thenReturn(Mono.empty());
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
-        assertThat(exchange.getResponse().getStatusCode()).isNull();
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
@@ -243,7 +243,6 @@ class JwtAuthenticationFilterTest {
     }
 
     private static byte[] decodeSecret(String secret) {
-        String normalised = secret.replace('-', '+').replace('_', '/');
-        return java.util.Base64.getDecoder().decode(normalised);
+        return java.util.Base64.getUrlDecoder().decode(secret);
     }
 }

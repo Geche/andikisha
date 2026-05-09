@@ -36,6 +36,9 @@ public class TenantLicenceFilter
     private static final Set<HttpMethod> WRITE_METHODS = Set.of(
             HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE);
 
+    /** Sentinel returned by defaultIfEmpty when Redis has no entry for a tenant. */
+    private static final String CACHE_MISS = "__CACHE_MISS__";
+
     private final SecretKey key;
     private final ReactiveStringRedisTemplate redisTemplate;
 
@@ -61,7 +64,9 @@ public class TenantLicenceFilter
                 claims = Jwts.parser().verifyWith(key).build()
                         .parseSignedClaims(authHeader.substring(7)).getPayload();
             } catch (JwtException e) {
-                return chain.filter(exchange);
+                log.warn("JWT validation failed in TenantLicenceFilter: {}", e.getMessage());
+                return reject(exchange, HttpStatus.UNAUTHORIZED,
+                        "INVALID_TOKEN", "Invalid or expired token");
             }
 
             // SUPER_ADMIN bypasses all licence checks
@@ -84,15 +89,23 @@ public class TenantLicenceFilter
 
             String redisKey = RedisKeys.licenceStatus(tenantId);
             return redisTemplate.opsForValue().get(redisKey)
-                    .defaultIfEmpty("ACTIVE") // Cache miss — treat as active
-                    .flatMap(status -> enforceLicence(exchange, chain, status));
+                    // Cache miss — fail closed: use sentinel so enforceLicence can reject.
+                    .defaultIfEmpty(CACHE_MISS)
+                    .flatMap(status -> enforceLicence(exchange, chain, tenantId, status));
         };
     }
 
     private Mono<Void> enforceLicence(ServerWebExchange exchange,
                                       org.springframework.cloud.gateway.filter.GatewayFilterChain chain,
+                                      String tenantId,
                                       String status) {
         return switch (status) {
+            case CACHE_MISS -> {
+                log.warn("Licence status cache miss for tenant {}; failing closed", tenantId);
+                yield reject(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                        "licence_check_unavailable",
+                        "Licence status unavailable. Please retry shortly.");
+            }
             case "SUSPENDED", "EXPIRED", "CANCELLED" ->
                     reject(exchange, HttpStatus.FORBIDDEN,
                             "LICENCE_SUSPENDED",
@@ -130,8 +143,7 @@ public class TenantLicenceFilter
     }
 
     private static byte[] decodeSecret(String secret) {
-        String normalised = secret.replace('-', '+').replace('_', '/');
-        return java.util.Base64.getDecoder().decode(normalised);
+        return java.util.Base64.getUrlDecoder().decode(secret);
     }
 
     private String escapeJson(String s) {

@@ -108,8 +108,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private static byte[] decodeSecret(String secret) {
-        String normalised = secret.replace('-', '+').replace('_', '/');
-        return java.util.Base64.getDecoder().decode(normalised);
+        return java.util.Base64.getUrlDecoder().decode(secret);
     }
 
     private boolean isPublicPath(String path) {

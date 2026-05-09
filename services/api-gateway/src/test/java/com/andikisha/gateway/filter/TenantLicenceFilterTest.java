@@ -85,12 +85,12 @@ class TenantLicenceFilterTest {
         verify(chain).filter(exchange);
     }
 
-    // ── Cache miss — pass through ─────────────────────────────────────────────
+    // ── Cache miss — fail closed ──────────────────────────────────────────────
 
     @Test
-    void cacheMiss_treatedAsActive_passesThrough() {
+    void cacheMiss_failsClosed_returns503() {
         String token = buildToken("ADMIN", TENANT_ID, null);
-        stubRedisStatus(TENANT_ID, null); // Redis returns empty
+        stubRedisStatus(TENANT_ID, null); // Redis returns empty (cache miss)
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/v1/employees")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
@@ -100,7 +100,8 @@ class TenantLicenceFilterTest {
 
         StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
 
-        verify(chain).filter(exchange);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        verify(chain, never()).filter(any());
     }
 
     // ── SUSPENDED licence ─────────────────────────────────────────────────────
@@ -262,7 +263,6 @@ class TenantLicenceFilterTest {
     }
 
     private static byte[] decodeSecret(String secret) {
-        String normalised = secret.replace('-', '+').replace('_', '/');
-        return java.util.Base64.getDecoder().decode(normalised);
+        return java.util.Base64.getUrlDecoder().decode(secret);
     }
 }
