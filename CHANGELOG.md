@@ -4,6 +4,36 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-05-09
+
+### frontend/landing — /pricing page enhancement
+
+Structural cleanup and UX upgrade across all pricing page components.
+
+#### New components
+- `components/pricing/PricingComparisonTable.tsx` — extracted comparison table (AndikishaHR vs spreadsheet); added `scope="col"` on all `<th>` headers (WCAG 1.3.1)
+- `components/pricing/PricingTestimonials.tsx` — extracted testimonials with "What customers say" Eyebrow heading and "Businesses that switched. Numbers that changed." h2
+
+#### Rebuilt components
+- `components/pricing/PricingTable.tsx` — full rebuild:
+  - Billing toggle: Monthly / Annual switch; annual prices auto-calculated at 15% discount (Starter KES 298, Growth KES 238, Scale KES 187)
+  - Separated plan cards: full-width 3-column grid above feature grid; Growth card uses `bg-brand-900` featured treatment; highlights list with "Everything in X, plus:" inheritance labels
+  - Trust strip: 4 signals (30-day free trial, No credit card, Cancel any time, Annual saves 15%) between cards and grid
+  - Feature grid: Check/X icons replace "Yes"/"-" text; rows grouped into 3 collapsible sections (Core / Growth & Scale only / Scale only); expand/collapse toggle
+  - CTA links fixed: Starter and Growth → `/early-access`, Scale → `/contact` (previously all self-linked to `/pricing`)
+  - `type="button"` added to both interactive buttons; `aria-expanded` on expand toggle; `role="switch"` + `aria-checked` on billing toggle
+
+#### Modified components
+- `components/faq/FaqList.tsx` — added optional `columns?: 1 | 2` prop (default `2`; home page unaffected); single-column mode removes left/right border separators
+
+#### Page
+- `app/pricing/page.tsx` — reduced from ~138 lines to 52 lines; all inline comparison table and testimonials data removed; `<FaqList columns={1} />` for single-column FAQ layout on pricing page
+
+#### Bug fixes
+- Navbar: removed dark-hero transparent mode (`DARK_HERO_PAGES`) that made nav links invisible on the white-background home page; removed `ChevronDown` icons from all nav links
+
+---
+
 ## [Unreleased] — 2026-05-08
 
 ### frontend/landing — Secondary pages full redesign
