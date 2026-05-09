@@ -25,6 +25,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -126,7 +128,8 @@ public class SuperAdminTenantService {
         }
 
         // 5. Publish tenant.created so downstream services can provision schemas, etc.
-        tenantEventPublisher.publishTenantCreated(savedTenant);
+        //    Deferred to afterCommit so a transaction rollback never produces ghost events.
+        publishAfterCommit(() -> tenantEventPublisher.publishTenantCreated(savedTenant));
 
         return new ProvisionedTenantResponse(
                 savedTenant.getId(),
@@ -212,6 +215,8 @@ public class SuperAdminTenantService {
         tenant.cancel();
         tenantRepository.save(tenant);
         log.info("Tenant {} cancelled by {}", tenantId, updatedBy);
+        String tenantIdStr = tenant.getTenantId();
+        publishAfterCommit(() -> tenantEventPublisher.publishTenantCancelled(tenantIdStr, updatedBy));
     }
 
     public Page<TenantSummaryResponse> filterTenants(List<TenantStatus> statuses, Pageable pageable) {
@@ -227,6 +232,20 @@ public class SuperAdminTenantService {
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static final int PASSWORD_LENGTH = 20;
     private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
+    private void publishAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            action.run();
+                        }
+                    });
+        } else {
+            action.run();
+        }
+    }
 
     /**
      * Generates a temporary password using a base62 charset via SecureRandom.

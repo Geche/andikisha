@@ -175,9 +175,10 @@ public class LicencePlanService {
                 tenantId, saved.getId(), LicenceStatus.ACTIVE, LicenceStatus.ACTIVE,
                 renewedBy, "Licence renewed"));
 
-        eventPublisher.publishLicenceRenewed(new LicenceRenewedEvent(
+        LicenceRenewedEvent renewedEvent = new LicenceRenewedEvent(
                 tenantId, saved.getId().toString(), newPlan.getName(),
-                newEndDate, agreedPriceKes, billingCycle, renewedBy));
+                newEndDate, agreedPriceKes, billingCycle, renewedBy);
+        publishAfterCommit(() -> eventPublisher.publishLicenceRenewed(renewedEvent));
 
         log.info("Renewed licence for tenant {}: old={} new={} endDate={}",
                 tenantId, current.getId(), saved.getId(), newEndDate);
@@ -223,10 +224,11 @@ public class LicencePlanService {
                 tenantId, saved.getId(), saved.getStatus(), saved.getStatus(),
                 upgradedBy, "Plan upgrade"));
 
-        eventPublisher.publishLicenceUpgraded(new LicenceUpgradedEvent(
+        LicenceUpgradedEvent upgradedEvent = new LicenceUpgradedEvent(
                 tenantId, saved.getId().toString(),
                 previousPlanName, newPlan.getName(),
-                newSeatCount, newAgreedPriceKes, upgradedBy));
+                newSeatCount, newAgreedPriceKes, upgradedBy);
+        publishAfterCommit(() -> eventPublisher.publishLicenceUpgraded(upgradedEvent));
 
         writePlanTierToCache(tenantId, newPlan.getName());
 

@@ -25,6 +25,7 @@ import com.andikisha.events.payroll.PayrollProcessedEvent;
 import com.andikisha.events.tenant.LicenceExpiringEvent;
 import com.andikisha.events.tenant.LicenceRenewedEvent;
 import com.andikisha.events.tenant.LicenceUpgradedEvent;
+import com.andikisha.events.tenant.TenantCancelledEvent;
 import com.andikisha.events.tenant.TenantCreatedEvent;
 import com.andikisha.events.tenant.TenantPlanChangedEvent;
 import com.andikisha.events.tenant.TenantReactivatedEvent;
@@ -49,6 +50,7 @@ import java.util.UUID;
         @JsonSubTypes.Type(value = TenantCreatedEvent.class,        name = "TenantCreated"),
         @JsonSubTypes.Type(value = TenantSuspendedEvent.class,      name = "TenantSuspended"),
         @JsonSubTypes.Type(value = TenantReactivatedEvent.class,    name = "TenantReactivated"),
+        @JsonSubTypes.Type(value = TenantCancelledEvent.class,      name = "TenantCancelled"),
         @JsonSubTypes.Type(value = TenantPlanChangedEvent.class,    name = "TenantPlanChanged"),
         @JsonSubTypes.Type(value = LeaveRequestedEvent.class,       name = "LeaveRequested"),
         @JsonSubTypes.Type(value = LeaveApprovedEvent.class,        name = "LeaveApproved"),

@@ -11,4 +11,6 @@ public interface TenantEventPublisher {
     void publishTenantPlanChanged(String tenantId, String oldPlan, String newPlan);
 
     void publishTenantReactivated(String tenantId);
+
+    void publishTenantCancelled(String tenantId, String cancelledBy);
 }

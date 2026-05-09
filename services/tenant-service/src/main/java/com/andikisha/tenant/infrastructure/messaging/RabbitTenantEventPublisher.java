@@ -1,5 +1,6 @@
 package com.andikisha.tenant.infrastructure.messaging;
 
+import com.andikisha.events.tenant.TenantCancelledEvent;
 import com.andikisha.events.tenant.TenantCreatedEvent;
 import com.andikisha.events.tenant.TenantPlanChangedEvent;
 import com.andikisha.events.tenant.TenantReactivatedEvent;
@@ -69,6 +70,15 @@ public class RabbitTenantEventPublisher implements TenantEventPublisher {
         publishAfterCommit(() -> {
             rabbitTemplate.convertAndSend(RabbitMqConfig.TENANT_EXCHANGE, "tenant.reactivated", event);
             log.info("Published tenant reactivated event for tenant: {}", tenantId);
+        });
+    }
+
+    @Override
+    public void publishTenantCancelled(String tenantId, String cancelledBy) {
+        var event = new TenantCancelledEvent(tenantId, cancelledBy);
+        publishAfterCommit(() -> {
+            rabbitTemplate.convertAndSend(RabbitMqConfig.TENANT_EXCHANGE, "tenant.cancelled", event);
+            log.info("Published tenant cancelled event for tenant: {}", tenantId);
         });
     }
 
