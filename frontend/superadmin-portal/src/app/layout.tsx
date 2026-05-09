@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat, DM_Mono } from "next/font/google";
 import { QueryProvider } from "@/components/layout/QueryProvider";
+import { ToastProvider } from "@/components/ui/Toaster";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -27,7 +28,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${montserrat.variable} ${dmMono.variable}`}>
       <body className="font-body antialiased">
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );
