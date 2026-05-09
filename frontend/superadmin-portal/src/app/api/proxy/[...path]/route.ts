@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-const GATEWAY_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const GATEWAY_URL = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
+
+const ALLOWED_PATH_PREFIXES = [
+  "/api/v1/super-admin/",
+  "/api/v1/plans",
+  "/api/v1/auth/super-admin/",
+];
+
+function isAllowedPath(path: string): boolean {
+  return ALLOWED_PATH_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
 
 async function proxyRequest(request: NextRequest, method: string): Promise<NextResponse> {
   const cookieStore = await cookies();
@@ -13,6 +23,11 @@ async function proxyRequest(request: NextRequest, method: string): Promise<NextR
 
   const path = request.nextUrl.pathname.replace("/api/proxy", "");
   const search = request.nextUrl.search;
+
+  if (!isAllowedPath(path)) {
+    return NextResponse.json({ error: "FORBIDDEN", message: "Path not allowed" }, { status: 403 });
+  }
+
   const url = `${GATEWAY_URL}${path}${search}`;
 
   const headers: Record<string, string> = {
