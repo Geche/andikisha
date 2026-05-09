@@ -3,7 +3,6 @@ package com.andikisha.gateway.filter;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,7 @@ public class SuperAdminAuthFilter
 
             String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return reject(exchange, HttpStatus.FORBIDDEN,
+                return reject(exchange, HttpStatus.UNAUTHORIZED,
                         "MISSING_TOKEN", "Authentication required");
             }
 
@@ -68,7 +67,7 @@ public class SuperAdminAuthFilter
                             "Super Admin role required for this endpoint");
                 }
             } catch (JwtException e) {
-                return reject(exchange, HttpStatus.FORBIDDEN, "INVALID_TOKEN", "Invalid token");
+                return reject(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token");
             }
 
             return chain.filter(exchange);

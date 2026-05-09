@@ -36,8 +36,6 @@ public class TenantLicenceFilter
     private static final Set<HttpMethod> WRITE_METHODS = Set.of(
             HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE);
 
-    /** Sentinel returned by defaultIfEmpty when Redis has no entry for a tenant. */
-    private static final String CACHE_MISS = "__CACHE_MISS__";
 
     private final SecretKey key;
     private final ReactiveStringRedisTemplate redisTemplate;
@@ -84,14 +82,21 @@ public class TenantLicenceFilter
 
             String tenantId = claims.get("tenantId", String.class);
             if (tenantId == null) {
-                return chain.filter(exchange);
+                return reject(exchange, HttpStatus.UNAUTHORIZED,
+                        "MISSING_TENANT_CLAIM", "Token is missing tenantId claim");
             }
 
             String redisKey = RedisKeys.licenceStatus(tenantId);
             return redisTemplate.opsForValue().get(redisKey)
-                    // Cache miss — fail closed: use sentinel so enforceLicence can reject.
-                    .defaultIfEmpty(CACHE_MISS)
-                    .flatMap(status -> enforceLicence(exchange, chain, tenantId, status));
+                    .switchIfEmpty(Mono.defer(() -> {
+                        log.warn("Licence status cache miss for tenant {}; failing closed", tenantId);
+                        return Mono.<String>error(new CacheMissException());
+                    }))
+                    .flatMap(status -> enforceLicence(exchange, chain, tenantId, status))
+                    .onErrorResume(CacheMissException.class, e ->
+                            reject(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                                    "LICENCE_CHECK_UNAVAILABLE",
+                                    "Licence status unavailable. Please retry shortly."));
         };
     }
 
@@ -100,12 +105,6 @@ public class TenantLicenceFilter
                                       String tenantId,
                                       String status) {
         return switch (status) {
-            case CACHE_MISS -> {
-                log.warn("Licence status cache miss for tenant {}; failing closed", tenantId);
-                yield reject(exchange, HttpStatus.SERVICE_UNAVAILABLE,
-                        "licence_check_unavailable",
-                        "Licence status unavailable. Please retry shortly.");
-            }
             case "SUSPENDED", "EXPIRED", "CANCELLED" ->
                     reject(exchange, HttpStatus.FORBIDDEN,
                             "LICENCE_SUSPENDED",
@@ -151,4 +150,8 @@ public class TenantLicenceFilter
     }
 
     public static class Config {}
+
+    private static final class CacheMissException extends RuntimeException {
+        CacheMissException() { super(null, null, true, false); }
+    }
 }

@@ -3,7 +3,6 @@ package com.andikisha.gateway.filter;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +12,7 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 .getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return unauthorized(exchange, "Missing or invalid Authorization header");
+            return unauthorized(exchange, "MISSING_TOKEN", "Missing or invalid Authorization header");
         }
 
         String token = authHeader.substring(7);
@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             String employeeId = claims.get("employeeId", String.class);
 
             if (tenantId == null || tenantId.isBlank()) {
-                return unauthorized(exchange, "Token missing tenantId claim");
+                return unauthorized(exchange, "MISSING_TENANT_CLAIM", "Token missing tenantId claim");
             }
 
             // Strip any client-supplied identity headers BEFORE setting validated values
@@ -98,7 +98,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         } catch (JwtException e) {
             log.warn("JWT validation failed: {}", e.getMessage());
-            return unauthorized(exchange, "Invalid or expired token");
+            return unauthorized(exchange, "INVALID_TOKEN", "Invalid or expired token");
         }
     }
 
@@ -116,14 +116,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 || GatewayPublicPaths.PREFIXES.stream().anyMatch(path::startsWith);
     }
 
-    private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
+    private Mono<Void> unauthorized(ServerWebExchange exchange, String code, String message) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        exchange.getResponse().getHeaders().add("Content-Type", "application/json");
-        // Use replace to escape any quotes in the message to prevent JSON injection
-        String safeMessage = message.replace("\\", "\\\\").replace("\"", "\\\"");
-        byte[] body = ("{\"error\":\"UNAUTHORIZED\",\"message\":\"" + safeMessage + "\"}")
-                .getBytes(StandardCharsets.UTF_8);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = String.format(
+                "{\"status\":401,\"code\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
+                escapeJson(code), escapeJson(message), java.time.Instant.now());
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         return exchange.getResponse().writeWith(
-                Mono.just(exchange.getResponse().bufferFactory().wrap(body)));
+                Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
+    }
+
+    private static String escapeJson(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

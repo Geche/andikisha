@@ -82,7 +82,7 @@ class SuperAdminAuthFilterTest {
     // ── Missing / invalid token ───────────────────────────────────────────────
 
     @Test
-    void missingToken_returnsForbidden() {
+    void missingToken_returnsUnauthorized() {
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/v1/super-admin/tenants")
                         .header("X-Internal-Request", "true")
@@ -91,11 +91,11 @@ class SuperAdminAuthFilterTest {
 
         StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
 
-        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
-    void invalidToken_returnsForbidden() {
+    void invalidToken_returnsUnauthorized() {
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/v1/super-admin/tenants")
                         .header("X-Internal-Request", "true")
@@ -105,7 +105,7 @@ class SuperAdminAuthFilterTest {
 
         StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
 
-        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     // ── Wrong role / tenant ───────────────────────────────────────────────────
