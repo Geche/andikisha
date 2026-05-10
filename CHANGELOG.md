@@ -4,6 +4,88 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-05-10
+
+### Full-repo security, correctness, and performance hardening (pre-deployment audit)
+
+14 commits resolving every Critical and High finding from a full-repo code review, plus Medium/Low/Nit fixes throughout.
+
+#### CI/CD
+
+- CD staging now gates on CI passing — uses `workflow_run` trigger so broken code can no longer auto-deploy to staging
+- Frontend typecheck (`pnpm -r type-check`) and lint (scoped to app packages) added to CI as a parallel job; Docker build requires both Java and frontend jobs to pass
+- ESLint config added to `frontend/superadmin-portal/` (was missing; landing site had one)
+- Gitleaks secret scanning added as the second step of the CI build job
+- Production rollout monitor expanded from 4 to all 13 services
+- `workflow_run` concurrency group fixed to use `head_branch` (was always resolving to `master`)
+- `timeout-minutes: 60` added to the production deploy job (was unbounded)
+
+#### Critical security fixes
+
+- **api-gateway:** `POST /api/v1/tenants` was in the gateway public-path bypass list — any unauthenticated caller could create a tenant. Removed from `GatewayPublicPaths.EXACT`.
+- **api-gateway:** Licence status cache miss defaulted to `"ACTIVE"` (fail-open). Now uses `switchIfEmpty` to return 503 with `licence_check_unavailable` — fail-closed.
+- **api-gateway:** `/api/v1/super-admin/**` wildcard was in `GatewayPublicPaths.PREFIXES`, making the global JWT filter skip validation for all super-admin paths. Narrowed to the two exact paths that must be public (`/login`, `/provision`).
+- **api-gateway:** `JwtException` in `TenantLicenceFilter` fell through silently to `chain.filter(exchange)`. Now returns 401 and logs a warning.
+- **api-gateway:** `Base64.getDecoder()` with manual character substitution replaced with `Base64.getUrlDecoder()` (padding-tolerant) in all 4 filter classes.
+- **api-gateway:** Null `tenantId` claim in a non-SUPER_ADMIN token previously passed through to downstream services with no tenant header. Now returns 401 `MISSING_TENANT_CLAIM`.
+- **api-gateway:** Error response body shape standardised across all 3 filters (`status`, `code`, `message`, `timestamp`); `setContentType` replaces `headers().add`; `SuperAdminAuthFilter` now returns 401 (not 403) for authentication failures.
+- **auth-service:** `provisionTenantAdmin` gRPC error passed `e.getMessage()` into the status description, leaking stack trace fragments and internal IDs. Replaced with a generic message; full exception logged server-side.
+- **superadmin-portal BFF:** Proxy forwarded any caller-supplied path with no validation — an authenticated session could reach `actuator/shutdown` or internal endpoints. Added `ALLOWED_PATH_PREFIXES` allowlist; returns 403 for anything outside it.
+- **superadmin-portal BFF:** `/api/proxy/` removed from middleware `PUBLIC_PREFIXES` — defence-in-depth restored; middleware and proxy handler both verify the cookie independently.
+- **superadmin-portal login:** Cookie `maxAge` was derived from `body.remember` (client-controlled). Now uses only `data.expiresIn` from the upstream response with a 3600s fallback and a positive-integer type guard.
+- **superadmin-portal login:** `data.accessToken` from upstream was used without runtime validation — could set cookie to `"undefined"`. Returns 502 if the value is not a non-empty string.
+- **superadmin-portal login:** Added in-memory rate limiter (10 attempts / 15-minute window per IP) checked before any upstream call.
+
+#### Ghost events (Critical correctness)
+
+Events were being published inside `@Transactional` methods without an afterCommit guard. If the transaction rolled back, downstream services (notification, analytics, leave) received events for operations that never committed.
+
+Fixed in 6 locations across 3 services:
+- **tenant-service** — `LicencePlanService.renew()`, `LicencePlanService.upgrade()`, `SuperAdminTenantService.createTenantWithLicence()`
+- **payroll-service** — `PayrollService.initiatePayroll()`, `PayrollService.calculatePayroll()`, `PayrollService.approvePayroll()`
+- **employee-service** — `EmployeeService.create()`, `update()`, `updateSalary()`, `terminate()`
+
+All event publishes now go through a `publishAfterCommit(Runnable)` helper using `TransactionSynchronizationManager.registerSynchronization`. Guard corrected to `isActualTransactionActive()` (was `isSynchronizationActive()` in payroll and employee).
+
+Also added: `SuperAdminTenantService.cancelTenant()` previously published no event — other services were never notified of cancellations. Added `TenantCancelledEvent` (new event class in `andikisha-events`) published on `tenant.cancelled` routing key.
+
+#### Shared library
+
+- **`TenantContext`** switched from `InheritableThreadLocal` to `ThreadLocal`. InheritableThreadLocal propagates parent values to child threads at creation time in thread pools, risking stale cross-request tenant IDs. All entry points (filters, gRPC interceptors, listeners) already set the value explicitly.
+- **`BaseEntity.setTenantId`** reduced from `public` to `protected`. External code can no longer accidentally overwrite the tenant ID of any entity after construction.
+
+#### Performance (tenant-service)
+
+- **`getSuperAdminAnalytics()`** — replaced unbounded `licenceRepository.findAll()` and `planRepository.findAll()` (full heap loads) with SQL `GROUP BY` aggregation queries. Also fixed a JPQL bug: `IN ('CANCELLED', 'EXPIRED')` string literals replaced with typed `List<LicenceStatus>` parameters.
+- **`getExpiringLicences()`** — replaced `tenantRepository.findAll()` with a scoped `findByTenantIdIn` keyed to only the tenants referenced by expiring licences.
+- **`LicenceExpiryJob.transitionLapsedGraceToSuspended()`** — eliminated N+1 history lookup (one query per grace-period licence). Added `grace_period_entered_at TIMESTAMP` column to `tenant_licence` (Flyway `V7`); nightly job now filters directly by this column with a partial index on `status = 'GRACE_PERIOD'`.
+- **`batchGetCurrentLicences()`** — eliminated N+1 plan lookups. Batch callers now pre-fetch all plan IDs in one `findAllById` call and pass a Map to the DTO mapper.
+
+#### Backend correctness
+
+- **`TenantGrpcService.verifyTenantActive()`** — caught all exceptions and returned `active=false`. DB outages were indistinguishable from missing tenants. Split into `TenantNotFoundException` → `active=false` and `Exception` → `onError(Status.INTERNAL)`.
+- **`LicencePlanService.upgrade()`** — removed dead guard (status check after repository query that already guaranteed the same statuses).
+- **`SuperAdminTenantService`** — `extendTrial` and `cancelTenant` now use `findByIdAndTenantId` instead of bare `findById`, consistent with every other service method.
+- **`CancelPayrollRequest`** — new DTO record with `@Size(max=500)` on `reason`; replaces unvalidated `Map<String, String>` on the `DELETE /api/v1/payroll/runs/{id}` endpoint.
+- **`KenyanTaxCalculator.applyBand()`** — intermediate `BigDecimal` multiplications now apply `setScale(4, HALF_UP)` before accumulation; final `setScale(2, HALF_UP)` applied once on the total. Prevents sub-cent rounding drift on multi-million KES payrolls.
+- **`Tenant.updatePaySchedule()`** — `BusinessRuleException` now uses code `"INVALID_PAY_DAY"` instead of the generic default.
+- **`PasswordGenerator`** extracted from `SuperAdminTenantService` into a dedicated `@Component`.
+- **`AuthService.provisionTenantAdmin`** — `TenantContext` afterCommit race: event payload now captures `tenantId` as a final local before the try block, not from `TenantContext` at callback time.
+
+#### Frontend correctness and accessibility
+
+- **Modals** — all 5 (`ConfirmModal`, `SuspendModal`, `ExtendTrialModal`, `RenewModal`, `UpgradeModal`) now use a shared `BaseModal` wrapper with `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, Escape key handling, and focus-on-mount. Previously none had any ARIA dialog contract.
+- **`TenantTable`** — removed non-functional checkboxes (select-all and per-row) and inert `Trash2`/`Pencil` icon buttons that had no onClick handlers. Removed the duplicate `<a href="/tenants/new">` anchor inside the table component (navigation belongs at the page level).
+- **`SortHeader`** moved from inside `TenantTable` to module scope — was causing re-mount on every parent render.
+- **`ApiError`** — new `class ApiError extends Error` with a typed `data` field. Replaces thrown plain objects from `auth.ts` which broke `instanceof Error` guards in catch blocks.
+- **`FeatureFlagsTab`** — added `onSettled` to the toggle mutation so the cache re-invalidates from the server after both successful and failed mutations.
+- **`TenantsPage`** — `<a href="/tenants/new">` replaced with `<Link href="/tenants/new">` for client-side navigation.
+- **`AlertBanner`** — dismiss key now scoped to the current alert count; re-appears when the count changes.
+- **Dashboard layout** — fallback email changed from `"superadmin@andikisha.com"` to `""` so a missing middleware header is visible rather than silently hidden.
+- **`NEXT_PUBLIC_API_URL`** renamed to `API_GATEWAY_URL` — the `NEXT_PUBLIC_` prefix was embedding the backend gateway URL in the client bundle at build time. **Manual step required:** rename the variable in `frontend/superadmin-portal/.env.local` and in your AWS deployment environment before the next build.
+
+---
+
 ## [Unreleased] — 2026-05-09
 
 ### superadmin-portal + tenant-service — Tenants section (Plan 2)
