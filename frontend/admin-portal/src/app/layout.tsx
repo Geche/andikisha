@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, DM_Mono } from "next/font/google";
+import { QueryProvider, ToastProvider } from "@andikisha/ui";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -17,10 +18,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "AndikishaHR Admin",
-    template: "%s | AndikishaHR Admin",
-  },
+  title: { default: "AndikishaHR Admin", template: "%s | AndikishaHR Admin" },
   description: "Enterprise HR and Payroll Management",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
@@ -33,7 +31,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${montserrat.variable} ${dmMono.variable}`}
     >
       <body className="font-body text-near-black bg-surface antialiased">
-        {children}
+        <QueryProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );
