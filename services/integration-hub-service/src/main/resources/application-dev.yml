@@ -24,8 +24,8 @@ app:
   mpesa:
     consumer-key: ""
     consumer-secret: ""
-  # Dev encryption key — never use this value outside local development
-  credential-encryption-key: "dev-only-insecure-key-replace-in-prod"
+  # Dev encryption key — valid base64, 32 bytes. Never use outside local development.
+  credential-encryption-key: "Vk+5LHcIhuRBRL8AD42p0hbGIHWyknNthztBWxShh2I="
 
 springdoc:
   api-docs:
