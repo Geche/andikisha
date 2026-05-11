@@ -29,27 +29,27 @@ function NavItemRow({
   const inner = (
     <span
       className={[
-        "flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm font-medium transition-colors",
+        "flex items-center gap-2.5 w-full h-[36px] px-2.5 rounded-md text-[13.5px] font-medium transition-colors",
         item.locked
-          ? "opacity-45 cursor-default text-gray-400"
+          ? "opacity-40 cursor-default text-gray-400"
           : active
-          ? "bg-[#E8F5F0] text-[#0B3D2E] font-semibold border-l-2 border-[#E8A020] pl-[9px]"
-          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900 cursor-pointer",
+          ? "bg-gray-100 text-gray-900 font-semibold"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer",
       ].join(" ")}
     >
       <Icon
         size={16}
-        className={active ? "text-[#0B3D2E]" : "text-gray-400"}
-        strokeWidth={2}
+        className={active ? "text-gray-700" : "text-gray-400"}
+        strokeWidth={active ? 2.25 : 2}
       />
       <span className="flex-1">{item.label}</span>
       {item.locked && (
-        <span className="text-[9.5px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full tracking-wide">
+        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
           Soon
         </span>
       )}
       {item.badge !== undefined && !item.locked && (
-        <span className="text-[11px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+        <span className="text-[11px] font-semibold bg-gray-100 text-gray-600 min-w-[20px] text-center px-1.5 py-0.5 rounded-full">
           {item.badge}
         </span>
       )}
@@ -101,7 +101,7 @@ export function SidebarShell({
         {nav.map((section, si) => (
           <div key={section.label ?? `root-${si}`}>
             {section.label && (
-              <p className="text-[10.5px] font-bold text-[#166A50] uppercase tracking-[0.09em] px-2 pt-4 pb-1.5">
+              <p className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-[0.1em] px-2.5 pt-5 pb-1">
                 {section.label}
               </p>
             )}
@@ -116,22 +116,22 @@ export function SidebarShell({
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* Footer actions (profile, settings, logout) */}
       {footerContent && (
-        <div className="border-t border-gray-200 px-3 pt-3 pb-0 space-y-0.5">
+        <div className="border-t border-gray-100 px-3 pt-2 pb-2 space-y-0.5">
           {footerContent}
         </div>
       )}
 
       {/* User card */}
-      <div className="px-3 pb-4 pt-3 border-t border-gray-100 mt-1">
-        <div className="flex items-center gap-2.5">
+      <div className="px-3 pb-4 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-50 transition-colors cursor-default">
           <UserAvatar email={userEmail} />
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-gray-900 truncate">
+            <p className="text-[13px] font-semibold text-gray-900 truncate leading-tight">
               {userRole}
             </p>
-            <p className="text-[11.5px] text-gray-400 truncate">{userEmail}</p>
+            <p className="text-[11.5px] text-gray-400 truncate leading-tight">{userEmail}</p>
           </div>
         </div>
       </div>
