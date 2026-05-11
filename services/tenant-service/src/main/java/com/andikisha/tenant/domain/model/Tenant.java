@@ -9,10 +9,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Entity
 @Table(name = "tenants")
@@ -67,10 +67,7 @@ public class Tenant extends BaseEntity {
     public static Tenant create(String companyName, String country,
                                 String currency, String adminEmail,
                                 String adminPhone, Plan plan) {
-        UUID id = UUID.randomUUID();
         Tenant tenant = new Tenant();
-        tenant.setId(id);
-        tenant.setTenantId(id.toString());
         tenant.companyName = companyName;
         tenant.country = country.toUpperCase();
         tenant.currency = currency.toUpperCase();
@@ -82,6 +79,16 @@ public class Tenant extends BaseEntity {
         tenant.payFrequency = "MONTHLY";
         tenant.payDay = 28;
         return tenant;
+    }
+
+    // Hibernate assigns the UUID id via @GeneratedValue before @PrePersist fires.
+    // We sync tenantId = id.toString() so cross-service events carry the correct
+    // string identifier, and so findByIdAndTenantId(id, id.toString()) keeps working.
+    @PrePersist
+    protected void syncTenantId() {
+        if (getTenantId() == null && getId() != null) {
+            setTenantId(getId().toString());
+        }
     }
 
     public void activate() {
