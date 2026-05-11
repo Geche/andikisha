@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
@@ -32,11 +32,35 @@ interface LeaveRequest {
   days: number;
 }
 
-function MetricCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function MetricCard({
+  label,
+  value,
+  sub,
+  change,
+  positive,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  change?: string;
+  positive?: boolean;
+}) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-[18px]">
-      <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-2">{label}</p>
-      <p className="text-[26px] font-bold text-[#101828] leading-none">{value}</p>
+    <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[13px] text-gray-500">{label}</p>
+        {change && (
+          <span
+            className={`inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-0.5 rounded-full ${
+              positive ? "bg-[#D1F5E6] text-[#0F5040]" : "bg-[#FEF3DC] text-[#92600A]"
+            }`}
+          >
+            <TrendingUp size={11} />
+            {change}
+          </span>
+        )}
+      </div>
+      <p className="text-[28px] font-bold text-[#101828] leading-none">{value}</p>
       {sub && <p className="text-[12px] text-gray-400 mt-1.5">{sub}</p>}
     </div>
   );
@@ -46,7 +70,7 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     APPROVED: "bg-[#D1F5E6] text-[#0F5040]",
     PENDING: "bg-[#FEF3DC] text-[#92600A]",
-    REJECTED: "bg-red-50 text-red-700",
+    REJECTED: "bg-red-100 text-red-700",
     PAID: "bg-[#D1F5E6] text-[#0F5040]",
     DRAFT: "bg-gray-100 text-gray-500",
   };
@@ -81,6 +105,7 @@ export default function DashboardPage() {
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const title = firstName ? `${greeting}, ${firstName}` : greeting;
   const subtitle = profile ? `${profile.jobTitle} · ${profile.department}` : undefined;
+  const pendingCount = leaves.filter((l) => l.status === "PENDING").length;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -104,7 +129,7 @@ export default function DashboardPage() {
           <MetricCard
             label="Leave balance"
             value={profile ? `${profile.leaveBalance}d` : "—"}
-            sub="All types"
+            sub="All types combined"
           />
           <MetricCard
             label="Latest net pay"
@@ -113,8 +138,10 @@ export default function DashboardPage() {
           />
           <MetricCard
             label="Pending requests"
-            value={String(leaves.filter((l) => l.status === "PENDING").length)}
-            sub="Leave requests"
+            value={String(pendingCount)}
+            sub="Awaiting approval"
+            change={pendingCount > 0 ? `${pendingCount} pending` : undefined}
+            positive={false}
           />
         </div>
 
@@ -123,7 +150,7 @@ export default function DashboardPage() {
           {/* Recent payslips */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-[13.5px] font-semibold text-[#101828]">Recent Payslips</p>
+              <p className="text-[13.5px] font-bold text-[#101828]">Recent Payslips</p>
               <Link href="/payslips" className="text-[12px] font-semibold text-[#166A50] hover:underline">
                 View all →
               </Link>
@@ -154,7 +181,7 @@ export default function DashboardPage() {
           {/* Leave requests */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-[13.5px] font-semibold text-[#101828]">Leave Requests</p>
+              <p className="text-[13.5px] font-bold text-[#101828]">Leave Requests</p>
               <Link href="/leave" className="text-[12px] font-semibold text-[#166A50] hover:underline">
                 Apply + view all →
               </Link>

@@ -17,14 +17,25 @@ import { LogoutButton } from "./LogoutButton";
 
 const NAV: NavSection[] = [
   {
+    label: "General",
     items: [
-      { label: "Dashboard",          href: "/dashboard",   icon: Home },
-      { label: "Employees",          href: "/employees",   icon: Users },
-      { label: "Payroll",            href: "/payroll",     icon: CreditCard },
-      { label: "Leave",              href: "/leave",       icon: Calendar },
-      { label: "Time & Attendance",  href: "/attendance",  icon: Clock,      locked: true },
-      { label: "Statutory Filings",  href: "/compliance",  icon: FileCheck,  locked: true },
-      { label: "Analytics",          href: "/analytics",   icon: BarChart2,  locked: true },
+      { label: "Dashboard", href: "/dashboard", icon: Home },
+    ],
+  },
+  {
+    label: "HR",
+    items: [
+      { label: "Employees",  href: "/employees", icon: Users },
+      { label: "Payroll",    href: "/payroll",   icon: CreditCard },
+      { label: "Leave",      href: "/leave",     icon: Calendar },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { label: "Time & Attendance", href: "/attendance", icon: Clock,     locked: true },
+      { label: "Statutory Filings", href: "/compliance", icon: FileCheck, locked: true },
+      { label: "Analytics",         href: "/analytics",  icon: BarChart2, locked: true },
     ],
   },
 ];

@@ -14,12 +14,13 @@ import { LogoutButton } from "./LogoutButton";
 
 const NAV: NavSection[] = [
   {
+    label: "My Space",
     items: [
-      { label: "Home",        href: "/dashboard",  icon: Home },
-      { label: "Payslips",    href: "/payslips",   icon: FileText },
-      { label: "Leave",       href: "/leave",      icon: Calendar },
-      { label: "Attendance",  href: "/attendance", icon: Clock },
-      { label: "Profile",     href: "/profile",    icon: User },
+      { label: "Home",       href: "/dashboard",  icon: Home },
+      { label: "Payslips",   href: "/payslips",   icon: FileText },
+      { label: "Leave",      href: "/leave",      icon: Calendar },
+      { label: "Attendance", href: "/attendance", icon: Clock },
+      { label: "Profile",    href: "/profile",    icon: User },
     ],
   },
 ];
