@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, AlertTriangle, Calendar } from "lucide-react";
+import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { ApiError } from "@/lib/auth";
 
@@ -34,14 +35,14 @@ const LEAVE_TYPES = [
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    APPROVED: "bg-green-50 text-green-700 border-green-200",
-    PENDING: "bg-amber-50 text-amber-700 border-amber-200",
-    REJECTED: "bg-red-50 text-red-700 border-red-200",
-    CANCELLED: "bg-gray-50 text-gray-500 border-gray-200",
+    APPROVED: "bg-[#D1F5E6] text-[#0F5040]",
+    PENDING: "bg-[#FEF3DC] text-[#92600A]",
+    REJECTED: "bg-red-100 text-red-700",
+    CANCELLED: "bg-gray-100 text-gray-500",
   };
-  const cls = map[status] ?? "bg-gray-50 text-gray-500 border-gray-200";
+  const cls = map[status] ?? "bg-gray-100 text-gray-500";
   return (
-    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
+    <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${cls}`}>
       {status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
   );
@@ -174,20 +175,18 @@ export default function LeavePage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="bg-white border-b border-gray-200 px-8 flex-shrink-0">
-        <div className="flex items-center justify-between h-[73px]">
-          <div>
-            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">Leave</h1>
-            <p className="text-[13px] text-gray-500 mt-0.5">Manage your leave requests</p>
-          </div>
+      <PageHeader
+        title="Leave"
+        subtitle="Manage your leave requests"
+        actions={
           <button
             onClick={() => setApplying(true)}
-            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#0a3328] text-white font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#0a3328] text-white font-semibold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <Plus size={15} strokeWidth={2.5} /> Apply for Leave
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
         {isError && (
@@ -199,21 +198,21 @@ export default function LeavePage() {
 
         {/* Balances */}
         {balances.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
             {balances.map((b) => (
-              <div key={b.leaveType} className="bg-white rounded-xl border border-gray-100 px-4 py-3.5">
-                <p className="text-[11.5px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+              <div key={b.leaveType} className="bg-white border border-gray-200 rounded-xl px-5 py-4">
+                <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-2">
                   {b.leaveType.charAt(0) + b.leaveType.slice(1).toLowerCase()}
                 </p>
-                <p className="text-[22px] font-bold text-[#02110C]">{b.balance}</p>
-                <p className="text-[11.5px] text-gray-400">{b.used} used · {b.total} total</p>
+                <p className="text-[26px] font-bold text-[#101828] leading-none">{b.balance}</p>
+                <p className="text-[12px] text-gray-400 mt-1.5">{b.used} used · {b.total} total</p>
               </div>
             ))}
           </div>
         )}
 
         {/* Requests table */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           {isLoading ? (
             <div className="space-y-0">
               {Array.from({ length: 5 }).map((_, i) => (

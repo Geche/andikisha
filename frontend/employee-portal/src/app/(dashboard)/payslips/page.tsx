@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, AlertTriangle, FileText } from "lucide-react";
+import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface Payslip {
@@ -28,12 +29,12 @@ interface PagedResponse<T> {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    PAID: "bg-green-50 text-green-700 border-green-200",
-    DRAFT: "bg-gray-50 text-gray-600 border-gray-200",
+    PAID: "bg-[#D1F5E6] text-[#0F5040]",
+    DRAFT: "bg-gray-100 text-gray-500",
   };
-  const cls = map[status] ?? "bg-gray-50 text-gray-500 border-gray-200";
+  const cls = map[status] ?? "bg-gray-100 text-gray-500";
   return (
-    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
+    <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${cls}`}>
       {status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
   );
@@ -148,14 +149,10 @@ export default function PayslipsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="bg-white border-b border-gray-200 px-8 flex-shrink-0">
-        <div className="flex items-center justify-between h-[73px]">
-          <div>
-            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">Payslips</h1>
-            <p className="text-[13px] text-gray-500 mt-0.5">{total} payslip{total !== 1 ? "s" : ""} on record</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Payslips"
+        subtitle={`${total} payslip${total !== 1 ? "s" : ""} on record`}
+      />
 
       <div className="flex-1 overflow-y-auto px-8 py-8">
         {isError && (
@@ -165,7 +162,7 @@ export default function PayslipsPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           {isLoading ? (
             <div className="space-y-0">
               {Array.from({ length: 6 }).map((_, i) => (

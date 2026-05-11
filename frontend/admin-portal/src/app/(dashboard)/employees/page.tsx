@@ -165,10 +165,27 @@ export default function EmployeesPage() {
       />
 
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
-        {/* Search + filter row */}
-        <div className="flex items-center gap-3 flex-wrap">
+        {/* Filter tabs + search row */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Status tabs — underline style */}
+          <div className="flex items-center gap-1 border-b border-gray-200 flex-1">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => handleTabChange(tab.value)}
+                className={`px-4 py-2.5 text-[13px] font-semibold border-b-2 transition-colors -mb-px whitespace-nowrap ${
+                  status === tab.value
+                    ? "border-[#0B3D2E] text-[#0B3D2E]"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {/* Search */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Search
               size={14}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -178,25 +195,8 @@ export default function EmployeesPage() {
               placeholder="Search by name or email…"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-[#02110C] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] w-64"
+              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] w-64"
             />
-          </div>
-
-          {/* Status tabs */}
-          <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
-            {STATUS_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => handleTabChange(tab.value)}
-                className={`px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-                  status === tab.value
-                    ? "bg-[#0B3D2E] text-white"
-                    : "text-gray-500 hover:bg-gray-50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
           </div>
         </div>
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Clock } from "lucide-react";
+import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface AttendanceRecord {
@@ -31,10 +32,10 @@ const MONTH_OPTIONS = Array.from({ length: 6 }, (_, i) => {
 
 function StatusBadge({ status }: { status: AttendanceRecord["status"] }) {
   const map: Record<string, string> = {
-    PRESENT: "bg-green-50 text-green-700 border-green-200",
-    ABSENT: "bg-red-50 text-red-700 border-red-200",
-    LATE: "bg-amber-50 text-amber-700 border-amber-200",
-    HALF_DAY: "bg-blue-50 text-blue-700 border-blue-200",
+    PRESENT: "bg-[#D1F5E6] text-[#0F5040]",
+    ABSENT: "bg-red-100 text-red-700",
+    LATE: "bg-[#FEF3DC] text-[#92600A]",
+    HALF_DAY: "bg-blue-50 text-blue-700",
   };
   const labels: Record<string, string> = {
     PRESENT: "Present",
@@ -43,7 +44,7 @@ function StatusBadge({ status }: { status: AttendanceRecord["status"] }) {
     HALF_DAY: "Half Day",
   };
   return (
-    <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border ${map[status]}`}>
+    <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${map[status]}`}>
       {labels[status]}
     </span>
   );
@@ -75,23 +76,21 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="bg-white border-b border-gray-200 px-8 flex-shrink-0">
-        <div className="flex items-center justify-between h-[73px]">
-          <div>
-            <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">Attendance</h1>
-            <p className="text-[13px] text-gray-500 mt-0.5">Your clock-in and clock-out records</p>
-          </div>
+      <PageHeader
+        title="Attendance"
+        subtitle="Your clock-in and clock-out records"
+        actions={
           <select
             value={month}
             onChange={(e) => { setMonth(e.target.value); setPage(0); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-[#02110C] focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E]"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E]"
           >
             {MONTH_OPTIONS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
             ))}
           </select>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
         {isError && (
@@ -105,18 +104,18 @@ export default function AttendancePage() {
         {!isLoading && records.length > 0 && (
           <div className="flex gap-3 flex-wrap">
             {[
-              { label: "Present", count: present, color: "bg-green-50 text-green-700 border-green-200" },
-              { label: "Absent", count: absent, color: "bg-red-50 text-red-700 border-red-200" },
-              { label: "Late", count: late, color: "bg-amber-50 text-amber-700 border-amber-200" },
+              { label: "Present", count: present, color: "bg-[#D1F5E6] text-[#0F5040]" },
+              { label: "Absent", count: absent, color: "bg-red-100 text-red-700" },
+              { label: "Late", count: late, color: "bg-[#FEF3DC] text-[#92600A]" },
             ].map(({ label, count, color }) => (
-              <div key={label} className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[13px] font-semibold ${color}`}>
+              <div key={label} className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-semibold ${color}`}>
                 {label}: <span className="font-bold">{count}</span>
               </div>
             ))}
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           {isLoading ? (
             <div className="space-y-0">
               {Array.from({ length: 8 }).map((_, i) => (

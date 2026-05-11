@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, User, Phone, Mail, Building2, Briefcase, Calendar } from "lucide-react";
+import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface EmployeeProfile {
@@ -43,9 +44,9 @@ function Field({ label, value, icon: Icon }: { label: string; value: string | nu
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100">
-        <h2 className="text-[14px] font-semibold text-[#02110C]">{title}</h2>
+        <h2 className="text-[13.5px] font-semibold text-[#101828]">{title}</h2>
       </div>
       <div className="px-6">{children}</div>
     </div>
@@ -64,11 +65,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="bg-white border-b border-gray-200 px-8 flex-shrink-0">
-        <div className="flex items-center h-[73px]">
-          <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">My Profile</h1>
-        </div>
-      </div>
+      <PageHeader title="My Profile" subtitle="Your personal and employment details" />
 
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
         {isError && (
@@ -79,8 +76,8 @@ export default function ProfilePage() {
         )}
 
         {/* Avatar card */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-[#0B3D2E] text-white flex items-center justify-center text-[22px] font-bold flex-shrink-0">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center gap-5">
+          <div className="w-14 h-14 rounded-xl bg-[#0B3D2E] text-white flex items-center justify-center text-[20px] font-bold flex-shrink-0">
             {isLoading ? "…" : initials}
           </div>
           <div>
