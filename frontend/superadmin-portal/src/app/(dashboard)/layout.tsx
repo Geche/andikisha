@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { SuperAdminShell } from "@andikisha/ui";
+import { SuperAdminNav, SuperAdminNavFooter } from "@/components/layout/Sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -7,16 +8,19 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const headersList = await headers();
-  const pathname = headersList.get("x-pathname");
-  if (!pathname) {
-    console.warn("[DashboardLayout] x-pathname header missing — check middleware matcher config");
-  }
   const userEmail = headersList.get("x-user-email") ?? "";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F9FAFB]">
-      <Sidebar activePath={pathname ?? "/dashboard"} userEmail={userEmail} />
-      <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
-    </div>
+    <SuperAdminShell
+      nav={<SuperAdminNav />}
+      navFooter={<SuperAdminNavFooter />}
+      topRight={
+        <span className="text-[13px] text-[#6B7280] truncate max-w-[200px]">
+          {userEmail}
+        </span>
+      }
+    >
+      {children}
+    </SuperAdminShell>
   );
 }

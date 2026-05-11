@@ -58,6 +58,15 @@ export { RoleBadge } from "./components/RoleBadge";
 export { useOnlineStatus } from "./lib/useOnlineStatus";
 export { OfflineBadge } from "./components/OfflineBadge";
 
+// ── Navigation & Shells (Plan B) ──────────────────────────────────────────
+export { TopBar } from "./components/TopBar";
+export { NavRail, NavRailItem, NavRailGroup } from "./components/NavRail";
+export type { BottomNavItem } from "./components/EmployeeShell";
+export { ProfileMenu } from "./components/ProfileMenu";
+export { SuperAdminShell } from "./components/SuperAdminShell";
+export { TenantAdminShell } from "./components/TenantAdminShell";
+export { EmployeeShell } from "./components/EmployeeShell";
+
 // ── Legacy — in use by all three portals, replaced in Plan B ───────────────
 export { BaseModal } from "./components/BaseModal";
 export { ToastProvider, useToast } from "./components/Toaster";

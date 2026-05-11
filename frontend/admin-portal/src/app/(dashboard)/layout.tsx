@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
-import { ClientSidebar } from "@/components/layout/ClientSidebar";
+import { TenantAdminShell } from "@andikisha/ui";
+import { TenantAdminNav, TenantAdminNavFooter } from "@/components/layout/Sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -8,13 +9,20 @@ export default async function DashboardLayout({
 }) {
   const headersList = await headers();
   const userEmail = headersList.get("x-user-email") ?? "";
+  const tenantId  = process.env.TENANT_ID ?? "";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F8F7F4]">
-      <ClientSidebar userEmail={userEmail} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {children}
-      </div>
-    </div>
+    <TenantAdminShell
+      nav={<TenantAdminNav />}
+      navFooter={<TenantAdminNavFooter />}
+      tenantName={tenantId ? undefined : undefined}
+      topRight={
+        <span className="text-[13px] text-[#6B7280] truncate max-w-[220px]">
+          {userEmail}
+        </span>
+      }
+    >
+      {children}
+    </TenantAdminShell>
   );
 }

@@ -1,55 +1,60 @@
 "use client";
 
-import Link from "next/link";
-import { SidebarShell, type NavSection } from "@andikisha/ui";
-import {
-  Home,
-  FileText,
-  Calendar,
-  Clock,
-  User,
-  UserCircle,
-} from "lucide-react";
-import { LogoutButton } from "./LogoutButton";
+import { NavRailItem, NavRailGroup, cn, type BottomNavItem } from "@andikisha/ui";
+import { Home, FileText, Calendar, Clock, User, LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { logout } from "@/lib/auth";
 
-const NAV: NavSection[] = [
-  {
-    label: "My Space",
-    items: [
-      { label: "Home",       href: "/dashboard",  icon: Home },
-      { label: "Payslips",   href: "/payslips",   icon: FileText },
-      { label: "Leave",      href: "/leave",      icon: Calendar },
-      { label: "Attendance", href: "/attendance", icon: Clock },
-      { label: "Profile",    href: "/profile",    icon: User },
-    ],
-  },
+const BOTTOM_NAV_ITEMS = [
+  { label: "Home",       href: "/dashboard",  icon: Home },
+  { label: "Payslips",   href: "/payslips",   icon: FileText },
+  { label: "Leave",      href: "/leave",      icon: Calendar },
+  { label: "Profile",    href: "/profile",    icon: User },
 ];
 
-export function Sidebar({
-  activePath,
-  userEmail,
-}: {
-  activePath: string;
-  userEmail: string;
-}) {
+/** Items for the mobile bottom nav — must be resolved with active state at render time */
+export function useBottomNavItems(): BottomNavItem[] {
+  const pathname = usePathname();
+  return BOTTOM_NAV_ITEMS.map((item) => ({
+    ...item,
+    active: pathname.startsWith(item.href),
+  }));
+}
+
+export function EmployeeDesktopNav() {
+  const pathname = usePathname();
+  const items = [
+    { label: "Home",       href: "/dashboard",  icon: Home },
+    { label: "Payslips",   href: "/payslips",   icon: FileText },
+    { label: "Leave",      href: "/leave",      icon: Calendar },
+    { label: "Attendance", href: "/attendance", icon: Clock },
+    { label: "Profile",    href: "/profile",    icon: User },
+  ];
   return (
-    <SidebarShell
-      nav={NAV}
-      activePath={activePath}
-      userEmail={userEmail}
-      userRole="Employee"
-      footerContent={
-        <>
-          <Link
-            href="/profile"
-            className="flex items-center gap-2.5 w-full h-[36px] px-2.5 rounded-md text-[13.5px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-          >
-            <UserCircle size={16} strokeWidth={2} className="text-gray-400" />
-            My profile
-          </Link>
-          <LogoutButton />
-        </>
-      }
-    />
+    <NavRailGroup theme="light">
+      {items.map((item) => (
+        <NavRailItem
+          key={item.label}
+          {...item}
+          theme="light"
+          active={pathname.startsWith(item.href)}
+        />
+      ))}
+    </NavRailGroup>
+  );
+}
+
+export function EmployeeDesktopNavFooter() {
+  return (
+    <button
+      onClick={() => void logout()}
+      className={cn(
+        "flex items-center gap-2.5 w-full h-9 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors",
+        "text-[#374151] hover:bg-[#F3F4F6] cursor-pointer group"
+      )}
+    >
+      <LogOut size={16} strokeWidth={2} className="text-[#6B7280] group-hover:text-error" />
+      <span className="group-hover:text-error">Sign out</span>
+    </button>
   );
 }
