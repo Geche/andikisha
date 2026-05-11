@@ -161,7 +161,7 @@ export default function DashboardPage() {
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-[14px] font-semibold text-[#02110C]">Recent Payslips</h2>
               <Link
-                href="/dashboard/payslips"
+                href="/payslips"
                 className="text-[12px] font-semibold text-[#0B3D2E] hover:underline"
               >
                 View all
@@ -197,7 +197,7 @@ export default function DashboardPage() {
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-[14px] font-semibold text-[#02110C]">Leave Requests</h2>
               <Link
-                href="/dashboard/leave"
+                href="/leave"
                 className="text-[12px] font-semibold text-[#0B3D2E] hover:underline"
               >
                 Apply + view all

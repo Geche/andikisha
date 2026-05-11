@@ -43,6 +43,13 @@ public class EmployeeController {
         return employeeService.create(request, userId);
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN', 'HR_MANAGER', 'HR')")
+    @Operation(summary = "Get the calling employee's own record (self-service)")
+    public EmployeeDetailResponse getMe(@RequestHeader("X-User-Email") String email) {
+        return queryService.findByEmail(email);
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
     @Operation(summary = "List employees with filtering and pagination")

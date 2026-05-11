@@ -16,6 +16,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     Optional<Employee> findByIdAndTenantId(UUID id, String tenantId);
 
+    Optional<Employee> findByEmailAndTenantId(String email, String tenantId);
+
     Page<Employee> findByTenantId(String tenantId, Pageable pageable);
 
     Page<Employee> findByTenantIdAndStatus(String tenantId, EmploymentStatus status, Pageable pageable);

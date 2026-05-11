@@ -34,6 +34,14 @@ public class EmployeeQueryService {
                 .orElseThrow(() -> new EmployeeNotFoundException(id));
     }
 
+    public EmployeeDetailResponse findByEmail(String email) {
+        String tenantId = TenantContext.requireTenantId();
+        return repository.findByEmailAndTenantId(email, tenantId)
+                .map(mapper::toDetailResponse)
+                .orElseThrow(() -> new com.andikisha.common.exception.ResourceNotFoundException(
+                        "Employee", email));
+    }
+
     public Page<EmployeeSummaryResponse> findAll(String departmentId,
                                                  String status,
                                                  String search,

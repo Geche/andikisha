@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 const GATEWAY_URL = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
 
 const ALLOWED_PREFIXES = [
-  "/api/v1/employees/",
+  "/api/v1/employees/me",
   "/api/v1/payslips",
   "/api/v1/leave/",
   "/api/v1/attendance/",
