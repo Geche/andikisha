@@ -2,26 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, ArrowLeft, ArrowRight } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
-
-const TESTIMONIALS = [
-  {
-    quote: "I can check my payslip, apply for leave, and see my attendance — all from my phone before I even get to the office.",
-    name: "James Otieno",
-    title: "Finance Officer, Mombasa Trading Co.",
-  },
-  {
-    quote: "The leave approval process that used to take a week of back-and-forth emails now takes one tap. AndikishaHR changed everything.",
-    name: "Grace Kamau",
-    title: "Senior Accountant, Nairobi Foods Ltd",
-  },
-  {
-    quote: "Seeing my payslip broken down — PAYE, SHIF, Housing Levy — finally made sense. I trust my employer more because of this.",
-    name: "David Mwangi",
-    title: "Operations Lead, Rift Valley Logistics",
-  },
-];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +12,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [slide, setSlide] = useState(0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,8 +35,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
-
-  const testimonial = TESTIMONIALS[slide];
 
   return (
     <div className="min-h-screen flex">
@@ -140,52 +119,18 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* ── Right panel — brand image with testimonial overlay ── */}
-      <div className="hidden lg:flex flex-1 relative bg-[#0B3D2E] overflow-hidden">
-        {/* Subtle texture / gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0B3D2E]/60 via-transparent to-[#02110C]/80" />
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 opacity-[0.06]">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
-                <path d="M 56 0 L 0 0 0 56" fill="none" stroke="white" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-
-        {/* Testimonial — bottom overlay */}
-        <div className="absolute bottom-0 left-0 right-0 px-14 pb-14 relative z-10">
-          <div className="absolute bottom-0 left-0 right-0 px-14 pb-14">
-            <p className="text-[26px] font-bold text-white leading-snug mb-6">
-              &ldquo;{testimonial.quote}&rdquo;
-            </p>
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-[15px] font-bold text-white">{testimonial.name}</p>
-                <p className="text-[13px] text-white/60 mt-0.5">{testimonial.title}</p>
-              </div>
-              {/* Navigation arrows */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSlide((s) => (s - 1 + TESTIMONIALS.length) % TESTIMONIALS.length)}
-                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                >
-                  <ArrowLeft size={16} />
-                </button>
-                <button
-                  onClick={() => setSlide((s) => (s + 1) % TESTIMONIALS.length)}
-                  className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
-                >
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ── Right panel — full cover image ── */}
+      <div className="hidden lg:block flex-1 relative overflow-hidden">
+        {/* Background image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1400&q=85&fit=crop&crop=faces,center"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Dark gradient overlay at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
       </div>
     </div>
   );

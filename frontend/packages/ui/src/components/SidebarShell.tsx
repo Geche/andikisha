@@ -91,17 +91,17 @@ export function SidebarShell({
 }: SidebarShellProps) {
   return (
     <aside className="w-[280px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen">
-      {/* Logo */}
-      <div className="px-5 pt-5 pb-4 border-b border-gray-100">
-        <LogoFull className="h-[26px] w-auto" />
+      {/* Logo — same height as PageHeader so they align horizontally */}
+      <div className="h-[73px] flex items-center px-5 flex-shrink-0 border-b border-gray-200">
+        <LogoFull className="h-7 w-auto" />
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
+      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-2">
         {nav.map((section, si) => (
           <div key={section.label ?? `root-${si}`}>
             {section.label && (
-              <p className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-[0.1em] px-2.5 pt-5 pb-1">
+              <p className={`text-[10.5px] font-semibold text-gray-400 uppercase tracking-[0.1em] px-2.5 pb-1 ${si === 0 ? "pt-1" : "pt-5"}`}>
                 {section.label}
               </p>
             )}
