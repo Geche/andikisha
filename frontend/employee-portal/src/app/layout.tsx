@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, DM_Mono } from "next/font/google";
+import { QueryProvider } from "@andikisha/ui";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -33,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${montserrat.variable} ${dmMono.variable}`}
     >
       <body className="font-body text-near-black bg-surface antialiased">
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );

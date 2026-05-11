@@ -1,0 +1,16 @@
+"use client";
+
+import { LogOut } from "lucide-react";
+import { logout } from "@/lib/auth";
+
+export function LogoutButton() {
+  return (
+    <button
+      onClick={() => logout()}
+      className="flex items-center gap-2.5 w-full h-[38px] px-2.5 rounded-md text-sm text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+    >
+      <LogOut size={16} strokeWidth={2} className="text-gray-400" />
+      Sign out
+    </button>
+  );
+}

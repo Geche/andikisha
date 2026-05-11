@@ -107,13 +107,20 @@ public class AuthService {
                     .orElseThrow(() -> new IllegalStateException(
                             "User exists by email query but not found by ID for tenantId=" + tenantId));
         }
-        TenantContext.setTenantId(tenantId);
-        try {
-            TokenResponse response = register(new RegisterRequest(email, phone, temporaryPassword, null));
-            return response.user().id().toString();
-        } finally {
-            TenantContext.clear();
+        String passwordHash = passwordEncoder.encode(temporaryPassword);
+        User admin = User.create(tenantId, email, phone, passwordHash, Role.ADMIN);
+        User savedAdmin = userRepository.save(admin);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishUserRegistered(savedAdmin);
+                }
+            });
+        } else {
+            eventPublisher.publishUserRegistered(savedAdmin);
         }
+        return savedAdmin.getId().toString();
     }
 
     @Transactional

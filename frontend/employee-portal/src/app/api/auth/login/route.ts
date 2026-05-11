@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 const GATEWAY = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
-const COOKIE_NAME = "admin_token";
+const COOKIE_NAME = "employee_token";
 
-// Simple in-memory rate limiter (10 attempts per 15 minutes per IP)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60 * 1000;
@@ -31,8 +30,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json();
-
   const tenantId = process.env.TENANT_ID;
   if (!tenantId) {
     return NextResponse.json(
@@ -40,6 +37,8 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   }
+
+  const body = await request.json();
 
   const upstream = await fetch(`${GATEWAY}/api/v1/auth/login`, {
     method: "POST",
@@ -57,9 +56,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Bad upstream response" }, { status: 502 });
   }
 
-  if (data.user?.role !== "ADMIN") {
+  if (data.user?.role !== "EMPLOYEE") {
     return NextResponse.json(
-      { error: "FORBIDDEN", message: "Admin access required" },
+      { error: "FORBIDDEN", message: "Employee access required" },
       { status: 403 }
     );
   }
@@ -79,8 +78,5 @@ export async function POST(request: NextRequest) {
     path: "/",
   });
 
-  return NextResponse.json({
-    user: data.user,
-    expiresIn,
-  });
+  return NextResponse.json({ user: data.user, expiresIn });
 }
