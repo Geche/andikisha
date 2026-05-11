@@ -44,7 +44,7 @@ import java.util.UUID;
 public class LicenceStateMachineService {
 
     private static final Logger log = LoggerFactory.getLogger(LicenceStateMachineService.class);
-    private static final Duration CACHE_TTL = Duration.ofSeconds(60);
+    private static final Duration CACHE_TTL = Duration.ofMinutes(30);
     private static final List<LicenceStatus> ACTIVE_LIKE_STATUSES = List.of(
             LicenceStatus.TRIAL, LicenceStatus.ACTIVE,
             LicenceStatus.GRACE_PERIOD, LicenceStatus.SUSPENDED);
