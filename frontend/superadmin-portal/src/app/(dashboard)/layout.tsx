@@ -10,15 +10,12 @@ export default async function DashboardLayout({
   const headersList = await headers();
   const userEmail = headersList.get("x-user-email") ?? "";
 
+  void userEmail; // available for future use in impersonation banner
+
   return (
     <SuperAdminShell
       nav={<SuperAdminNav />}
       navFooter={<SuperAdminNavFooter />}
-      topRight={
-        <span className="text-[13px] text-[#6B7280] truncate max-w-[200px]">
-          {userEmail}
-        </span>
-      }
     >
       {children}
     </SuperAdminShell>

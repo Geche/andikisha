@@ -6,15 +6,26 @@ interface PageHeaderProps {
   actions?: ReactNode;
 }
 
+/**
+ * Page-level header — title, subtitle, and right-side actions.
+ * Height h-[73px] matches the sidebar logo row so they sit on the same
+ * horizontal line. Border uses the same #E5E7EB hairline as the shell.
+ */
 export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
   return (
-    <div className="bg-white border-b border-gray-200 px-8 flex-shrink-0">
+    <div className="bg-surface border-b border-[#E5E7EB] px-8 flex-shrink-0">
       <div className="flex items-center justify-between h-[73px] gap-4">
-        <div>
-          <h1 className="text-[20px] font-bold text-[#101828] tracking-tight">{title}</h1>
-          {subtitle && <p className="text-[13px] text-gray-500 mt-0.5">{subtitle}</p>}
+        <div className="min-w-0">
+          <h1 className="text-[20px] font-bold text-near-black tracking-tight leading-tight">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-[13px] text-[#6B7280] mt-0.5 truncate">{subtitle}</p>
+          )}
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>
+        )}
       </div>
     </div>
   );
