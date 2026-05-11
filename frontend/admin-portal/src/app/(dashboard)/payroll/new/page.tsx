@@ -101,7 +101,7 @@ export default function NewPayrollRunPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex justify-center">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex justify-center">
         <form onSubmit={handleSubmit} noValidate className="w-full max-w-md">
           <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col gap-6">
 

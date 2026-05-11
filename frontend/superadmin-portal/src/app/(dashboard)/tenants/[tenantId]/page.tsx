@@ -110,7 +110,7 @@ export default function TenantDetailPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className="max-w-5xl mx-auto">
           {activeTab === "overview"   && <OverviewTab tenant={tenant} />}
           {activeTab === "onboarding" && <Placeholder label="Onboarding checklist" />}

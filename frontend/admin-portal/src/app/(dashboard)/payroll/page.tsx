@@ -173,7 +173,7 @@ export default function PayrollPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
         {/* Error */}
         {isError && (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">

@@ -113,7 +113,7 @@ export default function LeavePage() {
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader title="Leave Management" subtitle={subtitleText} />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
         {/* Status tabs */}
         <div className="border-b border-gray-200">
           <nav className="flex items-center gap-0" aria-label="Leave status filter">

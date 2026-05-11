@@ -164,7 +164,7 @@ export default function EmployeesPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
         {/* Search + filter row */}
         <div className="flex items-center gap-3 flex-wrap">
           {/* Search */}

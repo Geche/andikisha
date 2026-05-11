@@ -163,7 +163,7 @@ export default function NewEmployeePage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-8 py-8">
         <form onSubmit={handleSubmit} noValidate>
           <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col gap-8 max-w-3xl">
 

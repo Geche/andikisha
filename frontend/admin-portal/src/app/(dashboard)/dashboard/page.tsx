@@ -225,7 +225,7 @@ export default function DashboardPage() {
       />
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-6">
 
         {/* Global error (all three failed) */}
         {employeesError && leaveError && payrollError && (

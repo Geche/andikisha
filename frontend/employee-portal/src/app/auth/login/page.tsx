@@ -123,13 +123,13 @@ export default function LoginPage() {
         {/* Testimonial */}
         <div className="max-w-xl mt-8">
           <p className="text-[32px] font-bold text-[#101828] leading-snug">
-            Running payroll for 200 employees used to take two days.
-            With AndikishaHR it takes less than an hour.
+            I can check my payslip, apply for leave, and see my attendance —
+            all from my phone before I even get to the office.
           </p>
           <div className="flex items-start justify-between mt-6">
             <div>
-              <p className="text-[14px] font-semibold text-[#101828]">— Sarah Wanjiku</p>
-              <p className="text-[13px] text-[#667085]">HR Manager, Safaritek Ltd</p>
+              <p className="text-[14px] font-semibold text-[#101828]">— James Otieno</p>
+              <p className="text-[13px] text-[#667085]">Finance Officer, Mombasa Trading Co.</p>
             </div>
             <div className="flex gap-0.5 mt-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -154,10 +154,10 @@ export default function LoginPage() {
                 <div className="w-2.5 h-2.5 rounded-full bg-[#FEF0C7]"/>
                 <div className="w-2.5 h-2.5 rounded-full bg-[#D1FAE5]"/>
                 <div className="flex-1 mx-4 h-5 bg-[#F2F4F7] rounded-full text-[10px] text-[#98A2B3] flex items-center px-3">
-                  app.andikishahr.co.ke
+                  me.andikishahr.co.ke
                 </div>
               </div>
-              {/* Mock dashboard */}
+              {/* Mock employee dashboard */}
               <div className="flex" style={{ height: "360px" }}>
                 {/* Sidebar */}
                 <div className="w-44 flex-shrink-0 border-r border-gray-100 bg-white px-3 py-4 flex flex-col gap-1">
@@ -165,42 +165,46 @@ export default function LoginPage() {
                     <div className="w-5 h-5 rounded bg-[#0B3D2E]"/>
                     <div className="h-2.5 w-20 bg-[#0B3D2E] rounded-full opacity-80"/>
                   </div>
-                  {["Dashboard","Employees","Payroll","Leave"].map((item, i) => (
+                  {["Home","Payslips","Leave","Attendance","Profile"].map((item, i) => (
                     <div
                       key={item}
                       className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md ${i === 0 ? "bg-[#E8F5F0]" : ""}`}
                     >
                       <div className={`w-3 h-3 rounded-sm ${i === 0 ? "bg-[#0B3D2E]" : "bg-gray-200"}`}/>
-                      <div className={`h-2 rounded-full ${i === 0 ? "w-14 bg-[#0B3D2E]" : "w-12 bg-gray-200"}`}/>
+                      <div className={`h-2 rounded-full ${i === 0 ? "w-8 bg-[#0B3D2E]" : "w-12 bg-gray-200"}`}/>
                     </div>
                   ))}
                 </div>
                 {/* Content */}
                 <div className="flex-1 bg-[#F8F7F4] p-5 overflow-hidden">
-                  <div className="h-3 w-28 bg-gray-800 rounded-full mb-5"/>
-                  {/* Stat cards */}
-                  <div className="grid grid-cols-3 gap-3 mb-5">
-                    {["#D1FAE5","#FEF3C7","#EDE9FE"].map((bg, i) => (
-                      <div key={i} className="bg-white rounded-xl p-3 border border-gray-100">
+                  <div className="h-3 w-24 bg-gray-800 rounded-full mb-1.5"/>
+                  <div className="h-2 w-36 bg-gray-200 rounded-full mb-5"/>
+                  {/* Cards row */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {[
+                      { bg: "#D1FAE5", label: "Leave Balance", val: "18 days" },
+                      { bg: "#FEF3C7", label: "This Month", val: "KES 85,000" },
+                    ].map(({ bg, label, val }) => (
+                      <div key={label} className="bg-white rounded-xl p-3 border border-gray-100">
                         <div className="w-6 h-6 rounded-md mb-2" style={{ background: bg }}/>
-                        <div className="h-2 w-12 bg-gray-200 rounded-full mb-1.5"/>
-                        <div className="h-3 w-16 bg-gray-800 rounded-full"/>
+                        <div className="h-2 w-16 bg-gray-200 rounded-full mb-1.5"/>
+                        <div className="h-3 w-20 bg-gray-700 rounded-full"/>
                       </div>
                     ))}
                   </div>
-                  {/* Table mock */}
+                  {/* Recent payslips mock */}
                   <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                    <div className="px-4 py-2.5 border-b border-gray-100 flex gap-6">
-                      {["","","",""].map((_, i) => (
-                        <div key={i} className="h-2 w-12 bg-gray-100 rounded-full"/>
-                      ))}
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <div className="h-2 w-20 bg-gray-300 rounded-full"/>
                     </div>
-                    {[1,2,3].map(i => (
-                      <div key={i} className="px-4 py-2.5 border-b border-gray-50 flex items-center gap-6">
-                        <div className="w-5 h-5 rounded-full bg-gray-100 flex-shrink-0"/>
-                        <div className="h-2 w-20 bg-gray-200 rounded-full"/>
-                        <div className="h-2 w-16 bg-gray-100 rounded-full"/>
-                        <div className="h-2 w-10 bg-[#D1FAE5] rounded-full ml-auto"/>
+                    {["Apr 2026","Mar 2026","Feb 2026"].map(month => (
+                      <div key={month} className="px-4 py-2.5 border-b border-gray-50 flex items-center gap-4">
+                        <div className="w-7 h-7 rounded-md bg-[#E8F5F0] flex-shrink-0"/>
+                        <div className="flex-1">
+                          <div className="h-2 w-16 bg-gray-200 rounded-full mb-1"/>
+                          <div className="h-2 w-12 bg-gray-100 rounded-full"/>
+                        </div>
+                        <div className="h-2 w-10 bg-[#D1FAE5] rounded-full"/>
                       </div>
                     ))}
                   </div>

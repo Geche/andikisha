@@ -315,7 +315,7 @@ export default function EmployeeDetailPage({
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-5">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
         {/* Termination banner */}
         {employee?.status === "TERMINATED" && (
           <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-4 text-[13px] text-red-700">

@@ -65,7 +65,7 @@ export default function TenantsPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-5">
+      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
         {/* Status filter tabs */}
         <div className="flex items-center gap-1 border-b border-gray-200">
           {STATUS_TABS.map((tab) => (
