@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { SidebarShell, type NavSection } from "@andikisha/ui";
 import {
