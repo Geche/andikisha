@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_PATHS = ["/login"];
-const PUBLIC_PREFIXES = ["/api/auth/", "/_next/"];
+const PUBLIC_PATHS = ["/login", "/preview"];
+const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/preview"];
 
 function isPublic(pathname: string): boolean {
   return (

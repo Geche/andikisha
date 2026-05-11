@@ -1,13 +1,67 @@
+// ── Utilities ──────────────────────────────────────────────────────────────
 export { cn } from "./utils";
+
+// ── Brand ──────────────────────────────────────────────────────────────────
+export { LogoFull } from "./components/LogoFull";
+export { Logomark } from "./components/Logomark";
+
+// ── Primitives — Buttons ───────────────────────────────────────────────────
+export { Button } from "./components/button";
+export type { ButtonVariant, ButtonSize } from "./components/button";
+
+// ── Primitives — Display ───────────────────────────────────────────────────
+export { Badge } from "./components/Badge";
+export type { BadgeStatus } from "./components/Badge";
+export { Avatar } from "./components/Avatar";
+export { Tag, tagColorFor } from "./components/Tag";
+export type { TagColor } from "./components/Tag";
+export { Eyebrow } from "./components/Eyebrow";
+export { KbdHint } from "./components/KbdHint";
+export { EmptyState } from "./components/EmptyState";
+export { MoneyAmount } from "./components/MoneyAmount";
+
+// ── Primitives — Form ─────────────────────────────────────────────────────
+export { Input } from "./components/Input";
+export { Textarea } from "./components/Textarea";
+export { Select } from "./components/Select";
+export { Checkbox } from "./components/Checkbox";
+export { Switch } from "./components/Switch";
+export { FormField } from "./components/FormField";
+
+// ── Primitives — Loading ──────────────────────────────────────────────────
+export { Skeleton, SkeletonText } from "./components/Skeleton";
+export { Spinner } from "./components/Spinner";
+
+// ── Primitives — Overlays ─────────────────────────────────────────────────
+export { Tooltip } from "./components/Tooltip";
 export {
-  Button,
-  LogoFull,
-  Logomark,
-  BaseModal,
-  ToastProvider,
-  useToast,
-  PageHeader,
-  QueryProvider,
-  SidebarShell,
-} from "./components";
-export type { NavItem, NavSection } from "./components";
+  DropdownRoot,
+  DropdownTrigger,
+  DropdownContent,
+  DropdownItem,
+  DropdownSeparator,
+  DropdownLabel,
+} from "./components/Dropdown";
+export { DialogRoot, DialogTrigger, DialogClose, DialogContent } from "./components/Dialog";
+export { SheetRoot, SheetTrigger, SheetClose, SheetContent } from "./components/Sheet";
+
+// ── Primitives — Feedback ─────────────────────────────────────────────────
+export { InlineAlert } from "./components/InlineAlert";
+
+// ── Role & Permission ──────────────────────────────────────────────────────
+export { useCurrentRole, RoleContext } from "./lib/useCurrentRole";
+export type { UserRole } from "./lib/useCurrentRole";
+export { PermissionGate } from "./components/PermissionGate";
+export { RoleBadge } from "./components/RoleBadge";
+
+// ── Offline ────────────────────────────────────────────────────────────────
+export { useOnlineStatus } from "./lib/useOnlineStatus";
+export { OfflineBadge } from "./components/OfflineBadge";
+
+// ── Legacy — in use by all three portals, replaced in Plan B ───────────────
+export { BaseModal } from "./components/BaseModal";
+export { ToastProvider, useToast } from "./components/Toaster";
+export { PageHeader } from "./components/PageHeader";
+export { QueryProvider } from "./components/QueryProvider";
+export { SidebarShell } from "./components/SidebarShell";
+export type { NavItem, NavSection } from "./components/SidebarShell";

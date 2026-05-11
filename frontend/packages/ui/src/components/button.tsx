@@ -1,38 +1,42 @@
+"use client";
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "../utils";
 
+export type ButtonVariant = "primary" | "cta" | "secondary" | "ghost" | "danger" | "outline";
+export type ButtonSize = "sm" | "md" | "lg";
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: "primary" | "secondary" | "outline" | "danger" | "ghost";
-    size?: "sm" | "md" | "lg";
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant = "primary", size = "md", ...props }, ref) => {
-        return (
-            <button
-                ref={ref}
-                className={cn(
-                    "inline-flex items-center justify-center rounded-md font-medium transition-colors",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                    "disabled:pointer-events-none disabled:opacity-50",
-                    {
-                        "bg-blue-600 text-white hover:bg-blue-700": variant === "primary",
-                        "bg-gray-100 text-gray-900 hover:bg-gray-200": variant === "secondary",
-                        "border border-gray-300 bg-white hover:bg-gray-50": variant === "outline",
-                        "bg-red-600 text-white hover:bg-red-700": variant === "danger",
-                        "hover:bg-gray-100": variant === "ghost",
-                    },
-                    {
-                        "h-8 px-3 text-sm": size === "sm",
-                        "h-10 px-4 text-sm": size === "md",
-                        "h-12 px-6 text-base": size === "lg",
-                    },
-                    className
-                )}
-                {...props}
-            />
-        );
-    }
-);
+const BASE =
+  "inline-flex items-center justify-center gap-1.5 font-semibold rounded-lg transition-colors " +
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 " +
+  "disabled:opacity-50 disabled:pointer-events-none";
 
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary:   "bg-brand-900 text-white hover:bg-brand-800",
+  cta:       "bg-amber text-near-black hover:bg-amber-dark",
+  secondary: "bg-surface border border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]",
+  ghost:     "text-[#374151] hover:bg-[#F3F4F6]",
+  danger:    "bg-error text-white hover:bg-red-600",
+  outline:   "border border-brand-900 text-brand-900 hover:bg-brand-50",
+};
+
+const SIZES: Record<ButtonSize, string> = {
+  sm: "h-8 px-3 text-[13px]",
+  md: "h-9 px-3.5 text-[13.5px]",
+  lg: "h-11 px-5 text-[14px]",
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "primary", size = "md", ...props }, ref) => (
+    <button
+      ref={ref}
+      className={cn(BASE, VARIANTS[variant], SIZES[size], className)}
+      {...props}
+    />
+  )
+);
 Button.displayName = "Button";
