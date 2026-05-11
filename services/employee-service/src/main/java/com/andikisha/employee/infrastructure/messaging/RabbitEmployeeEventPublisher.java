@@ -11,8 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 
@@ -76,23 +74,13 @@ public class RabbitEmployeeEventPublisher implements EmployeeEventPublisher {
      * Defers the RabbitMQ send until after the surrounding database transaction
      * commits.  If no transaction is active the message is sent immediately.
      * This prevents phantom events when the DB transaction rolls back.
+     * Note: callers already invoke this from an afterCommit() callback in the
+     * service layer — do NOT nest another TransactionSynchronization here or
+     * the second callback will be registered after the trigger point and silently
+     * dropped, causing the event to never be sent.
      */
     private void sendAfterCommit(String exchange, String routingKey,
                                  Object event, String employeeNumber) {
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            doSend(exchange, routingKey, event, employeeNumber);
-                        }
-                    });
-        } else {
-            doSend(exchange, routingKey, event, employeeNumber);
-        }
-    }
-
-    private void doSend(String exchange, String routingKey, Object event, String employeeNumber) {
         try {
             rabbitTemplate.convertAndSend(exchange, routingKey, event);
             log.info("Published {} for employee {}", routingKey, employeeNumber);

@@ -124,6 +124,32 @@ public class AuthService {
     }
 
     @Transactional
+    public String provisionEmployeeUser(String tenantId, String email,
+                                        String phone, String initialPassword,
+                                        String employeeId) {
+        if (userRepository.existsByEmailAndTenantId(email, tenantId)) {
+            return userRepository.findByEmailAndTenantId(email, tenantId)
+                    .map(u -> u.getId().toString())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "User exists by email but not found for tenantId=" + tenantId));
+        }
+        String passwordHash = passwordEncoder.encode(initialPassword);
+        User employee = User.create(tenantId, email, phone, passwordHash, Role.EMPLOYEE);
+        User saved = userRepository.save(employee);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishUserRegistered(saved);
+                }
+            });
+        } else {
+            eventPublisher.publishUserRegistered(saved);
+        }
+        return saved.getId().toString();
+    }
+
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         String tenantId = TenantContext.requireTenantId();
 
