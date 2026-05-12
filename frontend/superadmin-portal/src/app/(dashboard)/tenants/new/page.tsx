@@ -108,7 +108,7 @@ export default function NewTenantPage() {
           subtitle="Credentials for the new tenant admin"
         />
         <div className="flex-1 overflow-y-auto px-8 py-8">
-          <div className="max-w-lg mx-auto bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+          <div className="max-w-lg mx-auto bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
             <div className="w-12 h-12 rounded-full bg-[#D1F5E6] flex items-center justify-center mb-4">
               <CheckCircle2 size={24} className="text-[#27A870]" />
             </div>
@@ -194,7 +194,7 @@ export default function NewTenantPage() {
         }
       />
       <div className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+        <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl p-8 shadow-sm">
           <form
             onSubmit={(e) => {
               e.preventDefault();

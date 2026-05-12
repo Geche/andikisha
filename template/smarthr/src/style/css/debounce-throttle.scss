@@ -1,0 +1,362 @@
+// Debouncing and Throttling Component Styles
+
+// Debounced Search Input
+.debounced-search-input {
+  position: relative;
+  width: 100%;
+
+  .ant-input {
+    transition: all 0.3s ease;
+    
+    &:focus {
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+  }
+
+  .search-indicator {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #666;
+    border: 1px solid #e8e8e8;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    z-index: 10;
+    animation: slideDown 0.2s ease;
+  }
+
+  &.searching {
+    .ant-input {
+      border-color: #1890ff;
+    }
+  }
+
+  &.loading {
+    .ant-input {
+      border-color: #52c41a;
+    }
+  }
+}
+
+// Throttled Scroll Container
+.throttled-scroll-container {
+  position: relative;
+  width: 100%;
+
+  .scroll-content {
+    position: relative;
+    transition: scroll-behavior 0.3s ease;
+    
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+      
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+
+    .scroll-progress {
+      height: 100%;
+      background: linear-gradient(90deg, #1890ff, #52c41a);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+  }
+
+  .scroll-status {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  &.scrolling {
+    .scroll-content {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+// Debounced API Caller
+.debounced-api-caller {
+  position: relative;
+
+  .api-status {
+    position: absolute;
+    top: -20px;
+    right: 0;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .api-loading {
+    color: #1890ff;
+  }
+
+  .api-error {
+    color: #ff4d4f;
+  }
+
+  .api-success {
+    color: #52c41a;
+  }
+
+  .retry-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #faad14;
+  }
+}
+
+// Performance Indicators
+.performance-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.good {
+    background: rgba(82, 196, 26, 0.1);
+    color: #52c41a;
+  }
+
+  &.warning {
+    background: rgba(250, 173, 20, 0.1);
+    color: #faad14;
+  }
+
+  &.poor {
+    background: rgba(255, 77, 79, 0.1);
+    color: #ff4d4f;
+  }
+
+  .indicator-value {
+    font-weight: 600;
+  }
+}
+
+// Debounce/Throttle Controls
+.debounce-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 6px;
+  margin-bottom: 8px;
+
+  .control-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+
+    .ant-switch {
+      min-width: 28px;
+      height: 16px;
+    }
+
+    .ant-input-number {
+      width: 60px;
+      font-size: 12px;
+    }
+  }
+}
+
+// Batch Update Indicator
+.batch-update-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+
+  .batch-count {
+    font-weight: 600;
+    color: #1890ff;
+  }
+}
+
+// Rate Limiting Indicator
+.rate-limit-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(250, 173, 20, 0.1);
+  color: #faad14;
+  border-radius: 4px;
+  font-size: 12px;
+
+  .rate-limit-bar {
+    width: 40px;
+    height: 4px;
+    background: rgba(250, 173, 20, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+
+    .rate-limit-progress {
+      height: 100%;
+      background: #faad14;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+  }
+}
+
+// Animations
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .debounce-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+
+    .control-item {
+      justify-content: space-between;
+    }
+  }
+
+  .batch-update-indicator {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    text-align: center;
+  }
+}
+
+// Dark Mode Support
+[data-theme="dark"] {
+  .debounced-search-input {
+    .search-indicator {
+      background: rgba(0, 0, 0, 0.95);
+      color: #ccc;
+      border-color: #333;
+    }
+  }
+
+  .throttled-scroll-container {
+    .scroll-indicator {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .scroll-status {
+      background: rgba(255, 255, 255, 0.9);
+      color: #000;
+    }
+  }
+
+  .debounce-controls {
+    background: #1f1f1f;
+    color: #ccc;
+
+    .control-item {
+      color: #ccc;
+    }
+  }
+
+  .batch-update-indicator {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+  }
+}
+
+// High Contrast Mode
+@media (prefers-contrast: high) {
+  .debounced-search-input,
+  .throttled-scroll-container,
+  .debounced-api-caller {
+    border: 2px solid;
+  }
+
+  .performance-indicator,
+  .rate-limit-indicator {
+    border: 1px solid;
+  }
+}
+
+// Reduced Motion
+@media (prefers-reduced-motion: reduce) {
+  .debounced-search-input,
+  .throttled-scroll-container,
+  .debounced-api-caller {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+} 

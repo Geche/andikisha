@@ -1,0 +1,299 @@
+"use client";
+import { all_routes } from "@/routes/all_routes";
+
+import CollapseHeader from "../../../core/common/collapse-header/collapse-header";
+import Link from "next/link";
+
+const PrefixesComponent = () => {
+  const routes = all_routes;
+  return (
+    <div>
+      <>
+        {/* Page Wrapper */}
+        <div className="page-wrapper">
+          <div className="content">
+            {/* Breadcrumb */}
+            <div className="d-md-flex d-block align-items-center justify-content-between page-breadcrumb mb-3">
+              <div className="my-auto mb-2">
+                <h2 className="mb-1">Settings</h2>
+                <nav>
+                  <ol className="breadcrumb mb-0">
+                    <li className="breadcrumb-item">
+                      <Link href={routes.adminDashboard}>
+                        <i className="ti ti-smart-home" />
+                      </Link>
+                    </li>
+                    <li className="breadcrumb-item">Website Settings</li>
+                    <li className="breadcrumb-item active" aria-current="page">
+                      Prefixes
+                    </li>
+                  </ol>
+                </nav>
+              </div>
+              <div className="head-icons ms-2">
+                <CollapseHeader />
+              </div>
+            </div>
+            {/* /Breadcrumb */}
+            <ul className="nav nav-tabs nav-tabs-solid bg-transparent border-bottom mb-3">
+              <li className="nav-item">
+                <Link className="nav-link" href={routes.profilesettings}>
+                  <i className="ti ti-settings me-2" />
+                  General Settings
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link active" href={routes.bussinessSettings}>
+                  <i className="ti ti-world-cog me-2" />
+                  Website Settings
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" href={routes.salarySettings}>
+                  <i className="ti ti-device-ipad-horizontal-cog me-2" />
+                  App Settings
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" href={routes.emailSettings}>
+                  <i className="ti ti-server-cog me-2" />
+                  System Settings
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" href={routes.paymentGateways}>
+                  <i className="ti ti-settings-dollar me-2" />
+                  Financial Settings
+                </Link>
+              </li>
+              <li className="nav-item">
+                <Link className="nav-link" href={routes.customCss}>
+                  <i className="ti ti-settings-2 me-2" />
+                  Other Settings
+                </Link>
+              </li>
+            </ul>
+            <div className="row">
+              <div className="col-xl-3 theiaStickySidebar">
+                <div className="card">
+                  <div className="card-body">
+                    <div className="d-flex flex-column list-group settings-list">
+                      <Link
+                        href={routes.bussinessSettings}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        Business Settings
+                      </Link>
+                      <Link
+                        href={routes.seoSettings}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        SEO Settings
+                      </Link>
+                      <Link
+                        href={routes.localizationSettings}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        Localization
+                      </Link>
+                      <Link
+                        href={routes.prefixes}
+                        className="d-inline-flex align-items-center rounded active py-2 px-3"
+                      >
+                        <i className="ti ti-arrow-badge-right me-2" />
+                        Prefixes
+                      </Link>
+                      <Link
+                        href={routes.preference}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        Preferences
+                      </Link>
+                      <Link
+                        href={routes.appearance}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        Appearance
+                      </Link>
+                      <Link
+                        href={routes.language}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        Language
+                      </Link>
+                      <Link
+                        href={routes.authenticationSettings}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        Authentication Settings
+                      </Link>
+                      <Link
+                        href={routes.aiSettings}
+                        className="d-inline-flex align-items-center rounded py-2 px-3"
+                      >
+                        AI Settings
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="col-xl-9">
+                <div className="card">
+                  <div className="card-body">
+                    <div className="border-bottom mb-3 pb-3">
+                      <h4>Prefixes</h4>
+                    </div>
+                    <form>
+                      <div className="border-bottom mb-3">
+                        <div className="row">
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Employee</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="EMP-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Clients</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="CLI-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Invoice</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="INV-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Tickets</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="TIC-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">
+                                  Candidate
+                                </label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="CAND-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Job</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="JOB-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Referral</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="REF-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className="row align-items-center mb-3">
+                              <div className="col-md-6">
+                                <label className="form-label mb-md-0">Assets</label>
+                              </div>
+                              <div className="col-md-6">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  defaultValue="AST-"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="d-flex align-items-center justify-content-end">
+                        <button
+                          type="button"
+                          className="btn btn-outline-light border me-3"
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary">
+                          Save
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="footer d-sm-flex align-items-center justify-content-between border-top bg-white p-3">
+            <p className="mb-0">2014 - 2026 © SmartHR.</p>
+            <p>
+              Designed &amp; Developed By{" "}
+              <Link href="#" className="text-primary">
+                Dreams
+              </Link>
+            </p>
+          </div>
+        </div>
+        {/* /Page Wrapper */}
+      </>
+
+    </div>
+  );
+};
+
+export default PrefixesComponent;
