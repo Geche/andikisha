@@ -20,6 +20,11 @@ export { KbdHint } from "./components/KbdHint";
 export { EmptyState } from "./components/EmptyState";
 export { MoneyAmount } from "./components/MoneyAmount";
 
+// ── Data primitives ────────────────────────────────────────────────────────
+export { StatCard } from "./components/StatCard";
+export { KpiGroup } from "./components/KpiGroup";
+export { DataTable } from "./components/DataTable";
+
 // ── Primitives — Form ─────────────────────────────────────────────────────
 export { Input } from "./components/Input";
 export { Textarea } from "./components/Textarea";
@@ -31,6 +36,10 @@ export { FormField } from "./components/FormField";
 // ── Primitives — Loading ──────────────────────────────────────────────────
 export { Skeleton, SkeletonText } from "./components/Skeleton";
 export { Spinner } from "./components/Spinner";
+
+// ── Command palette ───────────────────────────────────────────────────────
+export { CommandPalette } from "./components/CommandPalette";
+export type { CommandGroup, CommandItem, CommandPaletteProps } from "./components/CommandPalette";
 
 // ── Primitives — Overlays ─────────────────────────────────────────────────
 export { Tooltip } from "./components/Tooltip";

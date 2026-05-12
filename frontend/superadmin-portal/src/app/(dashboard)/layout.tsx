@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { SuperAdminShell } from "@andikisha/ui";
 import { SuperAdminNav, SuperAdminNavFooter } from "@/components/layout/Sidebar";
+import { PlatformCommandPalette } from "@/components/layout/PlatformCommandPalette";
 
 export default async function DashboardLayout({
   children,
@@ -17,6 +18,7 @@ export default async function DashboardLayout({
       nav={<SuperAdminNav />}
       navFooter={<SuperAdminNavFooter />}
     >
+      <PlatformCommandPalette />
       {children}
     </SuperAdminShell>
   );

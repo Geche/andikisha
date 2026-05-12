@@ -10,11 +10,12 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@andikisha/ui": "workspace:*",
     "@tanstack/react-query": "^5.62.0",
     "axios": "^1.7.0",
+    "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "jose": "^5.0.0",
-    "@andikisha/ui": "workspace:*",
     "lucide-react": "^1.14.0",
     "next": "15.1.0",
     "react": "^19.0.0",
