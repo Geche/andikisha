@@ -165,7 +165,7 @@ export default function PayrollPage() {
         subtitle={isLoading ? "Loading…" : `${totalElements.toLocaleString()} run${totalElements !== 1 ? "s" : ""}`}
         actions={
           <Link
-            href="/payroll/new"
+            href="/admin/payroll/new"
             className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + Run Payroll

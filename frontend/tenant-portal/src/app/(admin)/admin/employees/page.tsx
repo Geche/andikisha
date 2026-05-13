@@ -156,7 +156,7 @@ export default function EmployeesPage() {
         subtitle={isLoading ? "Loading…" : `${totalElements.toLocaleString()} employee${totalElements !== 1 ? "s" : ""}`}
         actions={
           <Link
-            href="/employees/new"
+            href="/admin/employees/new"
             className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + Add Employee

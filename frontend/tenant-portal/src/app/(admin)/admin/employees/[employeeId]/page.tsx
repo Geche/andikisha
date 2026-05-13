@@ -298,7 +298,7 @@ export default function EmployeeDetailPage({
         actions={
           <div className="flex items-center gap-2">
             <Link
-              href="/employees"
+              href="/admin/employees"
               className="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
             >
               <ArrowLeft size={14} />
