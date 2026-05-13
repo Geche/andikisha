@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@source "../../packages/ui/src/**/*.{ts,tsx}";
+
+@theme {
+  /* ── Brand — Forest Green ── */
+  --color-brand-950: #071e13;
+  --color-brand-900: #0b3d2e;
+  --color-brand-800: #0f5040;
+  --color-brand-700: #166a50;
+  --color-brand-500: #27a870;
+  --color-brand-100: #d1f5e6;
+  --color-brand-50: #e8f5f0;
+
+  /* ── Accent — Warm Amber ── */
+  --color-amber: #e8a020;
+  --color-amber-dark: #c98510;
+  --color-amber-light: #fef3dc;
+
+  /* ── Surfaces ── */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8f7f4;
+
+  /* ── Functional ── */
+  --color-near-black: #02110c;
+  --color-whatsapp: #25d366;
+  --color-error: #ef4444;
+
+  /* ── Fonts ── */
+  --font-display: var(--font-montserrat), sans-serif;
+  --font-body: var(--font-montserrat), sans-serif;
+  --font-mono: var(--font-dm-mono), monospace;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-montserrat, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    color: #111111;
+    background: #ffffff;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-montserrat, system-ui, sans-serif);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+}
