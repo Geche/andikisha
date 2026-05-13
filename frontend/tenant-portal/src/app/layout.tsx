@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
-import { QueryProvider, ToastProvider } from "@andikisha/ui";
+import { QueryProvider, ToastProvider, CurrentUserProvider } from "@andikisha/ui";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -21,11 +21,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={roboto.variable}>
       <body className="font-body text-near-black bg-surface antialiased">
-        <QueryProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </QueryProvider>
+        <CurrentUserProvider>
+          <QueryProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </QueryProvider>
+        </CurrentUserProvider>
       </body>
     </html>
   );

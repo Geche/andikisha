@@ -62,6 +62,15 @@ export { InlineAlert } from "./components/InlineAlert";
 // ── Role & Permission ──────────────────────────────────────────────────────
 export { useCurrentRole, RoleContext } from "./lib/useCurrentRole";
 export type { UserRole } from "./lib/useCurrentRole";
+export {
+  CurrentUserContext,
+  CurrentUserProvider,
+  useCurrentUser,
+  useHasRole,
+  useHasAnyRole,
+  useIsAuthenticated,
+} from "./lib/useCurrentUser";
+export type { CurrentUser } from "./lib/useCurrentUser";
 export { PermissionGate } from "./components/PermissionGate";
 export { RoleBadge } from "./components/RoleBadge";
 
