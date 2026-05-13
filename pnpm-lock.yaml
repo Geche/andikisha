@@ -8,197 +8,6 @@ importers:
 
   .: {}
 
-  frontend/admin-portal:
-    dependencies:
-      '@andikisha/api-client':
-        specifier: workspace:*
-        version: link:../packages/api-client
-      '@andikisha/shared-types':
-        specifier: workspace:*
-        version: link:../packages/shared-types
-      '@andikisha/ui':
-        specifier: workspace:*
-        version: link:../packages/ui
-      '@radix-ui/react-dialog':
-        specifier: ^1.1.0
-        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-dropdown-menu':
-        specifier: ^2.1.0
-        version: 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-select':
-        specifier: ^2.1.0
-        version: 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-tabs':
-        specifier: ^1.1.0
-        version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-tooltip':
-        specifier: ^1.2.8
-        version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@tanstack/react-query':
-        specifier: ^5.62.0
-        version: 5.96.0(react@19.2.4)
-      axios:
-        specifier: ^1.7.0
-        version: 1.14.0
-      clsx:
-        specifier: ^2.1.0
-        version: 2.1.1
-      cmdk:
-        specifier: ^1.1.1
-        version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.1.0
-      jose:
-        specifier: ^5.0.0
-        version: 5.10.0
-      lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.2.4)
-      next:
-        specifier: 15.1.0
-        version: 15.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-      recharts:
-        specifier: ^2.15.0
-        version: 2.15.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      tailwind-merge:
-        specifier: ^2.6.0
-        version: 2.6.1
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-      zustand:
-        specifier: ^5.0.0
-        version: 5.0.12(@types/react@19.2.14)(react@19.2.4)
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4.0.0
-        version: 4.2.2
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.15
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
-      eslint:
-        specifier: ^9.0.0
-        version: 9.39.4(jiti@2.6.1)
-      eslint-config-next:
-        specifier: 15.1.0
-        version: 15.1.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
-      postcss:
-        specifier: ^8.4.0
-        version: 8.5.8
-      tailwindcss:
-        specifier: ^4.0.0
-        version: 4.2.2
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-
-  frontend/employee-portal:
-    dependencies:
-      '@andikisha/api-client':
-        specifier: workspace:*
-        version: link:../packages/api-client
-      '@andikisha/shared-types':
-        specifier: workspace:*
-        version: link:../packages/shared-types
-      '@andikisha/ui':
-        specifier: workspace:*
-        version: link:../packages/ui
-      '@radix-ui/react-dialog':
-        specifier: ^1.1.0
-        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-dropdown-menu':
-        specifier: ^2.1.16
-        version: 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-select':
-        specifier: ^2.2.6
-        version: 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-tabs':
-        specifier: ^1.1.0
-        version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@radix-ui/react-tooltip':
-        specifier: ^1.2.8
-        version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@tanstack/react-query':
-        specifier: ^5.62.0
-        version: 5.96.0(react@19.2.4)
-      axios:
-        specifier: ^1.7.0
-        version: 1.14.0
-      clsx:
-        specifier: ^2.1.0
-        version: 2.1.1
-      cmdk:
-        specifier: ^1.1.1
-        version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.1.0
-      jose:
-        specifier: ^5.10.0
-        version: 5.10.0
-      lucide-react:
-        specifier: ^0.468.0
-        version: 0.468.0(react@19.2.4)
-      next:
-        specifier: 15.1.0
-        version: 15.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^2.6.0
-        version: 2.6.1
-      zod:
-        specifier: ^3.24.0
-        version: 3.25.76
-      zustand:
-        specifier: ^5.0.0
-        version: 5.0.12(@types/react@19.2.14)(react@19.2.4)
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4.0.0
-        version: 4.2.2
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.15
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
-      eslint:
-        specifier: ^9.0.0
-        version: 9.39.4(jiti@2.6.1)
-      eslint-config-next:
-        specifier: 15.1.0
-        version: 15.1.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
-      postcss:
-        specifier: ^8.4.0
-        version: 8.5.8
-      tailwindcss:
-        specifier: ^4.0.0
-        version: 4.2.2
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-
   frontend/landing:
     dependencies:
       '@andikisha/ui':
@@ -325,17 +134,41 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  frontend/superadmin-portal:
+  frontend/tenant-portal:
     dependencies:
+      '@andikisha/api-client':
+        specifier: workspace:*
+        version: link:../packages/api-client
+      '@andikisha/shared-types':
+        specifier: workspace:*
+        version: link:../packages/shared-types
       '@andikisha/ui':
         specifier: workspace:*
         version: link:../packages/ui
+      '@radix-ui/react-dialog':
+        specifier: ^1.1.0
+        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@radix-ui/react-dropdown-menu':
+        specifier: ^2.1.16
+        version: 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@radix-ui/react-select':
+        specifier: ^2.2.6
+        version: 2.2.6(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@radix-ui/react-tabs':
+        specifier: ^1.1.0
+        version: 1.1.13(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@radix-ui/react-tooltip':
+        specifier: ^1.2.8
+        version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-query':
         specifier: ^5.62.0
         version: 5.96.0(react@19.2.4)
       axios:
         specifier: ^1.7.0
         version: 1.14.0
+      clsx:
+        specifier: ^2.1.0
+        version: 2.1.1
       cmdk:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -343,11 +176,11 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       jose:
-        specifier: ^5.0.0
+        specifier: ^5.10.0
         version: 5.10.0
       lucide-react:
-        specifier: ^1.14.0
-        version: 1.14.0(react@19.2.4)
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.4)
       next:
         specifier: 15.1.0
         version: 15.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -357,36 +190,42 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
+      recharts:
+        specifier: ^2.15.0
+        version: 2.15.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      tailwind-merge:
+        specifier: ^2.6.0
+        version: 2.6.1
       zod:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4.0.0
+        version: 4.2.2
       '@types/node':
-        specifier: ^20
-        version: 20.19.39
+        specifier: ^22.0.0
+        version: 22.19.15
       '@types/react':
-        specifier: ^19
+        specifier: ^19.0.0
         version: 19.2.14
       '@types/react-dom':
-        specifier: ^19
+        specifier: ^19.0.0
         version: 19.2.3(@types/react@19.2.14)
-      autoprefixer:
-        specifier: ^10.4.0
-        version: 10.5.0(postcss@8.5.8)
       eslint:
-        specifier: ^8
-        version: 8.57.1
+        specifier: ^9.0.0
+        version: 9.39.4(jiti@2.6.1)
       eslint-config-next:
         specifier: 15.1.0
-        version: 15.1.0(eslint@8.57.1)(typescript@5.9.3)
+        version: 15.1.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
       postcss:
         specifier: ^8.4.0
         version: 8.5.8
       tailwindcss:
-        specifier: ^3.4.0
-        version: 3.4.19(yaml@2.8.3)
+        specifier: ^4.0.0
+        version: 4.2.2
       typescript:
-        specifier: ^5
+        specifier: ^5.7.0
         version: 5.9.3
 
 packages:
@@ -2828,11 +2667,6 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc
 
-  lucide-react@1.14.0:
-    resolution: {integrity: sha512-+1mdWcfSJVUsaTIjN9zoezmUhfXo5l0vP7ekBMPo3jcS/aIkxHnXqAPsByszMZx/Y8oQBRJxJx5xg+RH3urzxA==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -3771,24 +3605,6 @@ packages:
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
-  zustand@5.0.12:
-    resolution: {integrity: sha512-i77ae3aZq4dhMlRhJVCYgMLKuSiZAaUPAct2AksxQ+gOtimhGMdXljRT21P5BNpeT4kXlLIckvkPM029OljD7g==}
-    engines: {node: '>=12.20.0'}
-    peerDependencies:
-      '@types/react': '>=18.0.0'
-      immer: '>=9.0.6'
-      react: '>=18.0.0'
-      use-sync-external-store: '>=1.2.0'
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      immer:
-        optional: true
-      react:
-        optional: true
-      use-sync-external-store:
-        optional: true
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -6486,10 +6302,6 @@ snapshots:
     dependencies:
       react: 19.2.4
 
-  lucide-react@1.14.0(react@19.2.4):
-    dependencies:
-      react: 19.2.4
-
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -7862,10 +7674,5 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   zod@3.25.76: {}
-
-  zustand@5.0.12(@types/react@19.2.14)(react@19.2.4):
-    optionalDependencies:
-      '@types/react': 19.2.14
-      react: 19.2.4
 
   zwitch@2.0.4: {}
