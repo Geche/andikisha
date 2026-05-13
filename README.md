@@ -58,12 +58,13 @@ External Clients
 
 Each service runs its own PostgreSQL 16 database with schema-per-tenant isolation managed by Flyway migrations.
 
-### Frontend — 2 Next.js Portals
+### Frontend — Next.js Portals
 
 | Portal | Port | Audience |
 |--------|------|---------|
-| admin-portal | 3000 | HR managers, payroll officers, system admins |
-| employee-portal | 3001 | Employees (self-service: payslips, leave, profile) |
+| tenant-portal | 3000 | All tenant roles — `/my/*` for employee self-service, `/admin/*` for HR/payroll/admin |
+| platform-portal | 3003 | Internal Andikisha staff (SUPER_ADMIN) — scaffolded in Prompt A.5 |
+| landing | 3002 | Marketing site |
 
 ### Shared Frontend Packages
 
@@ -152,8 +153,8 @@ andikisha/
     andikisha-proto/           All .proto definitions
     andikisha-events/          All RabbitMQ event classes
   frontend/
-    admin-portal/              Next.js HR admin dashboard
-    employee-portal/           Next.js employee self-service portal
+    tenant-portal/             Next.js customer-facing portal (all tenant roles, port 3000)
+    landing/                   Next.js marketing site (port 3002)
     packages/
       api-client/              Shared Axios API client
       shared-types/            Shared TypeScript type definitions
