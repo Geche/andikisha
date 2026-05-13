@@ -2,11 +2,9 @@
   "name": "andikisha",
   "private": true,
   "scripts": {
-    "dev:admin": "pnpm --filter admin-portal dev",
-    "dev:employee": "pnpm --filter employee-portal dev",
+    "dev:tenant": "pnpm --filter tenant-portal dev",
     "dev:landing": "pnpm --filter landing-page dev",
-    "build:admin": "pnpm --filter admin-portal build",
-    "build:employee": "pnpm --filter employee-portal build",
+    "build:tenant": "pnpm --filter tenant-portal build",
     "build:landing": "pnpm --filter landing-page build",
     "build:all": "pnpm -r build",
     "lint": "pnpm -r lint",
