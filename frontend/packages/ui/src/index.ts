@@ -26,6 +26,12 @@ export { MoneyAmount } from "./components/MoneyAmount";
 export { StatCard } from "./components/StatCard";
 export { KpiGroup } from "./components/KpiGroup";
 export { DataTable } from "./components/DataTable";
+export { DonutChart } from "./components/DonutChart";
+export type { DonutSlice } from "./components/DonutChart";
+export { BarChart } from "./components/BarChart";
+export type { BarDatum } from "./components/BarChart";
+export { LineChart } from "./components/LineChart";
+export type { LineDatum } from "./components/LineChart";
 
 // ── Primitives — Form ─────────────────────────────────────────────────────
 export { Input } from "./components/Input";

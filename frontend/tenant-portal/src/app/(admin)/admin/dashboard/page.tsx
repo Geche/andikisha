@@ -12,8 +12,9 @@ import {
   MoneyAmount,
   Button,
   InlineAlert,
+  BarChart,
 } from "@andikisha/ui";
-import type { BadgeStatus } from "@andikisha/ui";
+import type { BadgeStatus, BarDatum } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface PagedResponse<T> {
@@ -64,50 +65,26 @@ function runStatusBadge(status: PayrollRun["status"]): BadgeStatus {
   }
 }
 
-// ─── Bar chart ───────────────────────────────────────────────────────────────
+// ─── Payroll bar chart data ───────────────────────────────────────────────────
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-function PayrollBarChart({ runs }: { runs: PayrollRun[] }) {
+function buildPayrollChartData(runs: PayrollRun[]): BarDatum[] {
   const byMonth: Record<string, number> = {};
   runs.forEach((r) => {
     const [, m] = r.period.split("-");
     const key = MONTHS[Number(m) - 1];
     if (key) byMonth[key] = (byMonth[key] ?? 0) + (r.totalNet ?? 0);
   });
-  const months = MONTHS.slice(0, new Date().getMonth() + 1);
-  const max = Math.max(...months.map((m) => byMonth[m] ?? 0), 1);
-
-  return (
-    <div className="flex items-end gap-2 h-36 mt-4">
-      {months.map((m) => {
-        const val = byMonth[m] ?? 0;
-        const pct = Math.max((val / max) * 100, val > 0 ? 8 : 0);
-        const isCurrentMonth = m === MONTHS[new Date().getMonth()];
-        return (
-          <div key={m} className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-            <div className="w-full relative flex flex-col justify-end" style={{ height: "112px" }}>
-              {val > 0 ? (
-                <div
-                  className="w-full rounded-t-md"
-                  style={{
-                    height: `${pct}%`,
-                    background: isCurrentMonth ? "#0B3D2E" : "#D1F5E6",
-                  }}
-                />
-              ) : (
-                <div className="w-full rounded-t-md bg-[#F3F4F6]" style={{ height: "8px" }} />
-              )}
-            </div>
-            <span className="text-[10px] text-[#9CA3AF]">{m}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
+  const currentMonthLabel = MONTHS[new Date().getMonth()];
+  return MONTHS.slice(0, new Date().getMonth() + 1).map((m) => ({
+    label: m,
+    value: byMonth[m] ?? 0,
+    active: m === currentMonthLabel,
+  }));
 }
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -336,7 +313,12 @@ export default function DashboardPage() {
               No payroll runs yet
             </div>
           ) : (
-            <PayrollBarChart runs={payrollData?.content ?? []} />
+            <BarChart
+              data={buildPayrollChartData(payrollData?.content ?? [])}
+              height={144}
+              yFormatter={(v) => `${Math.round(v / 1000)}K`}
+              className="mt-4"
+            />
           )}
         </div>
 
