@@ -3,6 +3,6 @@ import { cookies } from "next/headers";
 
 export async function POST() {
   const jar = await cookies();
-  jar.delete("admin_token");
+  jar.delete("tenant_token");
   return NextResponse.json({ ok: true });
 }

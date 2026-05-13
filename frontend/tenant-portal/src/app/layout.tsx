@@ -13,7 +13,8 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: { default: "AndikishaHR", template: "%s | AndikishaHR" },
   description: "Enterprise HR and Payroll Management",
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg", apple: "/icons/apple-touch-icon.png" },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

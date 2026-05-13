@@ -1,6 +1,6 @@
-const COOKIE_NAME = "admin_token";
+const COOKIE_NAME = "tenant_token";
 
-export interface AdminUser {
+export interface TenantUser {
   id: string;
   tenantId: string;
   email: string;

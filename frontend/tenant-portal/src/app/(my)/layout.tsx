@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { EmployeeClientShell } from "@/components/layout/EmployeeClientShell";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 export default async function MyLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();
@@ -7,6 +8,7 @@ export default async function MyLayout({ children }: { children: React.ReactNode
 
   return (
     <EmployeeClientShell userEmail={userEmail}>
+      <ServiceWorkerRegistration />
       {children}
     </EmployeeClientShell>
   );

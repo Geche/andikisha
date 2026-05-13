@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 const GATEWAY = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
-const COOKIE_NAME = "admin_token";
+const COOKIE_NAME = "tenant_token";
 
 // Simple in-memory rate limiter (10 attempts per 15 minutes per IP)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -57,12 +57,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Bad upstream response" }, { status: 502 });
   }
 
-  if (data.user?.role !== "ADMIN") {
-    return NextResponse.json(
-      { error: "FORBIDDEN", message: "Admin access required" },
-      { status: 403 }
-    );
-  }
+  // TODO(prompt-b): enforce role-based access. For now any tenant role can log in.
+  // SUPER_ADMIN should be rejected here and directed to platform-portal instead.
 
   const expiresIn =
     typeof data.expiresIn === "number" && data.expiresIn > 0

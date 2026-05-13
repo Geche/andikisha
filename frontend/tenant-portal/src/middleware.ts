@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_PATHS = ["/login", "/preview"];
+const PUBLIC_PATHS = ["/login"];
 const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/preview"];
 
 function isPublic(pathname: string): boolean {
@@ -24,7 +24,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("admin_token")?.value;
+  // Unified token — any tenant role uses this cookie.
+  const token = request.cookies.get("tenant_token")?.value;
 
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -45,20 +46,22 @@ export async function middleware(request: NextRequest) {
 
     const { payload } = await jwtVerify(token, secret);
 
-    if (payload.role !== "ADMIN") {
-      const response = NextResponse.redirect(new URL("/login", request.url));
-      response.cookies.delete("admin_token");
-      return response;
-    }
+    // TODO(prompt-b): replace permissive auth check with role-aware guards.
+    // /my/* requires EMPLOYEE. /admin/* requires any of {ADMIN, HR_MANAGER, PAYROLL_OFFICER, HR}.
+    // LINE_MANAGER routes through /my/* and sees the My Team section conditionally.
+    // For now any authenticated tenant user may access any route under /my/* or /admin/*.
 
     const response = NextResponse.next();
     response.headers.set("x-user-id", String(payload.sub ?? ""));
     response.headers.set("x-user-email", String(payload.email ?? ""));
     response.headers.set("x-tenant-id", String(payload.tenantId ?? ""));
+    if (payload.employeeId) {
+      response.headers.set("x-employee-id", String(payload.employeeId));
+    }
     return response;
   } catch {
     const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.delete("admin_token");
+    response.cookies.delete("tenant_token");
     return response;
   }
 }
