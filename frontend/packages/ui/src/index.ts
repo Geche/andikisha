@@ -1,5 +1,7 @@
 // ── Utilities ──────────────────────────────────────────────────────────────
 export { cn } from "./utils";
+export { formatMoney } from "./lib/formatMoney";
+export { formatDate, formatTime } from "./lib/formatDate";
 
 // ── Brand ──────────────────────────────────────────────────────────────────
 export { LogoFull } from "./components/LogoFull";

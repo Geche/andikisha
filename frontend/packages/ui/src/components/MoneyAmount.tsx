@@ -1,4 +1,5 @@
 import { cn } from "../utils";
+import { formatMoney } from "../lib/formatMoney";
 
 interface MoneyAmountProps {
   amount: number | null | undefined;
@@ -32,10 +33,9 @@ export function MoneyAmount({
     );
   }
 
-  const formatted = amount.toLocaleString("en-KE", {
-    minimumFractionDigits: cents ? 2 : 0,
-    maximumFractionDigits: cents ? 2 : 0,
-  });
+  // Split the formatted string so the currency code can be styled separately
+  const [code, ...rest] = formatMoney(amount, currency, cents).split(" ");
+  const formatted = rest.join(" ");
 
   return (
     <span
@@ -46,7 +46,7 @@ export function MoneyAmount({
         className
       )}
     >
-      <span className="text-[0.75em] text-[#6B7280] mr-0.5 font-sans font-medium">{currency}</span>
+      <span className="text-[0.75em] text-[#6B7280] mr-0.5 font-sans font-medium">{code}</span>
       {formatted}
     </span>
   );
