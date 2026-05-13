@@ -41,14 +41,8 @@ const config: Config = {
         info: "#60a5fa",
       },
       fontFamily: {
-        display: [
-          "var(--font-bricolage)",
-          "Bricolage Grotesque",
-          "var(--font-montserrat)",
-          "Montserrat",
-          "sans-serif",
-        ],
-        body: ["var(--font-montserrat)", "sans-serif"],
+        display: ["var(--font-roboto)", "Roboto", "sans-serif"],
+        body: ["var(--font-roboto)", "Roboto", "sans-serif"],
         mono: ["var(--font-dm-mono)", "monospace"],
       },
       fontSize: {
@@ -85,8 +79,8 @@ const config: Config = {
             color: "#4b5563",
             lineHeight: "1.85",
             p: { marginBottom: "1.25rem" },
-            h2: { fontFamily: "var(--font-montserrat), sans-serif", fontWeight: "700", color: "#02110c" },
-            h3: { fontFamily: "var(--font-montserrat), sans-serif", fontWeight: "600", color: "#02110c" },
+            h2: { fontFamily: "var(--font-roboto), sans-serif", fontWeight: "700", color: "#02110c" },
+            h3: { fontFamily: "var(--font-roboto), sans-serif", fontWeight: "600", color: "#02110c" },
             strong: { color: "#02110c" },
             a: { color: "#0b3d2e", textDecoration: "underline" },
             "ul > li::marker": { color: "#27a870" },

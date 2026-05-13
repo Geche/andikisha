@@ -26,8 +26,8 @@ const preset = {
         error: "#ef4444",
       },
       fontFamily: {
-        display: ["var(--font-montserrat)", "sans-serif"],
-        body: ["var(--font-montserrat)", "sans-serif"],
+        display: ["var(--font-roboto)", "Roboto", "sans-serif"],
+        body: ["var(--font-roboto)", "Roboto", "sans-serif"],
         mono: ["var(--font-dm-mono)", "monospace"],
       },
       animation: {
