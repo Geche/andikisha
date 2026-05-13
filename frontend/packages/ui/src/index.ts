@@ -84,19 +84,19 @@ export { RoleBadge } from "./components/RoleBadge";
 export { useOnlineStatus } from "./lib/useOnlineStatus";
 export { OfflineBadge } from "./components/OfflineBadge";
 
-// ── Navigation & Shells (Plan B) ──────────────────────────────────────────
+// ── Navigation & Shells ────────────────────────────────────────────────────
 export { TopBar } from "./components/TopBar";
 export { NavRail, NavRailItem, NavRailGroup } from "./components/NavRail";
-export type { BottomNavItem } from "./components/EmployeeShell";
 export { ProfileMenu } from "./components/ProfileMenu";
 export { HorizontalShell } from "./components/HorizontalShell";
 export type { HorizontalNavItem } from "./components/HorizontalShell";
-/** @deprecated Use HorizontalShell for the SUPER_ADMIN surface. */
-export { SuperAdminShell } from "./components/SuperAdminShell";
 export { TenantAdminShell } from "./components/TenantAdminShell";
 export { EmployeeShell } from "./components/EmployeeShell";
+export type { BottomNavItem } from "./components/EmployeeShell";
+/** @deprecated Use HorizontalShell for the SUPER_ADMIN surface. */
+export { SuperAdminShell } from "./components/SuperAdminShell";
 
-// ── Legacy — in use by all three portals, replaced in Plan B ───────────────
+// ── Shared infrastructure ──────────────────────────────────────────────────
 export { BaseModal } from "./components/BaseModal";
 export { ToastProvider, useToast } from "./components/Toaster";
 export { PageHeader } from "./components/PageHeader";
