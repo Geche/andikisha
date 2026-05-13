@@ -200,9 +200,25 @@ A service worker at `public/sw-my.js` is registered with scope `/my/` only (moun
 
 - CSS: Tailwind v4 only. No Bootstrap, no SCSS, no other CSS framework.
 - Icons: Lucide React only.
-- Font: Roboto (loaded via `next/font/google`).
-- Charts: Recharts (approved; used in admin dashboards).
+- Font: Roboto (loaded via `next/font/google`). No Bricolage Grotesque, DM Sans, or Montserrat anywhere.
+- Charts: Recharts (peer dep of `@andikisha/ui`; add to consuming app's `dependencies`).
 - Shared packages: `@andikisha/ui`, `@andikisha/api-client`, `@andikisha/shared-types` (workspace references).
+
+### @andikisha/ui — Three-Tier Component Model
+
+Components in `frontend/packages/ui/` follow a strict three-tier rule. Never put Tier 3 in this package.
+
+**Tier 1 — Primitives:** Data-agnostic, zero business logic, no API calls. Button, Badge, DataTable, DonutChart, PermissionGate, HorizontalShell, etc.
+
+**Tier 2 — Patterns / Chrome:** Composed from Tier 1; may know about roles and nav structure but not domain data. TenantAdminShell, EmployeeShell, ProfileMenu, CommandPalette.
+
+**Tier 3 — Domain-coupled (app only, never in @andikisha/ui):** Knows API shapes, business rules, or specific tenant data. PayslipRow, LeaveRequestCard, EmployeeStatusChip — these live in the app, not in the shared library.
+
+### @andikisha/ui — Token Rules
+
+- Neutral scale: `neutral-50` … `neutral-900`. Never use raw grey hex values in Tailwind classes — use `text-neutral-700`, `border-neutral-200`, etc.
+- Brand scale: `brand-50` … `brand-950`. Raw brand hex in inline styles only (e.g., recharts props).
+- Do not add one-off hex colors to Tailwind classes. If a value is needed more than twice, add it to `tailwind-preset.ts`.
 
 ### Template Reference
 
