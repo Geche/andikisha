@@ -170,3 +170,46 @@ Never commit .env files, application-prod.yml secrets, or build/ directories.
 - Do not put business logic in controllers. Controllers delegate to application services.
 - Do not use raw double or float for money. Use BigDecimal fields directly on snapshot entities; use Money.of() at the application boundary where a Money type is required.
 - Do not add accessor methods, interfaces, ports, or abstractions that have no current caller. If a future caller is planned, add the method when that caller is written, not before.
+
+## Frontend Conventions
+
+The customer-facing frontend is a single Next.js 15 app at `frontend/tenant-portal/` (port 3000). Internal Andikisha staff use `frontend/platform-portal/` (port 3003, scaffolded in Prompt A.5). The marketing site is `frontend/landing/` (port 3002). There are no other portal directories.
+
+### Route Groups
+
+Routes are organised under two App Router route groups with URL segments nested inside:
+
+- **`(my)/my/*`** — employee self-service. URL prefix `/my/`. Used by EMPLOYEE, LINE_MANAGER, and any other role accessing their own HR data.
+- **`(admin)/admin/*`** — HR management, payroll, compliance, settings. URL prefix `/admin/`. Used by ADMIN, HR_MANAGER, PAYROLL_OFFICER, HR.
+
+**LINE_MANAGER routes through `/my/*` only.** Their team-management surface is a conditional section inside `/my/*` that renders when the LINE_MANAGER role is present in the JWT claims. LINE_MANAGER content does not belong in `/admin/*`.
+
+Multi-role users (e.g. a user with both EMPLOYEE and HR_MANAGER) are handled in Prompt B via role-aware middleware. The current middleware (`src/middleware.ts`) is intentionally permissive — any authenticated user may access any route.
+
+### Auth
+
+The BFF uses a single HTTP-only cookie named `tenant_token`. The JWT payload includes `role`, `tenantId`, `sub` (userId), `email`, and optionally `employeeId`. Middleware reads this cookie and sets `x-user-id`, `x-user-email`, `x-tenant-id`, and `x-employee-id` headers for server components to consume via `await headers()`.
+
+Role-aware route guards and the `/api/auth/me` pattern land in Prompt B.
+
+### PWA
+
+A service worker at `public/sw-my.js` is registered with scope `/my/` only (mounted in `(my)/layout.tsx` via `ServiceWorkerRegistration`). The `(admin)/layout.tsx` does NOT register a service worker. The PWA manifest (`public/manifest.json`) sets `start_url` and `scope` to `/my/`.
+
+### Stack and Dependencies
+
+- CSS: Tailwind v4 only. No Bootstrap, no SCSS, no other CSS framework.
+- Icons: Lucide React only.
+- Font: Roboto (loaded via `next/font/google`).
+- Charts: Recharts (approved; used in admin dashboards).
+- Shared packages: `@andikisha/ui`, `@andikisha/api-client`, `@andikisha/shared-types` (workspace references).
+
+### Template Reference
+
+The SmartHR template at `template/smarthr-nextjs/` and `template/smarthr-html/` is read-only visual reference. Three rules apply permanently:
+
+1. No `import` from `template/*` in any production file.
+2. No template-only dependency in `frontend/tenant-portal/package.json`. Forbidden list: `bootstrap`, `react-bootstrap`, `antd`, `primereact`, `@fortawesome/*`, `react-feather`, `react-icons`, and others in `.claude/skills/template-reference/04-forbidden-dependencies.md`.
+3. No Bootstrap classes and no SCSS in `frontend/tenant-portal/`.
+
+Full rules: `docs/design/06-template-usage.md`. Enforcement skill: `.claude/skills/template-reference/SKILL.md`.
