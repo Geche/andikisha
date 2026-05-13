@@ -12,8 +12,8 @@ interface StatCardProps {
 
 export function StatCard({ label, value, change, positive, sub, className }: StatCardProps) {
   return (
-    <div className={cn("bg-surface border border-[#E5E7EB] rounded-xl p-5", className)}>
-      <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6B7280] mb-2">{label}</p>
+    <div className={cn("bg-surface border border-neutral-200 rounded-xl p-5", className)}>
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500 mb-2">{label}</p>
       <div className="flex items-start justify-between gap-2">
         <p className="text-[28px] font-bold text-near-black leading-none">{value}</p>
         {change != null && (
@@ -27,7 +27,7 @@ export function StatCard({ label, value, change, positive, sub, className }: Sta
           </span>
         )}
       </div>
-      {sub && <p className="text-[12px] text-[#9CA3AF] mt-1.5">{sub}</p>}
+      {sub && <p className="text-[12px] text-neutral-400 mt-1.5">{sub}</p>}
     </div>
   );
 }

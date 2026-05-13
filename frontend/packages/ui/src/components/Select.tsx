@@ -15,7 +15,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         "focus:outline-none focus-visible:outline focus-visible:outline-2",
         "focus-visible:outline-amber focus-visible:outline-offset-0",
         "disabled:opacity-50 disabled:cursor-not-allowed",
-        error ? "border-error" : "border-[#D0D5DD]",
+        error ? "border-error" : "border-neutral-300",
         className
       )}
       {...props}

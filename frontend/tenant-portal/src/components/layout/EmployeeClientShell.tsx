@@ -16,7 +16,7 @@ export function EmployeeClientShell({ userEmail, children }: EmployeeClientShell
       desktopNav={<EmployeeDesktopNav />}
       desktopNavFooter={<EmployeeDesktopNavFooter />}
       topRight={
-        <span className="text-[12px] text-[#6B7280] truncate max-w-[160px]">{userEmail}</span>
+        <span className="text-[12px] text-neutral-500 truncate max-w-[160px]">{userEmail}</span>
       }
     >
       {children}

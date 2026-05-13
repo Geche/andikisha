@@ -83,7 +83,7 @@ export default function AttendancePage() {
           <select
             value={month}
             onChange={(e) => { setMonth(e.target.value); setPage(0); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E]"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E]"
           >
             {MONTH_OPTIONS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>

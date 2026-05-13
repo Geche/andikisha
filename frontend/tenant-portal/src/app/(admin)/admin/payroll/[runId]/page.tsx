@@ -219,7 +219,7 @@ function ApproveModal({
       <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-[480px] p-6">
         <h2
           id="approve-modal-title"
-          className="text-[16px] font-bold text-[#101828] mb-1"
+          className="text-[16px] font-bold text-neutral-900 mb-1"
         >
           Approve Payroll Run
         </h2>
@@ -388,7 +388,7 @@ export default function PayrollRunDetailPage({
 
         {/* Payslips section */}
         <div className="flex flex-col gap-3">
-          <p className="text-[14px] font-bold text-[#101828]">Payslips</p>
+          <p className="text-[14px] font-bold text-neutral-900">Payslips</p>
 
           {/* Payslips error */}
           {payslipsError && (

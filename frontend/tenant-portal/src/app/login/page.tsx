@@ -53,13 +53,13 @@ export default function LoginPage() {
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl px-8 py-10">
         <div className="text-center mb-8">
           <h1 className="text-[22px] font-bold text-[#02110C] mb-1">Sign In</h1>
-          <p className="text-[14px] text-[#6B7280]">Please enter your details to sign in</p>
+          <p className="text-[14px] text-neutral-500">Please enter your details to sign in</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-[13.5px] font-medium text-[#374151] mb-1.5">
+            <label className="block text-[13.5px] font-medium text-neutral-700 mb-1.5">
               Email Address
             </label>
             <div className="relative">
@@ -70,9 +70,9 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 required
                 autoComplete="email"
-                className="w-full border border-[#D1D5DB] rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-[#111111] bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-[#9CA3AF] transition-colors"
+                className="w-full border border-neutral-300 rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-neutral-400 transition-colors"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] pointer-events-none">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
                 <Mail size={16} />
               </span>
             </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-[13.5px] font-medium text-[#374151] mb-1.5">
+            <label className="block text-[13.5px] font-medium text-neutral-700 mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -91,12 +91,12 @@ export default function LoginPage() {
                 placeholder="••••••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full border border-[#D1D5DB] rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-[#111111] bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-[#9CA3AF] transition-colors"
+                className="w-full border border-neutral-300 rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-neutral-400 transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-500 transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -111,9 +111,9 @@ export default function LoginPage() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-[#D1D5DB] text-[#0B3D2E] accent-[#0B3D2E] cursor-pointer"
+                className="w-4 h-4 rounded border-neutral-300 text-[#0B3D2E] accent-[#0B3D2E] cursor-pointer"
               />
-              <span className="text-[13px] text-[#374151]">Remember Me</span>
+              <span className="text-[13px] text-neutral-700">Remember Me</span>
             </label>
             <button
               type="button"

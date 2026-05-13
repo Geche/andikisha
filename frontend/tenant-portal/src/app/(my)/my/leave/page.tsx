@@ -48,7 +48,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const INPUT = "w-full border border-[#D0D5DD] rounded-lg px-3.5 py-2.5 text-[13.5px] text-[#101828] focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-[#98A2B3]";
+const INPUT = "w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[13.5px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-neutral-400";
 
 function ApplyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({
@@ -204,7 +204,7 @@ export default function LeavePage() {
                 <p className="text-[12px] font-semibold text-gray-500 uppercase tracking-wide mb-2">
                   {b.leaveType.charAt(0) + b.leaveType.slice(1).toLowerCase()}
                 </p>
-                <p className="text-[26px] font-bold text-[#101828] leading-none">{b.balance}</p>
+                <p className="text-[26px] font-bold text-neutral-900 leading-none">{b.balance}</p>
                 <p className="text-[12px] text-gray-400 mt-1.5">{b.used} used · {b.total} total</p>
               </div>
             ))}

@@ -32,8 +32,8 @@ interface HorizontalShellProps {
 function DropdownNavItem({ item }: { item: HorizontalNavItem }) {
   const Icon = item.icon;
   const inner = (
-    <span className="flex items-center gap-2 w-full px-3 py-2 text-[13px] rounded-md hover:bg-[#F5F5F5] transition-colors text-[#374151] hover:text-[#111111]">
-      {Icon && <Icon size={14} className="text-[#737373] flex-shrink-0" />}
+    <span className="flex items-center gap-2 w-full px-3 py-2 text-[13px] rounded-md hover:bg-neutral-100 transition-colors text-neutral-700 hover:text-neutral-900">
+      {Icon && <Icon size={14} className="text-neutral-500 flex-shrink-0" />}
       {item.label}
     </span>
   );
@@ -72,8 +72,8 @@ function TopNavItem({
         "flex items-center gap-1.5 h-[56px] px-3 text-[13.5px] font-semibold transition-colors relative",
         "border-b-2 -mb-px",
         active
-          ? "border-b-brand-900 text-[#111111]"
-          : "border-b-transparent text-[#525252] hover:text-[#111111] hover:border-b-[#D4D4D4]"
+          ? "border-b-brand-900 text-neutral-900"
+          : "border-b-transparent text-neutral-600 hover:text-neutral-900 hover:border-b-neutral-300"
       )}
     >
       {Icon && <Icon size={15} strokeWidth={1.75} />}
@@ -101,8 +101,8 @@ function TopNavItem({
           className={cn(
             "flex items-center gap-1.5 h-[56px] px-3 text-[13.5px] font-semibold transition-colors border-b-2 -mb-px",
             active
-              ? "border-b-brand-900 text-[#111111]"
-              : "border-b-transparent text-[#525252] hover:text-[#111111] hover:border-b-[#D4D4D4]"
+              ? "border-b-brand-900 text-neutral-900"
+              : "border-b-transparent text-neutral-600 hover:text-neutral-900 hover:border-b-neutral-300"
           )}
         >
           {Icon && <Icon size={15} strokeWidth={1.75} />}
@@ -121,7 +121,7 @@ function TopNavItem({
         <div
           className={cn(
             "absolute top-full left-0 mt-1 z-50",
-            "bg-white border border-[#E5E7EB] rounded-xl shadow-lg",
+            "bg-white border border-neutral-200 rounded-xl shadow-lg",
             "min-w-[200px] py-1.5 px-1.5"
           )}
         >
@@ -150,9 +150,9 @@ function MobileNav({
     <div className="fixed inset-0 z-40 flex">
       <div className="fixed inset-0 bg-black/30" onClick={onClose} />
       <div className="relative w-[280px] bg-white h-full flex flex-col shadow-xl z-50">
-        <div className="flex items-center justify-between h-[56px] px-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between h-[56px] px-4 border-b border-neutral-200">
           <LogoFull className="h-[22px] w-auto" />
-          <button onClick={onClose} className="text-[#737373] hover:text-[#111111]">
+          <button onClick={onClose} className="text-neutral-500 hover:text-neutral-900">
             <X size={20} />
           </button>
         </div>
@@ -165,7 +165,7 @@ function MobileNav({
                   <Link
                     href={item.href}
                     onClick={onClose}
-                    className="flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13.5px] font-semibold text-[#374151] hover:bg-[#F5F5F5] hover:text-[#111111] transition-colors"
+                    className="flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-[13.5px] font-semibold text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
                   >
                     {Icon && <Icon size={16} strokeWidth={1.75} />}
                     {item.label}
@@ -176,7 +176,7 @@ function MobileNav({
                     )}
                   </Link>
                 ) : (
-                  <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#9CA3AF] mt-3 first:mt-0">
+                  <div className="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mt-3 first:mt-0">
                     {item.label}
                   </div>
                 )}
@@ -187,7 +187,7 @@ function MobileNav({
                       key={child.label}
                       href={child.href}
                       onClick={onClose}
-                      className="flex items-center gap-2.5 h-9 px-5 rounded-lg text-[13px] text-[#525252] hover:bg-[#F5F5F5] hover:text-[#111111] transition-colors"
+                      className="flex items-center gap-2.5 h-9 px-5 rounded-lg text-[13px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
                     >
                       {ChildIcon && <ChildIcon size={14} strokeWidth={1.75} />}
                       {child.label}
@@ -225,11 +225,11 @@ export function HorizontalShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className={cn("flex flex-col h-screen overflow-hidden bg-[#FAFAFA]", className)}>
+    <div className={cn("flex flex-col h-screen overflow-hidden bg-neutral-50", className)}>
       {/* ── Top bar ── */}
       <header
         className={cn(
-          "flex-shrink-0 bg-white border-b border-[#E5E7EB] z-30",
+          "flex-shrink-0 bg-white border-b border-neutral-200 z-30",
           impersonationBanner ? "" : ""
         )}
       >
@@ -241,13 +241,13 @@ export function HorizontalShell({
 
         <div className="flex items-stretch h-[56px] px-5">
           {/* Logo */}
-          <div className="flex items-center pr-6 flex-shrink-0 border-r border-[#E5E7EB] mr-4">
+          <div className="flex items-center pr-6 flex-shrink-0 border-r border-neutral-200 mr-4">
             <LogoFull className="h-[22px] w-auto" />
           </div>
 
           {/* Mobile hamburger */}
           <button
-            className="flex items-center lg:hidden mr-3 text-[#737373] hover:text-[#111111]"
+            className="flex items-center lg:hidden mr-3 text-neutral-500 hover:text-neutral-900"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
           >

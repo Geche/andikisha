@@ -19,7 +19,7 @@ export function FormField({ label, htmlFor, hint, error, required, children, cla
         {required && <span className="text-error ml-0.5">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="text-[12px] text-[#6B7280]">{hint}</p>}
+      {hint && !error && <p className="text-[12px] text-neutral-500">{hint}</p>}
       {error && <p className="text-[12px] text-error">{error}</p>}
     </div>
   );

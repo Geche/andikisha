@@ -10,7 +10,7 @@ const COLOR_CLASSES: Record<TagColor, string> = {
   mauve:      "bg-[#D8CDE0] text-[#4A3363]",
   stone:      "bg-[#D5D3CF] text-[#3D3B37]",
   sky:        "bg-[#C6D8E3] text-[#2C4A5C]",
-  default:    "bg-[#F3F4F6] text-[#374151]",
+  default:    "bg-neutral-100 text-neutral-700",
 };
 
 const COLORS: TagColor[] = ["sage", "sand", "terracotta", "rose", "mauve", "stone", "sky"];

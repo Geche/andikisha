@@ -136,7 +136,7 @@ export default function LeaveRequestDetailPage({
           <DetailSkeleton />
         ) : request ? (
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <p className="text-[13px] font-bold text-[#101828] mb-4">Request Details</p>
+            <p className="text-[13px] font-bold text-neutral-900 mb-4">Request Details</p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-5">
               <DetailRow label="Employee">
                 <span className="font-semibold">{request.employeeName}</span>

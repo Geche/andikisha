@@ -60,7 +60,7 @@ function MetricCard({
           </span>
         )}
       </div>
-      <p className="text-[28px] font-bold text-[#101828] leading-none">{value}</p>
+      <p className="text-[28px] font-bold text-neutral-900 leading-none">{value}</p>
       {sub && <p className="text-[12px] text-gray-400 mt-1.5">{sub}</p>}
     </div>
   );
@@ -150,7 +150,7 @@ export default function DashboardPage() {
           {/* Recent payslips */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-[13.5px] font-bold text-[#101828]">Recent Payslips</p>
+              <p className="text-[13.5px] font-bold text-neutral-900">Recent Payslips</p>
               <Link href="/my/payslips" className="text-[12px] font-semibold text-[#166A50] hover:underline">
                 View all →
               </Link>
@@ -164,8 +164,8 @@ export default function DashboardPage() {
                 <tbody>
                   {payslips.map((p) => (
                     <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-3.5 font-medium text-[#101828]">{p.periodLabel}</td>
-                      <td className="px-6 py-3.5 text-right font-semibold text-[#101828]">
+                      <td className="px-6 py-3.5 font-medium text-neutral-900">{p.periodLabel}</td>
+                      <td className="px-6 py-3.5 text-right font-semibold text-neutral-900">
                         KES {p.netPay.toLocaleString()}
                       </td>
                       <td className="px-6 py-3.5 text-right">
@@ -181,7 +181,7 @@ export default function DashboardPage() {
           {/* Leave requests */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <p className="text-[13.5px] font-bold text-[#101828]">Leave Requests</p>
+              <p className="text-[13.5px] font-bold text-neutral-900">Leave Requests</p>
               <Link href="/my/leave" className="text-[12px] font-semibold text-[#166A50] hover:underline">
                 Apply + view all →
               </Link>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                   {leaves.map((l) => (
                     <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-3.5">
-                        <p className="font-medium text-[#101828] capitalize">
+                        <p className="font-medium text-neutral-900 capitalize">
                           {l.leaveType.toLowerCase().replace(/_/g, " ")}
                         </p>
                         <p className="text-[12px] text-gray-400 mt-0.5">

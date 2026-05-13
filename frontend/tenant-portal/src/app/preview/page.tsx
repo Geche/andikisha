@@ -19,7 +19,7 @@ import { Users, ChevronDown } from "lucide-react";
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-12">
-      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-[#6B7280] mb-5 pb-2 border-b border-[#E5E7EB]">
+      <h2 className="text-[11px] font-semibold uppercase tracking-widest text-neutral-500 mb-5 pb-2 border-b border-neutral-200">
         {title}
       </h2>
       <div className="flex flex-wrap gap-3 items-start">{children}</div>
@@ -29,8 +29,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-surface border border-[#E5E7EB] rounded-xl p-5 flex flex-col gap-3 min-w-[220px]">
-      <p className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{title}</p>
+    <div className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3 min-w-[220px]">
+      <p className="text-[12px] font-semibold text-neutral-400 uppercase tracking-wide">{title}</p>
       {children}
     </div>
   );
@@ -46,7 +46,7 @@ export default function PreviewPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <h1 className="text-[28px] font-bold text-near-black mb-2">@andikisha/ui — Component Preview</h1>
-      <p className="text-[14px] text-[#6B7280] mb-10">
+      <p className="text-[14px] text-neutral-500 mb-10">
         Sprint 1 primitives. Every variant. Brand tokens only. No purple, no blue-600.
       </p>
 
@@ -139,11 +139,11 @@ export default function PreviewPage() {
               <option>HR</option>
             </Select>
           </FormField>
-          <label className="flex items-center gap-2 text-[13px] text-[#374151] cursor-pointer">
+          <label className="flex items-center gap-2 text-[13px] text-neutral-700 cursor-pointer">
             <Checkbox checked={checked} onCheckedChange={setChecked} />
             Remember me for 30 days
           </label>
-          <label className="flex items-center gap-2 text-[13px] text-[#374151] cursor-pointer">
+          <label className="flex items-center gap-2 text-[13px] text-neutral-700 cursor-pointer">
             <Switch checked={switched} onCheckedChange={setSwitched} />
             Email notifications
           </label>
@@ -173,13 +173,13 @@ export default function PreviewPage() {
         <Card title="Eyebrow + KbdHint">
           <Eyebrow>Section heading</Eyebrow>
           <div className="flex items-center gap-2">
-            <span className="text-[13px] text-[#374151]">Press</span>
+            <span className="text-[13px] text-neutral-700">Press</span>
             <KbdHint>⌘</KbdHint>
             <KbdHint>K</KbdHint>
           </div>
         </Card>
         <Card title="OfflineBadge">
-          <p className="text-[12px] text-[#9CA3AF]">Visible when offline.</p>
+          <p className="text-[12px] text-neutral-400">Visible when offline.</p>
           <OfflineBadge />
         </Card>
       </Section>
@@ -200,7 +200,7 @@ export default function PreviewPage() {
       </Section>
 
       <Section title="EmptyState">
-        <div className="bg-surface border border-[#E5E7EB] rounded-xl w-full max-w-md">
+        <div className="bg-surface border border-neutral-200 rounded-xl w-full max-w-md">
           <EmptyState
             icon={Users}
             title="No employees yet"
@@ -219,7 +219,7 @@ export default function PreviewPage() {
             title="Approve Leave Request"
             description="Review and approve the leave request below."
           >
-            <p className="text-[14px] text-[#374151] mb-5">
+            <p className="text-[14px] text-neutral-700 mb-5">
               Annual leave for James Otieno — 5 days, 1–5 Dec 2026.
             </p>
             <div className="flex gap-3">

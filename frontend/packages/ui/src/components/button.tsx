@@ -18,8 +18,8 @@ const BASE =
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:   "bg-brand-900 text-white hover:bg-brand-800",
   cta:       "bg-amber text-near-black hover:bg-amber-dark",
-  secondary: "bg-surface border border-[#E5E7EB] text-[#374151] hover:bg-[#F3F4F6]",
-  ghost:     "text-[#374151] hover:bg-[#F3F4F6]",
+  secondary: "bg-surface border border-neutral-200 text-neutral-700 hover:bg-neutral-100",
+  ghost:     "text-neutral-700 hover:bg-neutral-100",
   danger:    "bg-error text-white hover:bg-red-600",
   outline:   "border border-brand-900 text-brand-900 hover:bg-brand-50",
 };

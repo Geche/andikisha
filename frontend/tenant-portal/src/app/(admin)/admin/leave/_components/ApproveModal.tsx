@@ -46,7 +46,7 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
       <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-[480px] p-6">
         <h2
           id="approve-leave-modal-title"
-          className="text-[16px] font-bold text-[#101828] mb-1"
+          className="text-[16px] font-bold text-neutral-900 mb-1"
         >
           Approve Leave Request
         </h2>

@@ -13,15 +13,15 @@ const STATUS_CLASSES: Record<BadgeStatus, string> = {
   disbursed:   "bg-brand-100 text-brand-800",
   filed:       "bg-brand-100 text-brand-800",
   pending:     "bg-amber-light text-[#92600A]",
-  draft:       "bg-[#F3F4F6] text-[#4B5563]",
+  draft:       "bg-neutral-100 text-neutral-600",
   calculating: "bg-amber-light text-[#92600A]",
   trial:       "bg-amber-light text-[#92600A]",
   rejected:    "bg-red-100 text-red-700",
   failed:      "bg-red-100 text-red-700",
-  cancelled:   "bg-[#F3F4F6] text-[#6B7280]",
-  terminated:  "bg-[#F3F4F6] text-[#6B7280]",
-  suspended:   "bg-[#F3F4F6] text-[#6B7280]",
-  inactive:    "bg-[#F3F4F6] text-[#6B7280]",
+  cancelled:   "bg-neutral-100 text-neutral-500",
+  terminated:  "bg-neutral-100 text-neutral-500",
+  suspended:   "bg-neutral-100 text-neutral-500",
+  inactive:    "bg-neutral-100 text-neutral-500",
 };
 
 interface BadgeProps {
@@ -35,7 +35,7 @@ export function Badge({ status, className, children }: BadgeProps) {
     <span
       className={cn(
         "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold",
-        status ? STATUS_CLASSES[status] : "bg-[#F3F4F6] text-[#374151]",
+        status ? STATUS_CLASSES[status] : "bg-neutral-100 text-neutral-700",
         className
       )}
     >

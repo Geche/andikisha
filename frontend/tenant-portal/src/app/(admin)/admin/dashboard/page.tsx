@@ -235,7 +235,7 @@ export default function DashboardPage() {
                   ) : latestRun ? (
                     <MoneyAmount amount={latestRun.totalNet} size="xl" />
                   ) : (
-                    <span className="text-[18px] text-[#9CA3AF]">No runs yet</span>
+                    <span className="text-[18px] text-neutral-400">No runs yet</span>
                   )
                 }
                 sub={
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                       {latestRun.status.charAt(0) + latestRun.status.slice(1).toLowerCase()}
                     </Badge>
                   ) : (
-                    <span className="text-[18px] text-[#9CA3AF]">—</span>
+                    <span className="text-[18px] text-neutral-400">—</span>
                   )
                 }
                 sub={
@@ -272,19 +272,19 @@ export default function DashboardPage() {
         </KpiGroup>
 
         {/* Payroll trend chart */}
-        <div className="bg-surface border border-[#E5E7EB] rounded-xl p-6">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-[14px] font-bold text-near-black">Payroll trend</h2>
             <button
               onClick={() => router.push("/payroll")}
-              className="text-[12px] font-semibold text-[#6B7280] border border-[#E5E7EB] rounded-lg px-3 py-1.5 hover:bg-[#F3F4F6] transition-colors"
+              className="text-[12px] font-semibold text-neutral-500 border border-neutral-200 rounded-lg px-3 py-1.5 hover:bg-neutral-100 transition-colors"
             >
               View all runs
             </button>
           </div>
 
           {/* Period tabs */}
-          <div className="flex items-center gap-0 mt-3 border-b border-[#F3F4F6]">
+          <div className="flex items-center gap-0 mt-3 border-b border-neutral-100">
             {CHART_PERIODS.map((p) => (
               <button
                 key={p}
@@ -292,7 +292,7 @@ export default function DashboardPage() {
                 className={`px-4 py-2 text-[13px] font-semibold border-b-2 transition-colors -mb-px ${
                   chartPeriod === p
                     ? "border-brand-900 text-brand-900"
-                    : "border-transparent text-[#9CA3AF] hover:text-[#6B7280]"
+                    : "border-transparent text-neutral-400 hover:text-neutral-500"
                 }`}
               >
                 {p}
@@ -301,7 +301,7 @@ export default function DashboardPage() {
           </div>
 
           {payrollLoading ? (
-            <div className="h-36 mt-4 flex items-center justify-center text-[13px] text-[#9CA3AF]">
+            <div className="h-36 mt-4 flex items-center justify-center text-[13px] text-neutral-400">
               Loading…
             </div>
           ) : payrollError ? (
@@ -309,7 +309,7 @@ export default function DashboardPage() {
               Could not load payroll data
             </div>
           ) : recentRuns.length === 0 ? (
-            <div className="h-36 mt-4 flex items-center justify-center text-[13px] text-[#9CA3AF]">
+            <div className="h-36 mt-4 flex items-center justify-center text-[13px] text-neutral-400">
               No payroll runs yet
             </div>
           ) : (
@@ -323,8 +323,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent payroll runs */}
-        <div className="bg-surface border border-[#E5E7EB] rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#F3F4F6] flex items-center justify-between">
+        <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
             <p className="text-[14px] font-bold text-near-black">Recent Payroll Runs</p>
             <button
               onClick={() => router.push("/payroll")}

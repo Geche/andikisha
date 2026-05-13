@@ -19,7 +19,7 @@ export function ProfileMenu({ email, name, role, onLogout, onProfile, onSettings
     <DropdownRoot>
       <DropdownTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[#F3F4F6] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
           aria-label="Open profile menu"
         >
           <Avatar name={name ?? email} size="sm" />
@@ -28,7 +28,7 @@ export function ProfileMenu({ email, name, role, onLogout, onProfile, onSettings
       <DropdownContent align="end">
         <div className="px-3 py-2">
           <p className="text-[13px] font-semibold text-near-black truncate">{name ?? email}</p>
-          <p className="text-[11.5px] text-[#6B7280] truncate">{email}</p>
+          <p className="text-[11.5px] text-neutral-500 truncate">{email}</p>
           {role && <div className="mt-1.5"><RoleBadge role={role} /></div>}
         </div>
         <DropdownSeparator />

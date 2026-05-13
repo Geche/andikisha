@@ -55,7 +55,7 @@ export function CommandPalette({
           className={cn(
             "fixed z-50 left-1/2 top-[20%] -translate-x-1/2",
             "w-full max-w-[560px]",
-            "rounded-2xl border border-[#E5E7EB] bg-surface shadow-2xl",
+            "rounded-2xl border border-neutral-200 bg-surface shadow-2xl",
             "p-0 overflow-hidden",
             "focus:outline-none"
           )}
@@ -68,18 +68,18 @@ export function CommandPalette({
 
           <Command className="flex flex-col" loop>
             {/* Search row */}
-            <div className="flex items-center gap-2 px-4 border-b border-[#E5E7EB] h-12">
-              <Search size={16} className="text-[#9CA3AF] flex-shrink-0" />
+            <div className="flex items-center gap-2 px-4 border-b border-neutral-200 h-12">
+              <Search size={16} className="text-neutral-400 flex-shrink-0" />
               <Command.Input
                 placeholder={placeholder}
-                className="flex-1 bg-transparent text-[14px] text-near-black placeholder:text-[#9CA3AF] outline-none"
+                className="flex-1 bg-transparent text-[14px] text-near-black placeholder:text-neutral-400 outline-none"
               />
               <KbdHint>Esc</KbdHint>
             </div>
 
             {/* Results */}
             <Command.List className="overflow-y-auto max-h-[360px] py-2">
-              <Command.Empty className="py-8 text-center text-[13px] text-[#9CA3AF]">
+              <Command.Empty className="py-8 text-center text-[13px] text-neutral-400">
                 No results found.
               </Command.Empty>
 
@@ -87,7 +87,7 @@ export function CommandPalette({
                 <Command.Group
                   key={group.label}
                   heading={
-                    <span className="text-[10px] uppercase tracking-wider text-[#9CA3AF] px-4 py-1.5 block">
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-400 px-4 py-1.5 block">
                       {group.label}
                     </span>
                   }
@@ -127,16 +127,16 @@ function CommandPaletteItem({ item, onSelect }: CommandPaletteItemProps): ReactN
       keywords={item.keywords}
       onSelect={onSelect}
       className={cn(
-        "flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-[#374151]",
+        "flex items-center gap-2.5 px-4 py-2.5 text-[13.5px] text-neutral-700",
         "rounded-lg mx-1 cursor-pointer select-none",
         "data-[selected=true]:bg-brand-50 data-[selected=true]:text-brand-900",
         "outline-none"
       )}
     >
-      {Icon && <Icon size={15} className="flex-shrink-0 text-[#6B7280]" />}
+      {Icon && <Icon size={15} className="flex-shrink-0 text-neutral-500" />}
       <span className="flex-1 truncate">{item.label}</span>
       {item.description && (
-        <span className="text-[12px] text-[#9CA3AF] truncate max-w-[160px]">
+        <span className="text-[12px] text-neutral-400 truncate max-w-[160px]">
           {item.description}
         </span>
       )}

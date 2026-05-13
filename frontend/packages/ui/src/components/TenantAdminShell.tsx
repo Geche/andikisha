@@ -23,9 +23,9 @@ export function TenantAdminShell({
   return (
     <div className={cn("flex h-screen overflow-hidden bg-surface-alt", className)}>
       {/* Left rail — light */}
-      <aside className="w-[240px] flex-shrink-0 flex flex-col h-full bg-surface border-r border-[#E5E7EB]">
+      <aside className="w-[240px] flex-shrink-0 flex flex-col h-full bg-surface border-r border-neutral-200">
         {/* Logo row — height matches PageHeader h-[73px] */}
-        <div className="h-[73px] flex items-center px-5 flex-shrink-0 border-b border-[#E5E7EB]">
+        <div className="h-[73px] flex items-center px-5 flex-shrink-0 border-b border-neutral-200">
           <LogoFull className="h-6 w-auto" />
         </div>
 
@@ -34,7 +34,7 @@ export function TenantAdminShell({
         </nav>
 
         {navFooter && (
-          <div className="flex-shrink-0 border-t border-[#E5E7EB] px-3 py-3 space-y-0.5">
+          <div className="flex-shrink-0 border-t border-neutral-200 px-3 py-3 space-y-0.5">
             {navFooter}
           </div>
         )}

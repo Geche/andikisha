@@ -195,7 +195,7 @@ export default function EmployeesPage() {
               placeholder="Search by name or email…"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-[#101828] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] w-64"
+              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-neutral-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] w-64"
             />
           </div>
         </div>

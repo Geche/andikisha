@@ -36,7 +36,7 @@ export function NavRailItem({
         locked && "opacity-40 cursor-default",
         !locked && dark && !active && "text-brand-100 hover:bg-brand-900/50 cursor-pointer",
         !locked && dark &&  active && "bg-brand-900 text-white font-semibold border-l-2 border-amber",
-        !locked && !dark && !active && "text-[#374151] hover:bg-[#F3F4F6] cursor-pointer",
+        !locked && !dark && !active && "text-neutral-700 hover:bg-neutral-100 cursor-pointer",
         !locked && !dark &&  active && "bg-brand-50 text-brand-900 font-semibold border-l-2 border-brand-500",
       )}
     >
@@ -46,20 +46,20 @@ export function NavRailItem({
         className={cn(
           dark  && !active && "text-brand-100/70",
           dark  &&  active && "text-amber",
-          !dark && !active && "text-[#6B7280]",
+          !dark && !active && "text-neutral-500",
           !dark &&  active && "text-brand-700",
         )}
       />
       <span className="flex-1 truncate">{label}</span>
       {locked && (
-        <span className={cn("text-[10px] font-semibold tracking-wide", dark ? "text-brand-100/50" : "text-[#9CA3AF]")}>
+        <span className={cn("text-[10px] font-semibold tracking-wide", dark ? "text-brand-100/50" : "text-neutral-400")}>
           Soon
         </span>
       )}
       {badge !== undefined && !locked && (
         <span className={cn(
           "text-[11px] font-semibold min-w-[20px] text-center px-1.5 py-0.5 rounded-full",
-          dark ? "bg-brand-800 text-brand-100" : "bg-[#F3F4F6] text-[#4B5563]"
+          dark ? "bg-brand-800 text-brand-100" : "bg-neutral-100 text-neutral-600"
         )}>
           {badge}
         </span>
@@ -94,7 +94,7 @@ export function NavRailGroup({ label, children, theme = "light", spacer }: NavRa
         <p
           className={cn(
             "text-[10px] font-semibold uppercase tracking-[0.1em] px-2.5 pb-1 pt-1",
-            theme === "dark" ? "text-brand-100/50" : "text-[#9CA3AF]"
+            theme === "dark" ? "text-brand-100/50" : "text-neutral-400"
           )}
         >
           {label}
@@ -128,7 +128,7 @@ export function NavRail({
         "flex-shrink-0 flex flex-col h-full border-r",
         theme === "dark"
           ? "bg-brand-950 border-brand-900"
-          : "bg-surface border-[#E5E7EB]",
+          : "bg-surface border-neutral-200",
         width,
         className
       )}
@@ -140,7 +140,7 @@ export function NavRail({
         <div
           className={cn(
             "flex-shrink-0 border-t px-3 py-3 space-y-0.5",
-            theme === "dark" ? "border-brand-900" : "border-[#E5E7EB]"
+            theme === "dark" ? "border-brand-900" : "border-neutral-200"
           )}
         >
           {footer}
