@@ -29,12 +29,23 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json() as {
-        error?: string;
-        message?: string;
-        platformPortalUrl?: string;
-        user?: { role?: string; roles?: string[] };
-        expiresIn?: number;
+      // res.json() returns unknown — narrow each field explicitly
+      const raw = await res.json() as Record<string, unknown>;
+      const errorCode = typeof raw.error === "string" ? raw.error : undefined;
+      const errorMsg = typeof raw.message === "string" ? raw.message : undefined;
+      const platformPortalUrl = typeof raw.platformPortalUrl === "string" ? raw.platformPortalUrl : undefined;
+      const rawUser = raw.user !== null && typeof raw.user === "object" ? raw.user as Record<string, unknown> : undefined;
+      const data = {
+        error: errorCode,
+        message: errorMsg,
+        platformPortalUrl,
+        user: rawUser
+          ? {
+              role: typeof rawUser.role === "string" ? rawUser.role : undefined,
+              roles: Array.isArray(rawUser.roles) ? (rawUser.roles as string[]) : undefined,
+            }
+          : undefined,
+        expiresIn: typeof raw.expiresIn === "number" ? raw.expiresIn : undefined,
       };
 
       if (!res.ok) {
@@ -146,13 +157,13 @@ export default function LoginPage() {
 
           {/* Error states */}
           {error?.kind === "general" && (
-            <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5">
+            <p role="alert" className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5">
               {error.message}
             </p>
           )}
 
           {error?.kind === "wrong_portal" && (
-            <div className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3.5 py-2.5">
+            <div role="alert" className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3.5 py-2.5">
               <p className="font-medium mb-1">Wrong portal</p>
               <p className="mb-2">This account uses the Andikisha platform portal.</p>
               {error.platformPortalUrl ? (
