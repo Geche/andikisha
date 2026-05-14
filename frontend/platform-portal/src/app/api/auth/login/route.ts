@@ -35,9 +35,11 @@ function extractRoles(token: string): Set<string> {
 export async function POST(request: NextRequest) {
   const body = await request.json() as { email?: string; password?: string };
 
+  // SUPER_ADMIN uses its own login endpoint — response is flat (no nested user object).
+  // SuperAdminTokenResponse: { accessToken, refreshToken, expiresIn, role, tenantId }
   let upstream: Response;
   try {
-    upstream = await fetch(`${GATEWAY}/api/v1/auth/login`, {
+    upstream = await fetch(`${GATEWAY}/api/v1/auth/super-admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: body.email, password: body.password }),
@@ -48,8 +50,10 @@ export async function POST(request: NextRequest) {
 
   const data = await upstream.json() as {
     accessToken?: string;
+    refreshToken?: string;
     expiresIn?: number;
-    user?: Record<string, unknown>;
+    role?: string;
+    tenantId?: string;
   };
 
   if (!upstream.ok) {
@@ -60,8 +64,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "BAD_UPSTREAM_RESPONSE" }, { status: 502 });
   }
 
-  // Reject non-SUPER_ADMIN at this portal. Cookie is never set.
-  // extractRoles returns empty Set on parse failure — empty set never contains SUPER_ADMIN.
+  // Verify SUPER_ADMIN claim in token — defence in depth (the dedicated endpoint
+  // already enforces this, but we confirm before setting any cookie).
   if (!extractRoles(data.accessToken).has("SUPER_ADMIN")) {
     return NextResponse.json(
       {
@@ -88,5 +92,5 @@ export async function POST(request: NextRequest) {
     path: "/",
   });
 
-  return NextResponse.json({ user: data.user, expiresIn });
+  return NextResponse.json({ expiresIn });
 }
