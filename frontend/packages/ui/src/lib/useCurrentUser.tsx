@@ -3,8 +3,6 @@
 import {
   createContext,
   useContext,
-  useState,
-  useEffect,
   type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -64,30 +62,22 @@ export function CurrentUserProvider({
   children: ReactNode;
   initialUser?: CurrentUser | null;
 }) {
-  const [user, setUser] = useState<CurrentUser | null>(initialUser ?? null);
-
-  const { data: queryUser } = useQuery<CurrentUser | null>({
+  const { data: user } = useQuery<CurrentUser | null>({
     queryKey: ["current-user"],
     queryFn: async () => {
       const res = await fetch("/api/auth/me");
-      if (!res.ok) return null;
+      if (res.status === 401) return null;
+      if (!res.ok) throw new Error(`/api/auth/me failed: ${res.status}`);
       return res.json() as Promise<CurrentUser>;
     },
-    initialData: initialUser ?? undefined,
+    initialData: initialUser ?? null,
     initialDataUpdatedAt: 0,
     staleTime: 60_000,
     refetchOnWindowFocus: true,
   });
 
-  // Sync React Query result into context whenever it changes
-  useEffect(() => {
-    if (queryUser !== undefined) {
-      setUser(queryUser ?? null);
-    }
-  }, [queryUser]);
-
   return (
-    <CurrentUserContext.Provider value={user}>
+    <CurrentUserContext.Provider value={user ?? null}>
       {children}
     </CurrentUserContext.Provider>
   );

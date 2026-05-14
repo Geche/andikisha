@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { CurrentUserProvider, useCurrentUser } from "../lib/useCurrentUser";
 import type { CurrentUser } from "../lib/useCurrentUser";
@@ -32,13 +32,12 @@ const FRESH_USER: CurrentUser = {
   userId: "u1",
   tenantId: "t1",
   email: "hr@acme.co",
-  roles: ["HR_MANAGER"],
+  roles: ["HR_MANAGER", "EMPLOYEE"],
   employeeId: "e1",
 };
 
 describe("CurrentUserProvider", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let fetchSpy: ReturnType<typeof vi.spyOn<any, any>>;
+  let fetchSpy: MockInstance<typeof globalThis.fetch>;
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -103,9 +102,12 @@ describe("CurrentUserProvider", () => {
       </Wrapper>
     );
 
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith("/api/auth/me"));
+    // Initial state from SSR data
+    expect(screen.getByText("hr@acme.co:HR_MANAGER")).toBeInTheDocument();
+
+    // After refetch resolves, context should reflect the richer server data
     await waitFor(() =>
-      expect(screen.getByText("hr@acme.co:HR_MANAGER")).toBeInTheDocument()
+      expect(screen.getByText("hr@acme.co:HR_MANAGER,EMPLOYEE")).toBeInTheDocument()
     );
   });
 
