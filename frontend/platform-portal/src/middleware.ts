@@ -58,15 +58,15 @@ export async function middleware(request: NextRequest) {
         roles: [...roleSet],
         redirectTo: tenantPortalUrl,
       });
-      return NextResponse.redirect(new URL(tenantPortalUrl));
+      return NextResponse.redirect(new URL(tenantPortalUrl, request.url));
     }
 
     // Forward headers to Server Components via request context.
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", String(payload.sub ?? ""));
     requestHeaders.set("x-user-email", String(payload.email ?? ""));
-    requestHeaders.set("x-user-role", "SUPER_ADMIN");
-    requestHeaders.set("x-user-roles", "SUPER_ADMIN");
+    requestHeaders.set("x-user-role", String(rawRole ?? "SUPER_ADMIN"));
+    requestHeaders.set("x-user-roles", [...roleSet].join(","));
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
     const response = NextResponse.redirect(new URL("/login", request.url));
