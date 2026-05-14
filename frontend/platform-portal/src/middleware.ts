@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/access-denied"];
+const PUBLIC_PREFIXES = ["/api/auth/", "/_next/"];
 const COOKIE_NAME = "platform_token";
 
 function isPublic(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname);
+  return (
+    PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+  );
 }
 
 function isAsset(pathname: string): boolean {
   return (
-    pathname.startsWith("/_next/") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/icons")
   );

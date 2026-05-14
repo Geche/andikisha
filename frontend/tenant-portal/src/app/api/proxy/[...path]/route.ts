@@ -21,7 +21,7 @@ function isAllowedPath(path: string): boolean {
 
 async function proxyRequest(request: NextRequest): Promise<NextResponse> {
   const jar = await cookies();
-  const token = jar.get("admin_token")?.value;
+  const token = jar.get("tenant_token")?.value;
 
   if (!token) {
     return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
