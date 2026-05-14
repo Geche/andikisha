@@ -40,16 +40,21 @@ export async function GET() {
     employeeId?: string;
   };
 
+  if (typeof data.id !== "string" || typeof data.tenantId !== "string" || typeof data.email !== "string") {
+    return NextResponse.json({ error: "INVALID_UPSTREAM_RESPONSE" }, { status: 502 });
+  }
+
   // Normalise to CurrentUser shape.
-  // B1 update: change `[data.role]` to `data.roles ?? [data.role]` when auth-service sends array.
   const currentUser = {
     userId: data.id,
     tenantId: data.tenantId,
     email: data.email,
     fullName: undefined, // auth-service has no name field yet — see user profile prompt
-    roles: [data.role],
+    roles: data.roles ?? [data.role],
     employeeId: data.employeeId ?? undefined,
   };
 
-  return NextResponse.json(currentUser);
+  return NextResponse.json(currentUser, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }
