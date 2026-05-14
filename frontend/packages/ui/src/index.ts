@@ -65,6 +65,9 @@ export { SheetRoot, SheetTrigger, SheetClose, SheetContent } from "./components/
 // ── Primitives — Feedback ─────────────────────────────────────────────────
 export { InlineAlert } from "./components/InlineAlert";
 
+// ── Auth utilities (also available via @andikisha/ui/auth for Edge runtime) ──
+export { findCorrectDashboard, ADMIN_ROLES, EMPLOYEE_ROLES } from "./lib/auth";
+
 // ── Role & Permission ──────────────────────────────────────────────────────
 export { useCurrentRole, RoleContext } from "./lib/useCurrentRole";
 export type { UserRole } from "./lib/useCurrentRole";
