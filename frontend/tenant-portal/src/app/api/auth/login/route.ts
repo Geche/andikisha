@@ -34,7 +34,7 @@ function extractRoleClaim(token: string): string | null {
     const parts = token.split(".");
     if (parts.length !== 3 || !parts[1]) return null;
     const padded = parts[1] + "=".repeat((4 - (parts[1].length % 4)) % 4);
-    const json = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+    const json = Buffer.from(padded.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
     const payload = JSON.parse(json) as Record<string, unknown>;
     return typeof payload.role === "string" ? payload.role : null;
   } catch {
