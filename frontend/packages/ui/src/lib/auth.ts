@@ -7,8 +7,8 @@
  * './auth' subpath export to avoid bundling the barrel (which includes React).
  */
 
-export const ADMIN_ROLES = new Set(["ADMIN", "HR_MANAGER", "PAYROLL_OFFICER", "HR"] as const);
-export const EMPLOYEE_ROLES = new Set(["EMPLOYEE"] as const);
+export const ADMIN_ROLES: ReadonlySet<string> = new Set(["ADMIN", "HR_MANAGER", "PAYROLL_OFFICER", "HR"]);
+export const EMPLOYEE_ROLES: ReadonlySet<string> = new Set(["EMPLOYEE"]);
 
 /**
  * Returns the canonical dashboard URL for the given user's role set.
@@ -23,7 +23,9 @@ export function findCorrectDashboard(roles: Set<string>): string {
   if (roles.has("SUPER_ADMIN")) {
     return process.env.NEXT_PUBLIC_PLATFORM_PORTAL_URL ?? "/access-denied";
   }
-  if ([...ADMIN_ROLES].some((r) => roles.has(r))) return "/admin/dashboard";
+  for (const r of ADMIN_ROLES) {
+    if (roles.has(r)) return "/admin/dashboard";
+  }
   if (roles.has("EMPLOYEE")) return "/my/dashboard";
   return "/access-denied";
 }
