@@ -17,7 +17,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@andikisha/ui": ["../packages/ui/src"],
-      "@andikisha/ui/auth": ["../packages/ui/src/lib/auth.ts"]
+      "@andikisha/ui/auth": ["../packages/ui/src/lib/auth.ts"],
+      "@andikisha/api-client": ["../packages/api-client/src"],
+      "@andikisha/shared-types": ["../packages/shared-types/src"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
