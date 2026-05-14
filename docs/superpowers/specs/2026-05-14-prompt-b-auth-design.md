@@ -68,6 +68,15 @@ EMPLOYEE      — Baseline self-service role. /my/* surface.
 Exports pure functions and constants. No React, no side effects. Used by both portals' middleware (via build-time tree-shaking) and by client components.
 
 ```ts
+/**
+ * EDGE RUNTIME SAFE — this file must remain pure:
+ * - No React imports, hooks, or JSX
+ * - No Node.js built-ins (fs, crypto, etc.)
+ * - No dynamic requires
+ * Next.js middleware runs in the Edge runtime. This file is imported via the
+ * './auth' subpath export to avoid bundling the barrel (which includes React).
+ */
+
 export const ADMIN_ROLES = new Set(['ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER', 'HR'] as const);
 export const EMPLOYEE_ROLES = new Set(['EMPLOYEE'] as const);
 
@@ -140,10 +149,10 @@ interface ProviderProps {
   children: ReactNode;
   /** Server-derived initial user — passed from root layout.tsx. Hydrates context on first paint. */
   initialUser?: CurrentUser | null;
-  /** Legacy: cookie name for the old decode path. Kept for backward compat; ignored when initialUser is provided. */
-  cookieName?: string;
 }
 ```
+
+The legacy `cookieName` prop is removed entirely. There are no callers of `CurrentUserProvider` outside `layout.tsx` — the interface change is safe. The old cookie-decode path (`decodeJwtPayload` + `readCookie`) is removed at the same time.
 
 **Behaviour:**
 
@@ -152,10 +161,12 @@ interface ProviderProps {
    - `queryKey: ['current-user']`
    - `queryFn`: `fetch('/api/auth/me').then(r => r.json())`
    - `initialData: initialUser ?? undefined`
+   - `initialDataUpdatedAt: 0`  ← treats SSR data as immediately stale; fires background refetch on mount (~100ms), not after `staleTime` expires
    - `staleTime: 60_000`
    - `refetchOnWindowFocus: true`
 3. When the query resolves, context updates via `setUser(queryData)`. React Query's `initialData` prevents a loading flash — the context is never null between SSR and first fetch.
-4. The old cookie-decode path (`decodeJwtPayload` + `readCookie`) is removed. `cookieName` prop is kept in the interface but has no effect when `initialUser` is passed (which it always will be from Prompt B onwards).
+
+**Why `initialDataUpdatedAt: 0`:** Without it React Query treats `initialData` as fresh (timestamped at the moment of mount) and waits the full 60 seconds before the first background refetch. Setting it to `0` marks the SSR-derived data as expired-at-epoch, so the refetch fires immediately on mount and corrects any staleness from the time the server rendered the page to when the client hydrated.
 
 **Why `initialData` not `placeholderData`:** `initialData` marks the cache as populated immediately, so `isLoading` is false from first render. `placeholderData` would cause a loading state on mount. We want the SSR user to be treated as real data that just needs background revalidation.
 
@@ -196,13 +207,19 @@ const roleSet = new Set<string>(rawRoles.filter(r => typeof r === 'string'));
 
 **Header forwarding:**
 
+`response.headers.set(...)` sets headers on the HTTP response going to the browser — those headers are NOT visible to Server Components via `await headers()`. The correct Next.js 13+ pattern is to clone the incoming request headers and pass the augmented copy through `NextResponse.next({ request: { headers: ... } })`:
+
 ```ts
-response.headers.set('x-user-id', String(payload.sub ?? ''));
-response.headers.set('x-user-email', String(payload.email ?? ''));
-response.headers.set('x-tenant-id', String(payload.tenantId ?? ''));
-response.headers.set('x-user-role', String(rawRole ?? '')); // legacy single, backward compat
-response.headers.set('x-user-roles', [...roleSet].join(','));  // set, B1-ready
-if (payload.employeeId) response.headers.set('x-employee-id', String(payload.employeeId));
+// Build augmented request headers so Server Components can read them via `await headers()`
+const requestHeaders = new Headers(request.headers);
+requestHeaders.set('x-user-id', String(payload.sub ?? ''));
+requestHeaders.set('x-user-email', String(payload.email ?? ''));
+requestHeaders.set('x-tenant-id', String(payload.tenantId ?? ''));
+requestHeaders.set('x-user-role', String(rawRole ?? ''));       // legacy single, backward compat
+requestHeaders.set('x-user-roles', [...roleSet].join(','));     // set, B1-ready
+if (payload.employeeId) requestHeaders.set('x-employee-id', String(payload.employeeId));
+
+return NextResponse.next({ request: { headers: requestHeaders } });
 ```
 
 **Path evaluation (in order):**
@@ -211,10 +228,12 @@ if (payload.employeeId) response.headers.set('x-employee-id', String(payload.emp
 1. SUPER_ADMIN anywhere → redirect to NEXT_PUBLIC_PLATFORM_PORTAL_URL ?? '/access-denied'
 2. /admin/* and roleSet has no ADMIN_ROLES member → redirect to findCorrectDashboard(roleSet)
 3. /my/*   and roleSet does not contain 'EMPLOYEE'   → redirect to findCorrectDashboard(roleSet)
-4. Otherwise → allow through with headers
+4. Otherwise → allow through with augmented request headers (NextResponse.next pattern above)
 ```
 
 **Logging on redirect (every redirect, info level):**
+
+Logging must be compatible with the Edge runtime (no Node.js `winston` or `pino`). Use `console.info` with a structured object — it is available in Edge and produces structured output in Vercel/CloudWatch log aggregators:
 
 ```ts
 console.info('[middleware] role-redirect', {
@@ -224,6 +243,8 @@ console.info('[middleware] role-redirect', {
   roles: [...roleSet],
 });
 ```
+
+If the project later adds an Edge-compatible logger (e.g., `@logtail/next`), replace `console.info` there. Do not import `pino` or any Node-only logger from middleware.
 
 ### 5.6 Root `layout.tsx` — server header read (updated)
 
@@ -254,7 +275,10 @@ Passes `initialUser` to `<CurrentUserProvider initialUser={initialUser}>`.
 After receiving the upstream `TokenResponse`, decode the `role` claim from the JWT payload (no verification needed — just reading the claim for the rejection check; the cookie is not set yet):
 
 ```ts
-const decodedRole = extractRoleClaim(data.accessToken); // base64url decode, no verify
+// extractRoleClaim: base64url-decode the JWT payload segment, JSON.parse, return payload.role.
+// Must handle malformed JWTs defensively — if parsing throws for any reason, treat role as null
+// (not as SUPER_ADMIN) so a corrupted token does not produce a false 403 rejection.
+const decodedRole = extractRoleClaim(data.accessToken); // returns string | null
 if (decodedRole === 'SUPER_ADMIN') {
   return NextResponse.json(
     {
@@ -307,21 +331,29 @@ export async function middleware(request: NextRequest) {
 
   try {
     const { payload } = await jwtVerify(token, secret);
-    if (payload.role !== 'SUPER_ADMIN') {
+
+    // B0/B1 transition-ready: same set extraction as tenant-portal middleware (section 5.5)
+    const rawRole = payload.role as string | undefined;
+    const rawRoles = Array.isArray(payload.roles) ? payload.roles as string[] : (rawRole ? [rawRole] : []);
+    const roleSet = new Set<string>(rawRoles.filter((r): r is string => typeof r === 'string'));
+
+    if (!roleSet.has('SUPER_ADMIN')) {
       const tenantPortalUrl = process.env.NEXT_PUBLIC_TENANT_PORTAL_URL ?? '/access-denied';
       console.info('[platform-middleware] non-super-admin redirect', {
         userId: payload.sub,
-        role: payload.role,
+        roles: [...roleSet],
         redirectTo: tenantPortalUrl,
       });
       return NextResponse.redirect(new URL(tenantPortalUrl));
     }
-    const response = NextResponse.next();
-    response.headers.set('x-user-id', String(payload.sub ?? ''));
-    response.headers.set('x-user-email', String(payload.email ?? ''));
-    response.headers.set('x-user-role', 'SUPER_ADMIN');
-    response.headers.set('x-user-roles', 'SUPER_ADMIN');
-    return response;
+
+    // Forward headers to Server Components via request context (NOT response.headers)
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', String(payload.sub ?? ''));
+    requestHeaders.set('x-user-email', String(payload.email ?? ''));
+    requestHeaders.set('x-user-role', 'SUPER_ADMIN');
+    requestHeaders.set('x-user-roles', 'SUPER_ADMIN');
+    return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
     const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete(COOKIE_NAME);
@@ -380,7 +412,10 @@ Cookie names do not require env vars — they are hardcoded constants (`tenant_t
 | Login with ADMIN credentials | Redirect → `/admin/dashboard` |
 | Login with SUPER_ADMIN credentials | 403 WRONG_PORTAL, cookie never set |
 | `findCorrectDashboard` unit tests — all role permutations | Correct URL for every input |
+| `findCorrectDashboard` — empty roles Set (`new Set()`) | Returns `/access-denied` |
+| `findCorrectDashboard` — JWT with empty `roles: []` array, no `role` claim | roleSet is empty → `/access-denied` (not a crash, not a wrong redirect) |
 | `CurrentUserProvider` — initialUser hydrates on first render | No flash, role data available immediately |
+| `CurrentUserProvider` — `/api/auth/me` revalidation fires within 100ms of mount | `initialDataUpdatedAt: 0` ensures React Query treats SSR data as stale; verify with `vi.useFakeTimers` that fetch is called before 100ms |
 | `CurrentUserProvider` — React Query refetch on window focus | Context updates when /api/auth/me returns fresh data |
 | `CurrentUserProvider` — manual role change → wait 60s or focus window | UI reflects change |
 | `/api/auth/me` BFF — valid cookie | 200 with CurrentUser shape |
