@@ -19,7 +19,7 @@ export function DropdownContent({ children, align = "end", className }: Dropdown
         align={align}
         sideOffset={6}
         className={cn(
-          "z-50 min-w-[180px] rounded-xl border border-[#E5E7EB] bg-surface shadow-lg p-1",
+          "z-50 min-w-[180px] rounded-xl border border-neutral-200 bg-surface shadow-lg p-1",
           className
         )}
       >
@@ -44,8 +44,8 @@ export function DropdownItem({ children, onSelect, danger, disabled, className }
       disabled={disabled}
       className={cn(
         "flex items-center gap-2 px-3 py-2 rounded-lg text-[13.5px] cursor-pointer outline-none",
-        "focus:bg-[#F3F4F6]",
-        danger ? "text-error focus:bg-red-50" : "text-[#374151]",
+        "focus:bg-neutral-100",
+        danger ? "text-error focus:bg-red-50" : "text-neutral-700",
         disabled && "opacity-50 pointer-events-none",
         className
       )}
@@ -56,12 +56,12 @@ export function DropdownItem({ children, onSelect, danger, disabled, className }
 }
 
 export function DropdownSeparator() {
-  return <RadixDropdown.Separator className="h-px bg-[#E5E7EB] my-1 -mx-1" />;
+  return <RadixDropdown.Separator className="h-px bg-neutral-200 my-1 -mx-1" />;
 }
 
 export function DropdownLabel({ children }: { children: ReactNode }) {
   return (
-    <RadixDropdown.Label className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
+    <RadixDropdown.Label className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
       {children}
     </RadixDropdown.Label>
   );

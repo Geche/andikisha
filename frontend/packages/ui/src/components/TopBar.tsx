@@ -14,7 +14,7 @@ export function TopBar({ left, center, right, impersonating, className }: TopBar
   return (
     <header
       className={cn(
-        "flex-shrink-0 flex items-center justify-between px-5 bg-surface border-b border-[#E5E7EB]",
+        "flex-shrink-0 flex items-center justify-between px-5 bg-surface border-b border-neutral-200",
         "h-[56px] z-30",
         impersonating && "border-b-2 border-b-amber",
         className

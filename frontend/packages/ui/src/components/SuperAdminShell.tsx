@@ -12,6 +12,11 @@ interface SuperAdminShellProps {
 }
 
 /**
+ * @deprecated Use {@link HorizontalShell} for the platform-portal SUPER_ADMIN surface.
+ * SuperAdminShell uses a vertical sidebar which does not match the horizontal nav
+ * design reference (template/smarthr-html/layout-horizontal.html). HorizontalShell
+ * was added in Prompt A.6 / Step 2.5 as the correct replacement.
+ *
  * SuperAdmin shell — dark forest-green left rail, no separate top bar.
  * The sidebar logo row aligns with each page's PageHeader.
  * Page-level title + actions live inside children via PageHeader.

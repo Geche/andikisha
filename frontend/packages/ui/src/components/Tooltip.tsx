@@ -21,11 +21,11 @@ export function Tooltip({ content, children, side = "top", delayDuration = 300 }
             sideOffset={6}
             className={cn(
               "z-50 px-2.5 py-1.5 rounded-md text-[12px] font-medium",
-              "bg-[#1F2937] text-white shadow-lg"
+              "bg-neutral-800 text-white shadow-lg"
             )}
           >
             {content}
-            <RadixTooltip.Arrow className="fill-[#1F2937]" />
+            <RadixTooltip.Arrow className="fill-neutral-800" />
           </RadixTooltip.Content>
         </RadixTooltip.Portal>
       </RadixTooltip.Root>

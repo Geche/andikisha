@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-montserrat: "Montserrat", sans-serif;
+  --font-roboto: "Roboto", sans-serif;
   --font-dm-mono: "DM Mono", monospace;
 }
 
@@ -11,14 +11,14 @@
   html { scroll-behavior: smooth; }
 
   body {
-    font-family: var(--font-montserrat);
+    font-family: var(--font-roboto);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-montserrat);
+    font-family: var(--font-roboto);
     letter-spacing: -0.02em;
     line-height: 1.15;
   }

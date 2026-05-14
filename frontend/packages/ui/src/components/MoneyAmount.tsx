@@ -1,4 +1,5 @@
 import { cn } from "../utils";
+import { formatMoney } from "../lib/formatMoney";
 
 interface MoneyAmountProps {
   amount: number | null | undefined;
@@ -26,27 +27,26 @@ export function MoneyAmount({
 }: MoneyAmountProps) {
   if (amount == null) {
     return (
-      <span className={cn("tabular-nums text-[#9CA3AF]", SIZE_CLASSES[size], className)}>
+      <span className={cn("tabular-nums text-neutral-400", SIZE_CLASSES[size], className)}>
         —
       </span>
     );
   }
 
-  const formatted = amount.toLocaleString("en-KE", {
-    minimumFractionDigits: cents ? 2 : 0,
-    maximumFractionDigits: cents ? 2 : 0,
-  });
+  // Split the formatted string so the currency code can be styled separately
+  const [code, ...rest] = formatMoney(amount, currency, cents).split(" ");
+  const formatted = rest.join(" ");
 
   return (
     <span
       className={cn(
         "tabular-nums font-mono",
         SIZE_CLASSES[size],
-        dimZero && amount === 0 ? "text-[#9CA3AF]" : "text-near-black",
+        dimZero && amount === 0 ? "text-neutral-400" : "text-near-black",
         className
       )}
     >
-      <span className="text-[0.75em] text-[#6B7280] mr-0.5 font-sans font-medium">{currency}</span>
+      <span className="text-[0.75em] text-neutral-500 mr-0.5 font-sans font-medium">{code}</span>
       {formatted}
     </span>
   );

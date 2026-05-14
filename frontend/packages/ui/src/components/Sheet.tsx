@@ -30,21 +30,21 @@ export function SheetContent({
         className={cn(
           "fixed z-50 top-0 bottom-0 bg-surface shadow-2xl flex flex-col",
           side === "right"
-            ? "right-0 border-l border-[#E5E7EB]"
-            : "left-0 border-r border-[#E5E7EB]",
+            ? "right-0 border-l border-neutral-200"
+            : "left-0 border-r border-neutral-200",
           width
         )}
       >
-        <div className="flex items-start justify-between px-6 py-5 border-b border-[#E5E7EB] flex-shrink-0">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-neutral-200 flex-shrink-0">
           <div>
             <RadixDialog.Title className="text-[16px] font-bold text-near-black">{title}</RadixDialog.Title>
             {description && (
-              <RadixDialog.Description className="text-[13px] text-[#6B7280] mt-0.5">
+              <RadixDialog.Description className="text-[13px] text-neutral-500 mt-0.5">
                 {description}
               </RadixDialog.Description>
             )}
           </div>
-          <RadixDialog.Close className="rounded-md p-1 text-[#9CA3AF] hover:text-[#374151] hover:bg-[#F3F4F6] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber">
+          <RadixDialog.Close className="rounded-md p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber">
             <X size={16} />
           </RadixDialog.Close>
         </div>

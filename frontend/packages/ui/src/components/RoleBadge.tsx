@@ -18,7 +18,7 @@ const COLOR: Record<NonNullable<UserRole>, string> = {
   PAYROLL_OFFICER: "bg-[#E0F2FE] text-[#0369A1]",
   HR:              "bg-brand-50 text-brand-700",
   LINE_MANAGER:    "bg-[#F3E8FF] text-[#6B21A8]",
-  EMPLOYEE:        "bg-[#F3F4F6] text-[#374151]",
+  EMPLOYEE:        "bg-neutral-100 text-neutral-700",
 };
 
 interface RoleBadgeProps {

@@ -43,16 +43,16 @@ export function DataTable({
   const clickable = typeof onRowClick === "function";
 
   return (
-    <div className={cn("bg-surface border border-[#E5E7EB] rounded-xl overflow-hidden", className)}>
+    <div className={cn("bg-surface border border-neutral-200 rounded-xl overflow-hidden", className)}>
       <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-[#FAFAFA] border-b border-[#E5E7EB]">
+          <tr className="bg-neutral-50 border-b border-neutral-200">
             {columns.map((col) => (
               <th
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
                 className={cn(
-                  "text-[11px] font-semibold uppercase tracking-wide text-[#9CA3AF] px-5 py-3",
+                  "text-[11px] font-semibold uppercase tracking-wide text-neutral-400 px-5 py-3",
                   ALIGN_TH[col.align ?? "left"]
                 )}
               >
@@ -64,7 +64,7 @@ export function DataTable({
         <tbody>
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <tr key={`skel-${i}`} className="border-b border-[#F3F4F6] last:border-0">
+              <tr key={`skel-${i}`} className="border-b border-neutral-100 last:border-0">
                 {columns.map((col) => (
                   <td key={col.key} className="px-5 py-3.5">
                     <Skeleton className="h-3 w-full max-w-[120px]" />
@@ -76,7 +76,7 @@ export function DataTable({
             <tr>
               <td
                 colSpan={columns.length}
-                className="py-14 text-center text-[13px] text-[#9CA3AF]"
+                className="py-14 text-center text-[13px] text-neutral-400"
               >
                 {emptyMessage}
               </td>
@@ -87,15 +87,15 @@ export function DataTable({
                 key={i}
                 onClick={clickable ? () => onRowClick(row, i) : undefined}
                 className={cn(
-                  "border-b border-[#F3F4F6] last:border-0",
-                  clickable && "hover:bg-[#FAFAFA] cursor-pointer transition-colors"
+                  "border-b border-neutral-100 last:border-0",
+                  clickable && "hover:bg-neutral-50 cursor-pointer transition-colors"
                 )}
               >
                 {columns.map((col) => (
                   <td
                     key={col.key}
                     className={cn(
-                      "text-[13.5px] text-[#374151] px-5 py-3.5",
+                      "text-[13.5px] text-neutral-700 px-5 py-3.5",
                       ALIGN_TD[col.align ?? "left"]
                     )}
                   >

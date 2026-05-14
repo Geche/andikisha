@@ -29,7 +29,7 @@ export function Switch({ checked, onCheckedChange, disabled, size = "md", classN
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         trackW,
-        checked ? "bg-brand-900" : "bg-[#D1D5DB]",
+        checked ? "bg-brand-900" : "bg-neutral-300",
         className
       )}
     >

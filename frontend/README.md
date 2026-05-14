@@ -2,12 +2,12 @@
 
 Enterprise HR and Payroll SaaS frontend for Kenyan and East African SMEs.
 
-This directory contains the **AndikishaHR frontend workspace** — a pnpm monorepo with three
-Next.js applications and three shared internal packages.
+This directory contains the **AndikishaHR frontend workspace** — a pnpm monorepo with Next.js
+applications and three shared internal packages.
 
+- **Tenant Portal** — customer-facing portal for all tenant roles (employee self-service + HR admin)
 - **Landing** — public marketing site (blog, pricing, demo request)
-- **Admin Portal** — HR manager / admin dashboard
-- **Employee Portal** — self-service portal for employees
+- **Platform Portal** — internal Andikisha staff (SUPER_ADMIN) — scaffolded in Prompt A.5
 
 Built with **TypeScript**, **Next.js 15** (App Router), and **Tailwind CSS**.
 
@@ -17,9 +17,10 @@ Built with **TypeScript**, **Next.js 15** (App Router), and **Tailwind CSS**.
 
 ```
 frontend/
+├── tenant-portal/        # Customer-facing portal (port 3000)
+│   ├── src/app/(my)/my/  # Employee self-service: /my/dashboard, /my/payslips, /my/leave, ...
+│   └── src/app/(admin)/admin/ # HR/payroll admin: /admin/dashboard, /admin/employees, ...
 ├── landing/              # Marketing site (port 3002)
-├── admin-portal/         # Admin dashboard (port 3000)
-├── employee-portal/      # Employee self-service (port 3001)
 └── packages/
     ├── ui/               # Shared React UI components
     ├── api-client/       # Axios wrapper with auth interceptor
@@ -30,8 +31,7 @@ frontend/
 graph TD
     subgraph Apps
         L["landing (public)"]
-        A["admin-portal"]
-        E["employee-portal"]
+        TP["tenant-portal"]
     end
 
     subgraph Shared
@@ -40,12 +40,9 @@ graph TD
         T["@andikisha/shared-types"]
     end
 
-    A --> U
-    A --> C
-    A --> T
-    E --> U
-    E --> C
-    E --> T
+    TP --> U
+    TP --> C
+    TP --> T
     L --> U
     L --> C
     L --> T
@@ -166,59 +163,41 @@ NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 
 ---
 
-### `admin-portal` — HR Manager Dashboard
+### `tenant-portal` — Customer-Facing Portal
 
 | Key | Value |
 |-----|-------|
 | Port | `3000` |
 | Next.js | `15.1.0` |
 | Tailwind | `v4.0.0` |
-| Router | App Router (`src/app/`) |
+| Router | App Router with `(my)` and `(admin)` route groups |
 
-**Current State**
+**Route Groups**
 
-> ⚠️ This app is a **stub** in active development. Only the base layout (`layout.tsx`) and placeholder homepage (`page.tsx`) exist.
+| Prefix | Route group | Who uses it |
+|--------|-------------|-------------|
+| `/my/*` | `(my)/my/` | EMPLOYEE, LINE_MANAGER — self-service |
+| `/admin/*` | `(admin)/admin/` | ADMIN, HR_MANAGER, PAYROLL_OFFICER, HR |
 
-**Planned Features**
+**Implemented routes**
 
-- Employee CRUD, department management, salary adjustments
-- Payroll run initiation, approval workflows, statutory reports
-- Analytics dashboards with Recharts (`recharts` already in `package.json`)
-- Role-based access (HR Manager, Admin)
+- `/my/dashboard`, `/my/payslips`, `/my/leave`, `/my/attendance`, `/my/profile`
+- `/admin/dashboard`, `/admin/employees` (list + detail + new), `/admin/leave` (list + approval), `/admin/payroll` (list + new + detail)
+
+**PWA**: Service worker registered for `/my/` scope only. Manifest at `public/manifest.json`.
+
+**Auth**: Single `tenant_token` HTTP-only cookie. Role-aware route guards land in Prompt B.
 
 **Dependencies**
 
 | Package | Purpose |
 |---------|---------|
-| `zustand` | Global state |
 | `@tanstack/react-query` | Server state management |
 | `axios` | HTTP client (via `@andikisha/api-client`) |
 | `zod` | Schema validation |
 | `date-fns` | Date formatting |
-| `recharts` | Charts and analytics |
+| `recharts` | Charts and analytics (admin dashboards) |
 | `@radix-ui/react-dialog`, `@radix-ui/react-dropdown-menu`, `@radix-ui/react-select`, `@radix-ui/react-tabs` | Headless UI primitives |
-
----
-
-### `employee-portal` — Self-Service Portal
-
-| Key | Value |
-|-----|-------|
-| Port | `3001` |
-| Next.js | `15.1.0` |
-| Tailwind | `v4.0.0` |
-| Router | App Router (`src/app/`) |
-
-**Current State**
-
-> ⚠️ This app is a **stub** in active development. Only the base layout (`layout.tsx`) and placeholder homepage (`page.tsx`) exist.
-
-**Planned Features**
-
-- Payslip download / view
-- Leave request and balance tracking
-- Profile and bank detail updates
-- Attendance calendar view
 
 **Dependencies**
 
@@ -355,8 +334,8 @@ Fonts: `Bricolage Grotesque` display, `DM Sans` body, `DM Mono` numbers/monospac
 **Example target areas**
 
 - `landing`: contact/demo form submission, MDX blog rendering, navigation responsive states
-- `admin-portal`: employee CRUD flows, payroll approval workflow
-- `employee-portal`: leave request flow, payslip download
+- `tenant-portal` (`/admin/*`): employee CRUD flows, payroll approval workflow
+- `tenant-portal` (`/my/*`): leave request flow, payslip download
 
 ---
 
@@ -364,12 +343,12 @@ Fonts: `Bricolage Grotesque` display, `DM Sans` body, `DM Mono` numbers/monospac
 
 1. **Tailwind version mismatch**
    - `landing` uses **Tailwind CSS v3** (`tailwind.config.ts` + `@tailwind base/components/utilities`).
-   - `admin-portal` and `employee-portal` use **Tailwind CSS v4** (`@import "tailwindcss"`).
+   - `tenant-portal` uses **Tailwind CSS v4** (`@import "tailwindcss"`).
    - `@andikisha/ui` does not declare a Tailwind peer dependency, so its utility classes may behave differently across apps.
    - **Recommended fix:** Migrate landing to Tailwind v4, or pin all apps to v3 and add a shared Tailwind preset.
 
 2. **Stub portals**
-   - `admin-portal` and `employee-portal` only have `layout.tsx` and `page.tsx`. Development is pending backend API readiness.
+   - `tenant-portal` has full route implementations for all HR and employee self-service workflows.
 
 3. **Landing has `package-lock.json`**
    - Despite pnpm being the declared manager, the landing app contains a `package-lock.json` (npm lockfile). This should be removed to avoid confusion; pnpm's workspace lock is maintained at the monorepo root.
@@ -407,7 +386,7 @@ vercel --prod
 
 ### Portals
 
-`admin-portal` and `employee-portal` are configured with `output: "standalone"` in `next.config.ts`, making them suitable for:
+`tenant-portal` is configured with `output: "standalone"` in `next.config.ts`, making it suitable for:
 
 - **Docker**: build standalone output, copy `.next/standalone` into a minimal Node.js image
 - **Vercel**: deploy as individual Next.js apps

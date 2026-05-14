@@ -20,7 +20,7 @@ interface MobileBottomNavProps {
 function MobileBottomNav({ items }: MobileBottomNavProps) {
   return (
     <nav
-      className="flex-shrink-0 flex items-stretch bg-surface border-t border-[#E5E7EB] lg:hidden"
+      className="flex-shrink-0 flex items-stretch bg-surface border-t border-neutral-200 lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {items.map((item) => {
@@ -31,13 +31,13 @@ function MobileBottomNav({ items }: MobileBottomNavProps) {
             href={item.href}
             className={cn(
               "flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors",
-              item.active ? "text-brand-700" : "text-[#6B7280]"
+              item.active ? "text-brand-700" : "text-neutral-500"
             )}
           >
             <Icon
               size={22}
               strokeWidth={item.active ? 2.25 : 1.75}
-              className={item.active ? "text-brand-700" : "text-[#9CA3AF]"}
+              className={item.active ? "text-brand-700" : "text-neutral-400"}
             />
             {item.label}
           </Link>
@@ -82,15 +82,15 @@ export function EmployeeShell({
     <div className={cn("flex flex-col h-screen overflow-hidden bg-surface lg:flex-row", className)}>
       {/* Desktop left rail — hidden on mobile */}
       {desktopNav && (
-        <aside className="hidden lg:flex flex-col w-[200px] flex-shrink-0 h-full bg-surface border-r border-[#E5E7EB]">
-          <div className="h-[56px] flex items-center px-4 flex-shrink-0 border-b border-[#E5E7EB]">
+        <aside className="hidden lg:flex flex-col w-[200px] flex-shrink-0 h-full bg-surface border-r border-neutral-200">
+          <div className="h-[56px] flex items-center px-4 flex-shrink-0 border-b border-neutral-200">
             <LogoFull className="h-[22px] w-auto" />
           </div>
           <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
             {desktopNav}
           </nav>
           {desktopNavFooter && (
-            <div className="flex-shrink-0 border-t border-[#E5E7EB] px-3 py-3 space-y-0.5">
+            <div className="flex-shrink-0 border-t border-neutral-200 px-3 py-3 space-y-0.5">
               {desktopNavFooter}
             </div>
           )}
@@ -100,7 +100,7 @@ export function EmployeeShell({
       {/* Main column */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-4 bg-surface border-b border-[#E5E7EB] h-12 lg:h-[56px]">
+        <header className="flex-shrink-0 flex items-center justify-between px-4 bg-surface border-b border-neutral-200 h-12 lg:h-[56px]">
           {/* Mobile: logo */}
           <div className="lg:hidden">
             <LogoFull className="h-[20px] w-auto" />

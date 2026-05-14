@@ -1,5 +1,7 @@
 // ── Utilities ──────────────────────────────────────────────────────────────
 export { cn } from "./utils";
+export { formatMoney } from "./lib/formatMoney";
+export { formatDate, formatTime } from "./lib/formatDate";
 
 // ── Brand ──────────────────────────────────────────────────────────────────
 export { LogoFull } from "./components/LogoFull";
@@ -24,6 +26,12 @@ export { MoneyAmount } from "./components/MoneyAmount";
 export { StatCard } from "./components/StatCard";
 export { KpiGroup } from "./components/KpiGroup";
 export { DataTable } from "./components/DataTable";
+export { DonutChart } from "./components/DonutChart";
+export type { DonutSlice } from "./components/DonutChart";
+export { BarChart } from "./components/BarChart";
+export type { BarDatum } from "./components/BarChart";
+export { LineChart } from "./components/LineChart";
+export type { LineDatum } from "./components/LineChart";
 
 // ── Primitives — Form ─────────────────────────────────────────────────────
 export { Input } from "./components/Input";
@@ -60,6 +68,15 @@ export { InlineAlert } from "./components/InlineAlert";
 // ── Role & Permission ──────────────────────────────────────────────────────
 export { useCurrentRole, RoleContext } from "./lib/useCurrentRole";
 export type { UserRole } from "./lib/useCurrentRole";
+export {
+  CurrentUserContext,
+  CurrentUserProvider,
+  useCurrentUser,
+  useHasRole,
+  useHasAnyRole,
+  useIsAuthenticated,
+} from "./lib/useCurrentUser";
+export type { CurrentUser } from "./lib/useCurrentUser";
 export { PermissionGate } from "./components/PermissionGate";
 export { RoleBadge } from "./components/RoleBadge";
 
@@ -67,16 +84,19 @@ export { RoleBadge } from "./components/RoleBadge";
 export { useOnlineStatus } from "./lib/useOnlineStatus";
 export { OfflineBadge } from "./components/OfflineBadge";
 
-// ── Navigation & Shells (Plan B) ──────────────────────────────────────────
+// ── Navigation & Shells ────────────────────────────────────────────────────
 export { TopBar } from "./components/TopBar";
 export { NavRail, NavRailItem, NavRailGroup } from "./components/NavRail";
-export type { BottomNavItem } from "./components/EmployeeShell";
 export { ProfileMenu } from "./components/ProfileMenu";
-export { SuperAdminShell } from "./components/SuperAdminShell";
+export { HorizontalShell } from "./components/HorizontalShell";
+export type { HorizontalNavItem } from "./components/HorizontalShell";
 export { TenantAdminShell } from "./components/TenantAdminShell";
 export { EmployeeShell } from "./components/EmployeeShell";
+export type { BottomNavItem } from "./components/EmployeeShell";
+/** @deprecated Use HorizontalShell for the SUPER_ADMIN surface. */
+export { SuperAdminShell } from "./components/SuperAdminShell";
 
-// ── Legacy — in use by all three portals, replaced in Plan B ───────────────
+// ── Shared infrastructure ──────────────────────────────────────────────────
 export { BaseModal } from "./components/BaseModal";
 export { ToastProvider, useToast } from "./components/Toaster";
 export { PageHeader } from "./components/PageHeader";
