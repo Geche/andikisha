@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Mail } from "lucide-react";
+import { Eye, EyeOff, ExternalLink, Mail } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
+import { findCorrectDashboard } from "@andikisha/ui/auth";
+
+type LoginError =
+  | { kind: "general"; message: string }
+  | { kind: "wrong_portal"; platformPortalUrl?: string };
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,12 +16,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<LoginError | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -24,14 +29,30 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
+      const data = await res.json() as {
+        error?: string;
+        message?: string;
+        platformPortalUrl?: string;
+        user?: { role?: string; roles?: string[] };
+        expiresIn?: number;
+      };
+
       if (!res.ok) {
-        setError(data.message ?? "Invalid credentials. Please try again.");
+        if (data.error === "WRONG_PORTAL") {
+          setError({ kind: "wrong_portal", platformPortalUrl: data.platformPortalUrl });
+          return;
+        }
+        setError({ kind: "general", message: data.message ?? "Invalid credentials. Please try again." });
         return;
       }
-      router.replace("/my/dashboard");
+
+      // Role-aware redirect — never hardcode /my/dashboard.
+      const roles = new Set<string>(
+        data.user?.roles ?? (data.user?.role ? [data.user.role] : [])
+      );
+      router.replace(findCorrectDashboard(roles));
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError({ kind: "general", message: "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }
@@ -123,11 +144,29 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Error */}
-          {error && (
+          {/* Error states */}
+          {error?.kind === "general" && (
             <p className="text-[13px] text-red-600 bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5">
-              {error}
+              {error.message}
             </p>
+          )}
+
+          {error?.kind === "wrong_portal" && (
+            <div className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3.5 py-2.5">
+              <p className="font-medium mb-1">Wrong portal</p>
+              <p className="mb-2">This account uses the Andikisha platform portal.</p>
+              {error.platformPortalUrl ? (
+                <a
+                  href={error.platformPortalUrl}
+                  className="inline-flex items-center gap-1 font-medium text-amber-800 hover:text-amber-900 underline underline-offset-2"
+                >
+                  Open platform portal
+                  <ExternalLink size={12} />
+                </a>
+              ) : (
+                <p className="text-amber-600">Contact your administrator for the platform portal URL.</p>
+              )}
+            </div>
           )}
 
           {/* Submit */}
