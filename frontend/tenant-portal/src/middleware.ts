@@ -15,7 +15,6 @@ function isPublic(pathname: string): boolean {
 function isAsset(pathname: string): boolean {
   return (
     pathname.startsWith("/favicon") ||
-    pathname.startsWith("/public") ||
     pathname.startsWith("/icons") ||
     pathname.startsWith("/images") ||
     pathname.startsWith("/sw-my.js")
@@ -66,12 +65,15 @@ export async function middleware(request: NextRequest) {
         redirectTo,
         roles: [...roleSet],
       });
-      return NextResponse.redirect(new URL(redirectTo));
+      return NextResponse.redirect(new URL(redirectTo, request.url));
     }
 
     // 2. /admin/* with no admin role → correct dashboard
-    if (pathname.startsWith("/admin")) {
-      const hasAdminRole = [...ADMIN_ROLES].some((r) => roleSet.has(r));
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+      let hasAdminRole = false;
+      for (const r of ADMIN_ROLES) {
+        if (roleSet.has(r)) { hasAdminRole = true; break; }
+      }
       if (!hasAdminRole) {
         const redirectTo = findCorrectDashboard(roleSet);
         console.info("[middleware] role-redirect", {
@@ -85,7 +87,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 3. /my/* without EMPLOYEE role → correct dashboard
-    if (pathname.startsWith("/my")) {
+    if (pathname === "/my" || pathname.startsWith("/my/")) {
       if (!roleSet.has("EMPLOYEE")) {
         const redirectTo = findCorrectDashboard(roleSet);
         console.info("[middleware] role-redirect", {
