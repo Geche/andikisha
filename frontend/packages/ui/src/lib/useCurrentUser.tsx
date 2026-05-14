@@ -12,7 +12,7 @@ import type { UserRole } from "./useCurrentRole";
 
 export interface CurrentUser {
   userId: string;
-  tenantId: string;
+  tenantId?: string;
   email: string;
   /**
    * Not yet populated — auth-service does not store user names.

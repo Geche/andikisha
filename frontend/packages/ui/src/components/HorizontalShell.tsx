@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, type ReactNode, type ElementType } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { cn } from "../utils";
 import { LogoFull } from "./LogoFull";
@@ -223,6 +224,7 @@ export function HorizontalShell({
   className,
 }: HorizontalShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <div className={cn("flex flex-col h-screen overflow-hidden bg-neutral-50", className)}>
@@ -257,7 +259,11 @@ export function HorizontalShell({
           {/* Horizontal nav — desktop only */}
           <nav className="hidden lg:flex items-stretch flex-1 gap-0.5">
             {navItems.map((item) => (
-              <TopNavItem key={item.label} item={item} active={false} />
+              <TopNavItem
+                key={item.label}
+                item={item}
+                active={pathname === item.href || pathname.startsWith((item.href ?? "") + "/")}
+              />
             ))}
           </nav>
 
