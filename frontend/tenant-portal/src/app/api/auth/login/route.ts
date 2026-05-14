@@ -22,23 +22,30 @@ function isRateLimited(ip: string): boolean {
 }
 
 /**
- * Base64url-decodes the JWT payload segment and returns the role claim.
+ * Base64url-decodes the JWT payload segment and returns all role claims as a Set.
  * Deliberately does NOT verify the signature — this is only for the SUPER_ADMIN rejection
  * check before the cookie is set. The cookie is never set for SUPER_ADMIN, so there is no
  * security risk in reading the unverified claim here.
  *
- * Returns null if the JWT is malformed, so a corrupted token never produces a false 403.
+ * Handles both B0 (single `role` string) and B1 (`roles` array) claim shapes.
+ * Returns an empty Set if the JWT is malformed — empty set never contains SUPER_ADMIN.
  */
-function extractRoleClaim(token: string): string | null {
+function extractRoles(token: string): Set<string> {
   try {
     const parts = token.split(".");
-    if (parts.length !== 3 || !parts[1]) return null;
+    if (parts.length !== 3 || !parts[1]) return new Set();
     const padded = parts[1] + "=".repeat((4 - (parts[1].length % 4)) % 4);
     const json = Buffer.from(padded.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
     const payload = JSON.parse(json) as Record<string, unknown>;
-    return typeof payload.role === "string" ? payload.role : null;
+    const rawRole = typeof payload.role === "string" ? payload.role : undefined;
+    const rawRoles: string[] = Array.isArray(payload.roles)
+      ? (payload.roles as string[]).filter((r): r is string => typeof r === "string")
+      : rawRole
+      ? [rawRole]
+      : [];
+    return new Set(rawRoles);
   } catch {
-    return null;
+    return new Set();
   }
 }
 
@@ -79,9 +86,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Reject SUPER_ADMIN at this portal — they belong in the platform portal.
-  // extractRoleClaim returns null on parse failure; null !== 'SUPER_ADMIN' so no false rejection.
-  const decodedRole = extractRoleClaim(data.accessToken);
-  if (decodedRole === "SUPER_ADMIN") {
+  // extractRoles returns an empty Set on parse failure, so no false rejection.
+  // B0/B1 bridge: checks both role (string) and roles (array) claims.
+  if (extractRoles(data.accessToken).has("SUPER_ADMIN")) {
     // Cookie is never set. The JWT is never persisted.
     return NextResponse.json(
       {
