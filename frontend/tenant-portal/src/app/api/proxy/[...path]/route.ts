@@ -5,6 +5,8 @@ const GATEWAY = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
 
 const ALLOWED_PATH_PREFIXES = [
   "/api/v1/employees",
+  "/api/v1/departments",
+  "/api/v1/positions",
   "/api/v1/payroll",
   "/api/v1/leave",
   "/api/v1/time-attendance",

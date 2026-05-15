@@ -10,34 +10,43 @@ import type { AxiosError } from "axios";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type EmploymentType = "PERMANENT" | "CONTRACT" | "CASUAL" | "INTERN";
-type EmployeeStatus = "ACTIVE" | "TERMINATED" | "ON_LEAVE" | "PROBATION";
+// Matches EmploymentStatus enum in employee-service
+type EmployeeStatus = "ACTIVE" | "TERMINATED" | "ON_LEAVE" | "ON_PROBATION";
 
+// Matches EmployeeDetailResponse record in employee-service
 interface EmployeeDetail {
   id: string;
   tenantId: string;
   employeeNumber: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   phoneNumber: string;
   nationalId: string;
   kraPin: string;
-  department: string | null;
-  jobTitle: string | null;
-  employmentType: EmploymentType;
-  status: EmployeeStatus;
-  hireDate: string;
-  createdAt: string;
-  basicSalary: number;
-  currency: string;
-  bankName: string | null;
-  bankAccount: string | null;
-  mpesaNumber: string | null;
+  nhifNumber: string | null;
   nssfNumber: string | null;
-  shifNumber: string | null;
-  terminatedAt: string | null;
-  terminationReason: string | null;
+  dateOfBirth: string | null;
+  gender: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
+  positionId: string | null;
+  positionTitle: string | null;
+  employmentType: string;
+  status: EmployeeStatus;
+  basicSalary: number;
+  housingAllowance: number;
+  transportAllowance: number;
+  medicalAllowance: number;
+  otherAllowances: number;
+  grossPay: number;
+  currency: string;
+  hireDate: string | null;
+  probationEndDate: string | null;
+  terminationDate: string | null;
+  bankName: string | null;
+  bankAccountNumber: string | null;
+  createdAt: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -63,23 +72,19 @@ function formatDate(dateStr: string | null): string {
 
 function statusBadgeClass(status: EmployeeStatus): string {
   switch (status) {
-    case "ACTIVE":
-      return "bg-[#D1F5E6] text-[#0F5040]";
-    case "TERMINATED":
-      return "bg-gray-100 text-gray-500";
-    case "ON_LEAVE":
-      return "bg-[#FEF3DC] text-[#92600A]";
-    case "PROBATION":
-      return "bg-blue-50 text-blue-700";
+    case "ACTIVE":       return "bg-[#D1F5E6] text-[#0F5040]";
+    case "TERMINATED":   return "bg-gray-100 text-gray-500";
+    case "ON_LEAVE":     return "bg-[#FEF3DC] text-[#92600A]";
+    case "ON_PROBATION": return "bg-blue-50 text-blue-700";
   }
 }
 
 function statusLabel(status: EmployeeStatus): string {
   switch (status) {
-    case "ON_LEAVE":
-      return "On Leave";
-    default:
-      return status.charAt(0) + status.slice(1).toLowerCase();
+    case "ON_PROBATION": return "Probation";
+    case "ON_LEAVE":     return "On Leave";
+    case "TERMINATED":   return "Terminated";
+    case "ACTIVE":       return "Active";
   }
 }
 
@@ -287,7 +292,7 @@ export default function EmployeeDetailPage({
   const fullName = employee ? `${employee.firstName} ${employee.lastName}` : "Employee";
   const subtitle =
     employee
-      ? `Employee #${employee.employeeNumber}${employee.jobTitle ? ` · ${employee.jobTitle}` : ""}`
+      ? `Employee #${employee.employeeNumber}${employee.positionTitle ? ` · ${employee.positionTitle}` : ""}`
       : undefined;
 
   return (
@@ -322,14 +327,9 @@ export default function EmployeeDetailPage({
             <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold">This employee has been terminated.</p>
-              {employee.terminatedAt && (
+              {employee.terminationDate && (
                 <p className="mt-0.5 text-red-600">
-                  Date: {formatDate(employee.terminatedAt)}
-                </p>
-              )}
-              {employee.terminationReason && (
-                <p className="mt-0.5 text-red-600">
-                  Reason: {employee.terminationReason}
+                  Date: {formatDate(employee.terminationDate)}
                 </p>
               )}
             </div>
@@ -365,8 +365,8 @@ export default function EmployeeDetailPage({
 
             {/* Employment */}
             <InfoCard title="Employment">
-              <InfoRow label="Department" value={employee.department ?? "—"} />
-              <InfoRow label="Job Title" value={employee.jobTitle ?? "—"} />
+              <InfoRow label="Department" value={employee.departmentName ?? "—"} />
+              <InfoRow label="Position" value={employee.positionTitle ?? "—"} />
               <InfoRow
                 label="Type"
                 value={
@@ -402,14 +402,14 @@ export default function EmployeeDetailPage({
             {/* Payment Method */}
             <InfoCard title="Payment Method">
               <InfoRow label="Bank Name" value={employee.bankName ?? "—"} />
-              <InfoRow label="Bank Account" value={employee.bankAccount ?? "—"} />
-              <InfoRow label="M-Pesa Number" value={employee.mpesaNumber ?? "—"} />
+              <InfoRow label="Bank Account" value={employee.bankAccountNumber ?? "—"} />
+              <InfoRow label="M-Pesa" value={employee.phoneNumber} />
             </InfoCard>
 
             {/* Statutory Numbers */}
             <InfoCard title="Statutory Numbers">
               <InfoRow label="NSSF Number" value={employee.nssfNumber ?? "—"} />
-              <InfoRow label="SHIF Number" value={employee.shifNumber ?? "—"} />
+              <InfoRow label="NHIF / SHIF Number" value={employee.nhifNumber ?? "—"} />
             </InfoCard>
           </div>
         ) : null}

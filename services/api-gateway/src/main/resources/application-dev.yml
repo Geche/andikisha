@@ -4,6 +4,10 @@ spring:
       host: localhost
       port: 6379
       password: changeme
+
+# Dev JWT secret — valid base64url, 64 bytes. Never use outside local development.
+# Spring resolves ${JWT_SECRET} in application.yml from this property when running locally.
+JWT_SECRET: "LFQeKe5sNUFz_GBnTZqscfbO9ci1htVvuJpx_gX6mNJN7THtgO1eWANulE3ILAcP"
   rabbitmq:
     username: andikisha
     password: changeme

@@ -69,7 +69,7 @@ spring:
         - id: employee-service
           uri: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
           predicates:
-            - Path=/api/v1/employees/**, /api/v1/departments/**
+            - Path=/api/v1/employees/**, /api/v1/departments/**, /api/v1/positions/**
           filters:
             - TenantLicenceFilter
             - name: CircuitBreaker

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { PageHeader, useToast } from "@andikisha/ui";
+import { PageHeader, InlineAlert, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 
@@ -13,56 +13,88 @@ import type { AxiosError } from "axios";
 
 type EmploymentType = "PERMANENT" | "CONTRACT" | "CASUAL" | "INTERN";
 
+interface DepartmentOption { id: string; name: string }
+interface PositionOption  { id: string; title: string }
+
 interface CreateEmployeeRequest {
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string;
   phoneNumber: string;
   nationalId: string;
   kraPin: string;
-  department?: string;
-  jobTitle?: string;
+  nhifNumber: string;
+  nssfNumber: string;
   employmentType: EmploymentType;
-  hireDate: string;
+  hireDate?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  departmentId?: string;
+  positionId?: string;
   basicSalary: number;
+  housingAllowance?: number;
+  transportAllowance?: number;
+  medicalAllowance?: number;
   currency: string;
-  bankName?: string;
-  bankAccount?: string;
-  mpesaNumber?: string;
-  nssfNumber?: string;
-  shifNumber?: string;
 }
 
-interface CreatedEmployee {
-  id: string;
+interface CreatedEmployee { id: string }
+
+// ─── Validation patterns (mirrors backend @Pattern annotations) ───────────────
+
+const PHONE_RE   = /^(\+254|0)7\d{8}$/;
+const NATIONAL_RE = /^\d{6,10}$/;
+const KRA_RE      = /^[A-Z]\d{9}[A-Z]$/;
+
+function validateFields(f: ReturnType<typeof buildFieldMap>): Record<string, string> {
+  const errs: Record<string, string> = {};
+  if (!f.firstName.trim())   errs.firstName   = "First name is required";
+  if (!f.lastName.trim())    errs.lastName    = "Last name is required";
+  if (!PHONE_RE.test(f.phoneNumber.trim()))
+    errs.phoneNumber = "Must be a valid Kenyan phone (+254XXXXXXXXX or 07XXXXXXXX)";
+  if (!NATIONAL_RE.test(f.nationalId.trim()))
+    errs.nationalId  = "Must be 6 – 10 digits";
+  if (!KRA_RE.test(f.kraPin.trim().toUpperCase()))
+    errs.kraPin      = "Format: one uppercase letter, 9 digits, one uppercase letter (e.g. A123456789X)";
+  if (!f.nhifNumber.trim())  errs.nhifNumber  = "NHIF/SHIF number is required";
+  if (!f.nssfNumber.trim())  errs.nssfNumber  = "NSSF number is required";
+  if (!f.basicSalary || parseFloat(f.basicSalary) <= 0)
+    errs.basicSalary = "Basic salary must be a positive number";
+  return errs;
 }
+
+function buildFieldMap(state: FieldState) { return state; }
 
 // ─── Field component ─────────────────────────────────────────────────────────
 
 function Field({
-  label,
-  required,
-  children,
+  label, required, error, hint, children,
 }: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
+  label: string; required?: boolean; error?: string; hint?: string; children: React.ReactNode;
 }) {
   return (
     <div>
       <label className="block text-[12px] font-semibold text-gray-600 mb-1.5">
-        {label}{" "}
-        {required && <span className="text-red-500">*</span>}
+        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
+      {hint && !error && <p className="text-[11.5px] text-gray-400 mt-1">{hint}</p>}
+      {error && <p className="text-[11.5px] text-red-600 mt-1">{error}</p>}
     </div>
   );
 }
 
 const inputCls =
-  "w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-[#02110C] focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-gray-300";
+  "w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-[#02110C] " +
+  "focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] " +
+  "placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400";
 
-// ─── Section header ──────────────────────────────────────────────────────────
+const errInputCls =
+  "w-full border border-red-300 rounded-lg px-3 py-2 text-[13.5px] text-[#02110C] " +
+  "focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 " +
+  "placeholder:text-gray-300 disabled:bg-gray-50";
+
+function inputClass(error?: string) { return error ? errInputCls : inputCls; }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -72,6 +104,26 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ─── Field state ─────────────────────────────────────────────────────────────
+
+interface FieldState {
+  firstName: string; lastName: string; email: string;
+  phoneNumber: string; nationalId: string;
+  kraPin: string; nhifNumber: string; nssfNumber: string;
+  employmentType: EmploymentType; hireDate: string; dateOfBirth: string; gender: string;
+  departmentId: string; positionId: string;
+  basicSalary: string; housingAllowance: string; transportAllowance: string; medicalAllowance: string;
+}
+
+const EMPTY: FieldState = {
+  firstName: "", lastName: "", email: "",
+  phoneNumber: "", nationalId: "",
+  kraPin: "", nhifNumber: "", nssfNumber: "",
+  employmentType: "PERMANENT", hireDate: "", dateOfBirth: "", gender: "",
+  departmentId: "", positionId: "",
+  basicSalary: "", housingAllowance: "", transportAllowance: "", medicalAllowance: "",
+};
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function NewEmployeePage() {
@@ -79,24 +131,28 @@ export default function NewEmployeePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  // ── Form state ──
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [nationalId, setNationalId] = useState("");
-  const [kraPin, setKraPin] = useState("");
-  const [department, setDepartment] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [employmentType, setEmploymentType] = useState<EmploymentType>("PERMANENT");
-  const [hireDate, setHireDate] = useState("");
-  const [basicSalary, setBasicSalary] = useState("");
-  const [bankName, setBankName] = useState("");
-  const [bankAccount, setBankAccount] = useState("");
-  const [mpesaNumber, setMpesaNumber] = useState("");
-  const [nssfNumber, setNssfNumber] = useState("");
-  const [shifNumber, setShifNumber] = useState("");
-  const [paymentError, setPaymentError] = useState("");
+  const [f, setF] = useState<FieldState>(EMPTY);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+
+  function set(key: keyof FieldState, val: string) {
+    setF((prev) => ({ ...prev, [key]: val }));
+    if (submitted && errors[key]) {
+      setErrors((prev) => { const next = { ...prev }; delete next[key]; return next; });
+    }
+  }
+
+  const { data: departments = [] } = useQuery<DepartmentOption[]>({
+    queryKey: ["departments"],
+    queryFn: () => apiClient.get("/api/v1/departments").then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  const { data: positions = [] } = useQuery<PositionOption[]>({
+    queryKey: ["positions"],
+    queryFn: () => apiClient.get("/api/v1/positions").then((r) => r.data),
+    staleTime: 60_000,
+  });
 
   const mutation = useMutation<CreatedEmployee, AxiosError<{ message?: string }>, CreateEmployeeRequest>({
     mutationFn: (body) =>
@@ -104,44 +160,49 @@ export default function NewEmployeePage() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["employees"] });
       toast("Employee added successfully", "success");
-      router.push(`/employees/${data.id}`);
+      router.push(`/admin/employees/${data.id}`);
     },
     onError: (err) => {
-      const msg =
-        err.response?.data?.message ?? "Failed to add employee. Please try again.";
+      const msg = err.response?.data?.message ?? "Failed to add employee. Please try again.";
       toast(msg, "error");
     },
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setPaymentError("");
+    setSubmitted(true);
 
-    // Client-side: require at least one payment method
-    if (!bankAccount.trim() && !mpesaNumber.trim()) {
-      setPaymentError("Provide at least one payment method: bank account or M-Pesa number.");
+    const errs = validateFields(buildFieldMap(f));
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      const firstErrKey = Object.keys(errs)[0];
+      const el = document.getElementById(firstErrKey);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     const body: CreateEmployeeRequest = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim(),
-      phoneNumber: phoneNumber.trim(),
-      nationalId: nationalId.trim(),
-      kraPin: kraPin.trim(),
-      employmentType,
-      hireDate,
-      basicSalary: parseFloat(basicSalary),
-      currency: "KES",
+      firstName:      f.firstName.trim(),
+      lastName:       f.lastName.trim(),
+      phoneNumber:    f.phoneNumber.trim(),
+      nationalId:     f.nationalId.trim(),
+      kraPin:         f.kraPin.trim().toUpperCase(),
+      nhifNumber:     f.nhifNumber.trim(),
+      nssfNumber:     f.nssfNumber.trim(),
+      employmentType: f.employmentType,
+      basicSalary:    parseFloat(f.basicSalary),
+      currency:       "KES",
     };
-    if (department.trim()) body.department = department.trim();
-    if (jobTitle.trim()) body.jobTitle = jobTitle.trim();
-    if (bankName.trim()) body.bankName = bankName.trim();
-    if (bankAccount.trim()) body.bankAccount = bankAccount.trim();
-    if (mpesaNumber.trim()) body.mpesaNumber = mpesaNumber.trim();
-    if (nssfNumber.trim()) body.nssfNumber = nssfNumber.trim();
-    if (shifNumber.trim()) body.shifNumber = shifNumber.trim();
+
+    if (f.email.trim())            body.email          = f.email.trim();
+    if (f.hireDate)                body.hireDate       = f.hireDate;
+    if (f.dateOfBirth)             body.dateOfBirth    = f.dateOfBirth;
+    if (f.gender)                  body.gender         = f.gender;
+    if (f.departmentId)            body.departmentId   = f.departmentId;
+    if (f.positionId)              body.positionId     = f.positionId;
+    if (f.housingAllowance.trim()) body.housingAllowance   = parseFloat(f.housingAllowance);
+    if (f.transportAllowance.trim()) body.transportAllowance = parseFloat(f.transportAllowance);
+    if (f.medicalAllowance.trim()) body.medicalAllowance   = parseFloat(f.medicalAllowance);
 
     mutation.mutate(body);
   }
@@ -167,226 +228,162 @@ export default function NewEmployeePage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col gap-8 max-w-3xl">
 
-            {/* Personal Information */}
+            {/* ── Personal Information ── */}
             <div>
               <SectionHeader>Personal Information</SectionHeader>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="First Name" required>
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="Jane"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="First Name" required error={errors.firstName}>
+                  <input id="firstName" className={inputClass(errors.firstName)} type="text"
+                    placeholder="Jane" value={f.firstName} disabled={isPending}
+                    onChange={(e) => set("firstName", e.target.value)} />
                 </Field>
-                <Field label="Last Name" required>
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="Mwangi"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="Last Name" required error={errors.lastName}>
+                  <input id="lastName" className={inputClass(errors.lastName)} type="text"
+                    placeholder="Mwangi" value={f.lastName} disabled={isPending}
+                    onChange={(e) => set("lastName", e.target.value)} />
                 </Field>
-                <Field label="Email Address" required>
-                  <input
-                    className={inputCls}
-                    type="email"
-                    placeholder="jane.mwangi@company.co.ke"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="Email Address" error={errors.email}
+                  hint="Optional — used for payslip email delivery if provided">
+                  <input id="email" className={inputClass(errors.email)} type="email"
+                    placeholder="jane.mwangi@company.co.ke" value={f.email} disabled={isPending}
+                    onChange={(e) => set("email", e.target.value)} />
                 </Field>
-                <Field label="Phone Number" required>
-                  <input
-                    className={inputCls}
-                    type="tel"
-                    placeholder="+254 700 000 000"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="Phone Number" required error={errors.phoneNumber}
+                  hint="+254XXXXXXXXX or 07XXXXXXXX">
+                  <input id="phoneNumber" className={inputClass(errors.phoneNumber)} type="tel"
+                    placeholder="0712 345 678" value={f.phoneNumber} disabled={isPending}
+                    onChange={(e) => set("phoneNumber", e.target.value)} />
                 </Field>
-                <Field label="National ID" required>
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="12345678"
-                    value={nationalId}
-                    onChange={(e) => setNationalId(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="National ID" required error={errors.nationalId}
+                  hint="6 – 10 digits">
+                  <input id="nationalId" className={inputClass(errors.nationalId)} type="text"
+                    placeholder="12345678" value={f.nationalId} disabled={isPending}
+                    onChange={(e) => set("nationalId", e.target.value)} />
                 </Field>
-                <Field label="KRA PIN" required>
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="A000000000Z"
-                    value={kraPin}
-                    onChange={(e) => setKraPin(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="Date of Birth">
+                  <input id="dateOfBirth" className={inputCls} type="date"
+                    value={f.dateOfBirth} disabled={isPending}
+                    onChange={(e) => set("dateOfBirth", e.target.value)} />
+                </Field>
+                <Field label="Gender">
+                  <select id="gender" className={inputCls} value={f.gender} disabled={isPending}
+                    onChange={(e) => set("gender", e.target.value)}>
+                    <option value="">— select —</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                    <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                  </select>
                 </Field>
               </div>
             </div>
 
-            {/* Employment */}
+            {/* ── Statutory IDs ── */}
+            <div>
+              <SectionHeader>Statutory Identifiers</SectionHeader>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="KRA PIN" required error={errors.kraPin}
+                  hint="Format: letter + 9 digits + letter  (e.g. A123456789X)">
+                  <input id="kraPin" className={inputClass(errors.kraPin)} type="text"
+                    placeholder="A123456789X" value={f.kraPin} disabled={isPending}
+                    onChange={(e) => set("kraPin", e.target.value.toUpperCase())} />
+                </Field>
+                <Field label="NHIF / SHIF Number" required error={errors.nhifNumber}>
+                  <input id="nhifNumber" className={inputClass(errors.nhifNumber)} type="text"
+                    placeholder="1234567" value={f.nhifNumber} disabled={isPending}
+                    onChange={(e) => set("nhifNumber", e.target.value)} />
+                </Field>
+                <Field label="NSSF Number" required error={errors.nssfNumber}>
+                  <input id="nssfNumber" className={inputClass(errors.nssfNumber)} type="text"
+                    placeholder="1234567" value={f.nssfNumber} disabled={isPending}
+                    onChange={(e) => set("nssfNumber", e.target.value)} />
+                </Field>
+              </div>
+            </div>
+
+            {/* ── Employment ── */}
             <div>
               <SectionHeader>Employment</SectionHeader>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Department">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="Engineering"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    disabled={isPending}
-                  />
+                  <select id="departmentId" className={inputCls} value={f.departmentId}
+                    disabled={isPending} onChange={(e) => set("departmentId", e.target.value)}>
+                    <option value="">— none —</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
                 </Field>
-                <Field label="Job Title">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="Software Engineer"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    disabled={isPending}
-                  />
+                <Field label="Position" hint="Can be assigned after creation if not listed">
+                  <select id="positionId" className={inputCls} value={f.positionId}
+                    disabled={isPending} onChange={(e) => set("positionId", e.target.value)}>
+                    <option value="">— none —</option>
+                    {positions.map((p) => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
                 </Field>
                 <Field label="Employment Type" required>
-                  <select
-                    className={inputCls}
-                    value={employmentType}
-                    onChange={(e) => setEmploymentType(e.target.value as EmploymentType)}
-                    required
-                    disabled={isPending}
-                  >
+                  <select id="employmentType" className={inputCls} value={f.employmentType}
+                    required disabled={isPending}
+                    onChange={(e) => set("employmentType", e.target.value as EmploymentType)}>
                     <option value="PERMANENT">Permanent</option>
                     <option value="CONTRACT">Contract</option>
                     <option value="CASUAL">Casual</option>
                     <option value="INTERN">Intern</option>
                   </select>
                 </Field>
-                <Field label="Hire Date" required>
-                  <input
-                    className={inputCls}
-                    type="date"
-                    value={hireDate}
-                    onChange={(e) => setHireDate(e.target.value)}
-                    required
-                    disabled={isPending}
-                  />
+                <Field label="Hire Date">
+                  <input id="hireDate" className={inputCls} type="date"
+                    value={f.hireDate} disabled={isPending}
+                    onChange={(e) => set("hireDate", e.target.value)} />
                 </Field>
               </div>
             </div>
 
-            {/* Compensation */}
+            {/* ── Compensation ── */}
             <div>
               <SectionHeader>Compensation</SectionHeader>
+              <InlineAlert variant="warning" className="mb-4">
+                Allowances directly affect PAYE, SHIF, and Housing Levy calculations. Entering zero
+                where allowances exist will produce incorrect payroll and incorrect statutory filings
+                with KRA. Casual workers typically have zero allowances; salaried employees usually
+                have at least housing or transport.
+              </InlineAlert>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Basic Salary (KES)" required>
-                  <input
-                    className={inputCls}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="50000"
-                    value={basicSalary}
-                    onChange={(e) => setBasicSalary(e.target.value)}
-                    required
+                <Field label="Basic Salary (KES)" required error={errors.basicSalary}>
+                  <input id="basicSalary" className={inputClass(errors.basicSalary)} type="number"
+                    min="0" step="0.01" placeholder="50000" value={f.basicSalary}
                     disabled={isPending}
-                  />
+                    onChange={(e) => set("basicSalary", e.target.value)} />
                 </Field>
                 <Field label="Currency">
-                  <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-gray-400 bg-gray-50 select-none">
+                  <div className={inputCls + " bg-gray-50 text-gray-400 select-none"}>
                     KES — Kenyan Shilling
                   </div>
                 </Field>
-              </div>
-            </div>
-
-            {/* Payment Method */}
-            <div>
-              <SectionHeader>Payment Method</SectionHeader>
-              <p className="text-[12px] text-gray-400 mb-4 -mt-2">
-                At least one of bank account or M-Pesa number is required.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Bank Name">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="Equity Bank"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
+                <Field label="Housing Allowance (KES)" hint="Leave blank if not applicable">
+                  <input id="housingAllowance" className={inputCls} type="number"
+                    min="0" step="0.01" placeholder="0" value={f.housingAllowance}
                     disabled={isPending}
-                  />
+                    onChange={(e) => set("housingAllowance", e.target.value)} />
                 </Field>
-                <Field label="Bank Account Number">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="0123456789"
-                    value={bankAccount}
-                    onChange={(e) => setBankAccount(e.target.value)}
+                <Field label="Transport Allowance (KES)" hint="Leave blank if not applicable">
+                  <input id="transportAllowance" className={inputCls} type="number"
+                    min="0" step="0.01" placeholder="0" value={f.transportAllowance}
                     disabled={isPending}
-                  />
+                    onChange={(e) => set("transportAllowance", e.target.value)} />
                 </Field>
-                <Field label="M-Pesa Number">
-                  <input
-                    className={inputCls}
-                    type="tel"
-                    placeholder="+254 700 000 000"
-                    value={mpesaNumber}
-                    onChange={(e) => setMpesaNumber(e.target.value)}
+                <Field label="Medical Allowance (KES)" hint="Leave blank if not applicable">
+                  <input id="medicalAllowance" className={inputCls} type="number"
+                    min="0" step="0.01" placeholder="0" value={f.medicalAllowance}
                     disabled={isPending}
-                  />
-                </Field>
-              </div>
-              {paymentError && (
-                <p className="mt-2 text-[12px] text-red-600">{paymentError}</p>
-              )}
-            </div>
-
-            {/* Statutory Numbers */}
-            <div>
-              <SectionHeader>Statutory Numbers</SectionHeader>
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="NSSF Number">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="0000000"
-                    value={nssfNumber}
-                    onChange={(e) => setNssfNumber(e.target.value)}
-                    disabled={isPending}
-                  />
-                </Field>
-                <Field label="SHIF Number">
-                  <input
-                    className={inputCls}
-                    type="text"
-                    placeholder="0000000"
-                    value={shifNumber}
-                    onChange={(e) => setShifNumber(e.target.value)}
-                    disabled={isPending}
-                  />
+                    onChange={(e) => set("medicalAllowance", e.target.value)} />
                 </Field>
               </div>
             </div>
 
-            {/* Submit */}
+            {/* ── Submit ── */}
             <button
               type="submit"
               disabled={isPending}
