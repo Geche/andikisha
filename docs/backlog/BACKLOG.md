@@ -4,6 +4,24 @@ Items that were deferred during development with clear rationale. Ordered roughl
 
 ---
 
+## Product
+
+### PRODUCT-BACKLOG-001 — Bank EFT prominence in payroll disbursement UX
+
+**Raised:** 2026-05-15  
+**Context:** The create form removes the bank account fields (correct — not in `CreateEmployeeRequest`). Bank details are edit-only via `UpdateEmployeeRequest`. M-Pesa (via phone number) is the implicit default disbursement channel.
+
+**Question for product:** Do a meaningful proportion of Kenyan SMEs — particularly those in formal sectors (manufacturing, construction, professional services) — use bank EFT as their *primary* payroll disbursement method rather than M-Pesa? If yes, the edit-form bank capture flow needs to be surfaced more prominently than a buried optional field, and the payroll disbursement UI should make the channel selection explicit rather than defaulting silently to M-Pesa.
+
+**Options to evaluate:**
+1. Bank account is a recommended (not optional) step during onboarding, surfaced as a wizard step after employee creation
+2. First payroll run for an employee without a bank account prompts: "This employee has no bank account. Payroll will be disbursed via M-Pesa to {phoneNumber}. Is that correct?"
+3. No change — M-Pesa default is correct for the SME target market
+
+**Not blocking current work.** Decide before building the payroll disbursement UI.
+
+---
+
 ## Security
 
 ### SEC-BACKLOG-001 — Audit @PreAuthorize SpEL expressions across all services for User-vs-Employee UUID mismatches
