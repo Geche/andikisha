@@ -1,0 +1,90 @@
+# AndikishaHR Engineering Backlog
+
+Items that were deferred during development with clear rationale. Ordered roughly by priority within each section.
+
+---
+
+## Security
+
+### SEC-BACKLOG-001 — Audit @PreAuthorize SpEL expressions across all services for User-vs-Employee UUID mismatches
+
+**Found:** 2026-05-15 during dashboard data-loading investigation  
+**Milestone:** B1 (multi-role JWT + UserContext)
+
+**Problem:**  
+`TrustedHeaderAuthFilter` sets `authentication.name` to the User entity UUID (from `X-User-ID` header). Several `@PreAuthorize` SpEL expressions check employee ownership by comparing the `{employeeId}` path variable against `authentication.name`, expecting them to be equal. They are not — User UUID and Employee UUID are different entities.
+
+**Known instances:**
+
+| Service | Endpoint | Expression | Status |
+|---|---|---|---|
+| `leave-service` | `GET /api/v1/leave/employees/{employeeId}/requests` | `#employeeId.equals(authentication.name)` | Fixed (workaround: added EMPLOYEE to hasAnyRole) |
+| `leave-service` | `GET /api/v1/leave/employees/{employeeId}/balances` | `#employeeId.equals(authentication.name)` | Not yet fixed |
+| `payroll-service` | `GET /api/v1/payroll/employees/{employeeId}/payslips` (service layer) | `authentication.getName()` compared to employeeId | Fixed (credentials field in auth token) |
+| `payroll-service` | `GET /api/v1/payroll/payslips/{id}` (service layer) | `authentication.getName()` compared to employeeId | Fixed (same credentials fix) |
+
+**All other services** with employee-scoped endpoints should be audited: `time-attendance-service`, `document-service`, `compliance-service`.
+
+**Correct fix:**  
+Either:  
+(a) `TrustedHeaderAuthFilter` stores `X-Employee-ID` in `authentication.credentials` consistently across all services (done for payroll-service), and all ownership checks use credentials; or  
+(b) A proper B1 UserContext is introduced that carries `(userId, employeeId, tenantId, roles)` — the right long-term solution.
+
+**Why deferred:**  
+The piecemeal fix pattern (service-by-service) creates inconsistency. B1 should introduce a shared `TrustedHeaderAuthFilter` in `andikisha-common` with a proper `GatewayAuthentication` token type that carries both userId and employeeId. Then all services share the fix.
+
+---
+
+## API Design
+
+### API-BACKLOG-001 — Add `/me` convenience endpoints for all employee-scoped resources
+
+**Found:** 2026-05-15 during employee dashboard data-loading investigation  
+**Milestone:** B2 or dedicated API consistency pass
+
+**Problem:**  
+Employee-facing endpoints currently require `{employeeId}` as a path parameter. This forces the frontend to:
+1. Know the employeeId before the query fires (`enabled: !!employeeId`)
+2. Use a different URL pattern than admin-facing queries
+
+The pattern needs to be applied consistently across every employee-scoped resource before any one service adopts it:
+- `GET /api/v1/payroll/me/payslips`
+- `GET /api/v1/leave/me/requests`
+- `GET /api/v1/leave/me/balances`
+- `GET /api/v1/time-attendance/me/records`
+- `GET /api/v1/documents/me`
+- `GET /api/v1/employees/me` (already exists ✅)
+
+**Why deferred:**  
+Piecemeal adoption creates API drift. Save for a dedicated backend API consistency pass that touches all services at once.
+
+---
+
+## Auth / Identity
+
+### AUTH-BACKLOG-001 — ADMIN-as-employee: no automatic employee record for tenant admins
+
+**Found:** 2026-05-15 during ADMIN-as-employee investigation  
+**Affects:** B1 sequencing for EMPLOYEE baseline role
+
+**Finding:**  
+The tenant provisioning flow (`SuperAdminTenantService.createTenantWithLicence`) creates:
+1. Tenant aggregate
+2. Licence record
+3. Admin user in auth-service (role = ADMIN)
+
+**No employee record is created for the admin.**
+
+`admin@demo.co.ke` has zero rows in the employee-service DB.
+
+**Is this intentional?**  
+Partially. The initial design treats the tenant ADMIN as a system administrator, not necessarily a payroll employee. In a large company, the HR admin may not be on the payroll at all. In a small SME (the core target market), the founder is often both the business owner and an employee.
+
+**Impact on B1:**  
+When B1 introduces the EMPLOYEE baseline role (every user who is on payroll gets EMPLOYEE in addition to their primary role), the provisioning flow will need a flag: `isAlsoEmployee: boolean`. If true, an employee record is created alongside the admin user, and the admin's `employee_id` is linked in auth-service.
+
+Until then, an admin who needs payslips must have their employee record created manually via the employee creation flow and linked via a future "link employee to user" endpoint.
+
+**Action for B1:**  
+- Add `isAlsoEmployee` field to `CreateTenantWithLicenceRequest`
+- If true, provisioning creates an employee record via employee-service gRPC and links it to the admin user

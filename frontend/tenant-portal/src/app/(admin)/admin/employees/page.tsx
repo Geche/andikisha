@@ -1,33 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { AlertTriangle, Search } from "lucide-react";
+import { AlertTriangle, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type EmploymentType = "PERMANENT" | "CONTRACT" | "CASUAL" | "INTERN";
-type EmployeeStatus = "ACTIVE" | "TERMINATED" | "ON_LEAVE" | "PROBATION";
+// Matches EmploymentStatus enum in employee-service
+type EmployeeStatus = "ACTIVE" | "ON_PROBATION" | "ON_LEAVE" | "TERMINATED";
 
+// Matches EmployeeSummaryResponse record in employee-service
 interface EmployeeSummary {
   id: string;
-  tenantId: string;
   employeeNumber: string;
   firstName: string;
   lastName: string;
-  email: string;
   phoneNumber: string;
-  nationalId: string;
-  kraPin: string;
-  department: string | null;
-  jobTitle: string | null;
-  employmentType: EmploymentType;
+  departmentName: string | null;
+  positionTitle: string | null;
   status: EmployeeStatus;
   hireDate: string;
-  createdAt: string;
 }
 
 interface PagedResponse<T> {
@@ -38,46 +33,91 @@ interface PagedResponse<T> {
   size: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 type StatusFilter = "ALL" | EmployeeStatus;
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
   { label: "All", value: "ALL" },
   { label: "Active", value: "ACTIVE" },
-  { label: "Terminated", value: "TERMINATED" },
+  { label: "Probation", value: "ON_PROBATION" },
   { label: "On Leave", value: "ON_LEAVE" },
-  { label: "Probation", value: "PROBATION" },
+  { label: "Terminated", value: "TERMINATED" },
 ];
+
+type SortField = "firstName" | "employeeNumber" | "departmentName" | "positionTitle" | "status" | "hireDate";
+type SortDir = "asc" | "desc";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function statusBadgeClass(status: EmployeeStatus): string {
   switch (status) {
     case "ACTIVE":
       return "bg-[#D1F5E6] text-[#0F5040]";
-    case "TERMINATED":
-      return "bg-gray-100 text-gray-500";
+    case "ON_PROBATION":
+      return "bg-blue-50 text-blue-700";
     case "ON_LEAVE":
       return "bg-[#FEF3DC] text-[#92600A]";
-    case "PROBATION":
-      return "bg-blue-50 text-blue-700";
+    case "TERMINATED":
+      return "bg-gray-100 text-gray-500";
   }
 }
 
 function statusLabel(status: EmployeeStatus): string {
   switch (status) {
-    case "ON_LEAVE":
-      return "On Leave";
-    default:
-      return status.charAt(0) + status.slice(1).toLowerCase();
+    case "ON_PROBATION": return "Probation";
+    case "ON_LEAVE":     return "On Leave";
+    case "TERMINATED":   return "Terminated";
+    case "ACTIVE":       return "Active";
   }
 }
 
+// Parse "YYYY-MM-DD" safely without UTC ambiguity
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-GB", {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+}
+
+// ─── Sortable column header ───────────────────────────────────────────────────
+
+function SortHeader({
+  label,
+  field,
+  current,
+  dir,
+  onSort,
+}: {
+  label: string;
+  field: SortField;
+  current: SortField;
+  dir: SortDir;
+  onSort: (f: SortField) => void;
+}) {
+  const active = current === field;
+  return (
+    <th
+      className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-800 transition-colors whitespace-nowrap"
+      onClick={() => onSort(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {active ? (
+          dir === "asc" ? (
+            <ChevronUp size={12} className="text-[#0B3D2E]" />
+          ) : (
+            <ChevronDown size={12} className="text-[#0B3D2E]" />
+          )
+        ) : (
+          <ChevronsUpDown size={12} className="text-gray-300" />
+        )}
+      </span>
+    </th>
+  );
 }
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
@@ -99,7 +139,6 @@ function TableSkeleton() {
           <div className="h-3 bg-gray-100 rounded w-24" />
           <div className="h-3 bg-gray-100 rounded w-24" />
           <div className="h-5 bg-gray-100 rounded-full w-20" />
-          <div className="h-5 bg-gray-100 rounded-full w-16" />
           <div className="h-3 bg-gray-100 rounded w-20" />
           <div className="h-3 bg-gray-100 rounded w-12" />
         </div>
@@ -115,24 +154,39 @@ export default function EmployeesPage() {
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("hireDate");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Simple debounce via timeout ref
   function handleSearchChange(val: string) {
     setSearch(val);
     setPage(0);
-    clearTimeout((handleSearchChange as { _t?: ReturnType<typeof setTimeout> })._t);
-    (handleSearchChange as { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => {
-      setDebouncedSearch(val);
-    }, 350);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(val), 350);
+  }
+
+  function handleSort(field: SortField) {
+    if (field === sortField) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+    setPage(0);
+  }
+
+  function handleTabChange(val: StatusFilter) {
+    setStatus(val);
+    setPage(0);
   }
 
   const { data, isLoading, isError, refetch } = useQuery<PagedResponse<EmployeeSummary>>({
-    queryKey: ["employees", page, status, debouncedSearch],
+    queryKey: ["employees", page, status, debouncedSearch, sortField, sortDir],
     queryFn: () => {
       const params: Record<string, string | number> = {
         page,
         size: 25,
-        sort: "createdAt,desc",
+        sort: `${sortField},${sortDir}`,
       };
       if (status !== "ALL") params.status = status;
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
@@ -144,16 +198,15 @@ export default function EmployeesPage() {
   const totalElements = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
 
-  function handleTabChange(val: StatusFilter) {
-    setStatus(val);
-    setPage(0);
-  }
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader
         title="Employees"
-        subtitle={isLoading ? "Loading…" : `${totalElements.toLocaleString()} employee${totalElements !== 1 ? "s" : ""}`}
+        subtitle={
+          isLoading
+            ? "Loading…"
+            : `${totalElements.toLocaleString()} employee${totalElements !== 1 ? "s" : ""}`
+        }
         actions={
           <Link
             href="/admin/employees/new"
@@ -167,7 +220,6 @@ export default function EmployeesPage() {
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
         {/* Filter tabs + search row */}
         <div className="flex items-center justify-between gap-4">
-          {/* Status tabs — underline style */}
           <div className="flex items-center gap-1 border-b border-gray-200 flex-1">
             {STATUS_TABS.map((tab) => (
               <button
@@ -184,7 +236,6 @@ export default function EmployeesPage() {
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative flex-shrink-0">
             <Search
               size={14}
@@ -222,28 +273,13 @@ export default function EmployeesPage() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Name
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Employee #
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Department
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Job Title
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Type
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Status
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-                    Hire Date
-                  </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <SortHeader label="Name"       field="firstName"     current={sortField} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Employee #" field="employeeNumber" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Department" field="departmentName" current={sortField} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Position"   field="positionTitle"  current={sortField} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Status"     field="status"         current={sortField} dir={sortDir} onSort={handleSort} />
+                  <SortHeader label="Hire Date"  field="hireDate"       current={sortField} dir={sortDir} onSort={handleSort} />
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-16">
                     Actions
                   </th>
                 </tr>
@@ -251,7 +287,7 @@ export default function EmployeesPage() {
               <tbody>
                 {employees.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center text-[13px] text-gray-400">
+                    <td colSpan={7} className="py-16 text-center text-[13px] text-gray-400">
                       No employees found
                     </td>
                   </tr>
@@ -265,18 +301,13 @@ export default function EmployeesPage() {
                         <p className="font-semibold text-[#02110C]">
                           {emp.firstName} {emp.lastName}
                         </p>
-                        <p className="text-[12px] text-gray-400 mt-0.5">{emp.email}</p>
+                        <p className="text-[12px] text-gray-400 mt-0.5">{emp.phoneNumber}</p>
                       </td>
                       <td className="px-6 py-4 text-gray-600 font-mono text-[12px]">
                         {emp.employeeNumber}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{emp.department ?? "—"}</td>
-                      <td className="px-6 py-4 text-gray-600">{emp.jobTitle ?? "—"}</td>
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                          {emp.employmentType}
-                        </span>
-                      </td>
+                      <td className="px-6 py-4 text-gray-600">{emp.departmentName ?? "—"}</td>
+                      <td className="px-6 py-4 text-gray-600">{emp.positionTitle ?? "—"}</td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${statusBadgeClass(emp.status)}`}
@@ -287,7 +318,7 @@ export default function EmployeesPage() {
                       <td className="px-6 py-4 text-gray-500">{formatDate(emp.hireDate)}</td>
                       <td className="px-6 py-4">
                         <Link
-                          href={`/employees/${emp.id}`}
+                          href={`/admin/employees/${emp.id}`}
                           className="text-[12.5px] font-semibold text-[#166A50] hover:underline"
                         >
                           View
@@ -305,7 +336,7 @@ export default function EmployeesPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-[13px]">
             <p className="text-gray-500">
-              Page {page + 1} of {totalPages}
+              Page {page + 1} of {totalPages} · {totalElements.toLocaleString()} employees
             </p>
             <div className="flex items-center gap-2">
               <button
