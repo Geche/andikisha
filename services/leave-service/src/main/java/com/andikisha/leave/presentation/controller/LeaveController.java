@@ -124,7 +124,7 @@ public class LeaveController {
     }
 
     @GetMapping("/employees/{employeeId}/requests")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER') or #employeeId.toString().equals(authentication.name)")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER', 'EMPLOYEE')")
     @Operation(summary = "Get leave requests for a specific employee")
     public Page<LeaveRequestResponse> employeeRequests(
             @RequestHeader("X-Tenant-ID") String tenantId,

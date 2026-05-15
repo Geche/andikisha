@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { PageHeader } from "@andikisha/ui";
+import { PageHeader, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface EmployeeProfile {
@@ -83,21 +83,34 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function DashboardPage() {
+  const currentUser = useCurrentUser();
+  const employeeId = currentUser?.employeeId;
+
   const { data: profile, isError: profileError } = useQuery<EmployeeProfile>({
     queryKey: ["employee-profile"],
     queryFn: () => apiClient.get("/api/v1/employees/me").then((r) => r.data),
   });
 
   const { data: payslips = [] } = useQuery<PayslipSummary[]>({
-    queryKey: ["payslips-recent"],
+    queryKey: ["payslips-recent", employeeId],
+    enabled: !!employeeId,
     queryFn: () =>
-      apiClient.get("/api/v1/payslips?size=3&sort=createdAt,desc").then((r) => r.data?.content ?? r.data ?? []),
+      apiClient
+        .get(`/api/v1/payroll/employees/${employeeId}/payslips`, {
+          params: { size: 3, sort: "createdAt,desc" },
+        })
+        .then((r) => r.data?.content ?? r.data ?? []),
   });
 
   const { data: leaves = [] } = useQuery<LeaveRequest[]>({
-    queryKey: ["leave-recent"],
+    queryKey: ["leave-recent", employeeId],
+    enabled: !!employeeId,
     queryFn: () =>
-      apiClient.get("/api/v1/leave/requests?size=5&sort=createdAt,desc").then((r) => r.data?.content ?? r.data ?? []),
+      apiClient
+        .get(`/api/v1/leave/employees/${employeeId}/requests`, {
+          params: { size: 5, sort: "createdAt,desc" },
+        })
+        .then((r) => r.data?.content ?? r.data ?? []),
   });
 
   const firstName = profile?.firstName ?? "";

@@ -3,6 +3,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+      password: changeme
   rabbitmq:
     username: andikisha
     password: changeme

@@ -23,19 +23,24 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String rawUserId   = request.getHeader("X-User-ID");
-        String rawRole     = request.getHeader("X-User-Role");
-        String rawTenantId = request.getHeader("X-Tenant-ID");
-        String requestId   = UUID.randomUUID().toString().substring(0, 8);
+        String rawUserId     = request.getHeader("X-User-ID");
+        String rawRole       = request.getHeader("X-User-Role");
+        String rawTenantId   = request.getHeader("X-Tenant-ID");
+        String rawEmployeeId = request.getHeader("X-Employee-ID");
+        String requestId     = UUID.randomUUID().toString().substring(0, 8);
 
         try {
             if (rawUserId != null && !rawUserId.isBlank() && rawRole != null && !rawRole.isBlank()) {
-                String userId   = rawUserId.replaceAll("[\r\n\t]", "_");
-                String role     = rawRole.replaceAll("[\r\n\t]", "_");
-                String tenantId = rawTenantId != null ? rawTenantId.replaceAll("[\r\n\t]", "_") : null;
+                String userId     = rawUserId.replaceAll("[\r\n\t]", "_");
+                String role       = rawRole.replaceAll("[\r\n\t]", "_");
+                String tenantId   = rawTenantId != null ? rawTenantId.replaceAll("[\r\n\t]", "_") : null;
+                String employeeId = rawEmployeeId != null && !rawEmployeeId.isBlank()
+                        ? rawEmployeeId.replaceAll("[\r\n\t]", "_") : null;
 
+                // principal = userId (stable identifier for all roles)
+                // credentials = employeeId when present (used by ownership checks in service layer)
                 var auth = new UsernamePasswordAuthenticationToken(
-                        userId, null,
+                        userId, employeeId,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);

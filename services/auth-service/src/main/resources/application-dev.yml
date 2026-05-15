@@ -40,6 +40,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
 
 # JWT_SECRET has NO fallback — you must set it in the IntelliJ run config.
 # If you start the service without it, Spring will throw:

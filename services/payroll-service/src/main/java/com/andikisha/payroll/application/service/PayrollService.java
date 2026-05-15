@@ -384,8 +384,10 @@ public class PayrollService {
         if (isPrivileged) {
             return;
         }
-        // EMPLOYEE role: authentication.getName() carries the employee UUID set by TrustedHeaderAuthFilter
-        if (!targetEmployeeId.toString().equals(authentication.getName())) {
+        // EMPLOYEE role: credentials carries the X-Employee-ID forwarded by the gateway.
+        // Fall back to authentication name for backwards compatibility.
+        String callerEmployeeId = authentication.getCredentials() instanceof String s ? s : authentication.getName();
+        if (!targetEmployeeId.toString().equals(callerEmployeeId)) {
             throw new AccessDeniedException("Access denied: you may only view your own payslips");
         }
     }
