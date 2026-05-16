@@ -140,6 +140,32 @@ employee-service (confirmed OK — has it on `EmployeeServiceApplication.java`),
 
 ---
 
+### PAYROLL-BACKLOG-003 — Testcontainers integration tests for the full payroll → disbursement flow
+
+**Raised:** 2026-05-16  
+**Context:** During the 2026-05-16 end-to-end verification of the payroll disbursement loop, four bugs were discovered that unit tests had not caught:
+
+1. `publishAfterCommit()` in PayrollService was double-wrapping a publish action in `TransactionSynchronization.afterCommit()`. Spring's snapshot-based dispatch silently drops synchronizations registered during an active afterCommit callback — the inner registration was never fired. Unit tests mock the publisher and don't exercise the transaction synchronization mechanism.
+
+2. `TypePrecedence.INFERRED` was needed in `RabbitMqConfig` because the Spring DevTools restart classloader resolves the `__TypeId__` AMQP header to a different classloader instance than the consuming context. Unit tests don't run DevTools and don't test actual RabbitMQ deserialization.
+
+3. `maybePublishRunCompleted()` in `PaymentProcessor` had a race condition: concurrent payment threads each counted in their own uncommitted transaction and saw (n-1) completed rows, so none triggered the `PaymentsCompletedEvent`. Unit tests run sequentially against mocked repositories.
+
+4. `PayrollRun.complete()` needed an idempotency guard because the same `PaymentsCompletedEvent` can arrive more than once under concurrent sandbox conditions. Unit tests exercise the domain method once.
+
+**What to build:**  
+An integration test module (or test class in payroll-service + integration-hub-service) using Testcontainers (PostgreSQL + RabbitMQ) that covers:
+- Full lifecycle: create run → calculate → approve → publish `PayrollApprovedEvent` → integration-hub receives → creates payment transactions → publishes `PaymentsCompletedEvent` → payroll-service transitions run to COMPLETED
+- Partial failure: configure sandbox to fail N of M transactions, assert run reaches COMPLETED with correct counts
+- Retry: assert retried FAILED transactions complete and run stays COMPLETED (idempotent guard)
+- Concurrent payment completion: inject concurrent payment saves and assert `PaymentsCompletedEvent` fires exactly once
+
+**Priority:** High. These are production-path bugs in an async, multi-transaction flow. The unit test suite provides no coverage for the interaction between Spring transaction lifecycle hooks, RabbitMQ message routing, and concurrent database writes.
+
+**Estimate:** 3-5 days to build the test harness and cover the four scenarios above.
+
+---
+
 ### COMPLIANCE-BACKLOG-001 — Move statutory rate constants from code to compliance-service rate tables
 
 **Raised:** 2026-05-15  
