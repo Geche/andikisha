@@ -224,7 +224,14 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
     queryKey: ["payroll-run", runId],
     queryFn: () => apiClient.get<PayrollRun>(`/api/v1/payroll/runs/${runId}`).then((r) => r.data),
     enabled: Boolean(runId),
-    refetchInterval: (q) => (q.state.data?.status === "CALCULATING" ? 5_000 : false),
+    refetchInterval: (q) => {
+      const s = q.state.data?.status;
+      // Poll during CALCULATING (5s) so the status badge auto-flips after calculation.
+      // Poll during APPROVED/PROCESSING (6s) so the badge auto-flips to COMPLETED once
+      // PaymentsCompletedEvent is processed — without this the badge stays "Approved"
+      // even though the run is complete.
+      return s === "CALCULATING" || s === "APPROVED" || s === "PROCESSING" ? 5_000 : false;
+    },
   });
 
   const {
