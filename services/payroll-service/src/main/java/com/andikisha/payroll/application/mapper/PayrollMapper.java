@@ -17,5 +17,6 @@ public interface PayrollMapper {
     @Mapping(target = "payrollRunId", source = "payrollRun.id")
     @Mapping(target = "period", source = "payrollRun.period")
     @Mapping(target = "paymentStatus", expression = "java(slip.getPaymentStatus().name())")
+    @Mapping(target = "paymentPhone", source = "paymentPhone")
     PaySlipResponse toResponse(PaySlip slip);
 }

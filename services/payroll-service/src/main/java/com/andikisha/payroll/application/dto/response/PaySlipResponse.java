@@ -31,5 +31,6 @@ public record PaySlipResponse(
         BigDecimal netPay,
         String currency,
         String paymentStatus,
+        String paymentPhone,
         String mpesaReceipt
 ) {}

@@ -68,6 +68,8 @@ app:
     enabled: ${BANK_TRANSFER_ENABLED:false}
     provider: ${BANK_PROVIDER:permalink}
   credential-encryption-key: ${CREDENTIAL_ENCRYPTION_KEY}
+  payroll-service:
+    url: ${PAYROLL_SERVICE_URL:http://localhost:8084}
 
 grpc:
   server:

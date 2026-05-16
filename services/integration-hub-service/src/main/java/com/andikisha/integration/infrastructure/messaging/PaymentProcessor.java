@@ -36,17 +36,20 @@ public class PaymentProcessor {
     private final MpesaClient mpesaClient;
     private final BankTransferClient bankTransferClient;
     private final IntegrationEventPublisher eventPublisher;
+    private final boolean mpesaSandbox;
 
     public PaymentProcessor(PaymentTransactionRepository transactionRepository,
                             IntegrationConfigRepository configRepository,
                             MpesaClient mpesaClient,
                             BankTransferClient bankTransferClient,
-                            IntegrationEventPublisher eventPublisher) {
+                            IntegrationEventPublisher eventPublisher,
+                            @org.springframework.beans.factory.annotation.Value("${app.mpesa.enabled:false}") boolean mpesaEnabled) {
         this.transactionRepository = transactionRepository;
         this.configRepository = configRepository;
         this.mpesaClient = mpesaClient;
         this.bankTransferClient = bankTransferClient;
         this.eventPublisher = eventPublisher;
+        this.mpesaSandbox = !mpesaEnabled;
     }
 
     @Async("paymentExecutor")
@@ -79,7 +82,8 @@ public class PaymentProcessor {
                         tx.getTenantId(), IntegrationType.MPESA_B2C)
                 .orElse(null);
 
-        if (config == null) {
+        // In sandbox mode, IntegrationConfig is not required; complete immediately.
+        if (config == null && !mpesaSandbox) {
             tx.markFailed("CONFIG_MISSING", "M-Pesa B2C integration not configured");
             transactionRepository.save(tx);
             log.warn("M-Pesa not configured for tenant {}", tx.getTenantId());
@@ -90,18 +94,33 @@ public class PaymentProcessor {
             String reference = "PAY-" + tx.getId().toString().substring(0, 8).toUpperCase();
             String remarks = "Salary payment " + tx.getEmployeeName();
 
+            String shortcode  = config != null ? config.getShortcode()  : "sandbox";
+            String initiator  = config != null ? config.getInitiatorName() : "sandbox";
+            String credential = config != null ? config.getSecurityCredential() : "";
+            String callback   = config != null ? config.getCallbackUrl() : "";
+            String timeout    = config != null ? config.getTimeoutUrl()  : "";
+
             MpesaClient.MpesaResponse response = mpesaClient.sendB2C(
-                    config.getShortcode(), config.getInitiatorName(),
-                    config.getSecurityCredential(),
+                    shortcode, initiator, credential,
                     tx.getPhoneNumber(), tx.getAmount(),
-                    remarks, reference,
-                    config.getCallbackUrl(), config.getTimeoutUrl()
+                    remarks, reference, callback, timeout
             );
 
             if (response.success()) {
                 tx.markSubmitted(reference, response.conversationId());
                 log.info("M-Pesa B2C submitted for {} amount KES {}",
                         tx.getEmployeeName(), tx.getAmount());
+
+                // Sandbox: no callback will arrive — complete immediately so the run progresses
+                if (config == null) {
+                    tx.markCompleted(response.conversationId());
+                    transactionRepository.save(tx);
+                    eventPublisher.publishPaymentCompleted(tx);
+                    maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
+                    log.info("Sandbox M-Pesa completed immediately for {} receipt {}",
+                            tx.getEmployeeName(), response.conversationId());
+                    return;
+                }
             } else {
                 tx.markFailed(response.responseCode(), response.responseDescription());
                 log.error("M-Pesa B2C failed for {}: {}",
@@ -114,6 +133,11 @@ public class PaymentProcessor {
             tx.markFailed("EXCEPTION", e.getMessage());
             transactionRepository.save(tx);
             log.error("M-Pesa exception for {}: {}", tx.getEmployeeName(), e.getMessage());
+        }
+
+        if (tx.getStatus() == TransactionStatus.COMPLETED
+                || tx.getStatus() == TransactionStatus.FAILED) {
+            maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
         }
     }
 
