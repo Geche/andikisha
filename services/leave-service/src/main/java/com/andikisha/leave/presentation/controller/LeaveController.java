@@ -144,6 +144,20 @@ public class LeaveController {
         return balanceService.getBalances(employeeId, y);
     }
 
+    @GetMapping("/me/balances")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'LINE_MANAGER', 'HR_MANAGER', 'HR', 'ADMIN')")
+    @Operation(summary = "Get leave balances for the currently authenticated employee")
+    public List<LeaveBalanceResponse> myBalances(
+            @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader(value = "X-Employee-ID", required = false) UUID employeeId,
+            @RequestParam(required = false) Integer year) {
+        if (employeeId == null) {
+            return List.of();
+        }
+        int y = year != null ? year : LocalDate.now().getYear();
+        return balanceService.getBalances(employeeId, y);
+    }
+
     @GetMapping("/policies")
     @Operation(summary = "Get leave policies for the tenant")
     public List<LeavePolicyResponse> policies(

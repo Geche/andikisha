@@ -10,8 +10,8 @@ interface EmployeeProfile {
   id: string;
   firstName: string;
   lastName: string;
-  positionTitle: string;
-  departmentName: string;
+  positionTitle?: string | null;
+  departmentName?: string | null;
 }
 
 interface LeaveBalance {
@@ -95,11 +95,10 @@ export default function DashboardPage() {
   });
 
   const { data: leaveBalances = [] } = useQuery<LeaveBalance[]>({
-    queryKey: ["leave-balances", employeeId],
-    enabled: !!employeeId,
+    queryKey: ["leave-balances-me"],
     queryFn: () =>
       apiClient
-        .get(`/api/v1/leave/employees/${employeeId}/balances`)
+        .get("/api/v1/leave/me/balances")
         .then((r) => r.data ?? []),
   });
 
@@ -132,7 +131,10 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const title = firstName ? `${greeting}, ${firstName}` : greeting;
-  const subtitle = profile ? `${profile.positionTitle} · ${profile.departmentName}` : undefined;
+  const subtitleParts = profile
+    ? [profile.positionTitle, profile.departmentName].filter(Boolean)
+    : [];
+  const subtitle = subtitleParts.length > 0 ? subtitleParts.join(" · ") : undefined;
   const pendingCount = leaves.filter((l) => l.status === "PENDING").length;
 
   return (
