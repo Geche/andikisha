@@ -10,17 +10,20 @@ interface EmployeeProfile {
   id: string;
   firstName: string;
   lastName: string;
-  jobTitle: string;
-  department: string;
-  leaveBalance: number;
-  annualLeaveBalance: number;
+  positionTitle: string;
+  departmentName: string;
+}
+
+interface LeaveBalance {
+  leaveType: string;
+  available: number;
 }
 
 interface PayslipSummary {
   id: string;
-  periodLabel: string;
+  period: string;
   netPay: number;
-  status: string;
+  paymentStatus: string | null;
 }
 
 interface LeaveRequest {
@@ -91,6 +94,18 @@ export default function DashboardPage() {
     queryFn: () => apiClient.get("/api/v1/employees/me").then((r) => r.data),
   });
 
+  const { data: leaveBalances = [] } = useQuery<LeaveBalance[]>({
+    queryKey: ["leave-balances", employeeId],
+    enabled: !!employeeId,
+    queryFn: () =>
+      apiClient
+        .get(`/api/v1/leave/employees/${employeeId}/balances`)
+        .then((r) => r.data ?? []),
+  });
+
+  const annualBalance = leaveBalances.find((b) => b.leaveType === "ANNUAL");
+  const sickBalance = leaveBalances.find((b) => b.leaveType === "SICK");
+
   const { data: payslips = [] } = useQuery<PayslipSummary[]>({
     queryKey: ["payslips-recent", employeeId],
     enabled: !!employeeId,
@@ -117,7 +132,7 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const title = firstName ? `${greeting}, ${firstName}` : greeting;
-  const subtitle = profile ? `${profile.jobTitle} · ${profile.department}` : undefined;
+  const subtitle = profile ? `${profile.positionTitle} · ${profile.departmentName}` : undefined;
   const pendingCount = leaves.filter((l) => l.status === "PENDING").length;
 
   return (
@@ -136,18 +151,18 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           <MetricCard
             label="Annual leave"
-            value={profile ? `${profile.annualLeaveBalance}d` : "—"}
+            value={annualBalance != null ? `${annualBalance.available}d` : "—"}
             sub="Days remaining"
           />
           <MetricCard
-            label="Leave balance"
-            value={profile ? `${profile.leaveBalance}d` : "—"}
-            sub="All types combined"
+            label="Sick leave"
+            value={sickBalance != null ? `${sickBalance.available}d` : "—"}
+            sub="Days remaining"
           />
           <MetricCard
             label="Latest net pay"
             value={payslips[0] ? `KES ${payslips[0].netPay.toLocaleString()}` : "—"}
-            sub={payslips[0]?.periodLabel ?? "No payslips yet"}
+            sub={payslips[0]?.period ?? "No payslips yet"}
           />
           <MetricCard
             label="Pending requests"
@@ -177,12 +192,12 @@ export default function DashboardPage() {
                 <tbody>
                   {payslips.map((p) => (
                     <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-3.5 font-medium text-neutral-900">{p.periodLabel}</td>
+                      <td className="px-6 py-3.5 font-medium text-neutral-900">{p.period}</td>
                       <td className="px-6 py-3.5 text-right font-semibold text-neutral-900">
                         KES {p.netPay.toLocaleString()}
                       </td>
                       <td className="px-6 py-3.5 text-right">
-                        <StatusBadge status={p.status} />
+                        <StatusBadge status={p.paymentStatus ?? "DRAFT"} />
                       </td>
                     </tr>
                   ))}

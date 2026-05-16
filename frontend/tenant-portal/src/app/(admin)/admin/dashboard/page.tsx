@@ -28,11 +28,11 @@ interface PayrollRun {
   payFrequency: "MONTHLY" | "WEEKLY" | "BIWEEKLY";
   status:
     | "DRAFT"
-    | "INITIATED"
     | "CALCULATING"
     | "CALCULATED"
     | "APPROVED"
-    | "DISBURSED"
+    | "PROCESSING"
+    | "COMPLETED"
     | "FAILED"
     | "CANCELLED";
   totalGross: number | null;
@@ -50,9 +50,10 @@ function formatPeriod(period: string): string {
 
 function runStatusBadge(status: PayrollRun["status"]): BadgeStatus {
   switch (status) {
+    case "COMPLETED":
     case "APPROVED":
-    case "DISBURSED":
       return "approved";
+    case "PROCESSING":
     case "CALCULATING":
     case "CALCULATED":
       return "calculating";
@@ -189,7 +190,7 @@ export default function DashboardPage() {
             >
               Export report
             </Button>
-            <Button variant="cta" onClick={() => router.push("/payroll/new")}>
+            <Button variant="cta" onClick={() => router.push("/admin/payroll/new")}>
               + Run Payroll
             </Button>
           </>
@@ -276,7 +277,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-[14px] font-bold text-near-black">Payroll trend</h2>
             <button
-              onClick={() => router.push("/payroll")}
+              onClick={() => router.push("/admin/payroll")}
               className="text-[12px] font-semibold text-neutral-500 border border-neutral-200 rounded-lg px-3 py-1.5 hover:bg-neutral-100 transition-colors"
             >
               View all runs
@@ -327,7 +328,7 @@ export default function DashboardPage() {
           <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
             <p className="text-[14px] font-bold text-near-black">Recent Payroll Runs</p>
             <button
-              onClick={() => router.push("/payroll")}
+              onClick={() => router.push("/admin/payroll")}
               className="text-[12px] font-semibold text-brand-800 hover:underline"
             >
               View all →
@@ -347,7 +348,7 @@ export default function DashboardPage() {
             emptyMessage="No payroll runs yet"
             onRowClick={(row) => {
               const id = row["_id"];
-              if (typeof id === "string") router.push(`/payroll/${id}`);
+              if (typeof id === "string") router.push(`/admin/payroll/${id}`);
             }}
             className="border-0 rounded-none"
           />

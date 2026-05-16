@@ -1,11 +1,15 @@
 "use client";
 
-import { use } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { use, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, CheckCircle, XCircle, Clock } from "lucide-react";
-import { PageHeader } from "@andikisha/ui";
+import {
+  ArrowLeft, AlertTriangle, AlertCircle, CheckCircle, XCircle, Clock,
+  RefreshCw, Play, ThumbsUp, SendHorizonal,
+} from "lucide-react";
+import { PageHeader, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import type { AxiosError } from "axios";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -95,26 +99,68 @@ function formatPeriod(period: string): string {
 
 function statusBadge(status: RunStatus): { cls: string; label: string } {
   switch (status) {
-    case "COMPLETED":  return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Completed" };
-    case "APPROVED":   return { cls: "bg-[#E8F5F0] text-[#166A50]", label: "Approved" };
-    case "PROCESSING": return { cls: "bg-blue-50 text-blue-700", label: "Disbursing" };
-    case "CALCULATED": return { cls: "bg-[#FEF3DC] text-[#92600A]", label: "Calculated" };
-    case "CALCULATING":return { cls: "bg-amber-50 text-amber-700", label: "Calculating" };
-    case "DRAFT":      return { cls: "bg-neutral-100 text-neutral-600", label: "Draft" };
-    case "FAILED":     return { cls: "bg-red-100 text-red-700", label: "Failed" };
-    case "CANCELLED":  return { cls: "bg-neutral-100 text-neutral-400", label: "Cancelled" };
+    case "COMPLETED":   return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Completed" };
+    case "APPROVED":    return { cls: "bg-[#E8F5F0] text-[#166A50]", label: "Approved" };
+    case "PROCESSING":  return { cls: "bg-blue-50 text-blue-700", label: "Disbursing" };
+    case "CALCULATED":  return { cls: "bg-[#FEF3DC] text-[#92600A]", label: "Calculated" };
+    case "CALCULATING": return { cls: "bg-amber-50 text-amber-700", label: "Calculating" };
+    case "DRAFT":       return { cls: "bg-neutral-100 text-neutral-600", label: "Draft" };
+    case "FAILED":      return { cls: "bg-red-100 text-red-700", label: "Failed" };
+    case "CANCELLED":   return { cls: "bg-neutral-100 text-neutral-400", label: "Cancelled" };
   }
 }
 
 function paymentStatusBadge(status: string | null): { cls: string; label: string } {
   switch (status) {
-    case "COMPLETED": return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Paid" };
-    case "FAILED":    return { cls: "bg-red-100 text-red-700", label: "Failed" };
-    case "SUBMITTED": return { cls: "bg-blue-50 text-blue-700", label: "Submitted" };
-    case "PROCESSING":return { cls: "bg-blue-50 text-blue-700", label: "Processing" };
-    case "PENDING":   return { cls: "bg-amber-50 text-amber-700", label: "Pending" };
-    default:          return { cls: "bg-neutral-100 text-neutral-500", label: "—" };
+    case "COMPLETED":  return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Paid" };
+    case "FAILED":     return { cls: "bg-red-100 text-red-700", label: "Failed" };
+    case "SUBMITTED":  return { cls: "bg-blue-50 text-blue-700", label: "Submitted" };
+    case "PROCESSING": return { cls: "bg-blue-50 text-blue-700", label: "Processing" };
+    case "PENDING":    return { cls: "bg-amber-50 text-amber-700", label: "Pending" };
+    default:           return { cls: "bg-neutral-100 text-neutral-500", label: "—" };
   }
+}
+
+// ─── Confirm Modal ────────────────────────────────────────────────────────────
+
+interface ConfirmModalProps {
+  title: string;
+  body: React.ReactNode;
+  confirmLabel: string;
+  confirmCls?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+function ConfirmModal({ title, body, confirmLabel, confirmCls, onConfirm, onCancel, loading }: ConfirmModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
+        <h2 className="text-[16px] font-bold text-[#02110C]">{title}</h2>
+        <div className="text-[13.5px] text-neutral-600 leading-relaxed">{body}</div>
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 border border-neutral-200 rounded-lg text-[13px] font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-4 py-2 rounded-lg text-[13px] font-bold disabled:opacity-60 disabled:cursor-not-allowed transition-colors ${
+              confirmCls ?? "bg-[#0B3D2E] hover:bg-[#07291E] text-white"
+            }`}
+          >
+            {loading ? "Please wait…" : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -137,7 +183,7 @@ function SummaryCardSkeleton() {
   );
 }
 
-function TableSkeleton({ cols = 8 }: { cols?: number }) {
+function TableSkeleton({ cols = 9 }: { cols?: number }) {
   return (
     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden animate-pulse">
       <div className="h-11 bg-neutral-50 border-b border-neutral-200" />
@@ -184,9 +230,7 @@ function PaymentSummaryPanel({ summary }: { summary: PaymentSummary }) {
         </div>
 
         <div className={`flex items-center gap-2.5 rounded-lg px-4 py-3 border ${
-          summary.failed > 0
-            ? "bg-red-50 border-red-200"
-            : "bg-neutral-50 border-neutral-200"
+          summary.failed > 0 ? "bg-red-50 border-red-200" : "bg-neutral-50 border-neutral-200"
         }`}>
           <XCircle size={16} className={summary.failed > 0 ? "text-red-600 flex-shrink-0" : "text-neutral-300 flex-shrink-0"} />
           <div>
@@ -219,6 +263,13 @@ function PaymentSummaryPanel({ summary }: { summary: PaymentSummary }) {
 
 export default function PayrollRunDetailPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = use(params);
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showDisburseModal, setShowDisburseModal] = useState(false);
+
+  // ── Queries ──────────────────────────────────────────────────────────────
 
   const { data: run, isLoading: runLoading, isError: runError, refetch: refetchRun } = useQuery<PayrollRun>({
     queryKey: ["payroll-run", runId],
@@ -226,10 +277,8 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
     enabled: Boolean(runId),
     refetchInterval: (q) => {
       const s = q.state.data?.status;
-      // Poll during CALCULATING (5s) so the status badge auto-flips after calculation.
-      // Poll during APPROVED/PROCESSING (6s) so the badge auto-flips to COMPLETED once
-      // PaymentsCompletedEvent is processed — without this the badge stays "Approved"
-      // even though the run is complete.
+      // Poll CALCULATING so badge auto-flips after calculation completes.
+      // Poll APPROVED/PROCESSING so badge auto-flips to COMPLETED after PaymentsCompletedEvent.
       return s === "CALCULATING" || s === "APPROVED" || s === "PROCESSING" ? 5_000 : false;
     },
   });
@@ -242,9 +291,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
   } = useQuery<PaySlip[]>({
     queryKey: ["payroll-run-payslips", runId],
     queryFn: () =>
-      apiClient
-        .get<PaySlip[]>(`/api/v1/payroll/runs/${runId}/payslips`)
-        .then((r) => r.data),
+      apiClient.get<PaySlip[]>(`/api/v1/payroll/runs/${runId}/payslips`).then((r) => r.data),
     enabled: Boolean(runId),
   });
 
@@ -258,167 +305,362 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
     refetchInterval: (q) => ((q.state.data?.pending ?? 0) > 0 ? 4_000 : false),
   });
 
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
+  function invalidateRun() {
+    void queryClient.invalidateQueries({ queryKey: ["payroll-run", runId] });
+    void queryClient.invalidateQueries({ queryKey: ["payroll-run-payslips", runId] });
+    void queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
+  }
+
+  const calculateMutation = useMutation<void, AxiosError<{ message?: string }>>({
+    mutationFn: () => apiClient.post(`/api/v1/payroll/runs/${runId}/calculate`).then(() => undefined),
+    onSuccess: () => {
+      toast("Calculation started — payslips will appear shortly", "success");
+      invalidateRun();
+    },
+    onError: (err) => toast(err.response?.data?.message ?? "Could not start calculation", "error"),
+  });
+
+  const approveMutation = useMutation<void, AxiosError<{ message?: string }>>({
+    mutationFn: () => apiClient.post(`/api/v1/payroll/runs/${runId}/approve`).then(() => undefined),
+    onSuccess: () => {
+      toast("Payroll run approved", "success");
+      setShowApproveModal(false);
+      invalidateRun();
+    },
+    onError: (err) => {
+      toast(err.response?.data?.message ?? "Could not approve run", "error");
+      setShowApproveModal(false);
+    },
+  });
+
+  const disburseMutation = useMutation<void, AxiosError<{ message?: string }>>({
+    mutationFn: () =>
+      apiClient.post(`/api/v1/payments/payroll-runs/${runId}/disburse`).then(() => undefined),
+    onSuccess: () => {
+      toast("Disbursement started — payments are being sent via M-Pesa", "success");
+      setShowDisburseModal(false);
+      invalidateRun();
+      void queryClient.invalidateQueries({ queryKey: ["payment-summary", runId] });
+    },
+    onError: (err) => {
+      toast(err.response?.data?.message ?? "Could not start disbursement", "error");
+      setShowDisburseModal(false);
+    },
+  });
+
+  const retryMutation = useMutation<void, AxiosError<{ message?: string }>>({
+    mutationFn: () =>
+      apiClient.post(`/api/v1/payments/payroll-runs/${runId}/retry-failed`).then(() => undefined),
+    onSuccess: () => {
+      toast("Retrying failed payments", "success");
+      void queryClient.invalidateQueries({ queryKey: ["payment-summary", runId] });
+      invalidateRun();
+    },
+    onError: (err) => toast(err.response?.data?.message ?? "Could not retry payments", "error"),
+  });
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+
   const payslips = payslipsData ?? [];
   const badge = run ? statusBadge(run.status) : null;
+  const hasFailedPayments =
+    run?.status === "COMPLETED" && paymentSummary && paymentSummary.failed > 0;
+
+  // ── Action buttons (header) ────────────────────────────────────────────────
+
+  function ActionButtons() {
+    if (!run) return null;
+    switch (run.status) {
+      case "DRAFT":
+        return (
+          <button
+            onClick={() => calculateMutation.mutate()}
+            disabled={calculateMutation.isPending}
+            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#07291E] disabled:opacity-60 text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+          >
+            <Play size={13} />
+            {calculateMutation.isPending ? "Starting…" : "Calculate"}
+          </button>
+        );
+      case "CALCULATED":
+        return (
+          <button
+            onClick={() => setShowApproveModal(true)}
+            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#07291E] text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+          >
+            <ThumbsUp size={13} />
+            Approve
+          </button>
+        );
+      case "APPROVED":
+        return (
+          <button
+            onClick={() => setShowDisburseModal(true)}
+            className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+          >
+            <SendHorizonal size={13} />
+            Disburse
+          </button>
+        );
+      case "COMPLETED":
+        if (paymentSummary && paymentSummary.failed > 0) {
+          return (
+            <button
+              onClick={() => retryMutation.mutate()}
+              disabled={retryMutation.isPending}
+              className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+            >
+              <RefreshCw size={13} className={retryMutation.isPending ? "animate-spin" : ""} />
+              {retryMutation.isPending ? "Retrying…" : `Retry ${paymentSummary.failed} Failed`}
+            </button>
+          );
+        }
+        return null;
+      default:
+        return null;
+    }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <PageHeader
-        title={runLoading ? "Loading…" : run ? `Payroll — ${formatPeriod(run.period)}` : "Payroll Run"}
-        subtitle={run ? `${run.employeeCount} employees · ${run.currency}` : undefined}
-        actions={
-          <div className="flex items-center gap-2">
-            {badge && (
-              <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
-                {badge.label}
-              </span>
-            )}
-            <Link
-              href="/admin/payroll"
-              className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={14} />
-              Back
-            </Link>
-          </div>
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
-        {runError && (
-          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
-            <AlertTriangle size={15} className="flex-shrink-0" />
-            <span className="flex-1">Could not load payroll run.</span>
-            <button onClick={() => void refetchRun()} className="text-[12px] font-semibold underline underline-offset-2">Retry</button>
-          </div>
-        )}
-
-        {/* Summary cards */}
-        {runLoading ? (
-          <div className="grid grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => <SummaryCardSkeleton key={i} />)}
-          </div>
-        ) : run ? (
-          <div className="grid grid-cols-4 gap-4">
-            <SummaryCard label="Total Gross" value={fmtKES(run.totalGross)} />
-            <SummaryCard label="Total Net" value={fmtKES(run.totalNet)} />
-            <SummaryCard label="Total PAYE" value={fmtKES(run.totalPaye)} />
-            <SummaryCard label="Employees" value={run.employeeCount.toLocaleString()} />
-          </div>
-        ) : null}
-
-        {/* Calculating banner */}
-        {run?.status === "CALCULATING" && (
-          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3.5 text-[13px] text-amber-700">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
-            Payroll is calculating — this page updates automatically.
-          </div>
-        )}
-
-        {/* Payment summary panel */}
-        {showPaymentPanel && (
-          summaryLoading ? (
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 animate-pulse flex flex-col gap-4">
-              <div className="h-4 bg-neutral-100 rounded w-40" />
-              <div className="h-2 bg-neutral-100 rounded-full" />
-              <div className="grid grid-cols-4 gap-3">
-                {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-neutral-100 rounded-lg" />)}
+    <>
+      {/* Approve confirmation modal */}
+      {showApproveModal && run && (
+        <ConfirmModal
+          title="Approve Payroll Run"
+          body={
+            <div className="flex flex-col gap-3">
+              <p>
+                You are about to approve the <strong>{formatPeriod(run.period)}</strong> payroll
+                run for <strong>{run.employeeCount} employees</strong>.
+              </p>
+              <div className="bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-3 text-[12.5px] space-y-1">
+                <div className="flex justify-between"><span>Total Gross</span><span className="font-semibold">{fmtKES(run.totalGross)}</span></div>
+                <div className="flex justify-between"><span>Total Net</span><span className="font-semibold">{fmtKES(run.totalNet)}</span></div>
+                <div className="flex justify-between"><span>Total PAYE</span><span className="font-semibold">{fmtKES(run.totalPaye)}</span></div>
               </div>
+              <p className="text-[12px] text-neutral-500">
+                Once approved, this run can be disbursed. This action cannot be undone.
+              </p>
             </div>
-          ) : paymentSummary ? (
-            <PaymentSummaryPanel summary={paymentSummary} />
-          ) : null
-        )}
+          }
+          confirmLabel="Approve Run"
+          onConfirm={() => approveMutation.mutate()}
+          onCancel={() => setShowApproveModal(false)}
+          loading={approveMutation.isPending}
+        />
+      )}
 
-        {/* Statutory deduction breakdown */}
-        {run && run.status !== "DRAFT" && (
-          <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-6 py-4 flex items-center gap-8 text-[12.5px] text-neutral-600 flex-wrap">
-            <span className="font-semibold text-neutral-700">Statutory deductions:</span>
-            <span>PAYE <strong className="text-neutral-900">{fmtKES(run.totalPaye)}</strong></span>
-            <span>NSSF <strong className="text-neutral-900">{fmtKES(run.totalNssf)}</strong></span>
-            <span>SHIF <strong className="text-neutral-900">{fmtKES(run.totalShif)}</strong></span>
-            <span>Housing Levy <strong className="text-neutral-900">{fmtKES(run.totalHousingLevy)}</strong></span>
-          </div>
-        )}
+      {/* Disburse confirmation modal */}
+      {showDisburseModal && run && (
+        <ConfirmModal
+          title="Disburse Payroll"
+          body={
+            <div className="flex flex-col gap-3">
+              <p>
+                This will send <strong>{fmtKES(run.totalNet)}</strong> to{" "}
+                <strong>{run.employeeCount} employees</strong> via M-Pesa B2C.
+              </p>
+              <p className="text-[12.5px] text-neutral-500">
+                Payments are processed asynchronously. You can monitor progress on this page
+                once disbursement starts.
+              </p>
+            </div>
+          }
+          confirmLabel="Send Payments"
+          confirmCls="bg-[#E8A020] hover:bg-[#C98510] text-[#02110C]"
+          onConfirm={() => disburseMutation.mutate()}
+          onCancel={() => setShowDisburseModal(false)}
+          loading={disburseMutation.isPending}
+        />
+      )}
 
-        {/* Payslips table */}
-        <div className="flex flex-col gap-3">
-          <p className="text-[14px] font-bold text-neutral-900">Payslips</p>
+      <div className="flex flex-col h-full overflow-hidden">
+        <PageHeader
+          title={runLoading ? "Loading…" : run ? `Payroll — ${formatPeriod(run.period)}` : "Payroll Run"}
+          subtitle={run ? `${run.employeeCount} employees · ${run.currency}` : undefined}
+          actions={
+            <div className="flex items-center gap-2">
+              {badge && (
+                <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
+                  {badge.label}
+                </span>
+              )}
+              <ActionButtons />
+              <Link
+                href="/admin/payroll"
+                className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+              >
+                <ArrowLeft size={14} />
+                Back
+              </Link>
+            </div>
+          }
+        />
 
-          {payslipsError && (
+        <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
+          {runError && (
             <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
               <AlertTriangle size={15} className="flex-shrink-0" />
-              <span className="flex-1">Could not load payslips.</span>
-              <button onClick={() => void refetchPayslips()} className="text-[12px] font-semibold underline underline-offset-2">Retry</button>
+              <span className="flex-1">Could not load payroll run.</span>
+              <button onClick={() => void refetchRun()} className="text-[12px] font-semibold underline underline-offset-2">Retry</button>
             </div>
           )}
 
-          {payslipsLoading ? (
-            <TableSkeleton />
-          ) : (
-            <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="bg-neutral-50 border-b border-neutral-100">
-                    <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Employee</th>
-                    <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">#</th>
-                    <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Gross</th>
-                    <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">PAYE</th>
-                    <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">NSSF</th>
-                    <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">SHIF</th>
-                    <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Net</th>
-                    <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Payment</th>
-                    <th className="px-6 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {payslips.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-14 text-center text-[13px] text-neutral-400">
-                        {run?.status === "DRAFT" || run?.status === "CALCULATING"
-                          ? "Payslips will appear after calculation completes."
-                          : "No payslips found."}
-                      </td>
-                    </tr>
-                  ) : (
-                    payslips.map((slip) => {
-                      const pmtBadge = paymentStatusBadge(slip.paymentStatus);
-                      return (
-                        <tr key={slip.id} className="border-b border-neutral-50 last:border-0 hover:bg-[#F8F7F4] transition-colors">
-                          <td className="px-6 py-3.5 font-medium text-[#02110C]">{slip.employeeName}</td>
-                          <td className="px-6 py-3.5 font-mono text-[12px] text-neutral-500">{slip.employeeNumber}</td>
-                          <td className="px-6 py-3.5 text-right text-neutral-700">{fmt(slip.grossPay)}</td>
-                          <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.paye)}</td>
-                          <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.nssf)}</td>
-                          <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.shif)}</td>
-                          <td className="px-6 py-3.5 text-right font-semibold text-[#02110C]">{fmt(slip.netPay)}</td>
-                          <td className="px-6 py-3.5">
-                            {slip.paymentStatus ? (
-                              <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${pmtBadge.cls}`}>
-                                {pmtBadge.label}
-                              </span>
-                            ) : (
-                              <span className="text-neutral-400 text-[12px]">—</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-3.5">
-                            <Link
-                              href={`/admin/payroll/${runId}/payslips/${slip.id}`}
-                              className="text-[12px] font-semibold text-[#166A50] hover:underline whitespace-nowrap"
-                            >
-                              View
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+          {/* Surface 9: COMPLETED-with-failures banner */}
+          {hasFailedPayments && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-5 py-4 text-[13px] text-amber-800">
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-amber-600" />
+              <div className="flex-1">
+                <p className="font-semibold">
+                  {paymentSummary!.failed} payment{paymentSummary!.failed !== 1 ? "s" : ""} failed
+                </p>
+                <p className="text-[12.5px] mt-0.5 text-amber-700">
+                  The payroll run completed but {paymentSummary!.failed} M-Pesa disbursement
+                  {paymentSummary!.failed !== 1 ? "s" : ""} were unsuccessful. Review the
+                  Payment Summary below and use the <strong>Retry Failed</strong> button to
+                  re-send to affected employees.
+                </p>
+              </div>
             </div>
           )}
+
+          {/* Summary cards */}
+          {runLoading ? (
+            <div className="grid grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <SummaryCardSkeleton key={i} />)}
+            </div>
+          ) : run ? (
+            <div className="grid grid-cols-4 gap-4">
+              <SummaryCard label="Total Gross" value={fmtKES(run.totalGross)} />
+              <SummaryCard label="Total Net" value={fmtKES(run.totalNet)} />
+              <SummaryCard label="Total PAYE" value={fmtKES(run.totalPaye)} />
+              <SummaryCard label="Employees" value={run.employeeCount.toLocaleString()} />
+            </div>
+          ) : null}
+
+          {/* Surface 7: Calculating/processing status banners */}
+          {run?.status === "CALCULATING" && (
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3.5 text-[13px] text-amber-700">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" />
+              Payroll is calculating — this page updates automatically.
+            </div>
+          )}
+          {run?.status === "PROCESSING" && (
+            <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3.5 text-[13px] text-blue-700">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse flex-shrink-0" />
+              Disbursement in progress — payments are being sent via M-Pesa. This page updates automatically.
+            </div>
+          )}
+
+          {/* Surface 6/7: Payment summary panel */}
+          {showPaymentPanel && (
+            summaryLoading ? (
+              <div className="bg-white border border-neutral-200 rounded-xl p-6 animate-pulse flex flex-col gap-4">
+                <div className="h-4 bg-neutral-100 rounded w-40" />
+                <div className="h-2 bg-neutral-100 rounded-full" />
+                <div className="grid grid-cols-4 gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 bg-neutral-100 rounded-lg" />)}
+                </div>
+              </div>
+            ) : paymentSummary ? (
+              <PaymentSummaryPanel summary={paymentSummary} />
+            ) : null
+          )}
+
+          {/* Statutory deduction breakdown */}
+          {run && run.status !== "DRAFT" && (
+            <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-6 py-4 flex items-center gap-8 text-[12.5px] text-neutral-600 flex-wrap">
+              <span className="font-semibold text-neutral-700">Statutory deductions:</span>
+              <span>PAYE <strong className="text-neutral-900">{fmtKES(run.totalPaye)}</strong></span>
+              <span>NSSF <strong className="text-neutral-900">{fmtKES(run.totalNssf)}</strong></span>
+              <span>SHIF <strong className="text-neutral-900">{fmtKES(run.totalShif)}</strong></span>
+              <span>Housing Levy <strong className="text-neutral-900">{fmtKES(run.totalHousingLevy)}</strong></span>
+            </div>
+          )}
+
+          {/* Payslips table */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[14px] font-bold text-neutral-900">Payslips</p>
+
+            {payslipsError && (
+              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
+                <AlertTriangle size={15} className="flex-shrink-0" />
+                <span className="flex-1">Could not load payslips.</span>
+                <button onClick={() => void refetchPayslips()} className="text-[12px] font-semibold underline underline-offset-2">Retry</button>
+              </div>
+            )}
+
+            {payslipsLoading ? (
+              <TableSkeleton />
+            ) : (
+              <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="bg-neutral-50 border-b border-neutral-100">
+                      <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Employee</th>
+                      <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">#</th>
+                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Gross</th>
+                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">PAYE</th>
+                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">NSSF</th>
+                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">SHIF</th>
+                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Net</th>
+                      <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Payment</th>
+                      <th className="px-6 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payslips.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-14 text-center text-[13px] text-neutral-400">
+                          {run?.status === "DRAFT" || run?.status === "CALCULATING"
+                            ? "Payslips will appear after calculation completes."
+                            : "No payslips found."}
+                        </td>
+                      </tr>
+                    ) : (
+                      payslips.map((slip) => {
+                        const pmtBadge = paymentStatusBadge(slip.paymentStatus);
+                        return (
+                          <tr key={slip.id} className="border-b border-neutral-50 last:border-0 hover:bg-[#F8F7F4] transition-colors">
+                            <td className="px-6 py-3.5 font-medium text-[#02110C]">{slip.employeeName}</td>
+                            <td className="px-6 py-3.5 font-mono text-[12px] text-neutral-500">{slip.employeeNumber}</td>
+                            <td className="px-6 py-3.5 text-right text-neutral-700">{fmt(slip.grossPay)}</td>
+                            <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.paye)}</td>
+                            <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.nssf)}</td>
+                            <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.shif)}</td>
+                            <td className="px-6 py-3.5 text-right font-semibold text-[#02110C]">{fmt(slip.netPay)}</td>
+                            <td className="px-6 py-3.5">
+                              {slip.paymentStatus ? (
+                                <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${pmtBadge.cls}`}>
+                                  {pmtBadge.label}
+                                </span>
+                              ) : (
+                                <span className="text-neutral-400 text-[12px]">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-3.5">
+                              <Link
+                                href={`/admin/payroll/${runId}/payslips/${slip.id}`}
+                                className="text-[12px] font-semibold text-[#166A50] hover:underline whitespace-nowrap"
+                              >
+                                View
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
