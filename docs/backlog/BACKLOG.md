@@ -125,6 +125,21 @@ Replace the constant with a `CalendarService.getWorkingDaysInPeriod(LocalDate fr
 
 ## Compliance
 
+### PAYROLL-BACKLOG-002 — Audit all services for missing @EnableJpaAuditing
+
+**Raised:** 2026-05-16  
+**Context:** payroll-service was discovered missing `@EnableJpaAuditing` during the 2026-05-16 smoke test. `BaseEntity` uses `@CreatedDate` and `@LastModifiedDate` via `AuditingEntityListener`, but without `@EnableJpaAuditing` in the Spring context these fields are never populated. In payroll-service, this silently broke all payroll run creation with a `NOT NULL` constraint violation on `created_at`. The same bug class may exist in other services.
+
+**Services to audit:**  
+employee-service (confirmed OK — has it on `EmployeeServiceApplication.java`), tenant-service, compliance-service, leave-service, time-attendance-service, document-service, notification-service, integration-hub-service, analytics-service, audit-service.
+
+**Method:**  
+`grep -r "@EnableJpaAuditing" services/*/src/main --include="*.java"` — any service with JPA entities that lacks the annotation is a potential silent failure.
+
+**Not blocking current work.** Run the grep before any service integration test cycle to catch failures early.
+
+---
+
 ### COMPLIANCE-BACKLOG-001 — Move statutory rate constants from code to compliance-service rate tables
 
 **Raised:** 2026-05-15  

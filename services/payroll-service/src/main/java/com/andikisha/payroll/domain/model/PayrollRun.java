@@ -150,6 +150,10 @@ public class PayrollRun extends BaseEntity {
         this.status = PayrollStatus.APPROVED;
     }
 
+    // Currently unreachable in production code paths. Reserved for future
+    // "disbursement in flight" indicator. PaymentsCompletedEvent transitions
+    // APPROVED → COMPLETED directly without an intermediate state today.
+    // See verification report 2026-05-16 for the design decision.
     public void markProcessing() {
         if (this.status != PayrollStatus.APPROVED) {
             throw new BusinessRuleException("Can only process an APPROVED payroll");
