@@ -26,6 +26,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     List<Employee> findByTenantIdAndStatus(String tenantId, EmploymentStatus status);
 
+    List<Employee> findByTenantIdAndStatusIn(String tenantId, List<EmploymentStatus> statuses);
+
     List<Employee> findAllByTenantIdAndIdIn(String tenantId, List<UUID> ids);
 
     boolean existsByTenantIdAndNationalId(String tenantId, String nationalId);

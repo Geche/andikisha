@@ -72,7 +72,9 @@ public class EmployeeQueryService {
 
     public List<EmployeeDetailResponse> findAllActive() {
         String tenantId = TenantContext.requireTenantId();
-        return repository.findByTenantIdAndStatus(tenantId, EmploymentStatus.ACTIVE)
+        // ACTIVE and ON_PROBATION are both payroll-eligible; TERMINATED, SUSPENDED, CANCELLED are not
+        return repository.findByTenantIdAndStatusIn(
+                        tenantId, List.of(EmploymentStatus.ACTIVE, EmploymentStatus.ON_PROBATION))
                 .stream().map(mapper::toDetailResponse).toList();
     }
 
