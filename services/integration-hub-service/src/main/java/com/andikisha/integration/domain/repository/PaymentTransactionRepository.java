@@ -30,4 +30,6 @@ public interface PaymentTransactionRepository
 
     long countByTenantIdAndPayrollRunIdAndStatus(
             String tenantId, UUID payrollRunId, TransactionStatus status);
+
+    long countByTenantIdAndPayrollRunId(String tenantId, UUID payrollRunId);
 }

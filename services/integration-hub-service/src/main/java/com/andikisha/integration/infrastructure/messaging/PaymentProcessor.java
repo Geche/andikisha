@@ -5,11 +5,13 @@ import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.integration.application.port.BankTransferClient;
 import com.andikisha.integration.application.port.IntegrationEventPublisher;
 import com.andikisha.integration.application.port.MpesaClient;
+import java.math.BigDecimal;
 import com.andikisha.integration.domain.model.IntegrationConfig;
 import com.andikisha.integration.domain.model.IntegrationType;
 import com.andikisha.integration.domain.model.KenyanBank;
 import com.andikisha.integration.domain.model.PaymentMethod;
 import com.andikisha.integration.domain.model.PaymentTransaction;
+import com.andikisha.integration.domain.model.TransactionStatus;
 import com.andikisha.integration.domain.repository.IntegrationConfigRepository;
 import com.andikisha.integration.domain.repository.PaymentTransactionRepository;
 import org.slf4j.Logger;
@@ -163,6 +165,28 @@ public class PaymentProcessor {
             transactionRepository.save(tx);
             eventPublisher.publishPaymentFailed(tx);
             log.error("Bank transfer exception for {}: {}", tx.getEmployeeName(), e.getMessage());
+        }
+
+        if (tx.getStatus() == TransactionStatus.COMPLETED
+                || tx.getStatus() == TransactionStatus.FAILED) {
+            maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
+        }
+    }
+
+    private void maybePublishRunCompleted(String tenantId, java.util.UUID payrollRunId) {
+        long total = transactionRepository.countByTenantIdAndPayrollRunId(tenantId, payrollRunId);
+        long completed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
+                tenantId, payrollRunId, TransactionStatus.COMPLETED);
+        long failed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
+                tenantId, payrollRunId, TransactionStatus.FAILED);
+        if (total > 0 && (completed + failed) == total) {
+            BigDecimal totalDisbursed = transactionRepository
+                    .findByTenantIdAndPayrollRunId(tenantId, payrollRunId).stream()
+                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
+                    .map(PaymentTransaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            eventPublisher.publishPaymentsCompleted(
+                    tenantId, payrollRunId.toString(), completed, failed, totalDisbursed);
         }
     }
 }

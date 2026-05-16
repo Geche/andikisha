@@ -18,6 +18,7 @@ import com.andikisha.events.leave.LeaveReversedEvent;
 import com.andikisha.events.notification.NotificationSentEvent;
 import com.andikisha.events.payroll.PaymentCompletedEvent;
 import com.andikisha.events.payroll.PaymentFailedEvent;
+import com.andikisha.events.payroll.PaymentsCompletedEvent;
 import com.andikisha.events.payroll.PayrollApprovedEvent;
 import com.andikisha.events.payroll.PayrollCalculatedEvent;
 import com.andikisha.events.payroll.PayrollInitiatedEvent;
@@ -60,8 +61,9 @@ import java.util.UUID;
         @JsonSubTypes.Type(value = PayrollCalculatedEvent.class,    name = "PayrollCalculated"),
         @JsonSubTypes.Type(value = PayrollApprovedEvent.class,      name = "PayrollApproved"),
         @JsonSubTypes.Type(value = PayrollProcessedEvent.class,     name = "PayrollProcessed"),
-        @JsonSubTypes.Type(value = PaymentCompletedEvent.class,     name = "PaymentCompleted"),
-        @JsonSubTypes.Type(value = PaymentFailedEvent.class,        name = "PaymentFailed"),
+        @JsonSubTypes.Type(value = PaymentCompletedEvent.class,      name = "PaymentCompleted"),
+        @JsonSubTypes.Type(value = PaymentFailedEvent.class,         name = "PaymentFailed"),
+        @JsonSubTypes.Type(value = PaymentsCompletedEvent.class,     name = "PaymentsCompleted"),
         @JsonSubTypes.Type(value = ComplianceRateChangedEvent.class, name = "ComplianceRateChanged"),
         @JsonSubTypes.Type(value = ClockInEvent.class,              name = "ClockIn"),
         @JsonSubTypes.Type(value = ClockOutEvent.class,             name = "ClockOut"),

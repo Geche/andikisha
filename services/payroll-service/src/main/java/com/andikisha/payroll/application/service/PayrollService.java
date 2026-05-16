@@ -367,6 +367,30 @@ public class PayrollService {
         payrollRunRepository.save(run);
     }
 
+    /**
+     * Called by the IntegrationEventListener when integration-hub signals that all
+     * payment transactions for this run have reached a terminal state. Transitions
+     * the run from APPROVED → COMPLETED (PROCESSING is skipped for now).
+     * Idempotent: if the run is already COMPLETED, this is a no-op.
+     */
+    @Transactional
+    public void completePayrollRun(UUID payrollRunId, long countFailed) {
+        String tenantId = TenantContext.requireTenantId();
+        PayrollRun run = payrollRunRepository.findByIdAndTenantId(payrollRunId, tenantId)
+                .orElseThrow(() -> new PayrollRunNotFoundException(payrollRunId));
+
+        if (run.getStatus() == PayrollStatus.COMPLETED) {
+            log.info("Run {} already COMPLETED — idempotent no-op", payrollRunId);
+            return;
+        }
+
+        run.complete(LocalDateTime.now(clock));
+        run = payrollRunRepository.save(run);
+        final PayrollRun completed = run;
+        publishAfterCommit(() -> eventPublisher.publishPayrollProcessed(completed));
+        log.info("Payroll run {} marked COMPLETED. {} payments failed.", payrollRunId, countFailed);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

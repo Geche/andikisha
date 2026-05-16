@@ -178,6 +178,28 @@ public class PaymentService {
         }
 
         transactionRepository.save(tx);
+
+        if (tx.getStatus() == TransactionStatus.COMPLETED
+                || tx.getStatus() == TransactionStatus.FAILED) {
+            maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
+        }
+    }
+
+    private void maybePublishRunCompleted(String tenantId, java.util.UUID payrollRunId) {
+        long total = transactionRepository.countByTenantIdAndPayrollRunId(tenantId, payrollRunId);
+        long completed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
+                tenantId, payrollRunId, TransactionStatus.COMPLETED);
+        long failed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
+                tenantId, payrollRunId, TransactionStatus.FAILED);
+        if (total > 0 && (completed + failed) == total) {
+            java.math.BigDecimal totalDisbursed = transactionRepository
+                    .findByTenantIdAndPayrollRunId(tenantId, payrollRunId).stream()
+                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
+                    .map(com.andikisha.integration.domain.model.PaymentTransaction::getAmount)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            eventPublisher.publishPaymentsCompleted(
+                    tenantId, payrollRunId.toString(), completed, failed, totalDisbursed);
+        }
     }
 
     public Page<PaymentTransactionResponse> listTransactions(Pageable pageable) {

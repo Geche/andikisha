@@ -19,9 +19,12 @@ public class RabbitMqConfig {
 
     public static final String PAYROLL_EXCHANGE = "payroll.events";
     public static final String EMPLOYEE_EXCHANGE = "employee.events";
+    public static final String INTEGRATION_EXCHANGE = "integration.events";
     public static final String PAYROLL_EMPLOYEE_EVENTS_QUEUE = "payroll.employee-events";
+    public static final String PAYROLL_PAYMENT_EVENTS_QUEUE = "payroll.payment-events";
     public static final String PAYROLL_DLX = "dlx.payroll";
     public static final String PAYROLL_DLQ = "dlq.payroll.employee-events";
+    public static final String PAYROLL_PAYMENT_DLQ = "dlq.payroll.payment-events";
 
     @Bean
     TopicExchange payrollExchange() {
@@ -31,6 +34,37 @@ public class RabbitMqConfig {
     @Bean
     TopicExchange employeeExchange() {
         return new TopicExchange(EMPLOYEE_EXCHANGE, true, false);
+    }
+
+    @Bean
+    TopicExchange integrationExchange() {
+        return new TopicExchange(INTEGRATION_EXCHANGE, true, false);
+    }
+
+    @Bean
+    Queue payrollPaymentEventsQueue() {
+        return QueueBuilder.durable(PAYROLL_PAYMENT_EVENTS_QUEUE)
+                .withArgument("x-dead-letter-exchange", "dlx.payroll")
+                .build();
+    }
+
+    @Bean
+    Binding bindPaymentsCompletedToPayroll() {
+        return BindingBuilder.bind(payrollPaymentEventsQueue())
+                .to(integrationExchange())
+                .with("payments.completed");
+    }
+
+    @Bean
+    Queue payrollPaymentDeadLetterQueue() {
+        return QueueBuilder.durable(PAYROLL_PAYMENT_DLQ).build();
+    }
+
+    @Bean
+    Binding bindPayrollPaymentDlq() {
+        return BindingBuilder.bind(payrollPaymentDeadLetterQueue())
+                .to(payrollDeadLetterExchange())
+                .with(PAYROLL_PAYMENT_EVENTS_QUEUE);
     }
 
     @Bean

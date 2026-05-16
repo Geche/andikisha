@@ -2,12 +2,14 @@ package com.andikisha.integration.infrastructure.messaging;
 
 import com.andikisha.events.payroll.PaymentCompletedEvent;
 import com.andikisha.events.payroll.PaymentFailedEvent;
+import com.andikisha.events.payroll.PaymentsCompletedEvent;
 import com.andikisha.integration.application.port.IntegrationEventPublisher;
 import com.andikisha.integration.domain.model.PaymentTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
 
 @Component
 public class RabbitIntegrationEventPublisher implements IntegrationEventPublisher {
@@ -53,5 +55,16 @@ public class RabbitIntegrationEventPublisher implements IntegrationEventPublishe
         rabbitTemplate.convertAndSend("integration.events", "payment.failed", event);
         log.warn("Published payment failed for {} error: {}",
                 tx.getEmployeeName(), tx.getErrorMessage());
+    }
+
+    @Override
+    public void publishPaymentsCompleted(String tenantId, String payrollRunId,
+                                         long countSuccessful, long countFailed,
+                                         BigDecimal totalDisbursed) {
+        var event = new PaymentsCompletedEvent(
+                tenantId, payrollRunId, countSuccessful, countFailed, totalDisbursed);
+        rabbitTemplate.convertAndSend("integration.events", "payments.completed", event);
+        log.info("Published payments.completed for run {} — {}/{} successful, KES {} disbursed",
+                payrollRunId, countSuccessful, countSuccessful + countFailed, totalDisbursed);
     }
 }
