@@ -67,8 +67,8 @@ export default function NewPayrollRunPage() {
       apiClient.post<PayrollRun>("/api/v1/payroll/runs", body).then((r) => r.data),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
-      toast("Payroll run initiated — calculation in progress", "success");
-      router.push(`/payroll/${data.id}`);
+      toast("Payroll run created — calculate to generate payslips", "success");
+      router.push(`/admin/payroll/${data.id}`);
     },
     onError: (err) => {
       const msg =
