@@ -59,3 +59,7 @@ infrastructure/docker/.env.env.local
 config/env/.env
 .worktrees/
 .superpowers/
+
+## Infrastructure Terraform
+infrastructure/docker/.env
+
