@@ -35,6 +35,7 @@ interface CreateEmployeeRequest {
   housingAllowance?: number;
   transportAllowance?: number;
   medicalAllowance?: number;
+  helbMonthlyDeduction?: number;
   currency: string;
 }
 
@@ -113,6 +114,7 @@ interface FieldState {
   employmentType: EmploymentType; hireDate: string; dateOfBirth: string; gender: string;
   departmentId: string; positionId: string;
   basicSalary: string; housingAllowance: string; transportAllowance: string; medicalAllowance: string;
+  helbMonthlyDeduction: string;
 }
 
 const EMPTY: FieldState = {
@@ -122,6 +124,7 @@ const EMPTY: FieldState = {
   employmentType: "PERMANENT", hireDate: "", dateOfBirth: "", gender: "",
   departmentId: "", positionId: "",
   basicSalary: "", housingAllowance: "", transportAllowance: "", medicalAllowance: "",
+  helbMonthlyDeduction: "",
 };
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -200,9 +203,10 @@ export default function NewEmployeePage() {
     if (f.gender)                  body.gender         = f.gender;
     if (f.departmentId)            body.departmentId   = f.departmentId;
     if (f.positionId)              body.positionId     = f.positionId;
-    if (f.housingAllowance.trim()) body.housingAllowance   = parseFloat(f.housingAllowance);
-    if (f.transportAllowance.trim()) body.transportAllowance = parseFloat(f.transportAllowance);
-    if (f.medicalAllowance.trim()) body.medicalAllowance   = parseFloat(f.medicalAllowance);
+    if (f.housingAllowance.trim())      body.housingAllowance      = parseFloat(f.housingAllowance);
+    if (f.transportAllowance.trim())    body.transportAllowance    = parseFloat(f.transportAllowance);
+    if (f.medicalAllowance.trim())      body.medicalAllowance      = parseFloat(f.medicalAllowance);
+    if (f.helbMonthlyDeduction.trim())  body.helbMonthlyDeduction  = parseFloat(f.helbMonthlyDeduction);
 
     mutation.mutate(body);
   }
@@ -297,6 +301,13 @@ export default function NewEmployeePage() {
                   <input id="nssfNumber" className={inputClass(errors.nssfNumber)} type="text"
                     placeholder="1234567" value={f.nssfNumber} disabled={isPending}
                     onChange={(e) => set("nssfNumber", e.target.value)} />
+                </Field>
+                <Field label="HELB Monthly Deduction (KES)"
+                  hint="Higher Education Loans Board repayment deducted post-tax. Leave blank if not applicable.">
+                  <input id="helbMonthlyDeduction" className={inputCls} type="number"
+                    min="0" step="0.01" placeholder="0" value={f.helbMonthlyDeduction}
+                    disabled={isPending}
+                    onChange={(e) => set("helbMonthlyDeduction", e.target.value)} />
                 </Field>
               </div>
             </div>

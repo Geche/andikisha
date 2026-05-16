@@ -48,6 +48,7 @@ public record CreateEmployeeRequest(
         BigDecimal transportAllowance,
         BigDecimal medicalAllowance,
         BigDecimal otherAllowances,
+        BigDecimal helbMonthlyDeduction,
 
         String currency,
         UUID departmentId,

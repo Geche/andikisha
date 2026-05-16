@@ -73,6 +73,7 @@ message SalaryStructureResponse {
   string medical_allowance = 5;
   string other_allowances = 6;
   string currency = 7;
+  string helb_monthly_deduction = 8;
 }
 
 message GetDepartmentRequest {

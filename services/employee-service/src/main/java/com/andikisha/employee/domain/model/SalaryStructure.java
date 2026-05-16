@@ -47,16 +47,24 @@ public class SalaryStructure {
     })
     private Money otherAllowances;
 
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "amount",   column = @Column(name = "helb_monthly_deduction_amount")),
+            @AttributeOverride(name = "currency", column = @Column(name = "helb_monthly_deduction_currency"))
+    })
+    private Money helbMonthlyDeduction;
+
     protected SalaryStructure() {}
 
     public SalaryStructure(Money basicSalary, Money housingAllowance,
                            Money transportAllowance, Money medicalAllowance,
-                           Money otherAllowances) {
+                           Money otherAllowances, Money helbMonthlyDeduction) {
         this.basicSalary = basicSalary;
-        this.housingAllowance    = housingAllowance    != null ? housingAllowance    : Money.zero(basicSalary.getCurrency());
-        this.transportAllowance  = transportAllowance  != null ? transportAllowance  : Money.zero(basicSalary.getCurrency());
-        this.medicalAllowance    = medicalAllowance    != null ? medicalAllowance    : Money.zero(basicSalary.getCurrency());
-        this.otherAllowances     = otherAllowances     != null ? otherAllowances     : Money.zero(basicSalary.getCurrency());
+        this.housingAllowance      = housingAllowance      != null ? housingAllowance      : Money.zero(basicSalary.getCurrency());
+        this.transportAllowance    = transportAllowance    != null ? transportAllowance    : Money.zero(basicSalary.getCurrency());
+        this.medicalAllowance      = medicalAllowance      != null ? medicalAllowance      : Money.zero(basicSalary.getCurrency());
+        this.otherAllowances       = otherAllowances       != null ? otherAllowances       : Money.zero(basicSalary.getCurrency());
+        this.helbMonthlyDeduction  = helbMonthlyDeduction  != null ? helbMonthlyDeduction  : Money.zero(basicSalary.getCurrency());
     }
 
     public Money grossPay() {

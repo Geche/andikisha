@@ -97,7 +97,8 @@ public class EmployeeService {
                 request.housingAllowance() != null ? Money.of(request.housingAllowance(), currency) : null,
                 request.transportAllowance() != null ? Money.of(request.transportAllowance(), currency) : null,
                 request.medicalAllowance() != null ? Money.of(request.medicalAllowance(), currency) : null,
-                request.otherAllowances() != null ? Money.of(request.otherAllowances(), currency) : null
+                request.otherAllowances() != null ? Money.of(request.otherAllowances(), currency) : null,
+                request.helbMonthlyDeduction() != null ? Money.of(request.helbMonthlyDeduction(), currency) : null
         );
 
         EmploymentType empType = parseEnum(EmploymentType.class, request.employmentType());
@@ -187,7 +188,8 @@ public class EmployeeService {
                 request.housingAllowance() != null ? Money.of(request.housingAllowance(), currency) : null,
                 request.transportAllowance() != null ? Money.of(request.transportAllowance(), currency) : null,
                 request.medicalAllowance() != null ? Money.of(request.medicalAllowance(), currency) : null,
-                request.otherAllowances() != null ? Money.of(request.otherAllowances(), currency) : null
+                request.otherAllowances() != null ? Money.of(request.otherAllowances(), currency) : null,
+                request.helbMonthlyDeduction() != null ? Money.of(request.helbMonthlyDeduction(), currency) : null
         );
 
         employee.updateSalary(newSalary);

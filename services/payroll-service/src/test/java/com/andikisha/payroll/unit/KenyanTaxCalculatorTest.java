@@ -134,6 +134,10 @@ class KenyanTaxCalculatorTest {
 
         assertThat(withHelb.netPay())
                 .isEqualByComparingTo(withoutHelb.netPay().subtract(helb));
+
+        // Accounting identity must hold with HELB included in totalDeductions
+        assertThat(withHelb.netPay().add(withHelb.totalDeductions()))
+                .isEqualByComparingTo(gross);
     }
 
     @Test

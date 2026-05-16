@@ -39,6 +39,7 @@ interface EmployeeDetail {
   transportAllowance: number;
   medicalAllowance: number;
   otherAllowances: number;
+  helbMonthlyDeduction: number;
   grossPay: number;
   currency: string;
   hireDate: string | null;
@@ -410,6 +411,10 @@ export default function EmployeeDetailPage({
             <InfoCard title="Statutory Numbers">
               <InfoRow label="NSSF Number" value={employee.nssfNumber ?? "—"} />
               <InfoRow label="NHIF / SHIF Number" value={employee.nhifNumber ?? "—"} />
+              <InfoRow
+                label="HELB Monthly Deduction"
+                value={employee.helbMonthlyDeduction > 0 ? formatKES(employee.helbMonthlyDeduction) : "—"}
+              />
             </InfoCard>
           </div>
         ) : null}

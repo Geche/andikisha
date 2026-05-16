@@ -110,6 +110,7 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
                     .setMedicalAllowance(dto.medicalAllowance() != null ? dto.medicalAllowance().toPlainString() : "0")
                     .setOtherAllowances(dto.otherAllowances() != null ? dto.otherAllowances().toPlainString() : "0")
                     .setCurrency(dto.currency())
+                    .setHelbMonthlyDeduction(dto.helbMonthlyDeduction() != null ? dto.helbMonthlyDeduction().toPlainString() : "0")
                     .build());
             observer.onCompleted();
         } catch (IllegalArgumentException e) {
@@ -150,6 +151,7 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
                             .setMedicalAllowance(dto.medicalAllowance() != null ? dto.medicalAllowance().toPlainString() : "0")
                             .setOtherAllowances(dto.otherAllowances() != null ? dto.otherAllowances().toPlainString() : "0")
                             .setCurrency(dto.currency())
+                            .setHelbMonthlyDeduction(dto.helbMonthlyDeduction() != null ? dto.helbMonthlyDeduction().toPlainString() : "0")
                             .build())
                     .toList();
             observer.onNext(GetSalaryStructuresBatchResponse.newBuilder()

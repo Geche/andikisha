@@ -9,5 +9,6 @@ public record UpdateSalaryRequest(
         BigDecimal housingAllowance,
         BigDecimal transportAllowance,
         BigDecimal medicalAllowance,
-        BigDecimal otherAllowances
+        BigDecimal otherAllowances,
+        BigDecimal helbMonthlyDeduction
 ) {}

@@ -35,6 +35,7 @@ public record EmployeeDetailResponse(
         BigDecimal transportAllowance,
         BigDecimal medicalAllowance,
         BigDecimal otherAllowances,
+        BigDecimal helbMonthlyDeduction,
         BigDecimal grossPay,
         String currency,
         LocalDate hireDate,

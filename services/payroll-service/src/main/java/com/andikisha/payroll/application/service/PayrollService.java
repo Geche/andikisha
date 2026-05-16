@@ -234,8 +234,9 @@ public class PayrollService {
                     BigDecimal totalAllowances = housing.add(transport).add(medical).add(other);
                     BigDecimal grossPay        = basicPay.add(totalAllowances);
 
+                    BigDecimal helbDeduction = parseSalary(salary.getHelbMonthlyDeduction());
                     // Pass basicPay separately: NSSF is on pensionable pay, not gross
-                    DeductionResult deductions = taxCalculator.calculate(grossPay, basicPay);
+                    DeductionResult deductions = taxCalculator.calculate(grossPay, basicPay, helbDeduction);
 
                     // Unpaid leave deduction: daily rate × unpaid days used this period
                     BigDecimal unpaidLeaveDeduction = computeUnpaidLeaveDeduction(
@@ -266,7 +267,7 @@ public class PayrollService {
                             .shif(deductions.shif())
                             .housingLevy(deductions.housingLevyEmployee())
                             .housingLevyEmployer(deductions.housingLevyEmployer())
-                            .helb(BigDecimal.ZERO)
+                            .helb(helbDeduction)
                             .nita(deductions.nita())
                             .otherDeductions(unpaidLeaveDeduction)
                             .personalRelief(deductions.personalRelief())
