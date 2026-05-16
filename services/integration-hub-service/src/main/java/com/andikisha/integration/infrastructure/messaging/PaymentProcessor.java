@@ -137,9 +137,14 @@ public class PaymentProcessor {
 
             transactionRepository.save(tx);
 
+            if (tx.getStatus() == TransactionStatus.FAILED) {
+                eventPublisher.publishPaymentFailed(tx);
+            }
+
         } catch (Exception e) {
             tx.markFailed("EXCEPTION", e.getMessage());
             transactionRepository.save(tx);
+            eventPublisher.publishPaymentFailed(tx);
             log.error("M-Pesa exception for {}: {}", tx.getEmployeeName(), e.getMessage());
         }
 

@@ -22,9 +22,11 @@ public class RabbitMqConfig {
     public static final String INTEGRATION_EXCHANGE = "integration.events";
     public static final String PAYROLL_EMPLOYEE_EVENTS_QUEUE = "payroll.employee-events";
     public static final String PAYROLL_PAYMENT_EVENTS_QUEUE = "payroll.payment-events";
+    public static final String PAYROLL_PER_PAYMENT_QUEUE = "payroll.per-payment-events";
     public static final String PAYROLL_DLX = "dlx.payroll";
     public static final String PAYROLL_DLQ = "dlq.payroll.employee-events";
     public static final String PAYROLL_PAYMENT_DLQ = "dlq.payroll.payment-events";
+    public static final String PAYROLL_PER_PAYMENT_DLQ = "dlq.payroll.per-payment-events";
 
     @Bean
     TopicExchange payrollExchange() {
@@ -68,6 +70,32 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    Queue payrollPerPaymentEventsQueue() {
+        return QueueBuilder.durable(PAYROLL_PER_PAYMENT_QUEUE)
+                .withArgument("x-dead-letter-exchange", PAYROLL_DLX)
+                .build();
+    }
+
+    @Bean
+    Binding bindPerPaymentEventsToPayroll() {
+        return BindingBuilder.bind(payrollPerPaymentEventsQueue())
+                .to(integrationExchange())
+                .with("payment.*");
+    }
+
+    @Bean
+    Queue payrollPerPaymentDeadLetterQueue() {
+        return QueueBuilder.durable(PAYROLL_PER_PAYMENT_DLQ).build();
+    }
+
+    @Bean
+    Binding bindPayrollPerPaymentDlq() {
+        return BindingBuilder.bind(payrollPerPaymentDeadLetterQueue())
+                .to(payrollDeadLetterExchange())
+                .with(PAYROLL_PER_PAYMENT_QUEUE);
+    }
+
+    @Bean
     Queue payrollEmployeeEventsQueue() {
         return QueueBuilder.durable(PAYROLL_EMPLOYEE_EVENTS_QUEUE)
                 .withArgument("x-dead-letter-exchange", "dlx.payroll")
@@ -100,7 +128,9 @@ public class RabbitMqConfig {
 
     @Bean
     Jackson2JsonMessageConverter messageConverter(ObjectMapper objectMapper) {
-        return new Jackson2JsonMessageConverter(objectMapper);
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+        converter.setTypePrecedence(org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper.TypePrecedence.INFERRED);
+        return converter;
     }
 
     @Bean

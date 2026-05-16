@@ -51,6 +51,15 @@ Either:
 **Why deferred:**  
 The piecemeal fix pattern (service-by-service) creates inconsistency. B1 should introduce a shared `TrustedHeaderAuthFilter` in `andikisha-common` with a proper `GatewayAuthentication` token type that carries both userId and employeeId. Then all services share the fix.
 
+**2026-05-16 update:** This pattern is widespread. The leave balances 403 fix
+(2026-05-16) added `GET /leave/me/balances` as a workaround because
+`@PreAuthorize` on `/employees/{employeeId}/balances` uses `authentication.name`
+(user UUID from X-User-ID) vs the path param (employee UUID from JWT employeeId
+claim) — different namespaces, always 403 for EMPLOYEE role. The underlying SpEL
+ownership pattern needs auditing across every employee-scoped resource in
+leave-service, payroll-service, and any other service with similar patterns.
+Workaround (a /me/* endpoint) does not fix the root cause.
+
 ---
 
 ## API Design
@@ -175,3 +184,26 @@ An integration test module (or test class in payroll-service + integration-hub-s
 Move statutory rates to a `statutory_rates` table in compliance-service, versioned by effective date. `KenyanTaxCalculator` fetches the applicable rate set for the payroll period via gRPC. This allows rate changes to be applied by data migration rather than code deployment, and supports historical re-calculation using the rates that were in effect at the time.
 
 **Not blocking current work.** Statutory rates for FY 2024/2025 are correct. Revisit before the next Finance Act (typically June/July each year).
+
+---
+
+## Infrastructure
+
+### INFRA-BACKLOG-001: YAML schema validation for application-*.yml across all services
+
+**Reported:** 2026-05-16
+**Priority:** Medium
+**Status:** Open
+
+The `api-gateway/application-dev.yml` had a broken YAML structure — the `rabbitmq` block
+was indented under a top-level `JWT_SECRET` key instead of under `spring`. This caused a
+`ParserException` on every gateway startup and was only caught during dashboard verification,
+not CI.
+
+Add either:
+- A YAML schema validator step in CI (e.g., yamllint with a Spring Boot-aware schema)
+- A "service must boot" integration test that starts each service in isolation and asserts
+  the health endpoint responds 200 within 30s
+
+This class of bug (wrong YAML indentation) causes silent failures that are invisible until
+manual testing.

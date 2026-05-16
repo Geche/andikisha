@@ -356,6 +356,26 @@ public class PayrollService {
                 .map(mapper::toResponse);
     }
 
+    /**
+     * Updates a single PaySlip's payment status in response to a per-payment event
+     * from integration-hub. Idempotent — re-delivery of the same event is safe because
+     * markPaid / markPaymentFailed reset to the same terminal state.
+     */
+    @Transactional
+    public void updatePaySlipPaymentStatus(UUID paySlipId, String tenantId,
+                                            boolean success, String receipt) {
+        paySlipRepository.findByIdAndTenantId(paySlipId, tenantId).ifPresent(slip -> {
+            if (success) {
+                slip.markPaid(receipt);
+            } else {
+                slip.markPaymentFailed();
+            }
+            paySlipRepository.save(slip);
+            log.info("PaySlip {} marked {} receipt={}", paySlipId,
+                    success ? "PAID" : "FAILED", receipt);
+        });
+    }
+
     @Transactional
     public void cancelPayroll(UUID payrollRunId, String reason) {
         String tenantId = TenantContext.requireTenantId();
