@@ -3,9 +3,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, AlertCircle } from "lucide-react";
 import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+
+interface PaymentSummary {
+  failed: number;
+  completed: number;
+  totalTransactions: number;
+}
 
 type RunStatus =
   | "DRAFT"
@@ -68,6 +74,53 @@ function statusBadge(status: RunStatus): { cls: string; label: string } {
     case "FAILED":     return { cls: "bg-red-100 text-red-700", label: "Failed" };
     case "CANCELLED":  return { cls: "bg-neutral-100 text-neutral-400", label: "Cancelled" };
   }
+}
+
+// Fetches payment summary for COMPLETED runs to show partial-failure indicator.
+// Extracted as a component because hooks cannot be called inside a map().
+// Uses staleTime=5min so re-navigating to this page doesn't trigger re-fetches.
+function RunRow({ run }: { run: PayrollRun }) {
+  const badge = statusBadge(run.status);
+
+  const { data: summary } = useQuery<PaymentSummary>({
+    queryKey: ["payment-summary", run.id],
+    queryFn: () =>
+      apiClient.get<PaymentSummary>(`/api/v1/payments/payroll-runs/${run.id}/summary`).then((r) => r.data),
+    enabled: run.status === "COMPLETED",
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const hasFailed = summary && summary.failed > 0;
+
+  return (
+    <tr className="border-b border-neutral-50 last:border-0 hover:bg-[#F8F7F4] transition-colors">
+      <td className="px-6 py-4 font-medium text-[#02110C]">{formatPeriod(run.period)}</td>
+      <td className="px-6 py-4 text-neutral-500 capitalize">{run.payFrequency.toLowerCase()}</td>
+      <td className="px-6 py-4 text-right text-neutral-700">{run.employeeCount || "—"}</td>
+      <td className="px-6 py-4 text-right text-neutral-700">{formatKES(run.totalGross)}</td>
+      <td className="px-6 py-4 text-right font-medium text-[#02110C]">{formatKES(run.totalNet)}</td>
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
+            {badge.label}
+          </span>
+          {hasFailed && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+              <AlertCircle size={10} />
+              {summary!.failed} failed
+            </span>
+          )}
+        </div>
+      </td>
+      <td className="px-6 py-4 text-neutral-500">{formatDate(run.createdAt)}</td>
+      <td className="px-6 py-4">
+        <Link href={`/admin/payroll/${run.id}`} className="text-[12.5px] font-semibold text-[#166A50] hover:underline">
+          View
+        </Link>
+      </td>
+    </tr>
+  );
 }
 
 function TableSkeleton() {
@@ -155,32 +208,7 @@ export default function PayrollPage() {
                     </td>
                   </tr>
                 ) : (
-                  runs.map((run) => {
-                    const badge = statusBadge(run.status);
-                    return (
-                      <tr key={run.id} className="border-b border-neutral-50 last:border-0 hover:bg-[#F8F7F4] transition-colors">
-                        <td className="px-6 py-4 font-medium text-[#02110C]">{formatPeriod(run.period)}</td>
-                        <td className="px-6 py-4 text-neutral-500 capitalize">{run.payFrequency.toLowerCase()}</td>
-                        <td className="px-6 py-4 text-right text-neutral-700">{run.employeeCount || "—"}</td>
-                        <td className="px-6 py-4 text-right text-neutral-700">{formatKES(run.totalGross)}</td>
-                        <td className="px-6 py-4 text-right font-medium text-[#02110C]">{formatKES(run.totalNet)}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
-                            {badge.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-neutral-500">{formatDate(run.createdAt)}</td>
-                        <td className="px-6 py-4">
-                          <Link
-                            href={`/admin/payroll/${run.id}`}
-                            className="text-[12.5px] font-semibold text-[#166A50] hover:underline"
-                          >
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })
+                  runs.map((run) => <RunRow key={run.id} run={run} />)
                 )}
               </tbody>
             </table>
