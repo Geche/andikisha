@@ -112,6 +112,18 @@ HR Officer, Sales Representative, Sales Manager, Software Engineer, Accountant, 
 
 **Employees:** 26 seed employees created during development. Employee numbers EMP-0001 through EMP-0026. `jane.w@demo.co.ke` is linked to employee record `a26e4215-21d7-4d0d-8579-c315fb6635c4` (EMP-0004).
 
+### Known dev data quirks
+
+**Payslip payment status on historical runs**
+
+Payroll runs disbursed in dev environments before 2026-05-16 (commit `68c6388`) will show `paymentStatus=PENDING` on all payslips, even if payments completed successfully. This is because the per-payment `PaymentCompletedEvent` → payroll-service listener did not yet exist. The payslip entity was never updated from the payment side.
+
+This is a historical artifact in dev environments only. It does not affect production: the listener exists from day one of any production deployment, so all disbursed payslips correctly reflect `PAID` or `FAILED`. If it bothers you in dev, reset the environment (see "Resetting the dev environment" above) and run fresh payroll runs.
+
+**Leave balances on seed employees**
+
+Seed employees loaded via Flyway SQL (EMP-0001 through EMP-0026) bypass the `EmployeeCreatedEvent` flow that normally initializes leave balances. The `StartupLeaveBalanceInitializer` in leave-service self-heals this on startup: it detects employees without current-year balances and initializes them automatically using the tenant's active leave policies. If you see empty leave balance KPIs in the employee dashboard, restart leave-service (it will re-run the heal) or run `make seed-demo-data`.
+
 ---
 
 ## Environment variables
