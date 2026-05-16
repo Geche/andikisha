@@ -155,6 +155,58 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@22.19.15)(jsdom@25.0.1)(lightningcss@1.32.0)
 
+  frontend/platform-portal:
+    dependencies:
+      '@andikisha/ui':
+        specifier: workspace:*
+        version: link:../packages/ui
+      '@tanstack/react-query':
+        specifier: ^5.62.0
+        version: 5.96.0(react@19.2.4)
+      jose:
+        specifier: ^5.10.0
+        version: 5.10.0
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@19.2.4)
+      next:
+        specifier: 15.1.0
+        version: 15.1.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4.0.0
+        version: 4.2.2
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.15
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^9.0.0
+        version: 9.39.4(jiti@2.6.1)
+      eslint-config-next:
+        specifier: 15.1.0
+        version: 15.1.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+      postcss:
+        specifier: ^8.4.0
+        version: 8.5.8
+      tailwindcss:
+        specifier: ^4.0.0
+        version: 4.2.2
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   frontend/tenant-portal:
     dependencies:
       '@andikisha/api-client':
