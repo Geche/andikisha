@@ -15,9 +15,13 @@ public class SandboxMpesaClient implements MpesaClient {
     private static final Logger log = LoggerFactory.getLogger(SandboxMpesaClient.class);
 
     private final boolean enabled;
+    private final String failPhonePrefix;
 
-    public SandboxMpesaClient(@Value("${app.mpesa.enabled:false}") boolean enabled) {
+    public SandboxMpesaClient(
+            @Value("${app.mpesa.enabled:false}") boolean enabled,
+            @Value("${app.mpesa.sandbox.fail-phone-prefix:}") String failPhonePrefix) {
         this.enabled = enabled;
+        this.failPhonePrefix = failPhonePrefix;
     }
 
     @Override
@@ -27,6 +31,11 @@ public class SandboxMpesaClient implements MpesaClient {
                                  String remarks, String occasion,
                                  String callbackUrl, String timeoutUrl) {
         if (!enabled) {
+            if (!failPhonePrefix.isBlank() && phoneNumber.startsWith(failPhonePrefix)) {
+                log.info("M-Pesa sandbox: simulating failure for {} (prefix match {})",
+                        phoneNumber, failPhonePrefix);
+                return new MpesaResponse(false, null, null, "F2", "Insufficient funds - test failure");
+            }
             log.info("M-Pesa sandbox: B2C {} to {} amount KES {}",
                     occasion, phoneNumber, amount);
             String mockConversationId = "AG_" + UUID.randomUUID().toString()
