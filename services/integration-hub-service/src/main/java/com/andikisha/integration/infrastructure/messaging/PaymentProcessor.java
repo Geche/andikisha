@@ -18,7 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.UUID;
 
@@ -37,12 +41,14 @@ public class PaymentProcessor {
     private final BankTransferClient bankTransferClient;
     private final IntegrationEventPublisher eventPublisher;
     private final boolean mpesaSandbox;
+    private final TransactionTemplate requiresNewTx;
 
     public PaymentProcessor(PaymentTransactionRepository transactionRepository,
                             IntegrationConfigRepository configRepository,
                             MpesaClient mpesaClient,
                             BankTransferClient bankTransferClient,
                             IntegrationEventPublisher eventPublisher,
+                            PlatformTransactionManager transactionManager,
                             @org.springframework.beans.factory.annotation.Value("${app.mpesa.enabled:false}") boolean mpesaEnabled) {
         this.transactionRepository = transactionRepository;
         this.configRepository = configRepository;
@@ -50,6 +56,8 @@ public class PaymentProcessor {
         this.bankTransferClient = bankTransferClient;
         this.eventPublisher = eventPublisher;
         this.mpesaSandbox = !mpesaEnabled;
+        this.requiresNewTx = new TransactionTemplate(transactionManager);
+        this.requiresNewTx.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Async("paymentExecutor")
@@ -197,20 +205,35 @@ public class PaymentProcessor {
         }
     }
 
-    private void maybePublishRunCompleted(String tenantId, java.util.UUID payrollRunId) {
-        long total = transactionRepository.countByTenantIdAndPayrollRunId(tenantId, payrollRunId);
-        long completed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
-                tenantId, payrollRunId, TransactionStatus.COMPLETED);
-        long failed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
-                tenantId, payrollRunId, TransactionStatus.FAILED);
-        if (total > 0 && (completed + failed) == total) {
-            BigDecimal totalDisbursed = transactionRepository
-                    .findByTenantIdAndPayrollRunId(tenantId, payrollRunId).stream()
-                    .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
-                    .map(PaymentTransaction::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            eventPublisher.publishPaymentsCompleted(
-                    tenantId, payrollRunId.toString(), completed, failed, totalDisbursed);
-        }
+    /**
+     * Defers the run-completion check to after the current transaction commits, then re-counts
+     * in a fresh REQUIRES_NEW transaction so all concurrent payment commits are visible.
+     * Without this, parallel payment threads each see their own uncommitted save and may all
+     * count (n-1) rows — missing the trigger. The idempotent PayrollRun.complete() guard in
+     * payroll-service handles the rare case where two threads both publish.
+     */
+    private void maybePublishRunCompleted(String tenantId, UUID payrollRunId) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                requiresNewTx.execute(status -> {
+                    long total = transactionRepository.countByTenantIdAndPayrollRunId(tenantId, payrollRunId);
+                    long completed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
+                            tenantId, payrollRunId, TransactionStatus.COMPLETED);
+                    long failed = transactionRepository.countByTenantIdAndPayrollRunIdAndStatus(
+                            tenantId, payrollRunId, TransactionStatus.FAILED);
+                    if (total > 0 && (completed + failed) == total) {
+                        BigDecimal totalDisbursed = transactionRepository
+                                .findByTenantIdAndPayrollRunId(tenantId, payrollRunId).stream()
+                                .filter(t -> t.getStatus() == TransactionStatus.COMPLETED)
+                                .map(PaymentTransaction::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        eventPublisher.publishPaymentsCompleted(
+                                tenantId, payrollRunId.toString(), completed, failed, totalDisbursed);
+                    }
+                    return null;
+                });
+            }
+        });
     }
 }

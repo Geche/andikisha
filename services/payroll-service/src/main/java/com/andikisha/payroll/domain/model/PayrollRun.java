@@ -162,6 +162,9 @@ public class PayrollRun extends BaseEntity {
     }
 
     public void complete(LocalDateTime at) {
+        if (this.status == PayrollStatus.COMPLETED) {
+            return; // idempotent — PaymentsCompletedEvent may arrive more than once under concurrent sandbox mode
+        }
         if (this.status != PayrollStatus.APPROVED && this.status != PayrollStatus.PROCESSING) {
             throw new BusinessRuleException(
                     "Can only complete an APPROVED or PROCESSING payroll, current: " + this.status);

@@ -32,8 +32,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -474,17 +472,14 @@ public class PayrollService {
      * Defers event publication until after the current transaction commits.
      * If no transaction is active, publishes immediately.
      */
+    /**
+     * Calls the publish action directly; the publisher's own sendAfterCommit
+     * handles deferral to after-transaction-commit. Wrapping here would create
+     * a nested afterCommit registration that Spring's snapshot-based callback
+     * dispatch never fires (the new synchronization is added to the set after the
+     * snapshot was taken in triggerAfterCommit, so it is silently lost).
+     */
     private void publishAfterCommit(Runnable publishAction) {
-        if (TransactionSynchronizationManager.isActualTransactionActive()) {
-            TransactionSynchronizationManager.registerSynchronization(
-                    new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            publishAction.run();
-                        }
-                    });
-        } else {
-            publishAction.run();
-        }
+        publishAction.run();
     }
 }
