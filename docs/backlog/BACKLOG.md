@@ -106,3 +106,31 @@ Until then, an admin who needs payslips must have their employee record created 
 **Action for B1:**  
 - Add `isAlsoEmployee` field to `CreateTenantWithLicenceRequest`
 - If true, provisioning creates an employee record via employee-service gRPC and links it to the admin user
+
+---
+
+## Payroll
+
+### PAYROLL-BACKLOG-001 — Replace hardcoded 22 working days with calendar-aware calculation
+
+**Raised:** 2026-05-15  
+**Context:** `PayrollService.STANDARD_WORKING_DAYS_PER_MONTH = 22` is used to compute unpaid-leave daily deductions. 22 is a reasonable approximation for a 5-day-week, 4.33-week month but is wrong for: weekly payroll periods, bi-weekly periods, months with public holidays, and daily-rated casual workers.
+
+**Required for multi-period payroll:**  
+Replace the constant with a `CalendarService.getWorkingDaysInPeriod(LocalDate from, LocalDate to, String tenantId)` call that accounts for weekends and KE public holidays from a `public_holidays` table.
+
+**Not blocking current work.** Revisit when multi-period payroll (weekly, bi-weekly, casual daily) is introduced.
+
+---
+
+## Compliance
+
+### COMPLIANCE-BACKLOG-001 — Move statutory rate constants from code to compliance-service rate tables
+
+**Raised:** 2026-05-15  
+**Context:** PAYE bands, NSSF tier limits, SHIF rate, Housing Levy rate, NITA levy, and personal relief are all hardcoded as `private static final` constants in `KenyanTaxCalculator`. KRA amends these annually (Finance Act). Updating them requires a code deployment.
+
+**Required:**  
+Move statutory rates to a `statutory_rates` table in compliance-service, versioned by effective date. `KenyanTaxCalculator` fetches the applicable rate set for the payroll period via gRPC. This allows rate changes to be applied by data migration rather than code deployment, and supports historical re-calculation using the rates that were in effect at the time.
+
+**Not blocking current work.** Statutory rates for FY 2024/2025 are correct. Revisit before the next Finance Act (typically June/July each year).

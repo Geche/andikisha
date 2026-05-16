@@ -57,7 +57,7 @@ public class PayrollController {
         return payrollService.calculatePayroll(id);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'PAYROLL_OFFICER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @PostMapping("/runs/{id}/approve")
     @Operation(summary = "Approve a calculated payroll run")
     public PayrollRunResponse approve(

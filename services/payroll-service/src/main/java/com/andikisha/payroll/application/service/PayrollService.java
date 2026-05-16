@@ -52,6 +52,10 @@ public class PayrollService {
 
     private static final Logger log = LoggerFactory.getLogger(PayrollService.class);
 
+    // TODO(PAYROLL-BACKLOG-001): 22 days is a fixed approximation. Multi-period payroll
+    // (weekly, bi-weekly, daily-rated casual workers) requires per-period working day counts
+    // derived from an actual calendar. Replace with a CalendarService lookup when
+    // multi-period payroll is introduced.
     private static final int STANDARD_WORKING_DAYS_PER_MONTH = 22;
 
     private final PayrollRunRepository payrollRunRepository;

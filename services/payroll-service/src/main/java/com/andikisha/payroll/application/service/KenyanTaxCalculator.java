@@ -146,12 +146,12 @@ public class KenyanTaxCalculator {
         tax      = tax.add(applyBand(remaining, BAND_1_LIMIT, RATE_1));
         remaining = remaining.subtract(BAND_1_LIMIT).max(BigDecimal.ZERO);
 
-        // Band 2: 24,001 – 32,333 at 25%
+        // Band 2: 24,001 – 32,300 at 25%  (KRA annual ceiling 387,600 ÷ 12 = 32,300 exactly)
         BigDecimal band2Width = BAND_2_LIMIT.subtract(BAND_1_LIMIT);
         tax      = tax.add(applyBand(remaining, band2Width, RATE_2));
         remaining = remaining.subtract(band2Width).max(BigDecimal.ZERO);
 
-        // Band 3: 32,334 – 500,000 at 30%
+        // Band 3: 32,301 – 500,000 at 30%
         BigDecimal band3Width = BAND_3_LIMIT.subtract(BAND_2_LIMIT);
         tax      = tax.add(applyBand(remaining, band3Width, RATE_3));
         remaining = remaining.subtract(band3Width).max(BigDecimal.ZERO);
