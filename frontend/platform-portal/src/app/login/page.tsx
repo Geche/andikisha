@@ -64,7 +64,7 @@ export default function PlatformLoginPage() {
       {/* Form card */}
       <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-2xl px-8 py-10">
         <div className="text-center mb-8">
-          <h1 className="text-[22px] font-bold text-[#02110C] mb-1">Platform Sign In</h1>
+          <h1 className="text-[22px] font-bold text-near-black mb-1">Platform Sign In</h1>
           <p className="text-[14px] text-neutral-500">Platform Administration — Staff Only</p>
         </div>
 
@@ -82,7 +82,7 @@ export default function PlatformLoginPage() {
                 placeholder="you@andikishahr.com"
                 required
                 autoComplete="email"
-                className="w-full border border-neutral-300 rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-neutral-400 transition-colors"
+                className="w-full border border-neutral-300 rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-400 transition-colors"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
                 <Mail size={16} />
@@ -103,7 +103,7 @@ export default function PlatformLoginPage() {
                 placeholder="••••••••••••"
                 required
                 autoComplete="current-password"
-                className="w-full border border-neutral-300 rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-neutral-400 transition-colors"
+                className="w-full border border-neutral-300 rounded-lg pl-3.5 pr-10 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-400 transition-colors"
               />
               <button
                 type="button"
@@ -145,7 +145,7 @@ export default function PlatformLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0B3D2E] hover:bg-[#0F5040] active:bg-[#071E13] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[14px] h-11 rounded-lg transition-colors"
+            className="w-full bg-brand-900 hover:bg-brand-800 active:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-[14px] h-11 rounded-lg transition-colors"
           >
             {loading ? "Signing in…" : "Sign In"}
           </button>

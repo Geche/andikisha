@@ -61,8 +61,8 @@ function PaymentStatusBadge({ status }: { status: string | null }) {
   switch (status) {
     case "COMPLETED":
       return (
-        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#0F5040]">
-          <CheckCircle2 size={13} className="text-[#166A50]" />
+        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-800">
+          <CheckCircle2 size={13} className="text-brand-700" />
           Paid
         </span>
       );
@@ -102,7 +102,7 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
   return (
     <div className="flex items-center justify-between px-6 py-3">
       <span className="text-[13px] text-neutral-600">{label}</span>
-      <span className={`text-[13px] ${bold ? "font-semibold text-[#02110C]" : "text-neutral-700"}`}>{value}</span>
+      <span className={`text-[13px] ${bold ? "font-semibold text-near-black" : "text-neutral-700"}`}>{value}</span>
     </div>
   );
 }
@@ -110,8 +110,8 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
 function TotalRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between px-6 py-3.5 bg-neutral-50">
-      <span className="text-[13px] font-semibold text-[#02110C]">{label}</span>
-      <span className="text-[14px] font-bold text-[#02110C]">{value}</span>
+      <span className="text-[13px] font-semibold text-near-black">{label}</span>
+      <span className="text-[14px] font-bold text-near-black">{value}</span>
     </div>
   );
 }
@@ -190,7 +190,7 @@ export default function PayslipDetailPage() {
           <div className="flex flex-col gap-4 max-w-2xl">
 
             {/* Summary header */}
-            <div className="bg-[#02110C] rounded-xl px-6 py-5 text-white flex items-center justify-between">
+            <div className="bg-near-black rounded-xl px-6 py-5 text-white flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Net Pay</p>
                 <p className="text-[28px] font-bold mt-1">{fmt(slip.netPay, currency)}</p>
@@ -263,9 +263,9 @@ export default function PayslipDetailPage() {
                 <span className="text-[13px] text-neutral-600">Less: Total Deductions</span>
                 <span className="text-[13px] text-red-600">− {fmt(slip.totalDeductions, currency)}</span>
               </div>
-              <div className="flex items-center justify-between px-6 py-5 bg-[#E8F5F0]">
-                <span className="text-[14px] font-bold text-[#02110C]">Net Pay</span>
-                <span className="text-[18px] font-bold text-[#0F5040]">{fmt(slip.netPay, currency)}</span>
+              <div className="flex items-center justify-between px-6 py-5 bg-brand-50">
+                <span className="text-[14px] font-bold text-near-black">Net Pay</span>
+                <span className="text-[18px] font-bold text-brand-800">{fmt(slip.netPay, currency)}</span>
               </div>
             </div>
 

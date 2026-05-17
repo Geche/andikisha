@@ -99,10 +99,10 @@ function formatPeriod(period: string): string {
 
 function statusBadge(status: RunStatus): { cls: string; label: string } {
   switch (status) {
-    case "COMPLETED":   return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Completed" };
-    case "APPROVED":    return { cls: "bg-[#E8F5F0] text-[#166A50]", label: "Approved" };
+    case "COMPLETED":   return { cls: "bg-brand-100 text-brand-800", label: "Completed" };
+    case "APPROVED":    return { cls: "bg-brand-50 text-brand-700", label: "Approved" };
     case "PROCESSING":  return { cls: "bg-blue-50 text-blue-700", label: "Disbursing" };
-    case "CALCULATED":  return { cls: "bg-[#FEF3DC] text-[#92600A]", label: "Calculated" };
+    case "CALCULATED":  return { cls: "bg-amber-light text-amber-text", label: "Calculated" };
     case "CALCULATING": return { cls: "bg-amber-50 text-amber-700", label: "Calculating" };
     case "DRAFT":       return { cls: "bg-neutral-100 text-neutral-600", label: "Draft" };
     case "FAILED":      return { cls: "bg-red-100 text-red-700", label: "Failed" };
@@ -112,7 +112,7 @@ function statusBadge(status: RunStatus): { cls: string; label: string } {
 
 function paymentStatusBadge(status: string | null): { cls: string; label: string } {
   switch (status) {
-    case "COMPLETED":  return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Paid" };
+    case "COMPLETED":  return { cls: "bg-brand-100 text-brand-800", label: "Paid" };
     case "FAILED":     return { cls: "bg-red-100 text-red-700", label: "Failed" };
     case "SUBMITTED":  return { cls: "bg-blue-50 text-blue-700", label: "Submitted" };
     case "PROCESSING": return { cls: "bg-blue-50 text-blue-700", label: "Processing" };
@@ -138,7 +138,7 @@ function ConfirmModal({ title, body, confirmLabel, confirmCls, onConfirm, onCanc
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal="true" role="dialog">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
-        <h2 className="text-[16px] font-bold text-[#02110C]">{title}</h2>
+        <h2 className="text-[16px] font-bold text-near-black">{title}</h2>
         <div className="text-[13.5px] text-neutral-600 leading-relaxed">{body}</div>
         <div className="flex items-center justify-end gap-2 pt-2">
           <button
@@ -152,7 +152,7 @@ function ConfirmModal({ title, body, confirmLabel, confirmCls, onConfirm, onCanc
             onClick={onConfirm}
             disabled={loading}
             className={`px-4 py-2 rounded-lg text-[13px] font-bold disabled:opacity-60 disabled:cursor-not-allowed transition-colors ${
-              confirmCls ?? "bg-[#0B3D2E] hover:bg-[#07291E] text-white"
+              confirmCls ?? "bg-brand-900 hover:bg-brand-950 text-white"
             }`}
           >
             {loading ? "Please wait…" : confirmLabel}
@@ -169,7 +169,7 @@ function SummaryCard({ label, value }: { label: string; value: React.ReactNode }
   return (
     <div className="bg-white border border-neutral-200 rounded-xl p-5">
       <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-2">{label}</p>
-      <p className="text-[22px] font-bold text-[#02110C] leading-none">{value}</p>
+      <p className="text-[22px] font-bold text-near-black leading-none">{value}</p>
     </div>
   );
 }
@@ -214,17 +214,17 @@ function PaymentSummaryPanel({ summary }: { summary: PaymentSummary }) {
         </div>
         <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#0B3D2E] rounded-full transition-all duration-500"
+            className="h-full bg-brand-900 rounded-full transition-all duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <div className="flex items-center gap-2.5 bg-[#F2FAF6] border border-[#C8ECDA] rounded-lg px-4 py-3">
-          <CheckCircle size={16} className="text-[#166A50] flex-shrink-0" />
+        <div className="flex items-center gap-2.5 bg-surface-tint border border-border-success rounded-lg px-4 py-3">
+          <CheckCircle size={16} className="text-brand-700 flex-shrink-0" />
           <div>
-            <p className="text-[20px] font-bold text-[#02110C] leading-none">{summary.completed}</p>
+            <p className="text-[20px] font-bold text-near-black leading-none">{summary.completed}</p>
             <p className="text-[11px] text-neutral-500 mt-0.5">Completed</p>
           </div>
         </div>
@@ -251,7 +251,7 @@ function PaymentSummaryPanel({ summary }: { summary: PaymentSummary }) {
 
         <div className="border border-neutral-200 rounded-lg px-4 py-3">
           <p className="text-[11px] text-neutral-500 mb-1">Disbursed</p>
-          <p className="text-[15px] font-bold text-[#02110C]">KES {fmt(summary.completedAmount)}</p>
+          <p className="text-[15px] font-bold text-near-black">KES {fmt(summary.completedAmount)}</p>
           <p className="text-[11px] text-neutral-400">of KES {fmt(summary.totalAmount)}</p>
         </div>
       </div>
@@ -378,7 +378,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
           <button
             onClick={() => calculateMutation.mutate()}
             disabled={calculateMutation.isPending}
-            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#07291E] disabled:opacity-60 text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-brand-900 hover:bg-brand-950 disabled:opacity-60 text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <Play size={13} />
             {calculateMutation.isPending ? "Starting…" : "Calculate"}
@@ -388,7 +388,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
         return (
           <button
             onClick={() => setShowApproveModal(true)}
-            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#07291E] text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-brand-900 hover:bg-brand-950 text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <ThumbsUp size={13} />
             Approve
@@ -398,7 +398,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
         return (
           <button
             onClick={() => setShowDisburseModal(true)}
-            className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <SendHorizonal size={13} />
             Disburse
@@ -471,7 +471,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
             </div>
           }
           confirmLabel="Send Payments"
-          confirmCls="bg-[#E8A020] hover:bg-[#C98510] text-[#02110C]"
+          confirmCls="bg-amber hover:bg-amber-dark text-near-black"
           onConfirm={() => disburseMutation.mutate()}
           onCancel={() => setShowDisburseModal(false)}
           loading={disburseMutation.isPending}
@@ -625,14 +625,14 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
                       payslips.map((slip) => {
                         const pmtBadge = paymentStatusBadge(slip.paymentStatus);
                         return (
-                          <tr key={slip.id} className="border-b border-neutral-50 last:border-0 hover:bg-[#F8F7F4] transition-colors">
-                            <td className="px-6 py-3.5 font-medium text-[#02110C]">{slip.employeeName}</td>
+                          <tr key={slip.id} className="border-b border-neutral-50 last:border-0 hover:bg-surface-alt transition-colors">
+                            <td className="px-6 py-3.5 font-medium text-near-black">{slip.employeeName}</td>
                             <td className="px-6 py-3.5 font-mono text-[12px] text-neutral-500">{slip.employeeNumber}</td>
                             <td className="px-6 py-3.5 text-right text-neutral-700">{fmt(slip.grossPay)}</td>
                             <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.paye)}</td>
                             <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.nssf)}</td>
                             <td className="px-6 py-3.5 text-right text-neutral-600">{fmt(slip.shif)}</td>
-                            <td className="px-6 py-3.5 text-right font-semibold text-[#02110C]">{fmt(slip.netPay)}</td>
+                            <td className="px-6 py-3.5 text-right font-semibold text-near-black">{fmt(slip.netPay)}</td>
                             <td className="px-6 py-3.5">
                               {slip.paymentStatus ? (
                                 <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${pmtBadge.cls}`}>
@@ -645,7 +645,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
                             <td className="px-6 py-3.5">
                               <Link
                                 href={`/admin/payroll/${runId}/payslips/${slip.id}`}
-                                className="text-[12px] font-semibold text-[#166A50] hover:underline whitespace-nowrap"
+                                className="text-[12px] font-semibold text-brand-700 hover:underline whitespace-nowrap"
                               >
                                 View
                               </Link>

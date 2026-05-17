@@ -65,10 +65,10 @@ function formatDate(dateStr: string | null): string {
 
 function statusBadge(status: RunStatus): { cls: string; label: string } {
   switch (status) {
-    case "COMPLETED":  return { cls: "bg-[#D1F5E6] text-[#0F5040]", label: "Completed" };
-    case "APPROVED":   return { cls: "bg-[#E8F5F0] text-[#166A50]", label: "Approved" };
+    case "COMPLETED":  return { cls: "bg-brand-100 text-brand-800", label: "Completed" };
+    case "APPROVED":   return { cls: "bg-brand-50 text-brand-700", label: "Approved" };
     case "PROCESSING": return { cls: "bg-blue-50 text-blue-700", label: "Disbursing" };
-    case "CALCULATED": return { cls: "bg-[#FEF3DC] text-[#92600A]", label: "Calculated" };
+    case "CALCULATED": return { cls: "bg-amber-light text-amber-text", label: "Calculated" };
     case "CALCULATING":return { cls: "bg-amber-50 text-amber-700", label: "Calculating" };
     case "DRAFT":      return { cls: "bg-neutral-100 text-neutral-600", label: "Draft" };
     case "FAILED":     return { cls: "bg-red-100 text-red-700", label: "Failed" };
@@ -94,12 +94,12 @@ function RunRow({ run }: { run: PayrollRun }) {
   const hasFailed = summary && summary.failed > 0;
 
   return (
-    <tr className="border-b border-neutral-50 last:border-0 hover:bg-[#F8F7F4] transition-colors">
-      <td className="px-6 py-4 font-medium text-[#02110C]">{formatPeriod(run.period)}</td>
+    <tr className="border-b border-neutral-50 last:border-0 hover:bg-surface-alt transition-colors">
+      <td className="px-6 py-4 font-medium text-near-black">{formatPeriod(run.period)}</td>
       <td className="px-6 py-4 text-neutral-500 capitalize">{run.payFrequency.toLowerCase()}</td>
       <td className="px-6 py-4 text-right text-neutral-700">{run.employeeCount || "—"}</td>
       <td className="px-6 py-4 text-right text-neutral-700">{formatKES(run.totalGross)}</td>
-      <td className="px-6 py-4 text-right font-medium text-[#02110C]">{formatKES(run.totalNet)}</td>
+      <td className="px-6 py-4 text-right font-medium text-near-black">{formatKES(run.totalNet)}</td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${badge.cls}`}>
@@ -115,7 +115,7 @@ function RunRow({ run }: { run: PayrollRun }) {
       </td>
       <td className="px-6 py-4 text-neutral-500">{formatDate(run.createdAt)}</td>
       <td className="px-6 py-4">
-        <Link href={`/admin/payroll/${run.id}`} className="text-[12.5px] font-semibold text-[#166A50] hover:underline">
+        <Link href={`/admin/payroll/${run.id}`} className="text-[12.5px] font-semibold text-brand-700 hover:underline">
           View
         </Link>
       </td>
@@ -165,7 +165,7 @@ export default function PayrollPage() {
         actions={
           <Link
             href="/admin/payroll/new"
-            className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + Run Payroll
           </Link>

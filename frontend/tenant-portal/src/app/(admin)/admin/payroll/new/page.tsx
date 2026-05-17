@@ -45,7 +45,7 @@ function getYearOptions(): number[] {
 }
 
 const selectCls =
-  "w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-[#02110C] focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] bg-white";
+  "w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 bg-white";
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ export default function NewPayrollRunPage() {
             <button
               type="submit"
               disabled={isPending}
-              className="w-full bg-[#E8A020] hover:bg-[#C98510] disabled:opacity-60 disabled:cursor-not-allowed text-[#02110C] font-bold text-[14px] py-3 rounded-lg transition-colors"
+              className="w-full bg-amber hover:bg-amber-dark disabled:opacity-60 disabled:cursor-not-allowed text-near-black font-bold text-[14px] py-3 rounded-lg transition-colors"
             >
               {isPending ? "Initiating…" : "Initiate Payroll Run"}
             </button>
