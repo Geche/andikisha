@@ -235,9 +235,8 @@ export function HorizontalShell({
           impersonationBanner ? "" : ""
         )}
       >
-        {/* TODO(tokens): trial banner uses non-brand yellows (#FEF9EC bg, #F5C842 border, #92600A text) — surface to Lawrence before tokenising */}
         {impersonationBanner && (
-          <div className="bg-[#FEF9EC] border-b border-[#F5C842] px-5 py-1.5 text-[12px] font-semibold text-[#92600A]">
+          <div className="bg-amber-light border-b border-amber px-5 py-1.5 text-[12px] font-semibold text-amber-text">
             {impersonationBanner}
           </div>
         )}
