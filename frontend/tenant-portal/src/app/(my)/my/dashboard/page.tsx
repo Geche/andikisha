@@ -55,7 +55,7 @@ function MetricCard({
         {change && (
           <span
             className={`inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-0.5 rounded-full ${
-              positive ? "bg-[#D1F5E6] text-[#0F5040]" : "bg-[#FEF3DC] text-[#92600A]"
+              positive ? "bg-brand-100 text-brand-800" : "bg-amber-light text-amber-text"
             }`}
           >
             <TrendingUp size={11} />
@@ -71,10 +71,10 @@ function MetricCard({
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    APPROVED: "bg-[#D1F5E6] text-[#0F5040]",
-    PENDING: "bg-[#FEF3DC] text-[#92600A]",
+    APPROVED: "bg-brand-100 text-brand-800",
+    PENDING: "bg-amber-light text-amber-text",
     REJECTED: "bg-red-100 text-red-700",
-    PAID: "bg-[#D1F5E6] text-[#0F5040]",
+    PAID: "bg-brand-100 text-brand-800",
     DRAFT: "bg-gray-100 text-gray-500",
   };
   const cls = map[status] ?? "bg-gray-100 text-gray-500";
@@ -181,7 +181,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <p className="text-[13.5px] font-bold text-neutral-900">Recent Payslips</p>
-              <Link href="/my/payslips" className="text-[12px] font-semibold text-[#166A50] hover:underline">
+              <Link href="/my/payslips" className="text-[12px] font-semibold text-brand-700 hover:underline">
                 View all →
               </Link>
             </div>
@@ -212,7 +212,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <p className="text-[13.5px] font-bold text-neutral-900">Leave Requests</p>
-              <Link href="/my/leave" className="text-[12px] font-semibold text-[#166A50] hover:underline">
+              <Link href="/my/leave" className="text-[12px] font-semibold text-brand-700 hover:underline">
                 Apply + view all →
               </Link>
             </div>

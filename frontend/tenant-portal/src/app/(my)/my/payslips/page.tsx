@@ -29,7 +29,7 @@ interface PagedResponse<T> {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    PAID: "bg-[#D1F5E6] text-[#0F5040]",
+    PAID: "bg-brand-100 text-brand-800",
     DRAFT: "bg-gray-100 text-gray-500",
   };
   const cls = map[status] ?? "bg-gray-100 text-gray-500";
@@ -52,24 +52,24 @@ function PayslipRow({ p, onClick }: { p: Payslip; onClick: () => void }) {
     >
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#E8F5F0] flex items-center justify-center flex-shrink-0">
-            <FileText size={15} className="text-[#0B3D2E]" />
+          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+            <FileText size={15} className="text-brand-900" />
           </div>
           <div>
-            <p className="text-[13.5px] font-semibold text-[#02110C]">{p.periodLabel}</p>
+            <p className="text-[13.5px] font-semibold text-near-black">{p.periodLabel}</p>
             <p className="text-[12px] text-gray-400">{p.periodStart} – {p.periodEnd}</p>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 text-right text-[13px] text-gray-500">{fmt(p.grossPay)}</td>
-      <td className="px-6 py-4 text-right text-[13.5px] font-bold text-[#02110C]">{fmt(p.netPay)}</td>
+      <td className="px-6 py-4 text-right text-[13.5px] font-bold text-near-black">{fmt(p.netPay)}</td>
       <td className="px-6 py-4 text-right">
         <StatusBadge status={p.status} />
       </td>
       <td className="px-6 py-4 text-right">
         <button
           onClick={(e) => { e.stopPropagation(); }}
-          className="flex items-center gap-1 text-[12px] font-semibold text-[#0B3D2E] hover:text-[#166A50] ml-auto"
+          className="flex items-center gap-1 text-[12px] font-semibold text-brand-900 hover:text-brand-700 ml-auto"
         >
           <Download size={13} /> PDF
         </button>
@@ -87,7 +87,7 @@ function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
       >
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="text-[18px] font-bold text-[#02110C]">{p.periodLabel} Payslip</h2>
+            <h2 className="text-[18px] font-bold text-near-black">{p.periodLabel} Payslip</h2>
             <p className="text-[13px] text-gray-500 mt-0.5">{p.periodStart} – {p.periodEnd}</p>
           </div>
           <StatusBadge status={p.status} />
@@ -96,7 +96,7 @@ function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
         <div className="space-y-3">
           <div className="flex justify-between py-2.5 border-b border-gray-100">
             <span className="text-[13.5px] font-semibold text-gray-700">Gross Pay</span>
-            <span className="text-[13.5px] font-bold text-[#02110C]">{fmt(p.grossPay)}</span>
+            <span className="text-[13.5px] font-bold text-near-black">{fmt(p.grossPay)}</span>
           </div>
           <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 pt-1">Deductions</p>
           {[
@@ -110,9 +110,9 @@ function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
               <span className="text-[13px] text-gray-700">({fmt(value)})</span>
             </div>
           ))}
-          <div className="flex justify-between py-3 border-t-2 border-[#0B3D2E]/20 mt-2">
-            <span className="text-[15px] font-bold text-[#0B3D2E]">Net Pay</span>
-            <span className="text-[15px] font-bold text-[#0B3D2E]">{fmt(p.netPay)}</span>
+          <div className="flex justify-between py-3 border-t-2 border-brand-900/20 mt-2">
+            <span className="text-[15px] font-bold text-brand-900">Net Pay</span>
+            <span className="text-[15px] font-bold text-brand-900">{fmt(p.netPay)}</span>
           </div>
         </div>
 
@@ -123,7 +123,7 @@ function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
           >
             Close
           </button>
-          <button className="flex-1 flex items-center justify-center gap-1.5 bg-[#0B3D2E] hover:bg-[#0a3328] text-white font-semibold text-[13.5px] h-10 rounded-lg transition-colors">
+          <button className="flex-1 flex items-center justify-center gap-1.5 bg-brand-900 hover:bg-brand-950 text-white font-semibold text-[13.5px] h-10 rounded-lg transition-colors">
             <Download size={14} /> Download PDF
           </button>
         </div>

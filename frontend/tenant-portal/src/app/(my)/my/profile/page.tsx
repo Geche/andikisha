@@ -30,13 +30,13 @@ function Field({ label, value, icon: Icon }: { label: string; value: string | nu
   return (
     <div className="flex items-start gap-3 py-3.5 border-b border-gray-50 last:border-0">
       {Icon && (
-        <div className="w-7 h-7 rounded-md bg-[#E8F5F0] flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Icon size={13} className="text-[#0B3D2E]" />
+        <div className="w-7 h-7 rounded-md bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Icon size={13} className="text-brand-900" />
         </div>
       )}
       <div className="flex-1 min-w-0">
         <p className="text-[11.5px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
-        <p className="text-[13.5px] font-medium text-[#02110C] truncate">{value || "—"}</p>
+        <p className="text-[13.5px] font-medium text-near-black truncate">{value || "—"}</p>
       </div>
     </div>
   );
@@ -77,7 +77,7 @@ export default function ProfilePage() {
 
         {/* Avatar card */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 flex items-center gap-5">
-          <div className="w-14 h-14 rounded-xl bg-[#0B3D2E] text-white flex items-center justify-center text-[20px] font-bold flex-shrink-0">
+          <div className="w-14 h-14 rounded-xl bg-brand-900 text-white flex items-center justify-center text-[20px] font-bold flex-shrink-0">
             {isLoading ? "…" : initials}
           </div>
           <div>
@@ -88,7 +88,7 @@ export default function ProfilePage() {
               </>
             ) : (
               <>
-                <p className="text-[18px] font-bold text-[#02110C]">
+                <p className="text-[18px] font-bold text-near-black">
                   {profile?.firstName} {profile?.lastName}
                 </p>
                 <p className="text-[13px] text-gray-500 mt-0.5">

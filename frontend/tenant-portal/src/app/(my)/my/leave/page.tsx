@@ -35,8 +35,8 @@ const LEAVE_TYPES = [
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    APPROVED: "bg-[#D1F5E6] text-[#0F5040]",
-    PENDING: "bg-[#FEF3DC] text-[#92600A]",
+    APPROVED: "bg-brand-100 text-brand-800",
+    PENDING: "bg-amber-light text-amber-text",
     REJECTED: "bg-red-100 text-red-700",
     CANCELLED: "bg-gray-100 text-gray-500",
   };
@@ -48,7 +48,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const INPUT = "w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[13.5px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-neutral-400";
+const INPUT = "w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[13.5px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-400";
 
 function ApplyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState({
@@ -74,7 +74,7 @@ function ApplyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: ()
         className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-[18px] font-bold text-[#02110C] mb-6">Apply for Leave</h2>
+        <h2 className="text-[18px] font-bold text-near-black mb-6">Apply for Leave</h2>
 
         <form
           onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }}
@@ -146,7 +146,7 @@ function ApplyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: ()
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="flex-1 bg-[#0B3D2E] hover:bg-[#0a3328] disabled:opacity-50 text-white font-semibold text-[13.5px] h-10 rounded-lg transition-colors"
+              className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 text-white font-semibold text-[13.5px] h-10 rounded-lg transition-colors"
             >
               {mutation.isPending ? "Submitting…" : "Submit Request"}
             </button>
@@ -181,7 +181,7 @@ export default function LeavePage() {
         actions={
           <button
             onClick={() => setApplying(true)}
-            className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#0a3328] text-white font-semibold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-brand-900 hover:bg-brand-950 text-white font-semibold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <Plus size={15} strokeWidth={2.5} /> Apply for Leave
           </button>
@@ -245,7 +245,7 @@ export default function LeavePage() {
               <tbody>
                 {requests.map((r) => (
                   <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 text-[13.5px] font-medium text-[#02110C] capitalize">
+                    <td className="px-6 py-4 text-[13.5px] font-medium text-near-black capitalize">
                       {r.leaveType.toLowerCase().replace(/_/g, " ")}
                     </td>
                     <td className="px-6 py-4 text-[13px] text-gray-500">

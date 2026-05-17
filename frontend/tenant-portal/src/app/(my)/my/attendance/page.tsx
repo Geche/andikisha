@@ -32,9 +32,9 @@ const MONTH_OPTIONS = Array.from({ length: 6 }, (_, i) => {
 
 function StatusBadge({ status }: { status: AttendanceRecord["status"] }) {
   const map: Record<string, string> = {
-    PRESENT: "bg-[#D1F5E6] text-[#0F5040]",
+    PRESENT: "bg-brand-100 text-brand-800",
     ABSENT: "bg-red-100 text-red-700",
-    LATE: "bg-[#FEF3DC] text-[#92600A]",
+    LATE: "bg-amber-light text-amber-text",
     HALF_DAY: "bg-blue-50 text-blue-700",
   };
   const labels: Record<string, string> = {
@@ -83,7 +83,7 @@ export default function AttendancePage() {
           <select
             value={month}
             onChange={(e) => { setMonth(e.target.value); setPage(0); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E]"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
           >
             {MONTH_OPTIONS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -104,9 +104,9 @@ export default function AttendancePage() {
         {!isLoading && records.length > 0 && (
           <div className="flex gap-3 flex-wrap">
             {[
-              { label: "Present", count: present, color: "bg-[#D1F5E6] text-[#0F5040]" },
+              { label: "Present", count: present, color: "bg-brand-100 text-brand-800" },
               { label: "Absent", count: absent, color: "bg-red-100 text-red-700" },
-              { label: "Late", count: late, color: "bg-[#FEF3DC] text-[#92600A]" },
+              { label: "Late", count: late, color: "bg-amber-light text-amber-text" },
             ].map(({ label, count, color }) => (
               <div key={label} className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-semibold ${color}`}>
                 {label}: <span className="font-bold">{count}</span>
@@ -147,7 +147,7 @@ export default function AttendancePage() {
                 <tbody>
                   {records.map((r) => (
                     <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                      <td className="px-6 py-3.5 text-[13.5px] font-medium text-[#02110C]">
+                      <td className="px-6 py-3.5 text-[13.5px] font-medium text-near-black">
                         {new Date(r.date).toLocaleDateString("en-KE", { weekday: "short", month: "short", day: "numeric" })}
                       </td>
                       <td className="px-6 py-3.5 text-right text-[13px] text-gray-500">{fmt12(r.clockIn)}</td>
