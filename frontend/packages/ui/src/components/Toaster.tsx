@@ -25,15 +25,15 @@ export function useToast() {
 }
 
 const ICON: Record<Variant, ReactNode> = {
-  success: <CheckCircle size={16} className="text-[#27A870]" />,
+  success: <CheckCircle size={16} className="text-brand-500" />,
   error:   <XCircle    size={16} className="text-red-500" />,
-  warning: <AlertTriangle size={16} className="text-[#E8A020]" />,
+  warning: <AlertTriangle size={16} className="text-amber" />,
 };
 
 const BORDER: Record<Variant, string> = {
-  success: "border-l-[#27A870]",
+  success: "border-l-brand-500",
   error:   "border-l-red-500",
-  warning: "border-l-[#E8A020]",
+  warning: "border-l-amber",
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -58,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl bg-white shadow-lg border border-gray-100 border-l-4 ${BORDER[t.variant]} animate-in slide-in-from-right-4 duration-200`}
           >
             <span className="mt-0.5 flex-shrink-0">{ICON[t.variant]}</span>
-            <p className="flex-1 text-[13px] font-medium text-[#02110C]">{t.message}</p>
+            <p className="flex-1 text-[13px] font-medium text-near-black">{t.message}</p>
             <button
               onClick={() => dismiss(t.id)}
               className="text-gray-400 hover:text-gray-600 flex-shrink-0"

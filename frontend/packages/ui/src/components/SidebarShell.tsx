@@ -68,7 +68,7 @@ function UserAvatar({ email }: { email: string }) {
       ? (parts[0][0] ?? "") + (parts[1][0] ?? "")
       : local.slice(0, 2);
   return (
-    <div className="w-8 h-8 rounded-full bg-[#0B3D2E] text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 uppercase">
+    <div className="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center text-[11px] font-bold flex-shrink-0 uppercase">
       {initials || "SA"}
     </div>
   );
