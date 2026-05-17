@@ -16,10 +16,15 @@ const preset = {
           DEFAULT: "#e8a020",
           dark: "#c98510",
           light: "#fef3dc",
+          text: "#92600a",  // amber-brown text on amber-light bg (pending badges, attendance)
         },
         surface: {
           DEFAULT: "#ffffff",
           alt: "#f8f7f4",
+          tint: "#f2faf6",  // light brand-green tint for success stat cards
+        },
+        border: {
+          success: "#c8ecda",  // brand-green border for success stat cards
         },
         neutral: {
           900: "#111111",

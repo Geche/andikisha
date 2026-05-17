@@ -15,10 +15,15 @@
   --color-amber: #e8a020;
   --color-amber-dark: #c98510;
   --color-amber-light: #fef3dc;
+  --color-amber-text: #92600a;  /* amber-brown text on amber-light bg */
 
   /* ── Surfaces ── */
   --color-surface: #ffffff;
   --color-surface-alt: #f8f7f4;
+  --color-surface-tint: #f2faf6;  /* light brand-green tint for success states */
+
+  /* ── Semantic borders ── */
+  --color-border-success: #c8ecda;
 
   /* ── Neutral scale ── */
   --color-neutral-900: #111111;
