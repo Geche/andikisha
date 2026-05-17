@@ -38,7 +38,7 @@ export function SuperAdminShell({
         </div>
 
         {impersonationBanner && (
-          <div className="flex-shrink-0 bg-amber-light border-b border-amber px-4 py-2 text-[12px] font-semibold text-[#92600A]">
+          <div className="flex-shrink-0 bg-amber-light border-b border-amber px-4 py-2 text-[12px] font-semibold text-amber-text">
             {impersonationBanner}
           </div>
         )}
