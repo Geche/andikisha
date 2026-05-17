@@ -216,9 +216,30 @@ Components in `frontend/packages/ui/` follow a strict three-tier rule. Never put
 
 ### @andikisha/ui — Token Rules
 
-- Neutral scale: `neutral-50` … `neutral-900`. Never use raw grey hex values in Tailwind classes — use `text-neutral-700`, `border-neutral-200`, etc.
-- Brand scale: `brand-50` … `brand-950`. Raw brand hex in inline styles only (e.g., recharts props).
-- Do not add one-off hex colors to Tailwind classes. If a value is needed more than twice, add it to `tailwind-preset.ts`.
+**Raw hex in `className` strings is forbidden.** Use named token utilities. Raw hex is allowed only in `style={{ }}` props (e.g., Recharts `fill` / `stroke` props that don't accept class names).
+
+**Token inventory** (defined in `tailwind-preset.ts` and `globals.css @theme`):
+
+| Token | Values | Use |
+|---|---|---|
+| `brand-50` … `brand-950` | Forest green scale | Brand backgrounds, text, borders |
+| `near-black` | `#02110c` | Darkest text, headings |
+| `amber` | `#e8a020` | Amber accent, warning borders |
+| `amber-dark` | `#c98510` | Amber hover states |
+| `amber-light` | `#fef3dc` | Amber/pending badge backgrounds |
+| `amber-text` | `#92600a` | Text on amber-light backgrounds |
+| `surface` | `#ffffff` | White card backgrounds |
+| `surface-alt` | `#f8f7f4` | Alternate surface (page bg, hover) |
+| `surface-tint` | `#f2faf6` | Light brand-green success card bg |
+| `border-success` | `#c8ecda` | Brand-green success state borders |
+| `neutral-50` … `neutral-900` | Grey scale | All grey text, borders, backgrounds |
+| `error` | `#ef4444` | Error states |
+
+**Enforcement rules:**
+- Never use `gray-*` — always use `neutral-*` (same step values for 100–800, intentionally different at 50 and 900).
+- Never use `text-[#hex]`, `bg-[#hex]`, `border-[#hex]` — always use a named token.
+- If a colour value appears more than once and has no token, add it to `tailwind-preset.ts` and both `globals.css` files before using it.
+- Hover darkening of brand buttons: use `hover:bg-brand-950` (not custom dark hex variants).
 
 ### Template Reference
 
