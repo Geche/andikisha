@@ -25,7 +25,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
       <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
         {label}
       </p>
-      <div className="text-[13.5px] text-[#02110C]">{children}</div>
+      <div className="text-[13.5px] text-near-black">{children}</div>
     </div>
   );
 }
@@ -100,7 +100,7 @@ export default function LeaveRequestDetailPage({
               <>
                 <button
                   onClick={() => setApproveOpen(true)}
-                  className="flex items-center gap-1.5 bg-[#0B3D2E] hover:bg-[#062818] text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 bg-brand-900 hover:bg-brand-950 text-white font-bold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
                 >
                   Approve
                 </button>
@@ -176,13 +176,13 @@ export default function LeaveRequestDetailPage({
           <div
             className={`border rounded-xl p-6 ${
               isApproved
-                ? "bg-[#F0FBF6] border-[#A3E6C8]"
+                ? "bg-surface-tint border-border-success"
                 : "bg-red-50 border-red-200"
             }`}
           >
             <p
               className={`text-[13px] font-bold mb-4 ${
-                isApproved ? "text-[#0F5040]" : "text-red-700"
+                isApproved ? "text-brand-800" : "text-red-700"
               }`}
             >
               {isApproved ? "Approved" : "Rejected"}
@@ -191,24 +191,24 @@ export default function LeaveRequestDetailPage({
               <div>
                 <p
                   className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                    isApproved ? "text-[#27A870]/70" : "text-red-400"
+                    isApproved ? "text-brand-500/70" : "text-red-400"
                   }`}
                 >
                   Reviewed By
                 </p>
-                <p className={isApproved ? "text-[#02110C]" : "text-red-900"}>
+                <p className={isApproved ? "text-near-black" : "text-red-900"}>
                   {request.reviewedBy ?? "—"}
                 </p>
               </div>
               <div>
                 <p
                   className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                    isApproved ? "text-[#27A870]/70" : "text-red-400"
+                    isApproved ? "text-brand-500/70" : "text-red-400"
                   }`}
                 >
                   Reviewed At
                 </p>
-                <p className={isApproved ? "text-[#02110C]" : "text-red-900"}>
+                <p className={isApproved ? "text-near-black" : "text-red-900"}>
                   {request.reviewedAt ? formatDate(request.reviewedAt) : "—"}
                 </p>
               </div>
@@ -216,12 +216,12 @@ export default function LeaveRequestDetailPage({
                 <div className="col-span-2">
                   <p
                     className={`text-[11px] font-semibold uppercase tracking-wide mb-1 ${
-                      isApproved ? "text-[#27A870]/70" : "text-red-400"
+                      isApproved ? "text-brand-500/70" : "text-red-400"
                     }`}
                   >
                     {isApproved ? "Notes" : "Reason"}
                   </p>
-                  <p className={isApproved ? "text-[#02110C]" : "text-red-900"}>
+                  <p className={isApproved ? "text-near-black" : "text-red-900"}>
                     {request.reviewNotes}
                   </p>
                 </div>

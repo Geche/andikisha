@@ -52,7 +52,7 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
         </h2>
         <p className="text-[13px] text-gray-500 mb-5">
           You are approving a leave request for{" "}
-          <span className="font-semibold text-[#02110C]">{request.employeeName}</span>.
+          <span className="font-semibold text-near-black">{request.employeeName}</span>.
         </p>
 
         {/* Summary */}
@@ -61,19 +61,19 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               Leave Type
             </p>
-            <p className="text-[#02110C] font-medium">{leaveTypeLabel(request.leaveType)}</p>
+            <p className="text-near-black font-medium">{leaveTypeLabel(request.leaveType)}</p>
           </div>
           <div>
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               Days
             </p>
-            <p className="text-[#02110C] font-medium">{request.totalDays}</p>
+            <p className="text-near-black font-medium">{request.totalDays}</p>
           </div>
           <div className="col-span-2">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               Dates
             </p>
-            <p className="text-[#02110C] font-medium">
+            <p className="text-near-black font-medium">
               {formatDateRange(request.startDate, request.endDate)}
             </p>
           </div>
@@ -95,7 +95,7 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note for the employee…"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-[#02110C] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] resize-none"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-near-black placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 resize-none"
           />
           <p className="text-right text-[11px] text-gray-400 mt-1">{notes.length}/300</p>
         </div>
@@ -113,7 +113,7 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
             type="button"
             disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
-            className="flex-1 bg-[#0B3D2E] hover:bg-[#062818] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
+            className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
           >
             {mutation.isPending ? "Approving…" : "Approve Leave"}
           </button>

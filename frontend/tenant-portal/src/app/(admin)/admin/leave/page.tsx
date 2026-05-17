@@ -123,7 +123,7 @@ export default function LeavePage() {
                 onClick={() => handleTabChange(tab.value)}
                 className={`px-4 py-2.5 text-[13px] font-semibold transition-colors -mb-px ${
                   statusFilter === tab.value
-                    ? "border-b-2 border-[#0B3D2E] text-[#0B3D2E]"
+                    ? "border-b-2 border-brand-900 text-brand-900"
                     : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
                 }`}
               >
@@ -189,10 +189,10 @@ export default function LeavePage() {
                   requests.map((req) => (
                     <tr
                       key={req.id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-[#F8F7F4] transition-colors"
+                      className="border-b border-gray-50 last:border-0 hover:bg-surface-alt transition-colors"
                     >
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-[#02110C]">{req.employeeName}</p>
+                        <p className="font-semibold text-near-black">{req.employeeName}</p>
                         <p className="text-[12px] text-gray-400 font-mono mt-0.5">
                           {req.employeeNumber}
                         </p>
@@ -217,7 +217,7 @@ export default function LeavePage() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => setApproveTarget(req)}
-                              className="text-[12.5px] font-semibold text-[#166A50] hover:underline"
+                              className="text-[12.5px] font-semibold text-brand-700 hover:underline"
                             >
                               Approve
                             </button>
@@ -231,7 +231,7 @@ export default function LeavePage() {
                         ) : (
                           <Link
                             href={`/leave/${req.id}`}
-                            className="text-[12.5px] font-semibold text-[#166A50] hover:underline"
+                            className="text-[12.5px] font-semibold text-brand-700 hover:underline"
                           >
                             View
                           </Link>

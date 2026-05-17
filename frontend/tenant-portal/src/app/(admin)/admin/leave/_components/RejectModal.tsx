@@ -54,7 +54,7 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
         </h2>
         <p className="text-[13px] text-gray-500 mb-5">
           You are rejecting a leave request from{" "}
-          <span className="font-semibold text-[#02110C]">{request.employeeName}</span>. A reason
+          <span className="font-semibold text-near-black">{request.employeeName}</span>. A reason
           is required.
         </p>
 
@@ -64,19 +64,19 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               Leave Type
             </p>
-            <p className="text-[#02110C] font-medium">{leaveTypeLabel(request.leaveType)}</p>
+            <p className="text-near-black font-medium">{leaveTypeLabel(request.leaveType)}</p>
           </div>
           <div>
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               Days
             </p>
-            <p className="text-[#02110C] font-medium">{request.totalDays}</p>
+            <p className="text-near-black font-medium">{request.totalDays}</p>
           </div>
           <div className="col-span-2">
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
               Dates
             </p>
-            <p className="text-[#02110C] font-medium">
+            <p className="text-near-black font-medium">
               {formatDateRange(request.startDate, request.endDate)}
             </p>
           </div>
@@ -98,7 +98,7 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Explain why this leave request is being rejected…"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-[#02110C] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-near-black placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none"
           />
           <p className="text-right text-[11px] text-gray-400 mt-1">{notes.length}/500</p>
         </div>

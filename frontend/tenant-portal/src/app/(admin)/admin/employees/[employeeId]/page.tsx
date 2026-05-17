@@ -73,9 +73,9 @@ function formatDate(dateStr: string | null): string {
 
 function statusBadgeClass(status: EmployeeStatus): string {
   switch (status) {
-    case "ACTIVE":       return "bg-[#D1F5E6] text-[#0F5040]";
+    case "ACTIVE":       return "bg-brand-100 text-brand-800";
     case "TERMINATED":   return "bg-gray-100 text-gray-500";
-    case "ON_LEAVE":     return "bg-[#FEF3DC] text-[#92600A]";
+    case "ON_LEAVE":     return "bg-amber-light text-amber-text";
     case "ON_PROBATION": return "bg-blue-50 text-blue-700";
   }
 }
@@ -94,7 +94,7 @@ function statusLabel(status: EmployeeStatus): string {
 function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-[#166A50] mb-4">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-4">
         {title}
       </p>
       <div className="flex flex-col gap-3">{children}</div>
@@ -106,7 +106,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <p className="text-[12.5px] text-gray-500 flex-shrink-0 w-40">{label}</p>
-      <p className="text-[13px] font-medium text-[#02110C] text-right">{value ?? "—"}</p>
+      <p className="text-[13px] font-medium text-near-black text-right">{value ?? "—"}</p>
     </div>
   );
 }
@@ -173,7 +173,7 @@ function TerminateModal({
         </h2>
         <p className="text-[13px] text-gray-500 mb-5">
           You are terminating{" "}
-          <span className="font-semibold text-[#02110C]">{employeeName}</span>. This action
+          <span className="font-semibold text-near-black">{employeeName}</span>. This action
           cannot be undone.
         </p>
 
@@ -187,7 +187,7 @@ function TerminateModal({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           disabled={mutation.isPending}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-[#02110C] resize-none focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] placeholder:text-gray-300"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black resize-none focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-gray-300"
         />
         <p className="text-[11px] text-gray-400 text-right mt-1">{reason.length}/500</p>
 

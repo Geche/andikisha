@@ -53,11 +53,11 @@ type SortDir = "asc" | "desc";
 function statusBadgeClass(status: EmployeeStatus): string {
   switch (status) {
     case "ACTIVE":
-      return "bg-[#D1F5E6] text-[#0F5040]";
+      return "bg-brand-100 text-brand-800";
     case "ON_PROBATION":
       return "bg-blue-50 text-blue-700";
     case "ON_LEAVE":
-      return "bg-[#FEF3DC] text-[#92600A]";
+      return "bg-amber-light text-amber-text";
     case "TERMINATED":
       return "bg-gray-100 text-gray-500";
   }
@@ -108,9 +108,9 @@ function SortHeader({
         {label}
         {active ? (
           dir === "asc" ? (
-            <ChevronUp size={12} className="text-[#0B3D2E]" />
+            <ChevronUp size={12} className="text-brand-900" />
           ) : (
-            <ChevronDown size={12} className="text-[#0B3D2E]" />
+            <ChevronDown size={12} className="text-brand-900" />
           )
         ) : (
           <ChevronsUpDown size={12} className="text-gray-300" />
@@ -210,7 +210,7 @@ export default function EmployeesPage() {
         actions={
           <Link
             href="/admin/employees/new"
-            className="flex items-center gap-1.5 bg-[#E8A020] hover:bg-[#C98510] text-[#02110C] font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + Add Employee
           </Link>
@@ -227,7 +227,7 @@ export default function EmployeesPage() {
                 onClick={() => handleTabChange(tab.value)}
                 className={`px-4 py-2.5 text-[13px] font-semibold border-b-2 transition-colors -mb-px whitespace-nowrap ${
                   status === tab.value
-                    ? "border-[#0B3D2E] text-[#0B3D2E]"
+                    ? "border-brand-900 text-brand-900"
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -246,7 +246,7 @@ export default function EmployeesPage() {
               placeholder="Search by name or email…"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-neutral-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0B3D2E]/20 focus:border-[#0B3D2E] w-64"
+              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-neutral-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 w-64"
             />
           </div>
         </div>
@@ -295,10 +295,10 @@ export default function EmployeesPage() {
                   employees.map((emp) => (
                     <tr
                       key={emp.id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-[#F8F7F4] transition-colors"
+                      className="border-b border-gray-50 last:border-0 hover:bg-surface-alt transition-colors"
                     >
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-[#02110C]">
+                        <p className="font-semibold text-near-black">
                           {emp.firstName} {emp.lastName}
                         </p>
                         <p className="text-[12px] text-gray-400 mt-0.5">{emp.phoneNumber}</p>
@@ -319,7 +319,7 @@ export default function EmployeesPage() {
                       <td className="px-6 py-4">
                         <Link
                           href={`/admin/employees/${emp.id}`}
-                          className="text-[12.5px] font-semibold text-[#166A50] hover:underline"
+                          className="text-[12.5px] font-semibold text-brand-700 hover:underline"
                         >
                           View
                         </Link>
