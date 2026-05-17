@@ -1,6 +1,6 @@
 ---
 name: template-reference
-description: Use whenever designing, building, modifying, or reviewing UI for `frontend/tenant-portal/` or `frontend/platform-portal/`. Triggers include creating or editing page components, layouts, navigation chrome, dashboards, list views, detail views, forms, settings screens, authentication screens; making design decisions about typography, colours, icons, spacing; adding or modifying dependencies in either app's `package.json`. The skill enforces the rules of engagement for the SmartHR commercial template that lives at `template/smarthr-nextjs/` and `template/smarthr-html/` in the repo root. It prevents accidental imports from the template directory, blocks template-only dependencies from being added to the AndikishaHR apps, and ensures all production UI uses the AndikishaHR brand stack (Tailwind CSS, Lucide React, Bricolage Grotesque, DM Sans, brand tokens from `andikishahr-brand-colours.md`). Companion files `screen-mapping.md` and `forbidden-dependencies.md` in the same directory provide lookup detail.
+description: Use whenever designing, building, modifying, or reviewing UI for `frontend/tenant-portal/` or `frontend/platform-portal/`. Triggers include creating or editing page components, layouts, navigation chrome, dashboards, list views, detail views, forms, settings screens, authentication screens; making design decisions about typography, colours, icons, spacing; adding or modifying dependencies in either app's `package.json`. The skill enforces the rules of engagement for the SmartHR commercial template that lives at `template/smarthr-nextjs/` and `template/smarthr-html/` in the repo root. It prevents accidental imports from the template directory, blocks template-only dependencies from being added to the AndikishaHR apps, and ensures all production UI uses the AndikishaHR brand stack (Tailwind CSS, Lucide React, Roboto, brand tokens from `tailwind-preset.ts` and `globals.css`). Companion files `screen-mapping.md` and `forbidden-dependencies.md` in the same directory provide lookup detail.
 ---
 
 # SmartHR Template Reference
@@ -40,7 +40,7 @@ Required (the AndikishaHR stack):
 - Tailwind CSS utility classes only
 - Brand tokens from `andikishahr-brand-colours.md`
 - Lucide React for icons
-- Bricolage Grotesque for display type, DM Sans for body
+- Roboto for both display and body type (loaded via `next/font/google`)
 - Component primitives from `@andikisha/ui`
 
 If you are about to add a dependency to either app's `package.json`, check it against `forbidden-dependencies.md` first.

@@ -146,7 +146,7 @@ For completeness, the AndikishaHR-approved UI stack:
 
 - `tailwindcss` for styling
 - `lucide-react` for icons
-- `bricolage-grotesque` and `dm-sans` (via `next/font`)
+- `roboto` (via `next/font/google`) — canonical font for all portals
 - `@andikisha/ui` for shared component primitives
 - `@andikisha/api-client` for backend API calls
 - `@andikisha/shared-types` for shared TypeScript types

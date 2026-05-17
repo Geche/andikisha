@@ -58,8 +58,8 @@ Production code uses the AndikishaHR stack only:
 
 - Tailwind CSS for styling
 - Lucide React for icons
-- Bricolage Grotesque for display type, DM Sans for body
-- Brand tokens defined in `andikishahr-brand-colours.md`
+- Roboto for both display and body type (loaded via `next/font/google`)
+- Brand tokens from `tailwind-preset.ts` and `globals.css` (brand-*, neutral-*, amber-*, near-black, surface)
 - Component primitives from `@andikisha/ui`
 
 ### Rule 3: Do not build features the template has but the roadmap does not
