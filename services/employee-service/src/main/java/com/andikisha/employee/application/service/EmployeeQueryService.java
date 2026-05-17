@@ -72,9 +72,14 @@ public class EmployeeQueryService {
 
     public List<EmployeeDetailResponse> findAllActive() {
         String tenantId = TenantContext.requireTenantId();
-        // ACTIVE and ON_PROBATION are both payroll-eligible; TERMINATED, SUSPENDED, CANCELLED are not
+        // ON_LEAVE is payroll-eligible: employees on approved paid leave continue to receive salary
+        // (with unpaid-leave deductions applied by the payroll engine if applicable).
+        // SUSPENDED and TERMINATED are excluded. CANCELLED is not a valid status.
         return repository.findByTenantIdAndStatusIn(
-                        tenantId, List.of(EmploymentStatus.ACTIVE, EmploymentStatus.ON_PROBATION))
+                        tenantId, List.of(
+                                EmploymentStatus.ACTIVE,
+                                EmploymentStatus.ON_PROBATION,
+                                EmploymentStatus.ON_LEAVE))
                 .stream().map(mapper::toDetailResponse).toList();
     }
 

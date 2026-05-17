@@ -64,6 +64,25 @@ Workaround (a /me/* endpoint) does not fix the root cause.
 
 ## API Design
 
+### API-BACKLOG-002 — SalaryStructure update should use PATCH semantics (null = no change, not zero)
+
+**Raised:** 2026-05-17  
+**Found during:** Employee edit flow audit  
+**Priority:** Medium
+
+**Problem:**  
+`PUT /api/v1/employees/{id}/salary` accepts `UpdateSalaryRequest` where optional allowance fields default to `null`. The service converts `null` to `Money.zero(currency)` via the `SalaryStructure` constructor. A caller who sends only `basicSalary` without re-sending existing allowances silently zeros all allowances. This is a data-loss footgun.
+
+**Current workaround:**  
+The UI must pre-fill every allowance field from the current `SalaryStructure` before submitting. This is fragile — any client (mobile app, API integration, future admin tool) that doesn't know to pre-fill will silently destroy allowance data.
+
+**Correct fix:**  
+Change the endpoint to use true PATCH semantics: `null` in `UpdateSalaryRequest` means "leave this field unchanged," not "set to zero." Requires explicit zero-sending (e.g. `0.00`) to actually clear an allowance.
+
+**Impact:** Existing UI workaround (pre-fill) remains safe after the fix — it still works correctly because all values are explicit. New clients benefit immediately.
+
+---
+
 ### API-BACKLOG-001 — Add `/me` convenience endpoints for all employee-scoped resources
 
 **Found:** 2026-05-15 during employee dashboard data-loading investigation  
@@ -207,3 +226,86 @@ Add either:
 
 This class of bug (wrong YAML indentation) causes silent failures that are invisible until
 manual testing.
+
+---
+
+## Audit / Observability
+
+### AUDIT-BACKLOG-001 — Employee change history endpoint and field-level diff UI
+
+**Raised:** 2026-05-17  
+**Found during:** Employee edit flow audit  
+**Priority:** Medium
+
+**Problem:**  
+`EmployeeHistory` records are written by `EmployeeService` for department transfers, salary changes, and status transitions, but:
+1. Personal detail changes (name, phone, email, DOB, gender) are NOT recorded — audit gaps.
+2. Bank detail changes are NOT recorded.
+3. No controller endpoint exposes the history — `GET /api/v1/employees/{id}/history` does not exist despite the repository query being ready.
+4. The UI has no way to show an HR admin when a record was last changed, by whom, and what changed.
+
+**What to build:**
+- Fix `EmployeeService.update()` to write `EmployeeHistory` records for personal detail and bank detail changes (field-level old/new values).
+- Add `GET /api/v1/employees/{id}/history` endpoint returning paged `EmployeeHistoryResponse` (changeType, fieldName, oldValue, newValue, changedBy, changedAt).
+- Add a "Recent changes" panel to the employee detail page showing the last N changes.
+
+**Why deferred:**  
+Not a compliance blocker for current Kenya statutory requirements. Salary and status history (the compliance-sensitive changes) are already recorded. Personal detail history is an internal audit concern. Prioritise after the edit and deactivate UI flows are stable.
+
+---
+
+## Payroll
+
+### PAYROLL-BACKLOG-004 — Final payslip flow for terminated employees with accrued leave payout
+
+**Raised:** 2026-05-17  
+**Found during:** Employee deactivate flow audit  
+**Priority:** High — Kenya Employment Act compliance
+
+**Legal basis:**  
+Kenya Employment Act, 2007 §28(2): on termination, the employer must pay out all accrued but untaken annual leave at the daily rate. Failure to do so is an Employment Act violation.
+
+**Current state:**  
+Termination has no payroll trigger. The terminated employee is excluded from future payroll runs. No pro-rated final payslip is generated. Accrued leave balance exists in leave-service but is frozen (not paid out).
+
+**What to build:**
+1. A `FINAL_PAYSLIP` payroll run type or a dedicated endpoint `POST /api/v1/payroll/employees/{id}/final-payslip` that:
+   - Fetches the employee's accrued, unused annual leave balance from leave-service via gRPC
+   - Calculates the payout: `unusedDays × (basicSalary ÷ 22)`
+   - Generates a payslip for the current month (pro-rated to the termination effective date)
+   - Applies all normal statutory deductions (PAYE on final pay including leave payout, NSSF, SHIF, Housing Levy)
+   - Includes the leave payout as a separate line item
+2. Trigger this automatically from `EmployeeService.terminate()` after the status transition, or from the `EmployeeTerminatedEvent` consumer in payroll-service.
+3. The final payslip must be disbursed within the period required by the employment contract (typically not more than 30 days after termination).
+
+**Recommended pattern:**  
+Immediate special payroll run triggered by the termination event, rather than waiting for the next regular run. Waiting for the regular cycle may violate the 30-day window.
+
+**Not blocking deactivate UI ship:** The UI can ship the termination flow without this. The final payslip should be calculated and displayed in the termination confirmation step, but disbursement can be manually initiated by the payroll officer for the initial implementation.
+
+---
+
+## Documents
+
+### DOCUMENT-BACKLOG-001 — Certificate of Service generation on employee termination
+
+**Raised:** 2026-05-17  
+**Found during:** Employee deactivate flow audit  
+**Priority:** High — Kenya Employment Act compliance
+
+**Legal basis:**  
+Kenya Employment Act, 2007 §52: the employer must provide a Certificate of Service to every employee whose employment is terminated, on request or automatically within 30 days.
+
+**Current state:**  
+`document-service` has a `document.employee-events` queue declared and bound to `employee.events` with routing key `employee.terminated`. The queue receives every termination event. There is **no `@RabbitListener` implemented** in document-service for this queue. Messages accumulate unprocessed indefinitely. This is a half-built infrastructure that does nothing.
+
+**What to build:**
+1. Implement `EmployeeTerminatedEventListener` in document-service consuming `document.employee-events`.
+2. On receiving `EmployeeTerminatedEvent`, fetch full employee details via gRPC from employee-service (name, employee number, hire date, termination date, department, position, termination reason).
+3. Generate a Certificate of Service PDF using the existing document generation infrastructure.
+4. Store the document in the employee's document folder with a `CERTIFICATE_OF_SERVICE` document type.
+5. Notify the employee (via notification-service or directly) that their Certificate of Service is available for download.
+
+**Alternatively:** If the document generation infrastructure is not ready, remove the queue declaration and replace with a TODO comment. Half-built infrastructure (queue with no consumer) is an operational hazard — messages pile up, queue grows, alerting fires. Either build it or remove the scaffolding.
+
+**Decision:** Build the listener. The queue infrastructure is already correct. Document generation for the Certificate of Service follows the same pattern as payslip PDF generation.
