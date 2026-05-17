@@ -3,17 +3,15 @@
 import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, ChevronDown } from "lucide-react";
+import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock } from "lucide-react";
 import { PageHeader, BaseModal, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-// Matches EmploymentStatus enum in employee-service
 type EmployeeStatus = "ACTIVE" | "TERMINATED" | "ON_LEAVE" | "ON_PROBATION";
 
-// Matches EmployeeDetailResponse record in employee-service
 interface EmployeeDetail {
   id: string;
   tenantId: string;
@@ -50,25 +48,18 @@ interface EmployeeDetail {
   createdAt: string;
 }
 
+interface DeptOption { id: string; name: string; }
+interface PosOption  { id: string; title: string; }
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatKES(amount: number): string {
-  return (
-    "KES " +
-    amount.toLocaleString("en-KE", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-  );
+  return "KES " + amount.toLocaleString("en-KE", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
 function statusBadgeClass(status: EmployeeStatus): string {
@@ -89,14 +80,42 @@ function statusLabel(status: EmployeeStatus): string {
   }
 }
 
+// ─── Shared form primitives ───────────────────────────────────────────────────
+
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
+      {children}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+  );
+}
+
+const inputCls = "w-full border border-neutral-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-300 disabled:bg-neutral-50 disabled:text-neutral-400 disabled:cursor-not-allowed";
+
+function LockedField({ label, value, reason }: { label: string; value: string; reason: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <span className="text-[12px] font-semibold text-neutral-600">{label}</span>
+        <span className="flex items-center gap-1 text-[10.5px] text-amber-text bg-amber-light px-1.5 py-0.5 rounded-full font-semibold">
+          <Lock size={9} />
+          {reason}
+        </span>
+      </div>
+      <input type="text" value={value} disabled className={inputCls} />
+    </div>
+  );
+}
+
 // ─── Card + Row ──────────────────────────────────────────────────────────────
 
-function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+function InfoCard({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="bg-white border border-neutral-200 rounded-xl p-6">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-4">
-        {title}
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700">{title}</p>
+        {action}
+      </div>
       <div className="flex flex-col gap-3">{children}</div>
     </div>
   );
@@ -131,7 +150,355 @@ function DetailSkeleton() {
   );
 }
 
-// ─── Terminate Modal ─────────────────────────────────────────────────────────
+// ─── Edit Employee Modal ──────────────────────────────────────────────────────
+
+interface EditEmployeeModalProps {
+  employee: EmployeeDetail;
+  hasPayslips: boolean;
+  onClose: () => void;
+}
+
+function EditEmployeeModal({ employee, hasPayslips, onClose }: EditEmployeeModalProps) {
+  const [form, setForm] = useState({
+    firstName:         employee.firstName,
+    lastName:          employee.lastName,
+    email:             employee.email ?? "",
+    phoneNumber:       employee.phoneNumber,
+    dateOfBirth:       employee.dateOfBirth ?? "",
+    gender:            employee.gender ?? "",
+    departmentId:      employee.departmentId ?? "",
+    positionId:        employee.positionId ?? "",
+    bankName:          employee.bankName ?? "",
+    bankAccountNumber: employee.bankAccountNumber ?? "",
+    kraPin:            employee.kraPin,
+    nhifNumber:        employee.nhifNumber ?? "",
+    nssfNumber:        employee.nssfNumber ?? "",
+  });
+
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const { data: departments = [] } = useQuery<DeptOption[]>({
+    queryKey: ["departments"],
+    queryFn: () => apiClient.get<DeptOption[]>("/api/v1/departments").then((r) => r.data),
+  });
+
+  const { data: positions = [] } = useQuery<PosOption[]>({
+    queryKey: ["positions"],
+    queryFn: () => apiClient.get<PosOption[]>("/api/v1/positions").then((r) => r.data),
+  });
+
+  const mutation = useMutation<EmployeeDetail, AxiosError<{ message?: string }>, typeof form>({
+    mutationFn: (body) =>
+      apiClient.put<EmployeeDetail>(`/api/v1/employees/${employee.id}`, {
+        ...body,
+        departmentId: body.departmentId || undefined,
+        positionId:   body.positionId   || undefined,
+        dateOfBirth:  body.dateOfBirth  || undefined,
+        gender:       body.gender       || undefined,
+        email:        body.email        || undefined,
+        bankName:     body.bankName     || undefined,
+        bankAccountNumber: body.bankAccountNumber || undefined,
+        kraPin:       hasPayslips ? undefined : (body.kraPin   || undefined),
+        nhifNumber:   hasPayslips ? undefined : (body.nhifNumber  || undefined),
+        nssfNumber:   hasPayslips ? undefined : (body.nssfNumber  || undefined),
+      }).then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["employee", employee.id] });
+      void queryClient.invalidateQueries({ queryKey: ["employees"] });
+      toast("Employee updated", "success");
+      onClose();
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message ?? "Failed to update employee. Please try again.";
+      toast(msg, "error");
+    },
+  });
+
+  const set = (field: keyof typeof form) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  return (
+    <BaseModal labelId="edit-employee-modal-title" onClose={onClose}>
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[640px] max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-neutral-100 flex-shrink-0">
+          <h2 id="edit-employee-modal-title" className="text-[16px] font-bold text-neutral-900">
+            Edit Employee
+          </h2>
+          <p className="text-[13px] text-neutral-500 mt-0.5">
+            {employee.firstName} {employee.lastName} · #{employee.employeeNumber}
+          </p>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-6">
+          {/* Personal Information */}
+          <section>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-3">
+              Personal Information
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FieldLabel required>First Name</FieldLabel>
+                <input type="text" value={form.firstName} onChange={set("firstName")} disabled={mutation.isPending} className={inputCls} />
+              </div>
+              <div>
+                <FieldLabel required>Last Name</FieldLabel>
+                <input type="text" value={form.lastName} onChange={set("lastName")} disabled={mutation.isPending} className={inputCls} />
+              </div>
+              <div>
+                <FieldLabel>Email</FieldLabel>
+                <input type="email" value={form.email} onChange={set("email")} disabled={mutation.isPending} className={inputCls} placeholder="name@company.co.ke" />
+              </div>
+              <div>
+                <FieldLabel required>Phone Number</FieldLabel>
+                <input type="tel" value={form.phoneNumber} onChange={set("phoneNumber")} disabled={mutation.isPending} className={inputCls} placeholder="+254712345678" />
+              </div>
+              <div>
+                <FieldLabel>Date of Birth</FieldLabel>
+                <input type="date" value={form.dateOfBirth} onChange={set("dateOfBirth")} disabled={mutation.isPending} className={inputCls} />
+              </div>
+              <div>
+                <FieldLabel>Gender</FieldLabel>
+                <select value={form.gender} onChange={set("gender")} disabled={mutation.isPending} className={inputCls}>
+                  <option value="">— Select —</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                  <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Employment */}
+          <section>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-3">
+              Employment
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FieldLabel>Department</FieldLabel>
+                <select value={form.departmentId} onChange={set("departmentId")} disabled={mutation.isPending} className={inputCls}>
+                  <option value="">— No department —</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FieldLabel>Position</FieldLabel>
+                <select value={form.positionId} onChange={set("positionId")} disabled={mutation.isPending} className={inputCls}>
+                  <option value="">— No position —</option>
+                  {positions.map((p) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Bank Details */}
+          <section>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-3">
+              Bank Details
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <FieldLabel>Bank Name</FieldLabel>
+                <input type="text" value={form.bankName} onChange={set("bankName")} disabled={mutation.isPending} className={inputCls} placeholder="e.g. Equity Bank" />
+              </div>
+              <div>
+                <FieldLabel>Account Number</FieldLabel>
+                <input type="text" value={form.bankAccountNumber} onChange={set("bankAccountNumber")} disabled={mutation.isPending} className={inputCls} placeholder="e.g. 0123456789" />
+              </div>
+            </div>
+          </section>
+
+          {/* Statutory Numbers */}
+          <section>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-3">
+              Statutory Numbers
+            </p>
+            {hasPayslips ? (
+              <div className="grid grid-cols-2 gap-4">
+                <LockedField label="KRA PIN" value={form.kraPin} reason="Locked after first payroll" />
+                <LockedField label="NHIF / SHIF Number" value={form.nhifNumber} reason="Locked after first payroll" />
+                <LockedField label="NSSF Number" value={form.nssfNumber} reason="Locked after first payroll" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>KRA PIN</FieldLabel>
+                  <input type="text" value={form.kraPin} onChange={set("kraPin")} disabled={mutation.isPending} className={inputCls} placeholder="A123456789X" />
+                </div>
+                <div>
+                  <FieldLabel>NHIF / SHIF Number</FieldLabel>
+                  <input type="text" value={form.nhifNumber} onChange={set("nhifNumber")} disabled={mutation.isPending} className={inputCls} />
+                </div>
+                <div>
+                  <FieldLabel>NSSF Number</FieldLabel>
+                  <input type="text" value={form.nssfNumber} onChange={set("nssfNumber")} disabled={mutation.isPending} className={inputCls} />
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-neutral-100 flex items-center gap-3 flex-shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={mutation.isPending}
+            className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!form.firstName.trim() || !form.lastName.trim() || mutation.isPending}
+            onClick={() => mutation.mutate(form)}
+            className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
+          >
+            {mutation.isPending ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+// ─── Salary Modal ─────────────────────────────────────────────────────────────
+
+interface SalaryModalProps {
+  employee: EmployeeDetail;
+  onClose: () => void;
+}
+
+function SalaryModal({ employee, onClose }: SalaryModalProps) {
+  const [form, setForm] = useState({
+    basicSalary:         String(employee.basicSalary),
+    housingAllowance:    String(employee.housingAllowance),
+    transportAllowance:  String(employee.transportAllowance),
+    medicalAllowance:    String(employee.medicalAllowance),
+    otherAllowances:     String(employee.otherAllowances),
+    helbMonthlyDeduction: String(employee.helbMonthlyDeduction),
+  });
+
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const mutation = useMutation<EmployeeDetail, AxiosError<{ message?: string }>, typeof form>({
+    mutationFn: (body) =>
+      apiClient
+        .put<EmployeeDetail>(`/api/v1/employees/${employee.id}/salary`, {
+          basicSalary:          parseFloat(body.basicSalary)         || 0,
+          housingAllowance:     parseFloat(body.housingAllowance)    || 0,
+          transportAllowance:   parseFloat(body.transportAllowance)  || 0,
+          medicalAllowance:     parseFloat(body.medicalAllowance)    || 0,
+          otherAllowances:      parseFloat(body.otherAllowances)     || 0,
+          helbMonthlyDeduction: parseFloat(body.helbMonthlyDeduction) || 0,
+        })
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["employee", employee.id] });
+      toast("Salary updated", "success");
+      onClose();
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message ?? "Failed to update salary.";
+      toast(msg, "error");
+    },
+  });
+
+  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const grossEstimate =
+    (parseFloat(form.basicSalary) || 0) +
+    (parseFloat(form.housingAllowance) || 0) +
+    (parseFloat(form.transportAllowance) || 0) +
+    (parseFloat(form.medicalAllowance) || 0) +
+    (parseFloat(form.otherAllowances) || 0);
+
+  const moneyInputCls = inputCls + " font-mono";
+
+  return (
+    <BaseModal labelId="salary-modal-title" onClose={onClose}>
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[520px] flex flex-col">
+        <div className="px-6 py-5 border-b border-neutral-100">
+          <h2 id="salary-modal-title" className="text-[16px] font-bold text-neutral-900">
+            Update Salary Structure
+          </h2>
+          <p className="text-[13px] text-neutral-500 mt-0.5">
+            {employee.firstName} {employee.lastName} · {employee.currency}
+          </p>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <FieldLabel required>Basic Salary</FieldLabel>
+              <input type="number" min="0" step="100" value={form.basicSalary} onChange={set("basicSalary")} disabled={mutation.isPending} className={moneyInputCls} />
+            </div>
+            <div>
+              <FieldLabel>Housing Allowance</FieldLabel>
+              <input type="number" min="0" step="100" value={form.housingAllowance} onChange={set("housingAllowance")} disabled={mutation.isPending} className={moneyInputCls} />
+            </div>
+            <div>
+              <FieldLabel>Transport Allowance</FieldLabel>
+              <input type="number" min="0" step="100" value={form.transportAllowance} onChange={set("transportAllowance")} disabled={mutation.isPending} className={moneyInputCls} />
+            </div>
+            <div>
+              <FieldLabel>Medical Allowance</FieldLabel>
+              <input type="number" min="0" step="100" value={form.medicalAllowance} onChange={set("medicalAllowance")} disabled={mutation.isPending} className={moneyInputCls} />
+            </div>
+            <div>
+              <FieldLabel>Other Allowances</FieldLabel>
+              <input type="number" min="0" step="100" value={form.otherAllowances} onChange={set("otherAllowances")} disabled={mutation.isPending} className={moneyInputCls} />
+            </div>
+            <div>
+              <FieldLabel>HELB Monthly Deduction</FieldLabel>
+              <input type="number" min="0" step="100" value={form.helbMonthlyDeduction} onChange={set("helbMonthlyDeduction")} disabled={mutation.isPending} className={moneyInputCls} />
+            </div>
+          </div>
+
+          {/* Gross estimate */}
+          <div className="flex items-center justify-between bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-200">
+            <span className="text-[12.5px] text-neutral-500 font-medium">Estimated Gross Pay</span>
+            <span className="text-[14px] font-bold text-near-black font-mono">
+              {formatKES(grossEstimate)}
+            </span>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-neutral-100 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={mutation.isPending}
+            className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!(parseFloat(form.basicSalary) > 0) || mutation.isPending}
+            onClick={() => mutation.mutate(form)}
+            className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
+          >
+            {mutation.isPending ? "Saving…" : "Update Salary"}
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+// ─── Terminate Modal ──────────────────────────────────────────────────────────
 
 function TerminateModal({
   employeeId,
@@ -156,8 +523,7 @@ function TerminateModal({
       onClose();
     },
     onError: (err) => {
-      const msg =
-        err.response?.data?.message ?? "Failed to terminate employee. Please try again.";
+      const msg = err.response?.data?.message ?? "Failed to terminate employee. Please try again.";
       toast(msg, "error");
     },
   });
@@ -165,10 +531,7 @@ function TerminateModal({
   return (
     <BaseModal labelId="terminate-modal-title" onClose={onClose}>
       <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[480px] p-6">
-        <h2
-          id="terminate-modal-title"
-          className="text-[16px] font-bold text-neutral-900 mb-1"
-        >
+        <h2 id="terminate-modal-title" className="text-[16px] font-bold text-neutral-900 mb-1">
           Terminate Employee
         </h2>
         <p className="text-[13px] text-neutral-500 mb-5">
@@ -242,18 +605,10 @@ function ActionsMenu({
         </button>
         {open && (
           <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setOpen(false)}
-              aria-hidden="true"
-            />
+            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} aria-hidden="true" />
             <div className="absolute right-0 top-10 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg min-w-[180px] py-1">
               <button
-                onClick={() => {
-                  setOpen(false);
-                  setShowTerminate(true);
-                }}
+                onClick={() => { setOpen(false); setShowTerminate(true); }}
                 className="w-full text-left px-4 py-2.5 text-[13px] text-red-600 hover:bg-red-50 font-medium transition-colors"
               >
                 Terminate Employee
@@ -282,6 +637,8 @@ export default function EmployeeDetailPage({
   params: Promise<{ employeeId: string }>;
 }) {
   const { employeeId } = use(params);
+  const [showEdit, setShowEdit]   = useState(false);
+  const [showSalary, setShowSalary] = useState(false);
 
   const { data: employee, isLoading, isError, refetch } = useQuery<EmployeeDetail>({
     queryKey: ["employee", employeeId],
@@ -290,11 +647,26 @@ export default function EmployeeDetailPage({
     enabled: Boolean(employeeId),
   });
 
+  // Determine if this employee has any payslips (locks statutory IDs)
+  const { data: payslipPage } = useQuery<{ totalElements: number }>({
+    queryKey: ["employee-payslips-count", employeeId],
+    queryFn: () =>
+      apiClient
+        .get<{ totalElements: number }>(`/api/v1/payroll/employees/${employeeId}/payslips?size=1`)
+        .then((r) => r.data),
+    enabled: Boolean(employeeId),
+    staleTime: 60_000,
+  });
+
+  const hasPayslips = (payslipPage?.totalElements ?? 0) > 0;
+
   const fullName = employee ? `${employee.firstName} ${employee.lastName}` : "Employee";
   const subtitle =
     employee
       ? `Employee #${employee.employeeNumber}${employee.positionTitle ? ` · ${employee.positionTitle}` : ""}`
       : undefined;
+
+  const isTerminated = employee?.status === "TERMINATED";
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -310,12 +682,21 @@ export default function EmployeeDetailPage({
               <ArrowLeft size={14} />
               Back
             </Link>
-            {employee && (
-              <ActionsMenu
-                status={employee.status}
-                employeeId={employee.id}
-                employeeName={fullName}
-              />
+            {employee && !isTerminated && (
+              <>
+                <button
+                  onClick={() => setShowEdit(true)}
+                  className="flex items-center gap-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+                >
+                  <Pencil size={13} />
+                  Edit
+                </button>
+                <ActionsMenu
+                  status={employee.status}
+                  employeeId={employee.id}
+                  employeeName={fullName}
+                />
+              </>
             )}
           </div>
         }
@@ -329,9 +710,7 @@ export default function EmployeeDetailPage({
             <div>
               <p className="font-semibold">This employee has been terminated.</p>
               {employee.terminationDate && (
-                <p className="mt-0.5 text-red-600">
-                  Date: {formatDate(employee.terminationDate)}
-                </p>
+                <p className="mt-0.5 text-red-600">Date: {formatDate(employee.terminationDate)}</p>
               )}
             </div>
           </div>
@@ -358,16 +737,18 @@ export default function EmployeeDetailPage({
           <div className="grid grid-cols-2 gap-5">
             {/* Personal Info */}
             <InfoCard title="Personal Information">
-              <InfoRow label="Email" value={employee.email} />
-              <InfoRow label="Phone" value={employee.phoneNumber} />
+              <InfoRow label="Email"       value={employee.email} />
+              <InfoRow label="Phone"       value={employee.phoneNumber} />
               <InfoRow label="National ID" value={employee.nationalId} />
-              <InfoRow label="KRA PIN" value={employee.kraPin} />
+              <InfoRow label="KRA PIN"     value={employee.kraPin} />
+              <InfoRow label="Date of Birth" value={formatDate(employee.dateOfBirth)} />
+              <InfoRow label="Gender"      value={employee.gender ?? "—"} />
             </InfoCard>
 
             {/* Employment */}
             <InfoCard title="Employment">
               <InfoRow label="Department" value={employee.departmentName ?? "—"} />
-              <InfoRow label="Position" value={employee.positionTitle ?? "—"} />
+              <InfoRow label="Position"   value={employee.positionTitle ?? "—"} />
               <InfoRow
                 label="Type"
                 value={
@@ -380,9 +761,7 @@ export default function EmployeeDetailPage({
               <InfoRow
                 label="Status"
                 value={
-                  <span
-                    className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${statusBadgeClass(employee.status)}`}
-                  >
+                  <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${statusBadgeClass(employee.status)}`}>
                     {statusLabel(employee.status)}
                   </span>
                 }
@@ -390,35 +769,73 @@ export default function EmployeeDetailPage({
             </InfoCard>
 
             {/* Compensation */}
-            <InfoCard title="Compensation">
-              <InfoRow
-                label="Basic Salary"
-                value={
-                  <span className="font-semibold">{formatKES(employee.basicSalary)}</span>
-                }
-              />
+            <InfoCard
+              title="Compensation"
+              action={
+                !isTerminated ? (
+                  <button
+                    onClick={() => setShowSalary(true)}
+                    className="flex items-center gap-1 text-[11.5px] font-semibold text-brand-700 hover:text-brand-900 transition-colors"
+                  >
+                    <Pencil size={11} />
+                    Update
+                  </button>
+                ) : undefined
+              }
+            >
+              <InfoRow label="Basic Salary"       value={<span className="font-semibold">{formatKES(employee.basicSalary)}</span>} />
+              <InfoRow label="Housing Allowance"  value={employee.housingAllowance > 0 ? formatKES(employee.housingAllowance) : "—"} />
+              <InfoRow label="Transport Allowance" value={employee.transportAllowance > 0 ? formatKES(employee.transportAllowance) : "—"} />
+              <InfoRow label="Medical Allowance"  value={employee.medicalAllowance > 0 ? formatKES(employee.medicalAllowance) : "—"} />
+              <InfoRow label="Other Allowances"   value={employee.otherAllowances > 0 ? formatKES(employee.otherAllowances) : "—"} />
+              <InfoRow label="HELB Deduction"     value={employee.helbMonthlyDeduction > 0 ? formatKES(employee.helbMonthlyDeduction) : "—"} />
+              <div className="border-t border-neutral-100 pt-3 mt-1">
+                <InfoRow label="Gross Pay" value={<span className="font-bold text-near-black">{formatKES(employee.grossPay)}</span>} />
+              </div>
               <InfoRow label="Currency" value={employee.currency} />
             </InfoCard>
 
             {/* Payment Method */}
             <InfoCard title="Payment Method">
-              <InfoRow label="Bank Name" value={employee.bankName ?? "—"} />
+              <InfoRow label="Bank Name"    value={employee.bankName ?? "—"} />
               <InfoRow label="Bank Account" value={employee.bankAccountNumber ?? "—"} />
-              <InfoRow label="M-Pesa" value={employee.phoneNumber} />
+              <InfoRow label="M-Pesa"       value={employee.phoneNumber} />
             </InfoCard>
 
             {/* Statutory Numbers */}
             <InfoCard title="Statutory Numbers">
-              <InfoRow label="NSSF Number" value={employee.nssfNumber ?? "—"} />
+              <InfoRow label="KRA PIN"           value={employee.kraPin} />
+              <InfoRow label="NSSF Number"       value={employee.nssfNumber ?? "—"} />
               <InfoRow label="NHIF / SHIF Number" value={employee.nhifNumber ?? "—"} />
               <InfoRow
                 label="HELB Monthly Deduction"
                 value={employee.helbMonthlyDeduction > 0 ? formatKES(employee.helbMonthlyDeduction) : "—"}
               />
+              {hasPayslips && (
+                <div className="flex items-center gap-1.5 mt-1 text-[11px] text-amber-text bg-amber-light rounded-md px-2.5 py-1.5 font-medium">
+                  <Lock size={10} />
+                  Statutory IDs are locked — employee has processed payroll
+                </div>
+              )}
             </InfoCard>
           </div>
         ) : null}
       </div>
+
+      {/* Modals */}
+      {employee && showEdit && (
+        <EditEmployeeModal
+          employee={employee}
+          hasPayslips={hasPayslips}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
+      {employee && showSalary && (
+        <SalaryModal
+          employee={employee}
+          onClose={() => setShowSalary(false)}
+        />
+      )}
     </div>
   );
 }

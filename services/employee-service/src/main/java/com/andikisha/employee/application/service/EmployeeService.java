@@ -160,9 +160,25 @@ public class EmployeeService {
                     oldDept, newDept.getName(), updatedBy));
         }
 
+        if (request.positionId() != null
+                && !request.positionId().equals(
+                employee.getPosition() != null ? employee.getPosition().getId() : null)) {
+            Position newPos = positionRepository.findByIdAndTenantId(request.positionId(), tenantId)
+                    .orElseThrow(() -> new PositionNotFoundException(request.positionId()));
+            String oldPos = employee.getPosition() != null ? employee.getPosition().getTitle() : "none";
+            employee.assignPosition(newPos);
+            historyRepository.save(EmployeeHistory.record(
+                    tenantId, employeeId, "POSITION_CHANGE", "position",
+                    oldPos, newPos.getTitle(), updatedBy));
+        }
+
         if (request.bankName() != null) {
             employee.updateBankDetails(
                     request.bankName(), request.bankAccountNumber(), request.bankBranch());
+        }
+
+        if (request.kraPin() != null || request.nhifNumber() != null || request.nssfNumber() != null) {
+            employee.updateStatutoryIds(request.kraPin(), request.nhifNumber(), request.nssfNumber());
         }
 
         employee = employeeRepository.save(employee);

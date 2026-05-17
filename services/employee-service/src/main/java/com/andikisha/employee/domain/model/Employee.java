@@ -149,6 +149,12 @@ public class Employee extends BaseEntity {
         if (gender != null) this.gender = gender;
     }
 
+    public void updateStatutoryIds(String kraPin, String nhifNumber, String nssfNumber) {
+        if (kraPin    != null && !kraPin.isBlank())    this.kraPin    = kraPin.trim().toUpperCase();
+        if (nhifNumber != null && !nhifNumber.isBlank()) this.nhifNumber = nhifNumber.trim();
+        if (nssfNumber != null && !nssfNumber.isBlank()) this.nssfNumber = nssfNumber.trim();
+    }
+
     public void updateBankDetails(String bankName, String accountNumber, String branch) {
         this.bankName = bankName;
         this.bankAccountNumber = accountNumber;
@@ -170,6 +176,13 @@ public class Employee extends BaseEntity {
             throw new BusinessRuleException("Cannot transfer a terminated employee");
         }
         this.department = newDepartment;
+    }
+
+    public void assignPosition(Position newPosition) {
+        if (this.status == EmploymentStatus.TERMINATED) {
+            throw new BusinessRuleException("Cannot reassign position of a terminated employee");
+        }
+        this.position = newPosition;
     }
 
     public void promote(Position newPosition, SalaryStructure newSalary) {

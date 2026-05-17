@@ -21,5 +21,12 @@ public record UpdateEmployeeRequest(
         UUID positionId,
         String bankName,
         String bankAccountNumber,
-        String bankBranch
+        String bankBranch,
+
+        // Statutory IDs — only accepted if employee has no processed payslips.
+        // The gateway enforces this at the UI layer; the service applies them unconditionally
+        // since the caller has already verified eligibility.
+        String kraPin,
+        String nhifNumber,
+        String nssfNumber
 ) {}
