@@ -34,23 +34,23 @@ const STATUS_TABS: { label: string; value: StatusFilter }[] = [
 
 function TableSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden animate-pulse">
-      <div className="h-11 bg-gray-50 border-b border-gray-200" />
+    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden animate-pulse">
+      <div className="h-11 bg-neutral-50 border-b border-neutral-200" />
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="h-[58px] border-b border-gray-100 last:border-0 flex items-center px-6 gap-6"
+          className="h-[58px] border-b border-neutral-100 last:border-0 flex items-center px-6 gap-6"
         >
           <div className="flex flex-col gap-1.5 w-36">
-            <div className="h-3 bg-gray-100 rounded w-28" />
-            <div className="h-2.5 bg-gray-100 rounded w-20" />
+            <div className="h-3 bg-neutral-100 rounded w-28" />
+            <div className="h-2.5 bg-neutral-100 rounded w-20" />
           </div>
-          <div className="h-3 bg-gray-100 rounded w-24" />
-          <div className="h-3 bg-gray-100 rounded w-32" />
-          <div className="h-3 bg-gray-100 rounded w-8" />
-          <div className="h-5 bg-gray-100 rounded-full w-20" />
-          <div className="h-3 bg-gray-100 rounded w-24" />
-          <div className="h-3 bg-gray-100 rounded w-24" />
+          <div className="h-3 bg-neutral-100 rounded w-24" />
+          <div className="h-3 bg-neutral-100 rounded w-32" />
+          <div className="h-3 bg-neutral-100 rounded w-8" />
+          <div className="h-5 bg-neutral-100 rounded-full w-20" />
+          <div className="h-3 bg-neutral-100 rounded w-24" />
+          <div className="h-3 bg-neutral-100 rounded w-24" />
         </div>
       ))}
     </div>
@@ -115,7 +115,7 @@ export default function LeavePage() {
 
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
         {/* Status tabs */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-neutral-200">
           <nav className="flex items-center gap-0" aria-label="Leave status filter">
             {STATUS_TABS.map((tab) => (
               <button
@@ -124,7 +124,7 @@ export default function LeavePage() {
                 className={`px-4 py-2.5 text-[13px] font-semibold transition-colors -mb-px ${
                   statusFilter === tab.value
                     ? "border-b-2 border-brand-900 text-brand-900"
-                    : "text-gray-500 hover:text-gray-700 border-b-2 border-transparent"
+                    : "text-neutral-500 hover:text-neutral-700 border-b-2 border-transparent"
                 }`}
               >
                 {tab.label}
@@ -151,29 +151,29 @@ export default function LeavePage() {
         {isLoading ? (
           <TableSkeleton />
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                <tr className="bg-neutral-50 border-b border-neutral-100">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Employee
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Leave Type
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Dates
                   </th>
-                  <th className="text-center px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-center px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Days
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Submitted
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -181,7 +181,7 @@ export default function LeavePage() {
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center text-[13px] text-gray-400">
+                    <td colSpan={7} className="py-16 text-center text-[13px] text-neutral-400">
                       No leave requests found
                     </td>
                   </tr>
@@ -189,19 +189,19 @@ export default function LeavePage() {
                   requests.map((req) => (
                     <tr
                       key={req.id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-surface-alt transition-colors"
+                      className="border-b border-neutral-50 last:border-0 hover:bg-surface-alt transition-colors"
                     >
                       <td className="px-6 py-4">
                         <p className="font-semibold text-near-black">{req.employeeName}</p>
-                        <p className="text-[12px] text-gray-400 font-mono mt-0.5">
+                        <p className="text-[12px] text-neutral-400 font-mono mt-0.5">
                           {req.employeeNumber}
                         </p>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{leaveTypeLabel(req.leaveType)}</td>
-                      <td className="px-6 py-4 text-gray-600">
+                      <td className="px-6 py-4 text-neutral-600">{leaveTypeLabel(req.leaveType)}</td>
+                      <td className="px-6 py-4 text-neutral-600">
                         {formatDateRange(req.startDate, req.endDate)}
                       </td>
-                      <td className="px-6 py-4 text-center text-gray-700 font-medium">
+                      <td className="px-6 py-4 text-center text-neutral-700 font-medium">
                         {req.totalDays}
                       </td>
                       <td className="px-6 py-4">
@@ -211,7 +211,7 @@ export default function LeavePage() {
                           {statusLabel(req.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-500">{formatDate(req.createdAt)}</td>
+                      <td className="px-6 py-4 text-neutral-500">{formatDate(req.createdAt)}</td>
                       <td className="px-6 py-4">
                         {req.status === "PENDING" ? (
                           <div className="flex items-center gap-3">
@@ -248,21 +248,21 @@ export default function LeavePage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-[13px]">
-            <p className="text-gray-500">
+            <p className="text-neutral-500">
               Page {page + 1} of {totalPages}
             </p>
             <div className="flex items-center gap-2">
               <button
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3.5 py-2 border border-gray-200 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3.5 py-2 border border-gray-200 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next
               </button>

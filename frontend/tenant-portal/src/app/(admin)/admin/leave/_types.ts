@@ -68,7 +68,7 @@ export function statusBadgeClass(status: LeaveStatus): string {
     case "REJECTED":
       return "bg-red-100 text-red-700";
     case "CANCELLED":
-      return "bg-gray-100 text-gray-400";
+      return "bg-neutral-100 text-neutral-400";
   }
 }
 

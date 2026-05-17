@@ -59,7 +59,7 @@ function statusBadgeClass(status: EmployeeStatus): string {
     case "ON_LEAVE":
       return "bg-amber-light text-amber-text";
     case "TERMINATED":
-      return "bg-gray-100 text-gray-500";
+      return "bg-neutral-100 text-neutral-500";
   }
 }
 
@@ -101,7 +101,7 @@ function SortHeader({
   const active = current === field;
   return (
     <th
-      className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-800 transition-colors whitespace-nowrap"
+      className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-800 transition-colors whitespace-nowrap"
       onClick={() => onSort(field)}
     >
       <span className="inline-flex items-center gap-1">
@@ -113,7 +113,7 @@ function SortHeader({
             <ChevronDown size={12} className="text-brand-900" />
           )
         ) : (
-          <ChevronsUpDown size={12} className="text-gray-300" />
+          <ChevronsUpDown size={12} className="text-neutral-300" />
         )}
       </span>
     </th>
@@ -124,23 +124,23 @@ function SortHeader({
 
 function TableSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden animate-pulse">
-      <div className="h-11 bg-gray-50 border-b border-gray-200" />
+    <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden animate-pulse">
+      <div className="h-11 bg-neutral-50 border-b border-neutral-200" />
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="h-[58px] border-b border-gray-100 last:border-0 flex items-center px-6 gap-6"
+          className="h-[58px] border-b border-neutral-100 last:border-0 flex items-center px-6 gap-6"
         >
           <div className="flex flex-col gap-1.5 flex-1">
-            <div className="h-3 bg-gray-100 rounded w-28" />
-            <div className="h-2.5 bg-gray-100 rounded w-40" />
+            <div className="h-3 bg-neutral-100 rounded w-28" />
+            <div className="h-2.5 bg-neutral-100 rounded w-40" />
           </div>
-          <div className="h-3 bg-gray-100 rounded w-20" />
-          <div className="h-3 bg-gray-100 rounded w-24" />
-          <div className="h-3 bg-gray-100 rounded w-24" />
-          <div className="h-5 bg-gray-100 rounded-full w-20" />
-          <div className="h-3 bg-gray-100 rounded w-20" />
-          <div className="h-3 bg-gray-100 rounded w-12" />
+          <div className="h-3 bg-neutral-100 rounded w-20" />
+          <div className="h-3 bg-neutral-100 rounded w-24" />
+          <div className="h-3 bg-neutral-100 rounded w-24" />
+          <div className="h-5 bg-neutral-100 rounded-full w-20" />
+          <div className="h-3 bg-neutral-100 rounded w-20" />
+          <div className="h-3 bg-neutral-100 rounded w-12" />
         </div>
       ))}
     </div>
@@ -220,7 +220,7 @@ export default function EmployeesPage() {
       <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
         {/* Filter tabs + search row */}
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1 border-b border-gray-200 flex-1">
+          <div className="flex items-center gap-1 border-b border-neutral-200 flex-1">
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab.value}
@@ -228,7 +228,7 @@ export default function EmployeesPage() {
                 className={`px-4 py-2.5 text-[13px] font-semibold border-b-2 transition-colors -mb-px whitespace-nowrap ${
                   status === tab.value
                     ? "border-brand-900 text-brand-900"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    : "border-transparent text-neutral-500 hover:text-neutral-700"
                 }`}
               >
                 {tab.label}
@@ -239,14 +239,14 @@ export default function EmployeesPage() {
           <div className="relative flex-shrink-0">
             <Search
               size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
             />
             <input
               type="text"
               placeholder="Search by name or email…"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-[13px] text-neutral-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 w-64"
+              className="pl-8 pr-3 py-2 border border-neutral-200 rounded-lg text-[13px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 w-64"
             />
           </div>
         </div>
@@ -269,17 +269,17 @@ export default function EmployeesPage() {
         {isLoading ? (
           <TableSkeleton />
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
+                <tr className="bg-neutral-50 border-b border-neutral-100">
                   <SortHeader label="Name"       field="firstName"     current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Employee #" field="employeeNumber" current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Department" field="departmentName" current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Position"   field="positionTitle"  current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Status"     field="status"         current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Hire Date"  field="hireDate"       current={sortField} dir={sortDir} onSort={handleSort} />
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide w-16">
+                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide w-16">
                     Actions
                   </th>
                 </tr>
@@ -287,7 +287,7 @@ export default function EmployeesPage() {
               <tbody>
                 {employees.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center text-[13px] text-gray-400">
+                    <td colSpan={7} className="py-16 text-center text-[13px] text-neutral-400">
                       No employees found
                     </td>
                   </tr>
@@ -295,19 +295,19 @@ export default function EmployeesPage() {
                   employees.map((emp) => (
                     <tr
                       key={emp.id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-surface-alt transition-colors"
+                      className="border-b border-neutral-50 last:border-0 hover:bg-surface-alt transition-colors"
                     >
                       <td className="px-6 py-4">
                         <p className="font-semibold text-near-black">
                           {emp.firstName} {emp.lastName}
                         </p>
-                        <p className="text-[12px] text-gray-400 mt-0.5">{emp.phoneNumber}</p>
+                        <p className="text-[12px] text-neutral-400 mt-0.5">{emp.phoneNumber}</p>
                       </td>
-                      <td className="px-6 py-4 text-gray-600 font-mono text-[12px]">
+                      <td className="px-6 py-4 text-neutral-600 font-mono text-[12px]">
                         {emp.employeeNumber}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{emp.departmentName ?? "—"}</td>
-                      <td className="px-6 py-4 text-gray-600">{emp.positionTitle ?? "—"}</td>
+                      <td className="px-6 py-4 text-neutral-600">{emp.departmentName ?? "—"}</td>
+                      <td className="px-6 py-4 text-neutral-600">{emp.positionTitle ?? "—"}</td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${statusBadgeClass(emp.status)}`}
@@ -315,7 +315,7 @@ export default function EmployeesPage() {
                           {statusLabel(emp.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-500">{formatDate(emp.hireDate)}</td>
+                      <td className="px-6 py-4 text-neutral-500">{formatDate(emp.hireDate)}</td>
                       <td className="px-6 py-4">
                         <Link
                           href={`/admin/employees/${emp.id}`}
@@ -335,21 +335,21 @@ export default function EmployeesPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between text-[13px]">
-            <p className="text-gray-500">
+            <p className="text-neutral-500">
               Page {page + 1} of {totalPages} · {totalElements.toLocaleString()} employees
             </p>
             <div className="flex items-center gap-2">
               <button
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3.5 py-2 border border-gray-200 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3.5 py-2 border border-gray-200 rounded-lg font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next
               </button>

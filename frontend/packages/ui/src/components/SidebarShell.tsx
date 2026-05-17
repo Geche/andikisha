@@ -31,25 +31,25 @@ function NavItemRow({
       className={[
         "flex items-center gap-2.5 w-full h-[36px] px-2.5 rounded-md text-[13.5px] font-medium transition-colors",
         item.locked
-          ? "opacity-40 cursor-default text-gray-400"
+          ? "opacity-40 cursor-default text-neutral-400"
           : active
-          ? "bg-gray-100 text-gray-900 font-semibold"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 cursor-pointer",
+          ? "bg-neutral-100 text-neutral-900 font-semibold"
+          : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 cursor-pointer",
       ].join(" ")}
     >
       <Icon
         size={16}
-        className={active ? "text-gray-700" : "text-gray-400"}
+        className={active ? "text-neutral-700" : "text-neutral-400"}
         strokeWidth={active ? 2.25 : 2}
       />
       <span className="flex-1">{item.label}</span>
       {item.locked && (
-        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
+        <span className="text-[10px] font-semibold text-neutral-400 tracking-wide">
           Soon
         </span>
       )}
       {item.badge !== undefined && !item.locked && (
-        <span className="text-[11px] font-semibold bg-gray-100 text-gray-600 min-w-[20px] text-center px-1.5 py-0.5 rounded-full">
+        <span className="text-[11px] font-semibold bg-neutral-100 text-neutral-600 min-w-[20px] text-center px-1.5 py-0.5 rounded-full">
           {item.badge}
         </span>
       )}
@@ -90,9 +90,9 @@ export function SidebarShell({
   footerContent,
 }: SidebarShellProps) {
   return (
-    <aside className="w-[280px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen">
+    <aside className="w-[280px] flex-shrink-0 bg-white border-r border-neutral-200 flex flex-col h-screen">
       {/* Logo — same height as PageHeader so they align horizontally */}
-      <div className="h-[73px] flex items-center px-5 flex-shrink-0 border-b border-gray-200">
+      <div className="h-[73px] flex items-center px-5 flex-shrink-0 border-b border-neutral-200">
         <LogoFull className="h-7 w-auto" />
       </div>
 
@@ -101,7 +101,7 @@ export function SidebarShell({
         {nav.map((section, si) => (
           <div key={section.label ?? `root-${si}`}>
             {section.label && (
-              <p className={`text-[10.5px] font-semibold text-gray-400 uppercase tracking-[0.1em] px-2.5 pb-1 ${si === 0 ? "pt-1" : "pt-5"}`}>
+              <p className={`text-[10.5px] font-semibold text-neutral-400 uppercase tracking-[0.1em] px-2.5 pb-1 ${si === 0 ? "pt-1" : "pt-5"}`}>
                 {section.label}
               </p>
             )}
@@ -118,20 +118,20 @@ export function SidebarShell({
 
       {/* Footer actions (profile, settings, logout) */}
       {footerContent && (
-        <div className="border-t border-gray-100 px-3 pt-2 pb-2 space-y-0.5">
+        <div className="border-t border-neutral-100 px-3 pt-2 pb-2 space-y-0.5">
           {footerContent}
         </div>
       )}
 
       {/* User card */}
-      <div className="px-3 pb-4 pt-2 border-t border-gray-100">
-        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-gray-50 transition-colors cursor-default">
+      <div className="px-3 pb-4 pt-2 border-t border-neutral-100">
+        <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-neutral-50 transition-colors cursor-default">
           <UserAvatar email={userEmail} />
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-gray-900 truncate leading-tight">
+            <p className="text-[13px] font-semibold text-neutral-900 truncate leading-tight">
               {userRole}
             </p>
-            <p className="text-[11.5px] text-gray-400 truncate leading-tight">{userEmail}</p>
+            <p className="text-[11.5px] text-neutral-400 truncate leading-tight">{userEmail}</p>
           </div>
         </div>
       </div>

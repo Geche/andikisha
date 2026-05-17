@@ -22,7 +22,7 @@ import {
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">
+      <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-1">
         {label}
       </p>
       <div className="text-[13.5px] text-near-black">{children}</div>
@@ -34,12 +34,12 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 
 function DetailSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 animate-pulse">
+    <div className="bg-white border border-neutral-200 rounded-xl p-6 animate-pulse">
       <div className="grid grid-cols-2 gap-x-8 gap-y-5">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i}>
-            <div className="h-2.5 bg-gray-100 rounded w-20 mb-2" />
-            <div className="h-4 bg-gray-100 rounded w-32" />
+            <div className="h-2.5 bg-neutral-100 rounded w-20 mb-2" />
+            <div className="h-4 bg-neutral-100 rounded w-32" />
           </div>
         ))}
       </div>
@@ -91,7 +91,7 @@ export default function LeaveRequestDetailPage({
           <div className="flex items-center gap-2">
             <Link
               href="/admin/leave"
-              className="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
             >
               <ArrowLeft size={14} />
               Back
@@ -135,14 +135,14 @@ export default function LeaveRequestDetailPage({
         {isLoading ? (
           <DetailSkeleton />
         ) : request ? (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="bg-white border border-neutral-200 rounded-xl p-6">
             <p className="text-[13px] font-bold text-neutral-900 mb-4">Request Details</p>
             <div className="grid grid-cols-2 gap-x-8 gap-y-5">
               <DetailRow label="Employee">
                 <span className="font-semibold">{request.employeeName}</span>
               </DetailRow>
               <DetailRow label="Employee Number">
-                <span className="font-mono text-[13px] text-gray-600">
+                <span className="font-mono text-[13px] text-neutral-600">
                   {request.employeeNumber}
                 </span>
               </DetailRow>
@@ -161,10 +161,10 @@ export default function LeaveRequestDetailPage({
               </DetailRow>
               <DetailRow label="Total Days">
                 <span className="font-semibold">{request.totalDays}</span>{" "}
-                <span className="text-gray-500">day{request.totalDays !== 1 ? "s" : ""}</span>
+                <span className="text-neutral-500">day{request.totalDays !== 1 ? "s" : ""}</span>
               </DetailRow>
               <DetailRow label="Reason">
-                <span className="text-gray-600">{request.reason ?? "—"}</span>
+                <span className="text-neutral-600">{request.reason ?? "—"}</span>
               </DetailRow>
               <DetailRow label="Submitted">{formatDate(request.createdAt)}</DetailRow>
             </div>

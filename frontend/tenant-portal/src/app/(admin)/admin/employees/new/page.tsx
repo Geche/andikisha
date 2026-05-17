@@ -75,25 +75,25 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[12px] font-semibold text-gray-600 mb-1.5">
+      <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="text-[11.5px] text-gray-400 mt-1">{hint}</p>}
+      {hint && !error && <p className="text-[11.5px] text-neutral-400 mt-1">{hint}</p>}
       {error && <p className="text-[11.5px] text-red-600 mt-1">{error}</p>}
     </div>
   );
 }
 
 const inputCls =
-  "w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black " +
+  "w-full border border-neutral-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black " +
   "focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 " +
-  "placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400";
+  "placeholder:text-neutral-300 disabled:bg-neutral-50 disabled:text-neutral-400";
 
 const errInputCls =
   "w-full border border-red-300 rounded-lg px-3 py-2 text-[13.5px] text-near-black " +
   "focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 " +
-  "placeholder:text-gray-300 disabled:bg-gray-50";
+  "placeholder:text-neutral-300 disabled:bg-neutral-50";
 
 function inputClass(error?: string) { return error ? errInputCls : inputCls; }
 
@@ -220,7 +220,7 @@ export default function NewEmployeePage() {
         actions={
           <Link
             href="/admin/employees"
-            className="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <ArrowLeft size={14} />
             Back
@@ -230,7 +230,7 @@ export default function NewEmployeePage() {
 
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <form onSubmit={handleSubmit} noValidate>
-          <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col gap-8 max-w-3xl">
+          <div className="bg-white border border-neutral-200 rounded-xl p-8 flex flex-col gap-8 max-w-3xl">
 
             {/* ── Personal Information ── */}
             <div>
@@ -369,7 +369,7 @@ export default function NewEmployeePage() {
                     onChange={(e) => set("basicSalary", e.target.value)} />
                 </Field>
                 <Field label="Currency">
-                  <div className={inputCls + " bg-gray-50 text-gray-400 select-none"}>
+                  <div className={inputCls + " bg-neutral-50 text-neutral-400 select-none"}>
                     KES — Kenyan Shilling
                   </div>
                 </Field>

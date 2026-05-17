@@ -45,7 +45,7 @@ function getYearOptions(): number[] {
 }
 
 const selectCls =
-  "w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 bg-white";
+  "w-full border border-neutral-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 bg-white";
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -93,7 +93,7 @@ export default function NewPayrollRunPage() {
         actions={
           <Link
             href="/admin/payroll"
-            className="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <ArrowLeft size={14} />
             Back
@@ -103,11 +103,11 @@ export default function NewPayrollRunPage() {
 
       <div className="flex-1 overflow-y-auto px-8 py-8 flex justify-center">
         <form onSubmit={handleSubmit} noValidate className="w-full max-w-md">
-          <div className="bg-white border border-gray-200 rounded-xl p-8 flex flex-col gap-6">
+          <div className="bg-white border border-neutral-200 rounded-xl p-8 flex flex-col gap-6">
 
             {/* Pay Period */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-600 mb-1.5">
+              <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
                 Pay Period <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-3">
@@ -140,7 +140,7 @@ export default function NewPayrollRunPage() {
 
             {/* Pay Frequency */}
             <div>
-              <label className="block text-[12px] font-semibold text-gray-600 mb-1.5">
+              <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
                 Pay Frequency <span className="text-red-500">*</span>
               </label>
               <select
@@ -156,7 +156,7 @@ export default function NewPayrollRunPage() {
             </div>
 
             {/* Info block */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3.5 text-[12.5px] text-gray-500 leading-relaxed">
+            <div className="bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-3.5 text-[12.5px] text-neutral-500 leading-relaxed">
               This will calculate PAYE, NSSF, SHIF, and Housing Levy for all active employees in
               the selected period.
             </div>

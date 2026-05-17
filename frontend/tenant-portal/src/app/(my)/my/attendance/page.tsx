@@ -83,7 +83,7 @@ export default function AttendancePage() {
           <select
             value={month}
             onChange={(e) => { setMonth(e.target.value); setPage(0); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
+            className="border border-neutral-200 rounded-lg px-3 py-2 text-[13px] text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
           >
             {MONTH_OPTIONS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -115,44 +115,44 @@ export default function AttendancePage() {
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           {isLoading ? (
             <div className="space-y-0">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="px-6 py-4 border-b border-gray-50 flex items-center gap-3">
-                  <div className="h-3 w-24 bg-gray-100 rounded-full animate-pulse"/>
-                  <div className="h-2 w-16 bg-gray-100 rounded-full animate-pulse ml-auto"/>
-                  <div className="h-2 w-16 bg-gray-100 rounded-full animate-pulse"/>
-                  <div className="h-5 w-14 bg-gray-100 rounded-full animate-pulse"/>
+                <div key={i} className="px-6 py-4 border-b border-neutral-50 flex items-center gap-3">
+                  <div className="h-3 w-24 bg-neutral-100 rounded-full animate-pulse"/>
+                  <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse ml-auto"/>
+                  <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse"/>
+                  <div className="h-5 w-14 bg-neutral-100 rounded-full animate-pulse"/>
                 </div>
               ))}
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Clock size={36} className="text-gray-200 mb-3" strokeWidth={1.5} />
-              <p className="text-[14px] font-semibold text-gray-400">No records for this month</p>
+              <Clock size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
+              <p className="text-[14px] font-semibold text-neutral-400">No records for this month</p>
             </div>
           ) : (
             <>
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="px-6 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Date</th>
-                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Clock In</th>
-                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Clock Out</th>
-                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Hours</th>
-                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Status</th>
+                  <tr className="border-b border-neutral-100">
+                    <th className="px-6 py-3 text-left text-[11px] font-semibold text-neutral-400 uppercase tracking-wide">Date</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-neutral-400 uppercase tracking-wide">Clock In</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-neutral-400 uppercase tracking-wide">Clock Out</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-neutral-400 uppercase tracking-wide">Hours</th>
+                    <th className="px-6 py-3 text-right text-[11px] font-semibold text-neutral-400 uppercase tracking-wide">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {records.map((r) => (
-                    <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                    <tr key={r.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50">
                       <td className="px-6 py-3.5 text-[13.5px] font-medium text-near-black">
                         {new Date(r.date).toLocaleDateString("en-KE", { weekday: "short", month: "short", day: "numeric" })}
                       </td>
-                      <td className="px-6 py-3.5 text-right text-[13px] text-gray-500">{fmt12(r.clockIn)}</td>
-                      <td className="px-6 py-3.5 text-right text-[13px] text-gray-500">{fmt12(r.clockOut)}</td>
-                      <td className="px-6 py-3.5 text-right text-[13px] font-semibold text-gray-700">
+                      <td className="px-6 py-3.5 text-right text-[13px] text-neutral-500">{fmt12(r.clockIn)}</td>
+                      <td className="px-6 py-3.5 text-right text-[13px] text-neutral-500">{fmt12(r.clockOut)}</td>
+                      <td className="px-6 py-3.5 text-right text-[13px] font-semibold text-neutral-700">
                         {r.hoursWorked != null ? `${r.hoursWorked.toFixed(1)}h` : "—"}
                       </td>
                       <td className="px-6 py-3.5 text-right">
@@ -163,20 +163,20 @@ export default function AttendancePage() {
                 </tbody>
               </table>
               {(data?.totalPages ?? 0) > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-                  <p className="text-[12px] text-gray-400">Page {page + 1} of {data?.totalPages}</p>
+                <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-100">
+                  <p className="text-[12px] text-neutral-400">Page {page + 1} of {data?.totalPages}</p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
-                      className="text-[12px] font-semibold text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 border border-gray-200 rounded-lg"
+                      className="text-[12px] font-semibold text-neutral-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 border border-neutral-200 rounded-lg"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() => setPage((p) => p + 1)}
                       disabled={page + 1 >= (data?.totalPages ?? 1)}
-                      className="text-[12px] font-semibold text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 border border-gray-200 rounded-lg"
+                      className="text-[12px] font-semibold text-neutral-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 border border-neutral-200 rounded-lg"
                     >
                       Next
                     </button>

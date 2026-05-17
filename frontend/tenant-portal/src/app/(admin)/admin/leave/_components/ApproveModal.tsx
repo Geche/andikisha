@@ -43,34 +43,34 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
 
   return (
     <BaseModal labelId="approve-leave-modal-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-[480px] p-6">
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[480px] p-6">
         <h2
           id="approve-leave-modal-title"
           className="text-[16px] font-bold text-neutral-900 mb-1"
         >
           Approve Leave Request
         </h2>
-        <p className="text-[13px] text-gray-500 mb-5">
+        <p className="text-[13px] text-neutral-500 mb-5">
           You are approving a leave request for{" "}
           <span className="font-semibold text-near-black">{request.employeeName}</span>.
         </p>
 
         {/* Summary */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 mb-5 grid grid-cols-2 gap-y-2.5 gap-x-4 text-[13px]">
+        <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3.5 mb-5 grid grid-cols-2 gap-y-2.5 gap-x-4 text-[13px]">
           <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+            <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-0.5">
               Leave Type
             </p>
             <p className="text-near-black font-medium">{leaveTypeLabel(request.leaveType)}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+            <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-0.5">
               Days
             </p>
             <p className="text-near-black font-medium">{request.totalDays}</p>
           </div>
           <div className="col-span-2">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+            <p className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wide mb-0.5">
               Dates
             </p>
             <p className="text-near-black font-medium">
@@ -83,10 +83,10 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
         <div className="mb-6">
           <label
             htmlFor="approve-notes"
-            className="block text-[12.5px] font-semibold text-gray-600 mb-1.5"
+            className="block text-[12.5px] font-semibold text-neutral-600 mb-1.5"
           >
             Notes{" "}
-            <span className="font-normal text-gray-400">(optional)</span>
+            <span className="font-normal text-neutral-400">(optional)</span>
           </label>
           <textarea
             id="approve-notes"
@@ -95,9 +95,9 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note for the employee…"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-[13px] text-near-black placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 resize-none"
+            className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13px] text-near-black placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 resize-none"
           />
-          <p className="text-right text-[11px] text-gray-400 mt-1">{notes.length}/300</p>
+          <p className="text-right text-[11px] text-neutral-400 mt-1">{notes.length}/300</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -105,7 +105,7 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
             type="button"
             onClick={onClose}
             disabled={mutation.isPending}
-            className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
+            className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
           >
             Cancel
           </button>

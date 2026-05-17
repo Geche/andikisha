@@ -49,9 +49,9 @@ function MetricCard({
   positive?: boolean;
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="bg-white border border-neutral-200 rounded-xl p-5">
       <div className="flex items-start justify-between mb-3">
-        <p className="text-[13px] text-gray-500">{label}</p>
+        <p className="text-[13px] text-neutral-500">{label}</p>
         {change && (
           <span
             className={`inline-flex items-center gap-1 text-[12px] font-semibold px-2 py-0.5 rounded-full ${
@@ -64,7 +64,7 @@ function MetricCard({
         )}
       </div>
       <p className="text-[28px] font-bold text-neutral-900 leading-none">{value}</p>
-      {sub && <p className="text-[12px] text-gray-400 mt-1.5">{sub}</p>}
+      {sub && <p className="text-[12px] text-neutral-400 mt-1.5">{sub}</p>}
     </div>
   );
 }
@@ -75,9 +75,9 @@ function StatusBadge({ status }: { status: string }) {
     PENDING: "bg-amber-light text-amber-text",
     REJECTED: "bg-red-100 text-red-700",
     PAID: "bg-brand-100 text-brand-800",
-    DRAFT: "bg-gray-100 text-gray-500",
+    DRAFT: "bg-neutral-100 text-neutral-500",
   };
-  const cls = map[status] ?? "bg-gray-100 text-gray-500";
+  const cls = map[status] ?? "bg-neutral-100 text-neutral-500";
   return (
     <span className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full ${cls}`}>
       {status.charAt(0) + status.slice(1).toLowerCase()}
@@ -178,22 +178,22 @@ export default function DashboardPage() {
         {/* Recent payslips + leave side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Recent payslips */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <p className="text-[13.5px] font-bold text-neutral-900">Recent Payslips</p>
               <Link href="/my/payslips" className="text-[12px] font-semibold text-brand-700 hover:underline">
                 View all →
               </Link>
             </div>
             {payslips.length === 0 ? (
-              <div className="px-6 py-10 text-center text-[13px] text-gray-400">
+              <div className="px-6 py-10 text-center text-[13px] text-neutral-400">
                 No payslips available yet
               </div>
             ) : (
               <table className="w-full text-[13px]">
                 <tbody>
                   {payslips.map((p) => (
-                    <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <tr key={p.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
                       <td className="px-6 py-3.5 font-medium text-neutral-900">{p.period}</td>
                       <td className="px-6 py-3.5 text-right font-semibold text-neutral-900">
                         KES {p.netPay.toLocaleString()}
@@ -209,27 +209,27 @@ export default function DashboardPage() {
           </div>
 
           {/* Leave requests */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <p className="text-[13.5px] font-bold text-neutral-900">Leave Requests</p>
               <Link href="/my/leave" className="text-[12px] font-semibold text-brand-700 hover:underline">
                 Apply + view all →
               </Link>
             </div>
             {leaves.length === 0 ? (
-              <div className="px-6 py-10 text-center text-[13px] text-gray-400">
+              <div className="px-6 py-10 text-center text-[13px] text-neutral-400">
                 No leave requests yet
               </div>
             ) : (
               <table className="w-full text-[13px]">
                 <tbody>
                   {leaves.map((l) => (
-                    <tr key={l.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <tr key={l.id} className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50 transition-colors">
                       <td className="px-6 py-3.5">
                         <p className="font-medium text-neutral-900 capitalize">
                           {l.leaveType.toLowerCase().replace(/_/g, " ")}
                         </p>
-                        <p className="text-[12px] text-gray-400 mt-0.5">
+                        <p className="text-[12px] text-neutral-400 mt-0.5">
                           {l.startDate} → {l.endDate} · {l.days}d
                         </p>
                       </td>

@@ -74,7 +74,7 @@ function formatDate(dateStr: string | null): string {
 function statusBadgeClass(status: EmployeeStatus): string {
   switch (status) {
     case "ACTIVE":       return "bg-brand-100 text-brand-800";
-    case "TERMINATED":   return "bg-gray-100 text-gray-500";
+    case "TERMINATED":   return "bg-neutral-100 text-neutral-500";
     case "ON_LEAVE":     return "bg-amber-light text-amber-text";
     case "ON_PROBATION": return "bg-blue-50 text-blue-700";
   }
@@ -93,7 +93,7 @@ function statusLabel(status: EmployeeStatus): string {
 
 function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6">
+    <div className="bg-white border border-neutral-200 rounded-xl p-6">
       <p className="text-[11px] font-bold uppercase tracking-widest text-brand-700 mb-4">
         {title}
       </p>
@@ -105,7 +105,7 @@ function InfoCard({ title, children }: { title: string; children: React.ReactNod
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <p className="text-[12.5px] text-gray-500 flex-shrink-0 w-40">{label}</p>
+      <p className="text-[12.5px] text-neutral-500 flex-shrink-0 w-40">{label}</p>
       <p className="text-[13px] font-medium text-near-black text-right">{value ?? "—"}</p>
     </div>
   );
@@ -117,12 +117,12 @@ function DetailSkeleton() {
   return (
     <div className="grid grid-cols-2 gap-5 animate-pulse">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="h-3 bg-gray-100 rounded w-32 mb-4" />
+        <div key={i} className="bg-white border border-neutral-200 rounded-xl p-6">
+          <div className="h-3 bg-neutral-100 rounded w-32 mb-4" />
           {Array.from({ length: 3 }).map((_, j) => (
             <div key={j} className="flex justify-between mb-3">
-              <div className="h-3 bg-gray-100 rounded w-24" />
-              <div className="h-3 bg-gray-100 rounded w-28" />
+              <div className="h-3 bg-neutral-100 rounded w-24" />
+              <div className="h-3 bg-neutral-100 rounded w-28" />
             </div>
           ))}
         </div>
@@ -164,20 +164,20 @@ function TerminateModal({
 
   return (
     <BaseModal labelId="terminate-modal-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-[480px] p-6">
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[480px] p-6">
         <h2
           id="terminate-modal-title"
           className="text-[16px] font-bold text-neutral-900 mb-1"
         >
           Terminate Employee
         </h2>
-        <p className="text-[13px] text-gray-500 mb-5">
+        <p className="text-[13px] text-neutral-500 mb-5">
           You are terminating{" "}
           <span className="font-semibold text-near-black">{employeeName}</span>. This action
           cannot be undone.
         </p>
 
-        <label className="block text-[12px] font-semibold text-gray-600 mb-1.5">
+        <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
           Reason <span className="text-red-500">*</span>
         </label>
         <textarea
@@ -187,16 +187,16 @@ function TerminateModal({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           disabled={mutation.isPending}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black resize-none focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-gray-300"
+          className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black resize-none focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-300"
         />
-        <p className="text-[11px] text-gray-400 text-right mt-1">{reason.length}/500</p>
+        <p className="text-[11px] text-neutral-400 text-right mt-1">{reason.length}/500</p>
 
         <div className="flex items-center gap-3 mt-5">
           <button
             type="button"
             onClick={onClose}
             disabled={mutation.isPending}
-            className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
+            className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
           >
             Cancel
           </button>
@@ -235,7 +235,7 @@ function ActionsMenu({
       <div className="relative">
         <button
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
         >
           Actions
           <ChevronDown size={13} />
@@ -248,7 +248,7 @@ function ActionsMenu({
               onClick={() => setOpen(false)}
               aria-hidden="true"
             />
-            <div className="absolute right-0 top-10 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] py-1">
+            <div className="absolute right-0 top-10 z-20 bg-white border border-neutral-200 rounded-lg shadow-lg min-w-[180px] py-1">
               <button
                 onClick={() => {
                   setOpen(false);
@@ -305,7 +305,7 @@ export default function EmployeeDetailPage({
           <div className="flex items-center gap-2">
             <Link
               href="/admin/employees"
-              className="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
             >
               <ArrowLeft size={14} />
               Back
@@ -371,7 +371,7 @@ export default function EmployeeDetailPage({
               <InfoRow
                 label="Type"
                 value={
-                  <span className="font-mono text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                  <span className="font-mono text-[11px] bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded">
                     {employee.employmentType}
                   </span>
                 }
