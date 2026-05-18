@@ -25,14 +25,15 @@ public class EmployeeCreatedListener {
 
     @RabbitListener(queues = RabbitMqConfig.EMPLOYEE_CREATED_QUEUE)
     public void onEmployeeCreated(EmployeeCreatedEvent event) {
-        if (event.getEmail() == null || event.getEmail().isBlank()) {
-            log.warn("EmployeeCreatedEvent missing email for tenant={} employee={} — skipping user creation",
-                    event.getTenantId(), event.getEmployeeId());
-            return;
-        }
-
+        com.andikisha.common.tenant.TenantContext.setTenantId(event.getTenantId());
         try {
-            String tempPassword = PasswordGenerator.generate();
+            if (event.getEmail() == null || event.getEmail().isBlank()) {
+                log.warn("EmployeeCreatedEvent missing email for tenant={} employee={} — skipping user creation",
+                        event.getTenantId(), event.getEmployeeId());
+                return;
+            }
+
+            String tempPassword = com.andikisha.common.util.PasswordGenerator.generate();
 
             authService.provisionEmployeeUser(
                     event.getTenantId(),
@@ -55,6 +56,8 @@ public class EmployeeCreatedListener {
         } catch (Exception ex) {
             log.error("Failed to provision auth user for employee={} tenant={}",
                     event.getEmployeeId(), event.getTenantId(), ex);
+        } finally {
+            com.andikisha.common.tenant.TenantContext.clear();
         }
     }
 }

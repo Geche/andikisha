@@ -1,9 +1,7 @@
 package com.andikisha.events.auth;
 
 import com.andikisha.events.BaseEvent;
-import lombok.Getter;
 
-@Getter
 public class EmployeeUserProvisionedEvent extends BaseEvent {
 
     private String employeeId;
@@ -13,12 +11,10 @@ public class EmployeeUserProvisionedEvent extends BaseEvent {
     private String employeeNumber;
     private String tempPassword;
 
-    protected EmployeeUserProvisionedEvent() {}
-
     public EmployeeUserProvisionedEvent(String tenantId, String employeeId,
                                         String email, String firstName, String lastName,
                                         String employeeNumber, String tempPassword) {
-        super("EmployeeUserProvisioned", tenantId);
+        super("auth.employee_provisioned", tenantId);
         this.employeeId = employeeId;
         this.email = email;
         this.firstName = firstName;
@@ -26,4 +22,13 @@ public class EmployeeUserProvisionedEvent extends BaseEvent {
         this.employeeNumber = employeeNumber;
         this.tempPassword = tempPassword;
     }
+
+    protected EmployeeUserProvisionedEvent() { super(); }
+
+    public String getEmployeeId()     { return employeeId; }
+    public String getEmail()          { return email; }
+    public String getFirstName()      { return firstName; }
+    public String getLastName()       { return lastName; }
+    public String getEmployeeNumber() { return employeeNumber; }
+    public String getTempPassword()   { return tempPassword; }
 }
