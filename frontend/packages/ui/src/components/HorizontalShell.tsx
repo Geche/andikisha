@@ -77,7 +77,6 @@ function TopNavItem({
           : "border-b-transparent text-neutral-600 hover:text-neutral-900 hover:border-b-neutral-300"
       )}
     >
-      {Icon && <Icon size={15} strokeWidth={1.75} />}
       {item.label}
       {item.badge != null && (
         <span className="text-[10px] font-bold min-w-[18px] px-1 py-px bg-brand-900 text-white rounded-full">
@@ -106,7 +105,6 @@ function TopNavItem({
               : "border-b-transparent text-neutral-600 hover:text-neutral-900 hover:border-b-neutral-300"
           )}
         >
-          {Icon && <Icon size={15} strokeWidth={1.75} />}
           {item.label}
           {item.badge != null && (
             <span className="text-[10px] font-bold min-w-[18px] px-1 py-px bg-brand-900 text-white rounded-full">

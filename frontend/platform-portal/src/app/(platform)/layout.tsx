@@ -23,9 +23,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   return (
     <HorizontalShell navItems={platformNavConfig} rightSlot={rightSlot}>
-      <div className="px-6 py-6">
-        {children}
-      </div>
+      {children}
     </HorizontalShell>
   );
 }

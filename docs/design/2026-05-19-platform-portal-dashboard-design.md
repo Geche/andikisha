@@ -67,7 +67,7 @@ The dashboard must answer these three questions in the order they're asked. Plat
 
 ## B. Information Hierarchy
 
-Ranked by "what does the SUPER_ADMIN need first":
+Ranked by urgency — what the SUPER_ADMIN needs to know first:
 
 1. **Platform health** — blocking; if services are down, nothing else matters
 2. **Active tenants** — primary business KPI
@@ -75,6 +75,8 @@ Ranked by "what does the SUPER_ADMIN need first":
 4. **MRR** — financial health indicator
 5. **Recent tenant signups** — context for tenant conversations, recent activity
 6. **Support tickets** — queue status (hidden until support feature ships)
+
+**On rank vs. visual position:** Rank 1 means "must be visible without scrolling and assessable in under one second." It does not mean top-left. The health grid (rank 1) is placed in the right column of the lower section — not the KPI strip, not the top row. This works because: (a) the SUPER_ADMIN sees the entire viewport at once on a typical desktop, so left column and right column are simultaneous, not sequential; (b) the compact dot-grid format creates higher visual contrast than a text table, drawing the eye faster regardless of x-position; (c) splitting health (right) from recent signups (left) lets both be read in a single glance without the eye having to scan vertically. The KPI strip is above both — all three KPIs answer questions 2–4 and are read left-to-right after the initial health glance.
 
 ---
 
@@ -105,17 +107,17 @@ Ranked by "what does the SUPER_ADMIN need first":
 
 **Layout position:** KPI strip, column 2 of 3.
 
-**Backend:** Same `GET /api/v1/super-admin/tenants/metrics` → `DashboardMetricsResponse.trialsExpiring7` (expiring in 7 days). **LIKELY_EXISTS** — same endpoint as Widget 1.
+**Backend:** Same `GET /api/v1/super-admin/tenants/metrics` → `trialsExpiring14` (primary), `trialsExpiring7` (sub-label urgency signal), `trialsExpiring48` (critical signal). **LIKELY_EXISTS for trialsExpiring7/48 — verify `trialsExpiring14` exists; add to `DashboardMetricsResponse` and `getDashboardMetrics()` if missing.**
 
 **Display:**
-- Value: count of trials expiring within 7 days
-- Sub-label: `{trialsExpiring48} expiring in 48h`
-- Amber highlight (`bg-amber-light border-amber`) when `trialsExpiring48 > 0`
+- Value: count of trials expiring within 14 days (`trialsExpiring14`)
+- Sub-label: `{trialsExpiring7} expiring in 7 days`
+- Color: neutral when `trialsExpiring7 === 0`; amber card highlight (`bg-amber-light border-amber`) when `trialsExpiring7 > 0`; red card highlight (`bg-red-50 border-error`) when `trialsExpiring48 > 0`
 - Click: navigates to `/tenants?status=TRIAL`
 
 **If removed:** No visibility into trials at risk. Not removable.
 
-**If zero:** Show `0` with neutral styling (no amber). Correct state — green ops.
+**If zero:** Show `0` with neutral styling. Correct state — green ops.
 
 ---
 
@@ -125,11 +127,11 @@ Ranked by "what does the SUPER_ADMIN need first":
 
 **Layout position:** KPI strip, column 3 of 3.
 
-**Backend:** `GET /api/v1/super-admin/billing/mrr` → `{ mrr: number, mrrDelta: number, currency: "KES" }`. **NEEDS_BACKEND.** No billing aggregation endpoint exists. `tenant-service` has licence rows with `agreedPriceKes` and `billingCycle` — MRR can be derived from summing active licences normalized to monthly. This is new logic.
+**Backend:** `GET /api/v1/super-admin/billing/mrr` → `{ contracted: number, collected: number | null, currency: "KES" }`. **NEEDS_BACKEND.** Contracted = sum of `TenantLicence.agreedPriceKes` for ACTIVE licences, normalized to monthly (monthly billing × 1, annual billing ÷ 12). Collected starts as `0` or `null` until integration-hub M-Pesa reconciliation is wired. Backend ships contracted first; collected field is present but nullable from day one.
 
 **Display:**
-- Value: `KES {mrr}` formatted with `MoneyAmount` component
-- Sub-label: month-over-month change (positive/negative badge)
+- Value: `KES {contracted}` formatted with `MoneyAmount` component
+- Sub-label: `Collected: KES {collected}` (or "Collected: —" when null)
 - Click: navigates to `/billing`
 
 **If endpoint missing:** Render widget with `—` and sub-label "Revenue data unavailable". Do not block other widgets.
@@ -160,13 +162,11 @@ Ranked by "what does the SUPER_ADMIN need first":
 
 **Purpose:** Ops safety net. Answers "is anything on fire?" before the SUPER_ADMIN starts other work.
 
-**Layout position:** Lower section, right column (spans ~40% width). Intentionally placed second in the lower row; reading order is left-to-right (recent signups, then health check).
+**Layout position:** Lower section, right column (spans ~40% width), aligned at the same vertical start as Widget 4. The compact dot-grid format creates higher visual contrast than a text table — the eye lands on it first even from the right column. See Section B for the full reasoning on rank vs. visual position.
 
-Wait — the information hierarchy (Section B) places platform health first. This is a conflict. Resolution: health grid goes in the **top row of the lower section** (above recent signups in a stacked layout), or moves to a visual indicator in the top bar. Proposal: **health grid anchors the right column at the top, at the same vertical position as the recent signups table**. SUPER_ADMIN sees both simultaneously on a typical desktop viewport — health on the right, signups on the left. Health is visually prominent because its compact grid shape draws the eye more efficiently than a text table.
+**Backend:** `GET /api/v1/super-admin/system/health` → `{ services: [{ name: string, status: "UP" | "DOWN" | "UNKNOWN" }] }`. **NEEDS_BACKEND.** Owned by **api-gateway** (new endpoint). Makes parallel HTTP calls to each of the 13 services' `/actuator/health` with a 2-second timeout per service. Unreachable or timed-out services return `UNKNOWN`. No DEGRADED state in V1 — requires latency tracking that doesn't yet exist (filed as backlog).
 
-**Backend:** `GET /api/v1/super-admin/system/health` → `{ services: [{ name, status: "UP"|"DEGRADED"|"DOWN", latency?: number }] }`. **NEEDS_BACKEND.** Each Spring Boot service exposes `/actuator/health`. A new endpoint in `tenant-service` (or a dedicated `system-service`) must aggregate these. 13 services × 1 HTTP call each = parallel health checks.
-
-**Display:** Grid of service name + status dot. Green (`bg-brand-500`), amber (`bg-amber`), red (`bg-error`). No latency numbers in V1 — just UP/DOWN/DEGRADED. Click on any service navigates to `/system/health`.
+**Display:** Grid of service name + status dot. Green (`bg-brand-500`) for UP, red (`bg-error`) for DOWN, grey (`bg-neutral-300`) for UNKNOWN. No latency numbers. Click anywhere on the grid navigates to `/system/health`.
 
 **If endpoint missing:** Show 13 grey dots with label "Health unavailable". Never block render.
 
@@ -239,8 +239,8 @@ When support ships: render as a compact count card in the KPI strip (would becom
 | Status badge (trial) | `Badge status="calculating"` | ✅ |
 | Status badge (suspended) | `Badge status="cancelled"` | ✅ |
 | Health dot — UP | `w-2 h-2 rounded-full bg-brand-500` | new |
-| Health dot — DEGRADED | `w-2 h-2 rounded-full bg-amber` | new |
 | Health dot — DOWN | `w-2 h-2 rounded-full bg-error` | new |
+| Health dot — UNKNOWN | `w-2 h-2 rounded-full bg-neutral-300` | new |
 | Amber KPI card highlight | `border-amber bg-amber-light` | ✅ |
 | Content area padding | `px-8 py-8` | ✅ (after fix) |
 | Font | Roboto (already set in layout.tsx) | ✅ |
@@ -276,7 +276,7 @@ When support ships: render as a compact count card in the KPI strip (would becom
 - Widget 4 table: show empty state message "No tenants yet. Provision the first tenant." with a text link to `/tenants/new`.
 - Widget 5: render dots normally (all services should be UP even with no tenants).
 
-**No refresh button on dashboard.** React Query's `staleTime` default handles re-fetching. Stale time for KPIs and health: 30 seconds. Stale time for recent signups table: 60 seconds.
+**Auto-refresh.** No manual refresh button. React Query handles background re-fetching with `refetchInterval`. Health grid: 30s. KPIs: 60s. Recent signups: 60s. All intervals pause automatically when `document.visibilityState !== 'visible'` via `refetchIntervalInBackground: false` (React Query default). `refetchOnWindowFocus: true` triggers an immediate refresh when the tab regains focus.
 
 ---
 
@@ -314,19 +314,21 @@ When support ships: render as a compact count card in the KPI strip (would becom
 
 ---
 
-## H. Open Questions
+## H. Resolved Decisions
 
-1. **MRR calculation method.** Is MRR derived from `TenantLicence.agreedPriceKes × (1 if monthly, ÷ 12 if annual)` for active licences only? Or is it based on actual payments received (requires M-Pesa reconciliation)? This affects what the endpoint aggregates and whether the number is "contracted MRR" vs "collected MRR". **Decision needed before building the backend.**
+All six open questions resolved 2026-05-19.
 
-2. **Health endpoint ownership.** Which service builds `GET /api/v1/super-admin/system/health`? It needs to make parallel HTTP calls to 13 `actuator/health` endpoints. Does it live in `tenant-service` (the platform-facing service) or in a new `system-service`? Or does api-gateway expose a composite health endpoint? **Decision needed before building the backend.**
+1. **MRR:** Contracted primary, collected sub-label. `GET /api/v1/super-admin/billing/mrr` returns `{ contracted, collected, currency: "KES" }`. Contracted ships first; collected is null until integration-hub reconciliation is wired.
 
-3. **Tenant detail page.** Widget 4 (recent signups) rows link to `/tenants/{id}`. That page is a stub. Should the table rows be non-clickable until the detail page ships, or should they link to a stub with the right URL now? Recommendation: link to the URL now. Stubs are acceptable during development.
+2. **Health endpoint:** API gateway owns `GET /api/v1/super-admin/system/health`. Parallel calls to 13 service `/actuator/health` endpoints, 2-second timeout each. Unreachable = UNKNOWN.
 
-4. **Trial widget threshold.** The design shows "trials expiring in 7 days" as the primary number, with "expiring in 48h" as sub-label. Is 7 days the right primary window, or should it be 14 days (one renewal cycle for monthly plans)? The backend already computes both `trialsExpiring7` and `trialsExpiring48`. The question is which one leads.
+3. **Tenant detail link:** Link to `/tenants/{id}` now. Stub destination acceptable. Real detail page ships with Flow 1 (tenant creation UI).
 
-5. **Health dot granularity.** Three states (UP / DEGRADED / DOWN) cover the common cases. Should DEGRADED be defined as "health check returned UP but latency > threshold" or "Spring Boot reports `OUT_OF_SERVICE`"? If latency tracking is needed, the backend health endpoint needs to measure response time, not just status. **Decision affects backend implementation.**
+4. **Trial threshold:** 14-day primary (`trialsExpiring14`), 7-day sub-label. Gradient urgency: neutral → amber (trialsExpiring7 > 0) → red (trialsExpiring48 > 0). Verify `trialsExpiring14` exists on backend; add if missing.
 
-6. **Auto-refresh.** Should the health grid auto-refresh every 30 seconds without user interaction? This is standard for ops dashboards. React Query's `refetchInterval` handles it. But it adds background network traffic. For ≤5 users, this is negligible. Decision: **yes, auto-refresh health grid every 30s, KPIs every 60s.** Flagged here for Lawrence to confirm or override.
+5. **Health dot states:** UP / DOWN / UNKNOWN only. DEGRADED dropped — no latency signal exists to drive it. Filed as backlog item for when latency tracking is added.
+
+6. **Auto-refresh:** 30s health, 60s KPIs and signups. Pauses when tab is hidden (`refetchIntervalInBackground: false`). Resumes on focus (`refetchOnWindowFocus: true`).
 
 ---
 
@@ -374,7 +376,7 @@ The active state treatment, mobile drawer, right slot, and logo placement are al
 
 One new primitive is proposed but not yet built:
 
-**`ServiceHealthGrid`** — a grid of service name + status dot rows. Props: `services: { name: string; status: "UP" | "DEGRADED" | "DOWN" | "UNKNOWN" }[]`, `isLoading: boolean`, `onServiceClick?: (name: string) => void`. This lives in `@andikisha/ui` if it's reused across platform-portal surfaces; otherwise it lives directly in `platform-portal/src/components/`. Given only the dashboard uses it in V1, build it in-app. Extract to `@andikisha/ui` if it appears elsewhere.
+**`ServiceHealthGrid`** — a grid of service name + status dot rows. Props: `services: { name: string; status: "UP" | "DOWN" | "UNKNOWN" }[]`, `isLoading: boolean`, `onServiceClick?: (name: string) => void`. This lives in `@andikisha/ui` if it's reused across platform-portal surfaces; otherwise it lives directly in `platform-portal/src/components/`. Given only the dashboard uses it in V1, build it in-app. Extract to `@andikisha/ui` if it appears elsewhere.
 
 No other new primitives needed. Widget 4 uses `DataTable`, Widgets 1–3 use `StatCard` inside `KpiGroup`, Widget 5 uses the inline `ServiceHealthGrid`. `PageHeader` and `Badge` already exist.
 
