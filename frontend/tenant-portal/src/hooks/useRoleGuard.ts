@@ -7,21 +7,26 @@ import { ADMIN_ROLES, findCorrectDashboard } from "@andikisha/ui/auth";
 
 type AuthStatus = "loading" | "authorized" | "redirecting";
 
+function checkAuthorized(roles: Set<string>, area: "employee" | "admin"): boolean {
+  return area === "employee"
+    ? roles.has("EMPLOYEE")
+    : [...ADMIN_ROLES].some((r) => roles.has(r));
+}
+
 /**
- * Client-side role guard. Returns:
- *  - "loading"     — not yet mounted or user not resolved; caller renders nothing
- *  - "authorized"  — role matches this area; safe to render children
- *  - "redirecting" — wrong role; redirect in flight; caller renders nothing
+ * Client-side role guard.
  *
- * IMPORTANT: always returns "authorized" during SSR so the server-rendered HTML
- * matches the client's first paint. The guard only activates after mount, which
- * prevents hydration mismatches while still blocking wrong-role content on the
- * client. Middleware handles the server-side enforcement.
+ * When the user is already in the React Query cache (client-side navigation),
+ * the role check fires synchronously on the first render — no flash.
+ *
+ * When the user is null (SSR or cold load), we return "authorized" so the
+ * server HTML and client first-paint match, then apply the check after mount
+ * to avoid a hydration mismatch.
  */
 export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
-  const [mounted, setMounted] = useState(false);
   const user = useCurrentUser();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -31,24 +36,24 @@ export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
     ? new Set<string>(user.roles.flatMap((r) => (r ? [r] : [])))
     : null;
 
-  const authorized = roles
-    ? area === "employee"
-      ? roles.has("EMPLOYEE")
-      : [...ADMIN_ROLES].some((r) => roles.has(r))
-    : null;
+  const authorized = roles ? checkAuthorized(roles, area) : null;
 
   useEffect(() => {
-    if (mounted && authorized === false && roles) {
+    if (authorized === false && roles) {
       router.replace(findCorrectDashboard(roles));
     }
-  }, [mounted, authorized, roles, router]);
+  }, [authorized, roles, router]);
 
-  // During SSR and the first synchronous client render: always "authorized"
-  // so the HTML tree matches and React hydrates without a mismatch.
+  // User is known — check role immediately regardless of mount state.
+  // This handles client-side navigation where the cache is already populated.
+  if (user !== null && user !== undefined) {
+    if (!authorized) return "redirecting";
+    return "authorized";
+  }
+
+  // User unknown (SSR / cold load) — be permissive until mounted so that
+  // server HTML and client first paint are identical (no hydration mismatch).
+  // After mount, if user is still null, show loading.
   if (!mounted) return "authorized";
-
-  // After mount: apply the real role check.
-  if (!user || authorized === null) return "loading";
-  if (!authorized) return "redirecting";
-  return "authorized";
+  return "loading";
 }
