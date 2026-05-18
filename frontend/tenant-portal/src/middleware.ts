@@ -3,7 +3,7 @@ import { jwtVerify } from "jose";
 import { findCorrectDashboard, ADMIN_ROLES } from "@andikisha/ui/auth";
 
 const PUBLIC_PATHS = ["/login"];
-const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/preview"];
+const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/preview", "/reset-password/"];
 
 function isPublic(pathname: string): boolean {
   return (
@@ -56,7 +56,16 @@ export async function middleware(request: NextRequest) {
     const roleSet = new Set<string>(rawRoles.filter((r): r is string => typeof r === "string"));
 
     // Path evaluation — in priority order.
-    // 1. SUPER_ADMIN anywhere → platform portal
+    // 1. Force change-password redirect for accounts requiring it.
+    //    Applies to any authenticated role — both employees and admins must set a real password.
+    //    Allow /my/change-password itself through to avoid redirect loops.
+    //    API routes allowed through so the change-password BFF works.
+    const mustChangePassword = payload.mustChangePassword === true;
+    if (mustChangePassword && pathname !== "/my/change-password") {
+      return NextResponse.redirect(new URL("/my/change-password", request.url));
+    }
+
+    // 2. SUPER_ADMIN anywhere → platform portal
     if (roleSet.has("SUPER_ADMIN")) {
       const redirectTo = process.env.NEXT_PUBLIC_PLATFORM_PORTAL_URL ?? "/access-denied";
       console.info("[middleware] role-redirect", {
@@ -68,7 +77,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
 
-    // 2. /admin/* with no admin role → correct dashboard
+    // 3. /admin/* with no admin role → correct dashboard
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
       let hasAdminRole = false;
       for (const r of ADMIN_ROLES) {
@@ -86,7 +95,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // 3. /my/* without EMPLOYEE role → correct dashboard
+    // 4. /my/* without EMPLOYEE role → correct dashboard
     if (pathname === "/my" || pathname.startsWith("/my/")) {
       if (!roleSet.has("EMPLOYEE")) {
         const redirectTo = findCorrectDashboard(roleSet);
@@ -100,7 +109,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // 4. Allowed — forward augmented headers to Server Components via request context.
+    // 5. Allowed — forward augmented headers to Server Components via request context.
     // IMPORTANT: NextResponse.next({ request: { headers } }) is the correct pattern.
     // response.headers.set(...) sets browser-facing headers only — NOT visible to Server
     // Components via await headers(). The request copy is what propagates to the server.

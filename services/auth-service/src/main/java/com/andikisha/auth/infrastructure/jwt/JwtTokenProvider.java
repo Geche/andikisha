@@ -50,7 +50,8 @@ public class JwtTokenProvider {
                 .claim("email", user.getEmail())
                 .claim("role", user.getRole().name())
                 .claim("employeeId",
-                        user.getEmployeeId() != null ? user.getEmployeeId().toString() : null);
+                        user.getEmployeeId() != null ? user.getEmployeeId().toString() : null)
+                .claim("mustChangePassword", user.isMustChangePassword());
         if (planTier != null) {
             builder.claim("plan", planTier);
         }

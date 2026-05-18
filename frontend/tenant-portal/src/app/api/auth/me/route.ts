@@ -38,6 +38,7 @@ export async function GET() {
     role: string;
     roles?: string[];
     employeeId?: string;
+    mustChangePassword?: boolean;
   };
 
   if (typeof data.id !== "string" || typeof data.tenantId !== "string" || typeof data.email !== "string") {
@@ -52,6 +53,7 @@ export async function GET() {
     fullName: undefined, // auth-service has no name field yet — see user profile prompt
     roles: data.roles ?? [data.role],
     employeeId: data.employeeId ?? undefined,
+    mustChangePassword: data.mustChangePassword ?? false,
   };
 
   return NextResponse.json(currentUser, {

@@ -29,4 +29,11 @@ public final class RedisKeys {
     public static String ussdSession(String msisdn) {
         return "ussd:session:" + msisdn;
     }
+
+    // Password reset token cache. TTL: 1 hour (3600 seconds).
+    // Written by Auth Service on forgot-password. Value: "{userId}:{tenantId}".
+    // Deleted by Auth Service on successful password reset.
+    public static String passwordReset(String token) {
+        return "pwd:reset:" + token;
+    }
 }
