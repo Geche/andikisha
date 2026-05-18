@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { EmployeeShell, ProfileMenu } from "@andikisha/ui";
 import { useBottomNavItems, EmployeeDesktopNav } from "./EmployeeNav";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 
 interface EmployeeClientShellProps {
   userEmail: string;
@@ -10,6 +11,7 @@ interface EmployeeClientShellProps {
 }
 
 export function EmployeeClientShell({ userEmail, children }: EmployeeClientShellProps) {
+  useRoleGuard("employee");
   const bottomNav = useBottomNavItems();
   const router = useRouter();
 
