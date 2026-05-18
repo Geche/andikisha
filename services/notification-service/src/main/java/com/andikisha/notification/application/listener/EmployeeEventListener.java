@@ -39,23 +39,10 @@ public class EmployeeEventListener {
     }
 
     private void handleCreated(EmployeeCreatedEvent event) {
-        String subject = "Welcome to AndikishaHR";
-        String body = "Dear " + event.getFirstName() + " " + event.getLastName() + ",\n\n"
-                + "Welcome aboard! Your employee number is " + event.getEmployeeNumber() + ".\n\n"
-                + "You can access the employee portal to view your payslips, "
-                + "submit leave requests, and update your profile.\n\n"
-                + "If you have any questions, please contact the HR department.";
-
-        notificationService.sendMultiChannel(
-                event.getTenantId(),
-                UUID.fromString(event.getEmployeeId()),
-                event.getFirstName() + " " + event.getLastName(),
-                event.getEmail(),
-                event.getPhoneNumber(),
-                "ONBOARDING", subject, body,
-                NotificationPriority.NORMAL,
-                event.getEventId(), event.getEventType()
-        );
+        // Credential welcome email is sent by AuthEventListener on EmployeeUserProvisionedEvent.
+        // No duplicate message here.
+        log.debug("EmployeeCreatedEvent for employee={} — welcome handled by AuthEventListener",
+                event.getEmployeeId());
     }
 
     private void handleTerminated(EmployeeTerminatedEvent event) {

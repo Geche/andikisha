@@ -22,6 +22,7 @@ spring:
 
 # SMS disabled in dev; api-key provided as empty string to satisfy Spring binding
 app:
+  portal-url: ${PORTAL_URL:http://localhost:3000}
   notifications:
     sms:
       api-key: ""

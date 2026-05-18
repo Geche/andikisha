@@ -30,6 +30,8 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(notificationDlq()).to(notificationDlx()).with("");
     }
 
+    public static final String AUTH_EXCHANGE = "auth.events";
+
     // Exchanges (declared idempotently, same as in publishing services)
     @Bean TopicExchange employeeExchange() {
         return new TopicExchange("employee.events", true, false);
@@ -42,6 +44,9 @@ public class RabbitMqConfig {
     }
     @Bean TopicExchange tenantExchange() {
         return new TopicExchange("tenant.events", true, false);
+    }
+    @Bean TopicExchange authExchange() {
+        return new TopicExchange(AUTH_EXCHANGE, true, false);
     }
     // Queues
     @Bean Queue notificationEmployeeQueue() {
@@ -58,6 +63,10 @@ public class RabbitMqConfig {
     }
     @Bean Queue notificationTenantQueue() {
         return QueueBuilder.durable("notification.tenant-events")
+                .withArgument("x-dead-letter-exchange", "dlx.notification").build();
+    }
+    @Bean Queue notificationAuthQueue() {
+        return QueueBuilder.durable("notification.auth-events")
                 .withArgument("x-dead-letter-exchange", "dlx.notification").build();
     }
 
@@ -77,6 +86,9 @@ public class RabbitMqConfig {
     @Bean Binding bindTenant() {
         return BindingBuilder.bind(notificationTenantQueue())
                 .to(tenantExchange()).with("tenant.created");
+    }
+    @Bean Binding bindAuth(Queue notificationAuthQueue, TopicExchange authExchange) {
+        return BindingBuilder.bind(notificationAuthQueue).to(authExchange).with("auth.*");
     }
 
     @Bean Jackson2JsonMessageConverter messageConverter(ObjectMapper objectMapper) {
