@@ -45,6 +45,9 @@ public class User extends BaseEntity {
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword = true;
+
     protected User() {}
 
     public static User create(String tenantId, String email, String phoneNumber,
@@ -57,6 +60,7 @@ public class User extends BaseEntity {
         user.role = role;
         user.active = true;
         user.failedLoginAttempts = 0;
+        user.mustChangePassword = true;
         return user;
     }
 
@@ -107,6 +111,10 @@ public class User extends BaseEntity {
 
     public void linkEmployee(UUID employeeId) {
         this.employeeId = employeeId;
+    }
+
+    public void clearMustChangePassword() {
+        this.mustChangePassword = false;
     }
 
 }

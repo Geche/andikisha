@@ -135,6 +135,7 @@ public class AuthService {
         }
         String passwordHash = passwordEncoder.encode(initialPassword);
         User employee = User.create(tenantId, email, phone, passwordHash, Role.EMPLOYEE);
+        employee.linkEmployee(UUID.fromString(employeeId));
         User saved = userRepository.save(employee);
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

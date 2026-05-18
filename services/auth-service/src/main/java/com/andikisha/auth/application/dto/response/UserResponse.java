@@ -11,6 +11,7 @@ public record UserResponse(
         String role,
         UUID employeeId,
         boolean active,
+        boolean mustChangePassword,
         LocalDateTime lastLogin,
         LocalDateTime createdAt
 ) {}

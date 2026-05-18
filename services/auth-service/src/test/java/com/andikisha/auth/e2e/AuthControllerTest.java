@@ -252,7 +252,7 @@ class AuthControllerTest {
     void me_whenAuthenticated_returns200() throws Exception {
         UserResponse userResponse = new UserResponse(
                 USER_ID, TENANT_ID, "jane@example.com",
-                "+254700000001", "EMPLOYEE", null, true, null, LocalDateTime.now());
+                "+254700000001", "EMPLOYEE", null, true, false, null, LocalDateTime.now());
         when(authService.getUser(USER_ID)).thenReturn(userResponse);
 
         mockMvc.perform(get(BASE + "/me")
@@ -291,7 +291,7 @@ class AuthControllerTest {
     private TokenResponse tokenResponse() {
         UserResponse userResponse = new UserResponse(
                 USER_ID, TENANT_ID, "jane@example.com",
-                "+254700000001", "EMPLOYEE", null, true, null, LocalDateTime.now());
+                "+254700000001", "EMPLOYEE", null, true, false, null, LocalDateTime.now());
         return new TokenResponse("access-token", "refresh-token", 3600L, userResponse);
     }
 }

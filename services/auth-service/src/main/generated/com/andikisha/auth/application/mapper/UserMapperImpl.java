@@ -27,6 +27,7 @@ public class UserMapperImpl implements UserMapper {
         String phoneNumber = null;
         UUID employeeId = null;
         boolean active = false;
+        boolean mustChangePassword = false;
         LocalDateTime lastLogin = null;
         LocalDateTime createdAt = null;
 
@@ -36,12 +37,13 @@ public class UserMapperImpl implements UserMapper {
         phoneNumber = user.getPhoneNumber();
         employeeId = user.getEmployeeId();
         active = user.isActive();
+        mustChangePassword = user.isMustChangePassword();
         lastLogin = user.getLastLogin();
         createdAt = user.getCreatedAt();
 
         String role = user.getRole().name();
 
-        UserResponse userResponse = new UserResponse( id, tenantId, email, phoneNumber, role, employeeId, active, lastLogin, createdAt );
+        UserResponse userResponse = new UserResponse( id, tenantId, email, phoneNumber, role, employeeId, active, mustChangePassword, lastLogin, createdAt );
 
         return userResponse;
     }

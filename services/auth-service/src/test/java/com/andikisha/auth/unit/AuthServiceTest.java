@@ -88,7 +88,7 @@ class AuthServiceTest {
 
     private UserResponse buildUserResponse(String role) {
         return new UserResponse(USER_ID, TENANT_ID, "jane@test.com",
-                "+254722123456", role, null, true, null, LocalDateTime.now());
+                "+254722123456", role, null, true, false, null, LocalDateTime.now());
     }
 
     private void stubRefreshClaims(String token) {
