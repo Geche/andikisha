@@ -1,4 +1,4 @@
-# Onboarding Checklist — Design Document
+# Workspace Setup Checklist — Design Document
 
 **Scope:** Replaces the empty admin dashboard for new tenants until all 4 setup steps are complete.
 

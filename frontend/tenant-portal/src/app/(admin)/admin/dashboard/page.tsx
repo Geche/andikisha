@@ -16,6 +16,7 @@ import {
 } from "@andikisha/ui";
 import type { BadgeStatus, BarDatum } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { WorkspaceSetupChecklist } from "@/components/workspace-setup/WorkspaceSetupChecklist";
 
 interface PagedResponse<T> {
   content: T[];
@@ -108,6 +109,18 @@ export default function DashboardPage() {
     now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) +
     " EAT";
 
+  // ── Workspace setup state (4 counts that drive checklist vs. standard view) ──
+
+  const { data: deptsData, refetch: refetchDepts } = useQuery<{ id: string }[]>({
+    queryKey: ["workspace-depts"],
+    queryFn: () => apiClient.get("/api/v1/departments").then((r) => r.data),
+  });
+
+  const { data: positionsData, refetch: refetchPositions } = useQuery<{ id: string }[]>({
+    queryKey: ["workspace-positions"],
+    queryFn: () => apiClient.get("/api/v1/positions").then((r) => r.data),
+  });
+
   const {
     data: employeesData,
     isLoading: empLoading,
@@ -145,6 +158,18 @@ export default function DashboardPage() {
         .then((r) => r.data),
   });
 
+  // ── Workspace setup decision ────────────────────────────────────────────────
+
+  const deptCount = deptsData?.length ?? 0;
+  const posCount = positionsData?.length ?? 0;
+  const empCount = employeesData?.totalElements ?? 0;
+  const payrollCount = payrollData?.content?.length ?? 0;
+
+  const isSetupComplete =
+    deptCount > 0 && posCount > 0 && empCount > 0 && payrollCount > 0;
+
+  // ── Standard dashboard derived values ───────────────────────────────────────
+
   const isLoadingStats = empLoading || leaveLoading || payrollLoading;
   const latestRun = payrollData?.content?.[0] ?? null;
   const recentRuns = payrollData?.content?.slice(0, 7) ?? [];
@@ -172,6 +197,34 @@ export default function DashboardPage() {
     }),
     _id: run.id,
   }));
+
+  // ── Workspace setup checklist ─────────────────────────────────────────────
+
+  if (!isSetupComplete) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <PageHeader
+          title="Welcome to AndikishaHR"
+          subtitle="Let's get your workspace set up."
+        />
+        <div className="flex-1 overflow-y-auto px-8 py-8">
+          <div className="max-w-2xl">
+            <WorkspaceSetupChecklist
+              state={{ deptCount, posCount, empCount, payrollCount }}
+              onStepComplete={() => {
+                void refetchEmp();
+                void refetchPayroll();
+                void refetchDepts();
+                void refetchPositions();
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Standard dashboard ────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

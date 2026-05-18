@@ -4,6 +4,34 @@ Items that were deferred during development with clear rationale. Ordered roughl
 
 ---
 
+## Platform
+
+### PLATFORM-BACKLOG-001 — Tenant creation UI in platform-portal
+
+**Raised:** 2026-05-18  
+**Priority:** High — blocks real demos and first paying customers. Currently a new tenant can only be provisioned via direct API call.
+
+**Context:** `SuperAdminTenantService.createTenantWithLicence` exists and works at the API level. The backend endpoint `POST /api/v1/super-admin/tenants` is complete and tested. Credential email delivery to the new admin is already wired in `notification-service`. There is no UI in platform-portal to invoke any of this.
+
+**What to build:** `/tenants/new` page in `platform-portal` with a form covering:
+- Company / organisation name
+- Contact details (admin email, admin first name, admin last name, admin phone)
+- Subscription tier select: Starter / Professional / Enterprise (maps to `planId`)
+- Billing cycle (monthly / annual)
+- Seat count
+- Agreed price (KES)
+- Trial days (default 14)
+
+On submit:
+1. Calls `POST /api/v1/super-admin/tenants` with the form data
+2. Backend returns `ProvisionedTenantResponse` including `temporaryPassword`
+3. UI displays the temp password to the SUPER_ADMIN in a one-time modal with a copy button ("This password will not be shown again")
+4. Credential email is already sent to the admin automatically by notification-service — no additional action needed
+
+**Not blocking current work.** Build after Phase 2 workspace setup checklist ships.
+
+---
+
 ## Product
 
 ### PRODUCT-BACKLOG-001 — Bank EFT prominence in payroll disbursement UX
