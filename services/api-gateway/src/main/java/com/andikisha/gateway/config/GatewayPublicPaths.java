@@ -15,7 +15,9 @@ public final class GatewayPublicPaths {
         "/api/v1/auth/super-admin/provision",
         "/api/v1/auth/super-admin/login",
         "/api/v1/auth/ussd/validate",
-        "/api/v1/plans"
+        "/api/v1/plans",
+        "/api/v1/auth/forgot-password",
+        "/api/v1/auth/reset-password"
     );
 
     /** Path prefixes requiring no JWT and no tenant header. */

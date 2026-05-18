@@ -309,3 +309,23 @@ Kenya Employment Act, 2007 §52: the employer must provide a Certificate of Serv
 **Alternatively:** If the document generation infrastructure is not ready, remove the queue declaration and replace with a TODO comment. Half-built infrastructure (queue with no consumer) is an operational hazard — messages pile up, queue grows, alerting fires. Either build it or remove the scaffolding.
 
 **Decision:** Build the listener. The queue infrastructure is already correct. Document generation for the Certificate of Service follows the same pattern as payslip PDF generation.
+
+---
+
+## Infrastructure
+
+### INFRA-BACKLOG-002 — Remove orphaned employee-portal and admin-portal directories
+
+**Raised:** 2026-05-18  
+**Priority:** Low — no impact on builds, CI, or deployments
+
+Source code cleaned up in commit `dcd6905` (2026-05-17): the single tracked file in each directory (`shell-preview/page.tsx`) was deleted. The directories remain on disk with gitignored `node_modules/` and `.next/` artifacts from pre-consolidation development.
+
+**Before deleting:**
+1. Confirm neither directory is referenced in `pnpm-workspace.yaml` (currently they are — check whether removal is needed)
+2. Confirm no CI/CD scripts, Dockerfiles, or deployment configs reference these paths
+3. Confirm root `package.json` scripts do not reference them
+
+**Then:** `rm -rf frontend/employee-portal frontend/admin-portal`
+
+**Why deferred:** Gitignored artifacts don't affect builds or test runs. Risk of breaking something if references remain. Low urgency.

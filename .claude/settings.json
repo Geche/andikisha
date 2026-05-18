@@ -33,6 +33,10 @@
       "Read(**/.gradle/**)"
     ]
   },
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
   "preferences": {
     "codeStyle": "google-java-format",
     "testFramework": "junit5",
