@@ -1,7 +1,8 @@
 "use client";
 
-import { EmployeeShell } from "@andikisha/ui";
-import { useBottomNavItems, EmployeeDesktopNav, EmployeeDesktopNavFooter } from "./EmployeeNav";
+import { useRouter } from "next/navigation";
+import { EmployeeShell, ProfileMenu } from "@andikisha/ui";
+import { useBottomNavItems, EmployeeDesktopNav } from "./EmployeeNav";
 
 interface EmployeeClientShellProps {
   userEmail: string;
@@ -10,13 +11,23 @@ interface EmployeeClientShellProps {
 
 export function EmployeeClientShell({ userEmail, children }: EmployeeClientShellProps) {
   const bottomNav = useBottomNavItems();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+  }
+
   return (
     <EmployeeShell
       bottomNav={bottomNav}
       desktopNav={<EmployeeDesktopNav />}
-      desktopNavFooter={<EmployeeDesktopNavFooter />}
       topRight={
-        <span className="text-[12px] text-neutral-500 truncate max-w-[160px]">{userEmail}</span>
+        <ProfileMenu
+          email={userEmail}
+          role="EMPLOYEE"
+          onLogout={() => void handleLogout()}
+        />
       }
     >
       {children}

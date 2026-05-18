@@ -1,9 +1,8 @@
 "use client";
 
-import { NavRailItem, NavRailGroup, cn, type BottomNavItem } from "@andikisha/ui";
-import { Home, FileText, Calendar, Clock, User, LogOut } from "lucide-react";
+import { NavRailItem, NavRailGroup, type BottomNavItem } from "@andikisha/ui";
+import { Home, FileText, Calendar, Clock, User } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { logout } from "@/lib/auth";
 
 const BOTTOM_NAV_ITEMS = [
   { label: "Home",     href: "/my/dashboard", icon: Home },
@@ -43,17 +42,3 @@ export function EmployeeDesktopNav() {
   );
 }
 
-export function EmployeeDesktopNavFooter() {
-  return (
-    <button
-      onClick={() => void logout()}
-      className={cn(
-        "flex items-center gap-2.5 w-full h-9 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors",
-        "text-neutral-700 hover:bg-neutral-100 cursor-pointer group"
-      )}
-    >
-      <LogOut size={16} strokeWidth={2} className="text-neutral-500 group-hover:text-error" />
-      <span className="group-hover:text-error">Sign out</span>
-    </button>
-  );
-}
