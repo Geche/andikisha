@@ -15,9 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+
 @Service
 @Transactional(readOnly = true)
 public class DepartmentService {
+
+    private record DefaultDept(String name, String description) {}
+
+    private static final List<DefaultDept> DEFAULT_DEPARTMENTS = List.of(
+        new DefaultDept("Human Resources", "Recruitment, payroll admin, employee relations"),
+        new DefaultDept("Finance",         "Accounting, budgeting, statutory compliance"),
+        new DefaultDept("Operations",      "Day-to-day business operations and logistics"),
+        new DefaultDept("Engineering",     "Software development and technical infrastructure"),
+        new DefaultDept("Sales",           "Business development and client management")
+    );
 
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
@@ -33,6 +44,26 @@ public class DepartmentService {
 
     public List<DepartmentResponse> findAll() {
         String tenantId = TenantContext.requireTenantId();
+        return departmentRepository.findByTenantIdAndActiveTrue(tenantId).stream()
+                .map(dept -> {
+                    DepartmentResponse base = mapper.toResponse(dept);
+                    long count = employeeRepository.countActiveByTenantIdAndDepartmentId(
+                            tenantId, dept.getId(), EmploymentStatus.TERMINATED);
+                    return new DepartmentResponse(
+                            base.id(), base.name(), base.description(),
+                            base.parentId(), count, base.active());
+                })
+                .toList();
+    }
+
+    @Transactional
+    public List<DepartmentResponse> seedDefaults() {
+        String tenantId = TenantContext.requireTenantId();
+        for (DefaultDept d : DEFAULT_DEPARTMENTS) {
+            if (!departmentRepository.existsByTenantIdAndName(tenantId, d.name())) {
+                departmentRepository.save(Department.create(tenantId, d.name(), d.description(), null));
+            }
+        }
         return departmentRepository.findByTenantIdAndActiveTrue(tenantId).stream()
                 .map(dept -> {
                     DepartmentResponse base = mapper.toResponse(dept);

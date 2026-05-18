@@ -40,6 +40,13 @@ public class DepartmentController {
         return departmentService.create(request.name(), request.description(), request.parentId());
     }
 
+    @PostMapping("/seed-defaults")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Seed default departments (idempotent — creates missing, skips existing)")
+    public List<DepartmentResponse> seedDefaults() {
+        return departmentService.seedDefaults();
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Update a department")

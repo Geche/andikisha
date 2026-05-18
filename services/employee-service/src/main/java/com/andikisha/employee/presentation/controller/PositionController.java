@@ -30,6 +30,13 @@ public class PositionController {
         return positionService.findAll();
     }
 
+    @PostMapping("/seed-defaults")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Seed default positions (idempotent — creates missing, skips existing)")
+    public List<PositionResponse> seedDefaults() {
+        return positionService.seedDefaults();
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")

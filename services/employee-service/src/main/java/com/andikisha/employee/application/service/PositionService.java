@@ -15,6 +15,21 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class PositionService {
 
+    private record DefaultPosition(String title, String description, String gradeLevel) {}
+
+    private static final List<DefaultPosition> DEFAULT_POSITIONS = List.of(
+        new DefaultPosition("HR Officer",                     "Handles recruitment and employee relations",        "L3"),
+        new DefaultPosition("Sales Representative",           "Field and inside sales",                           "L2"),
+        new DefaultPosition("Sales Manager",                  "Manages the sales team and targets",               "L4"),
+        new DefaultPosition("Software Engineer",              "Full-stack and backend development",               "L4"),
+        new DefaultPosition("Accountant",                     "Bookkeeping, payroll processing, tax filing",      "L3"),
+        new DefaultPosition("Operations Manager",             "Oversees daily operational workflows",             "L5"),
+        new DefaultPosition("Customer Service Representative","First-line customer support",                      "L2"),
+        new DefaultPosition("Marketing Officer",              "Brand management and digital marketing",           "L3"),
+        new DefaultPosition("Administrative Assistant",       "Office administration and executive support",      "L2"),
+        new DefaultPosition("Finance Manager",                "Financial planning, reporting, and compliance",    "L5")
+    );
+
     private final PositionRepository positionRepository;
     private final EmployeeMapper mapper;
 
@@ -25,6 +40,19 @@ public class PositionService {
 
     public List<PositionResponse> findAll() {
         String tenantId = TenantContext.requireTenantId();
+        return positionRepository.findByTenantIdAndActiveTrue(tenantId).stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Transactional
+    public List<PositionResponse> seedDefaults() {
+        String tenantId = TenantContext.requireTenantId();
+        for (DefaultPosition p : DEFAULT_POSITIONS) {
+            if (!positionRepository.existsByTenantIdAndTitle(tenantId, p.title())) {
+                positionRepository.save(Position.create(tenantId, p.title(), p.description(), p.gradeLevel()));
+            }
+        }
         return positionRepository.findByTenantIdAndActiveTrue(tenantId).stream()
                 .map(mapper::toResponse)
                 .toList();
