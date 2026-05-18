@@ -3,6 +3,8 @@ package com.andikisha.auth.infrastructure.messaging;
 import com.andikisha.auth.application.port.AuthEventPublisher;
 import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.infrastructure.config.RabbitMqConfig;
+import com.andikisha.events.auth.EmployeeUserProvisionedEvent;
+import com.andikisha.events.auth.PasswordResetRequestedEvent;
 import com.andikisha.events.auth.UserDeactivatedEvent;
 import com.andikisha.events.auth.UserRegisteredEvent;
 import org.slf4j.Logger;
@@ -39,5 +41,22 @@ public class RabbitAuthEventPublisher implements AuthEventPublisher {
         rabbitTemplate.convertAndSend(
                 RabbitMqConfig.AUTH_EXCHANGE, "auth.user_deactivated", event);
         log.info("Published user deactivated event for user: {}", userId);
+    }
+
+    @Override
+    public void publishEmployeeUserProvisioned(String tenantId, String employeeId,
+                                               String email, String firstName, String lastName,
+                                               String employeeNumber, String tempPassword) {
+        var event = new EmployeeUserProvisionedEvent(
+                tenantId, employeeId, email, firstName, lastName, employeeNumber, tempPassword);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.AUTH_EXCHANGE, "auth.employee_provisioned", event);
+        log.info("Published EmployeeUserProvisioned for employee={}", employeeId);
+    }
+
+    @Override
+    public void publishPasswordResetRequested(String tenantId, String email, String resetToken) {
+        var event = new PasswordResetRequestedEvent(tenantId, email, resetToken);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.AUTH_EXCHANGE, "auth.password_reset_requested", event);
+        log.info("Published PasswordResetRequested for email={}", email);
     }
 }

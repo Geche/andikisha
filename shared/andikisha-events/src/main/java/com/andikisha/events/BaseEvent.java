@@ -2,6 +2,8 @@ package com.andikisha.events;
 
 import com.andikisha.events.attendance.ClockInEvent;
 import com.andikisha.events.attendance.ClockOutEvent;
+import com.andikisha.events.auth.EmployeeUserProvisionedEvent;
+import com.andikisha.events.auth.PasswordResetRequestedEvent;
 import com.andikisha.events.auth.UserDeactivatedEvent;
 import com.andikisha.events.auth.UserRegisteredEvent;
 import com.andikisha.events.compliance.ComplianceRateChangedEvent;
@@ -42,8 +44,10 @@ import java.util.UUID;
 @Getter
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = UserRegisteredEvent.class,       name = "UserRegistered"),
-        @JsonSubTypes.Type(value = UserDeactivatedEvent.class,      name = "UserDeactivated"),
+        @JsonSubTypes.Type(value = UserRegisteredEvent.class,            name = "UserRegistered"),
+        @JsonSubTypes.Type(value = UserDeactivatedEvent.class,           name = "UserDeactivated"),
+        @JsonSubTypes.Type(value = EmployeeUserProvisionedEvent.class,   name = "EmployeeUserProvisioned"),
+        @JsonSubTypes.Type(value = PasswordResetRequestedEvent.class,    name = "PasswordResetRequested"),
         @JsonSubTypes.Type(value = EmployeeCreatedEvent.class,      name = "EmployeeCreated"),
         @JsonSubTypes.Type(value = EmployeeUpdatedEvent.class,      name = "EmployeeUpdated"),
         @JsonSubTypes.Type(value = EmployeeTerminatedEvent.class,   name = "EmployeeTerminated"),
