@@ -115,20 +115,15 @@ public class SuperAdminTenantService {
         String temporaryPassword = passwordGenerator.generate();
 
         // 4. Provision admin user in Auth Service via gRPC.
-        try {
-            authServiceClient.provisionInitialAdmin(
-                    savedTenant.getTenantId(),
-                    normalizedEmail,
-                    request.adminFirstName(),
-                    request.adminLastName(),
-                    request.adminPhone(),
-                    temporaryPassword);
-        } catch (Exception ex) {
-            // Auth Service failure must not abort tenant creation — the
-            // SUPER_ADMIN can resend the invite. Log and continue.
-            log.error("Auth Service provisionInitialAdmin failed for tenant {} - manual fix required",
-                    savedTenant.getTenantId(), ex);
-        }
+        //    Failure propagates and triggers @Transactional rollback of the tenant + licence rows.
+        //    The super-admin sees the error and can retry the entire tenant creation flow.
+        authServiceClient.provisionInitialAdmin(
+                savedTenant.getTenantId(),
+                normalizedEmail,
+                request.adminFirstName(),
+                request.adminLastName(),
+                request.adminPhone(),
+                temporaryPassword);
 
         // 5. Publish tenant.created so downstream services can provision schemas, etc.
         //    Deferred to afterCommit so a transaction rollback never produces ghost events.
