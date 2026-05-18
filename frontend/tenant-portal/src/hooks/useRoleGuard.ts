@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@andikisha/ui";
 import { ADMIN_ROLES, findCorrectDashboard } from "@andikisha/ui/auth";
 
-type AuthStatus = "loading" | "authorized" | "redirecting";
+type AuthStatus = "authorized" | "redirecting";
 
 function checkAuthorized(roles: Set<string>, area: "employee" | "admin"): boolean {
   return area === "employee"
@@ -14,23 +14,17 @@ function checkAuthorized(roles: Set<string>, area: "employee" | "admin"): boolea
 }
 
 /**
- * Client-side role guard.
+ * Client-side role guard. Returns:
+ *  - "authorized"  — render children (role confirmed, or user unknown — be permissive)
+ *  - "redirecting" — wrong role confirmed; redirect in flight; render nothing
  *
- * When the user is already in the React Query cache (client-side navigation),
- * the role check fires synchronously on the first render — no flash.
- *
- * When the user is null (SSR or cold load), we return "authorized" so the
- * server HTML and client first-paint match, then apply the check after mount
- * to avoid a hydration mismatch.
+ * Rule: only block when we KNOW the role is wrong. Unknown user = permissive.
+ * Middleware enforces auth server-side; this guard only catches client-side
+ * navigation that bypasses middleware.
  */
 export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
   const user = useCurrentUser();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const roles = user
     ? new Set<string>(user.roles.flatMap((r) => (r ? [r] : [])))
@@ -44,16 +38,8 @@ export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
     }
   }, [authorized, roles, router]);
 
-  // User is known — check role immediately regardless of mount state.
-  // This handles client-side navigation where the cache is already populated.
-  if (user !== null && user !== undefined) {
-    if (!authorized) return "redirecting";
-    return "authorized";
-  }
-
-  // User unknown (SSR / cold load) — be permissive until mounted so that
-  // server HTML and client first paint are identical (no hydration mismatch).
-  // After mount, if user is still null, show loading.
-  if (!mounted) return "authorized";
-  return "loading";
+  // Only block rendering when role is definitively wrong.
+  // If user is null or still loading, let middleware's server decision stand.
+  if (authorized === false) return "redirecting";
+  return "authorized";
 }

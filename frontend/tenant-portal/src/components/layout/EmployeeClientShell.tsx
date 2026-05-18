@@ -20,7 +20,7 @@ export function EmployeeClientShell({ userEmail, children }: EmployeeClientShell
     router.replace("/login");
   }
 
-  if (authStatus !== "authorized") return null;
+  if (authStatus === "redirecting") return null;
 
   return (
     <EmployeeShell
