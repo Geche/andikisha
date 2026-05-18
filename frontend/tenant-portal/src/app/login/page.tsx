@@ -18,6 +18,10 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<LoginError | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot]         = useState(false);
+  const [forgotEmail, setForgotEmail]       = useState("");
+  const [forgotLoading, setForgotLoading]   = useState(false);
+  const [forgotSent, setForgotSent]         = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -149,6 +153,7 @@ export default function LoginPage() {
             </label>
             <button
               type="button"
+              onClick={() => setShowForgot(true)}
               className="text-[13px] font-medium text-error hover:text-red-600 transition-colors"
             >
               Forgot Password?
@@ -195,6 +200,77 @@ export default function LoginPage() {
       <p className="text-[12px] text-white/50 pb-2">
         &copy; {new Date().getFullYear()} AndikishaHR Limited. All rights reserved.
       </p>
+
+      {showForgot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-xl w-full max-w-[380px] p-6">
+            <h2 className="text-[16px] font-bold text-near-black mb-1">Forgot Password?</h2>
+            {forgotSent ? (
+              <>
+                <p className="text-[13.5px] text-neutral-600 mt-2">
+                  If that email address is registered, you will receive a password reset link shortly.
+                </p>
+                <button
+                  onClick={() => { setShowForgot(false); setForgotSent(false); setForgotEmail(""); }}
+                  className="mt-5 w-full border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-xl transition-colors"
+                >
+                  Close
+                </button>
+              </>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setForgotLoading(true);
+                  try {
+                    await fetch("/api/auth/forgot-password", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email: forgotEmail }),
+                    });
+                    setForgotSent(true);
+                  } finally {
+                    setForgotLoading(false);
+                  }
+                }}
+                className="flex flex-col gap-4 mt-4"
+              >
+                <div>
+                  <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
+                    Email address
+                  </label>
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    disabled={forgotLoading}
+                    placeholder="you@company.co.ke"
+                    className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-300 disabled:bg-neutral-50"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgot(false)}
+                    disabled={forgotLoading}
+                    className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-xl transition-colors disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading || !forgotEmail}
+                    className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-xl transition-colors"
+                  >
+                    {forgotLoading ? "Sending…" : "Send Link"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

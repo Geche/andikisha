@@ -1,9 +1,11 @@
 package com.andikisha.auth.presentation.controller;
 
 import com.andikisha.auth.application.dto.request.ChangePasswordRequest;
+import com.andikisha.auth.application.dto.request.ForgotPasswordRequest;
 import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
+import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.service.AuthService;
@@ -64,6 +66,20 @@ public class AuthController {
     @Operation(summary = "Logout and revoke all refresh tokens")
     public void logout(Authentication authentication) {
         authService.logout(UUID.fromString(authentication.getName()));
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Request a password reset email")
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Reset password using a one-time token from email")
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
     }
 
     @GetMapping("/me")

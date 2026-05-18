@@ -1,9 +1,11 @@
 package com.andikisha.auth.application.service;
 
 import com.andikisha.auth.application.dto.request.ChangePasswordRequest;
+import com.andikisha.auth.application.dto.request.ForgotPasswordRequest;
 import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
+import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.mapper.UserMapper;
@@ -30,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -262,6 +265,48 @@ public class AuthService {
         User user = userRepository.findByEmployeeIdAndTenantId(employeeId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", employeeId));
         return userMapper.toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String tenantId = TenantContext.requireTenantId();
+        // Respond identically whether the email exists or not to prevent user enumeration.
+        userRepository.findByEmailAndTenantId(
+                request.email().toLowerCase().trim(), tenantId)
+                .ifPresent(user -> {
+                    String token = com.andikisha.common.util.PasswordGenerator.generate();
+                    String redisKey = RedisKeys.passwordReset(token);
+                    // Value format: "{userId}:{tenantId}" for retrieval on reset.
+                    redisTemplate.opsForValue().set(
+                            redisKey,
+                            user.getId() + ":" + tenantId,
+                            Duration.ofHours(1));
+                    eventPublisher.publishPasswordResetRequested(tenantId, request.email(), token);
+                });
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String redisKey = RedisKeys.passwordReset(request.token());
+        String stored = redisTemplate.opsForValue().get(redisKey);
+        if (stored == null) {
+            throw new com.andikisha.common.exception.BusinessRuleException(
+                    "Reset token is invalid or has expired.");
+        }
+
+        String[] parts = stored.split(":", 2);
+        UUID userId = UUID.fromString(parts[0]);
+        String tenantId = parts[1];
+
+        User user = userRepository.findByIdAndTenantId(userId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        user.changePassword(passwordEncoder.encode(request.newPassword()));
+        user.clearMustChangePassword();
+        userRepository.save(user);
+
+        redisTemplate.delete(redisKey);
+        refreshTokenRepository.revokeAllByUserIdAndTenantId(userId, tenantId);
     }
 
     private TokenResponse generateTokenResponse(User user) {
