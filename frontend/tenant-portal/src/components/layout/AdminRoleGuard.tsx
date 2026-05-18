@@ -3,6 +3,7 @@
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 
 export function AdminRoleGuard({ children }: { children: React.ReactNode }) {
-  useRoleGuard("admin");
+  const authStatus = useRoleGuard("admin");
+  if (authStatus !== "authorized") return null;
   return <>{children}</>;
 }

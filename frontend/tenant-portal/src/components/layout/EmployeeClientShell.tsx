@@ -11,7 +11,7 @@ interface EmployeeClientShellProps {
 }
 
 export function EmployeeClientShell({ userEmail, children }: EmployeeClientShellProps) {
-  useRoleGuard("employee");
+  const authStatus = useRoleGuard("employee");
   const bottomNav = useBottomNavItems();
   const router = useRouter();
 
@@ -19,6 +19,8 @@ export function EmployeeClientShell({ userEmail, children }: EmployeeClientShell
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
   }
+
+  if (authStatus !== "authorized") return null;
 
   return (
     <EmployeeShell

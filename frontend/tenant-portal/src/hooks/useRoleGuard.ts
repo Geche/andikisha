@@ -5,29 +5,37 @@ import { useRouter } from "next/navigation";
 import { useCurrentUser } from "@andikisha/ui";
 import { ADMIN_ROLES, findCorrectDashboard } from "@andikisha/ui/auth";
 
+type AuthStatus = "loading" | "authorized" | "redirecting";
+
 /**
- * Client-side complement to middleware role guards.
- * Redirects if the signed-in user navigates client-side into a route
- * area they don't belong in (bypassing the server middleware).
+ * Client-side role guard. Returns:
+ *  - "loading"     — user not yet resolved; caller should render nothing
+ *  - "authorized"  — role matches this area; safe to render children
+ *  - "redirecting" — wrong role; redirect is in flight; render nothing
+ *
+ * Complements the server-side middleware guard for client-side navigations.
  */
-export function useRoleGuard(area: "employee" | "admin") {
+export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
   const user = useCurrentUser();
   const router = useRouter();
 
+  const roles = user
+    ? new Set<string>(user.roles.flatMap((r) => (r ? [r] : [])))
+    : null;
+
+  const authorized = roles
+    ? area === "employee"
+      ? roles.has("EMPLOYEE")
+      : [...ADMIN_ROLES].some((r) => roles.has(r))
+    : null;
+
   useEffect(() => {
-    if (!user) return;
-    const roles = new Set<string>(user.roles.flatMap((r) => (r ? [r] : [])));
-
-    if (area === "employee" && !roles.has("EMPLOYEE")) {
+    if (authorized === false && roles) {
       router.replace(findCorrectDashboard(roles));
-      return;
     }
+  }, [authorized, roles, router]);
 
-    if (area === "admin") {
-      const hasAdminRole = [...ADMIN_ROLES].some((r) => roles.has(r));
-      if (!hasAdminRole) {
-        router.replace(findCorrectDashboard(roles));
-      }
-    }
-  }, [user, router, area]);
+  if (!user || authorized === null) return "loading";
+  if (!authorized) return "redirecting";
+  return "authorized";
 }
