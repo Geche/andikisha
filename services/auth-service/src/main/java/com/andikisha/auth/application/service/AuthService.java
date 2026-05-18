@@ -228,6 +228,7 @@ public class AuthService {
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));
+        user.clearMustChangePassword();
         userRepository.save(user);
 
         // Revoke all refresh tokens to force re-login on other devices
