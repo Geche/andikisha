@@ -32,6 +32,26 @@ On submit:
 
 ---
 
+### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
+
+**Raised:** 2026-05-19  
+**Priority:** Low — V1 uses client-side filter on the visible page; only matters at scale.
+
+**Problem:**  
+`SuperAdminController.listTenants()` accepts `search` (free-text) and `planId` (UUID) query params but the service layer silently ignores them. `TenantRepository` does not extend `JpaSpecificationExecutor` and has no search-capable query methods. The `filterTenants()` service method only branches on `status`.
+
+**V1 workaround:** Client-side filter on the visible page (whatever Spring Pageable returns). Accurate up to the page size.
+
+**Implement when:** Tenant count exceeds ~200, at which point a single page no longer covers the working set and the SUPER_ADMIN needs server-side filtering.
+
+**What to build:**
+1. `TenantRepository extends JpaSpecificationExecutor<Tenant>`
+2. `TenantSpecification` — predicates for `companyName ILIKE %search%` and `plan_id = :planId`
+3. Wire into `SuperAdminTenantService.filterTenants()` and `listTenants()`
+4. Add `search` and `planId` as first-class filter params in service method signatures
+
+---
+
 ## Product
 
 ### PRODUCT-BACKLOG-001 — Bank EFT prominence in payroll disbursement UX
