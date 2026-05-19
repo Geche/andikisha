@@ -203,8 +203,15 @@ A seventh section for a single text field would inflate the page. The reason ban
 **G.4 — Licence history newest-first.**  
 SUPER_ADMIN wants to know what happened recently, not the full backstory. Newest-first matches mental model. Full history is scrollable below.
 
-**G.5 — `changedBy` displayed as raw user ID.**  
-Resolving user IDs to human-readable names requires a call to auth-service (not in scope). A raw UUID is honest. A future improvement can add a name lookup once auth-service exposes a `GetUserById` gRPC method.
+**G.5 — `changedBy` display: truncated UUID for SUPER_ADMIN actions, "System" for automated jobs.**  
+Automated jobs (`LicenceExpiryJob`) use the sentinel value `"SYSTEM"` as the `changedBy` actor — verified in source. The UI applies:
+```typescript
+function formatChangedBy(changedBy: string | null) {
+  if (!changedBy || changedBy === "SYSTEM") return "System";
+  return changedBy.slice(0, 8) + "…"; // first 8 chars; full UUID on hover title
+}
+```
+A future improvement can add a name lookup once auth-service exposes a `GetUserById` gRPC method.
 
 **G.6 — Feature flags section shows registry + existing + add-custom input.**  
 Registry entries give named toggles for known flags (even before the flag is in the tenant's DB row — toggling creates it). Unknown-but-existing flags surface transparently. The add-custom input supports operational flexibility without requiring code deploys for new flag keys.
@@ -241,19 +248,40 @@ The SUPER_ADMIN arriving at a cancelled tenant's detail page should see the canc
 
 ---
 
-## H. Open Questions
+## H. Resolved Questions and Known Limitations
 
-**H.1 — Which actions should be available for CANCELLED status?**  
-Currently: only "Reset admin password" is shown (for archival/audit). Should SUPER_ADMIN be able to reactivate a cancelled tenant? The state machine allows `CANCELLED → (none)` — no valid transition out. This is intentional by design. But is there a legitimate business case for un-cancelling? If yes, a new backend transition and endpoint would be required. Defer to Lawrence.
+**H.1 — CANCELLED is terminal. No reactivation path. [RESOLVED]**  
+The state machine's `CANCELLED → (none)` is intentional. Cancellation terminates the billing relationship and triggers notifications; un-cancelling would invalidate that contract. Real scenarios requiring re-engagement are handled by re-provisioning as a new tenant. The design (read-only mode for CANCELLED, reset-password always available) is correct.
 
-**H.2 — Feature flag empty registry.**  
-The registry is empty at V1 launch. The feature flags section will show only the "custom flags" list (empty for most tenants) and the "Add custom flag" input. This looks sparse. Options: (a) ship as-is with an explanatory note, (b) hide the section entirely until registry has entries, (c) show a placeholder explaining flags will appear here. Recommendation: option (a) — hide-until-ready creates a maintenance burden, and the explanatory note is honest about the system's state. Decision needed.
+**H.2 — Feature flags: ship as-is with explanatory note (option a). [RESOLVED]**  
+Section ships with empty state text:
+> "No feature flags currently registered for the platform. As features ship with flag-gated rollouts, they will appear here. To toggle a specific flag for this tenant before it's added to the registry, use 'Add custom flag' below."
 
-**H.3 — `changedBy` is a raw UUID in licence history.**  
-For internal SUPER_ADMIN use, this is workable. If the platform ever has multiple SUPER_ADMIN users, reading a UUID per action becomes uncomfortable. A future `GetUserDisplayName(userId)` gRPC call to auth-service would resolve this. Not needed for V1 (single SUPER_ADMIN account in dev). Flag for post-multi-admin work.
+**H.3 — `changedBy` — SYSTEM sentinel confirmed, UI handles it. [RESOLVED]**  
+Automated jobs (`LicenceExpiryJob`) use `SYSTEM_ACTOR = "SYSTEM"`. The `formatChangedBy()` helper in G.5 renders this as "System" and truncates UUID actors to 8 chars with full value on hover. No action needed beyond implementation.
 
-**H.4 — Password reset notification gap (Adjustment 2).**  
-V1 ships without automated email notification when a SUPER_ADMIN resets a tenant admin's password. The SUPER_ADMIN reads the temp password to the tenant over the phone or via secure message. This is adequate for early-stage operations but creates a security audit gap and breaks the customer trust expectation at scale. Tracked in NOTIFICATION-BACKLOG-001 (scope now explicitly includes `AdminPasswordResetEvent` handling). No decision needed — just confirming the known limitation is documented.
+**H.4 — Password reset notification gap. [KNOWN LIMITATION]**  
+V1 ships without automated email notification of admin password reset events. SUPER_ADMIN shares the temp password verbally. Tracked in NOTIFICATION-BACKLOG-001 (scope explicitly includes `AdminPasswordResetEvent`). No implementation action needed now.
 
-**H.5 — Renew and upgrade licence actions are deferred.**  
-`POST .../licences/renew` and `POST .../licences/upgrade` exist and work. They are omitted from V1 because they involve multi-field forms (new plan ID, seat count, pricing, dates) that each deserve a focused interaction. Shipping them as part of the detail page would make the actions section a second create form. Recommend a dedicated `/tenants/{id}/licence` page for these, linked from the licence card. Confirm deferred scope.
+**H.5 — Renew and upgrade deferred to future `/tenants/{id}/licence` page. [RESOLVED]**  
+A "Manage licence →" link appears top-right of the licence card, muted with "Coming soon" tooltip (same treatment as unbuilt nav dropdown items). Confirms the path exists without implementing it now.
+
+---
+
+## Refinements (resolved post-review)
+
+**Refinement 1 — Reset admin password always available, including CANCELLED tenants.**  
+Post-cancellation access is needed for data export and compliance closeout. The always-visible reset button in the design is correct.
+
+**Refinement 2 — Action button grouping with visual separation.**  
+Left: Routine actions (Extend trial, Reset admin password). Middle: Status-change actions (Suspend / Reactivate). Right (separated by margin): Cancel tenant. Prevents accidental click into the destructive zone.
+
+**Refinement 3 — History empty state copy.**  
+"No licence transitions yet. History entries appear here when a licence is suspended, reactivated, extended, or cancelled."
+
+**Refinement 4 — Success toasts for lifecycle actions.**  
+- Suspend → `"Suspended {orgName}"`
+- Reactivate → `"Reactivated {orgName}"`
+- Extend trial → `"Trial extended to {newDate}"`
+- Reset password → no toast (the result modal is the confirmation)
+- Cancel → `"Cancelled {orgName}"`
