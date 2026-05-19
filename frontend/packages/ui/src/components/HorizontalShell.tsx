@@ -14,6 +14,8 @@ export interface HorizontalNavItem {
   href?: string;
   icon?: ElementType;
   badge?: string | number;
+  /** When true: item renders muted (opacity-40, no pointer events) with "Coming soon" tooltip */
+  comingSoon?: boolean;
   /** Dropdown children rendered when the item is hovered / clicked */
   children?: HorizontalNavItem[];
 }
@@ -32,6 +34,20 @@ interface HorizontalShellProps {
 
 function DropdownNavItem({ item }: { item: HorizontalNavItem }) {
   const Icon = item.icon;
+
+  if (item.comingSoon) {
+    return (
+      <span
+        title="Coming soon"
+        className="flex items-center gap-2 w-full px-3 py-2 text-[13px] rounded-md text-neutral-700 opacity-40 cursor-not-allowed select-none"
+      >
+        {Icon && <Icon size={14} className="text-neutral-500 flex-shrink-0" />}
+        {item.label}
+        <span className="ml-auto text-[10px] font-semibold text-neutral-400 uppercase tracking-wide">Soon</span>
+      </span>
+    );
+  }
+
   const inner = (
     <span className="flex items-center gap-2 w-full px-3 py-2 text-[13px] rounded-md hover:bg-neutral-100 transition-colors text-neutral-700 hover:text-neutral-900">
       {Icon && <Icon size={14} className="text-neutral-500 flex-shrink-0" />}
@@ -181,6 +197,18 @@ function MobileNav({
                 )}
                 {item.children?.map((child) => {
                   const ChildIcon = child.icon;
+                  if (child.comingSoon) {
+                    return (
+                      <span
+                        key={child.label}
+                        className="flex items-center gap-2.5 h-9 px-5 rounded-lg text-[13px] text-neutral-600 opacity-40 cursor-not-allowed"
+                      >
+                        {ChildIcon && <ChildIcon size={14} strokeWidth={1.75} />}
+                        {child.label}
+                        <span className="ml-auto text-[10px] font-semibold text-neutral-400 uppercase">Soon</span>
+                      </span>
+                    );
+                  }
                   return child.href ? (
                     <Link
                       key={child.label}

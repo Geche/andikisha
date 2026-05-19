@@ -22,8 +22,8 @@ export const platformNavConfig: HorizontalNavItem[] = [
     children: [
       { label: "All Tenants", href: "/tenants" },
       { label: "Provision Tenant", href: "/tenants/new" },
-      { label: "Feature Flags", href: "/tenants/feature-flags" },
-      { label: "Usage Metrics", href: "/tenants/usage" },
+      { label: "Feature Flags", href: "/tenants/feature-flags", comingSoon: true },
+      { label: "Usage Metrics", href: "/tenants/usage", comingSoon: true },
     ],
   },
   {
@@ -31,9 +31,9 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/billing",
     icon: CreditCard,
     children: [
-      { label: "Invoices", href: "/billing/invoices" },
-      { label: "Plans & Pricing", href: "/billing/plans" },
-      { label: "Revenue Reports", href: "/billing/revenue" },
+      { label: "Invoices", href: "/billing/invoices", comingSoon: true },
+      { label: "Plans & Pricing", href: "/billing/plans", comingSoon: true },
+      { label: "Revenue Reports", href: "/billing/revenue", comingSoon: true },
     ],
   },
   {
@@ -41,12 +41,12 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/compliance",
     icon: BookOpen,
     children: [
-      { label: "PAYE Brackets", href: "/compliance/paye" },
-      { label: "NSSF Rates", href: "/compliance/nssf" },
-      { label: "SHIF Rates", href: "/compliance/shif" },
-      { label: "Housing Levy", href: "/compliance/housing-levy" },
-      { label: "Rate Scheduler", href: "/compliance/scheduler" },
-      { label: "Regulatory Changelog", href: "/compliance/changelog" },
+      { label: "PAYE Brackets", href: "/compliance/paye", comingSoon: true },
+      { label: "NSSF Rates", href: "/compliance/nssf", comingSoon: true },
+      { label: "SHIF Rates", href: "/compliance/shif", comingSoon: true },
+      { label: "Housing Levy", href: "/compliance/housing-levy", comingSoon: true },
+      { label: "Rate Scheduler", href: "/compliance/scheduler", comingSoon: true },
+      { label: "Regulatory Changelog", href: "/compliance/changelog", comingSoon: true },
     ],
   },
   {
@@ -54,12 +54,12 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/integrations",
     icon: Plug,
     children: [
-      { label: "KRA iTax", href: "/integrations/kra" },
-      { label: "NSSF", href: "/integrations/nssf" },
-      { label: "SHIF", href: "/integrations/shif" },
-      { label: "M-Pesa (Daraja)", href: "/integrations/mpesa" },
-      { label: "Africa's Talking", href: "/integrations/africastalking" },
-      { label: "Webhook Log", href: "/integrations/webhooks" },
+      { label: "KRA iTax", href: "/integrations/kra", comingSoon: true },
+      { label: "NSSF", href: "/integrations/nssf", comingSoon: true },
+      { label: "SHIF", href: "/integrations/shif", comingSoon: true },
+      { label: "M-Pesa (Daraja)", href: "/integrations/mpesa", comingSoon: true },
+      { label: "Africa's Talking", href: "/integrations/africastalking", comingSoon: true },
+      { label: "Webhook Log", href: "/integrations/webhooks", comingSoon: true },
     ],
   },
   {
@@ -67,9 +67,9 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/support",
     icon: LifeBuoy,
     children: [
-      { label: "Tenant Tickets", href: "/support/tickets" },
-      { label: "SLA Policies", href: "/support/sla" },
-      { label: "Agents", href: "/support/agents" },
+      { label: "Tenant Tickets", href: "/support/tickets", comingSoon: true },
+      { label: "SLA Policies", href: "/support/sla", comingSoon: true },
+      { label: "Agents", href: "/support/agents", comingSoon: true },
     ],
   },
   { label: "Users", href: "/users", icon: Users },
@@ -78,9 +78,9 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/audit",
     icon: Shield,
     children: [
-      { label: "Cross-Tenant Log", href: "/audit/log" },
-      { label: "Security Events", href: "/audit/security" },
-      { label: "KDPA Requests", href: "/audit/kdpa" },
+      { label: "Cross-Tenant Log", href: "/audit/log", comingSoon: true },
+      { label: "Security Events", href: "/audit/security", comingSoon: true },
+      { label: "KDPA Requests", href: "/audit/kdpa", comingSoon: true },
     ],
   },
   {
@@ -88,10 +88,10 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/system",
     icon: Activity,
     children: [
-      { label: "Service Health", href: "/system/health" },
-      { label: "Queue Monitor", href: "/system/queues" },
-      { label: "Traces", href: "/system/traces" },
-      { label: "API Gateway", href: "/system/gateway" },
+      { label: "Service Health", href: "/system/health", comingSoon: true },
+      { label: "Queue Monitor", href: "/system/queues", comingSoon: true },
+      { label: "Traces", href: "/system/traces", comingSoon: true },
+      { label: "API Gateway", href: "/system/gateway", comingSoon: true },
     ],
   },
   {
@@ -99,9 +99,9 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/communications",
     icon: Megaphone,
     children: [
-      { label: "Announcements", href: "/communications/announcements" },
-      { label: "Maintenance Notices", href: "/communications/maintenance" },
-      { label: "Templates", href: "/communications/templates" },
+      { label: "Announcements", href: "/communications/announcements", comingSoon: true },
+      { label: "Maintenance Notices", href: "/communications/maintenance", comingSoon: true },
+      { label: "Templates", href: "/communications/templates", comingSoon: true },
     ],
   },
   {
@@ -109,9 +109,9 @@ export const platformNavConfig: HorizontalNavItem[] = [
     href: "/settings",
     icon: Settings,
     children: [
-      { label: "Platform Config", href: "/settings/platform" },
-      { label: "Rate Limits", href: "/settings/rate-limits" },
-      { label: "Feature Rollouts", href: "/settings/features" },
+      { label: "Platform Config", href: "/settings/platform", comingSoon: true },
+      { label: "Rate Limits", href: "/settings/rate-limits", comingSoon: true },
+      { label: "Feature Rollouts", href: "/settings/features", comingSoon: true },
     ],
   },
 ];
