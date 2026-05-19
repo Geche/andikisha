@@ -251,6 +251,7 @@ public class SuperAdminTenantService {
      */
     public DashboardMetricsResponse getDashboardMetrics() {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate in14Days = today.plusDays(14);
         LocalDate in7Days = today.plusDays(7);
         LocalDate in2Days = today.plusDays(2);
         LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
@@ -258,6 +259,8 @@ public class SuperAdminTenantService {
         long total = tenantRepository.count();
         long active = tenantRepository.countByStatus(TenantStatus.ACTIVE);
         long suspended = tenantRepository.countByStatus(TenantStatus.SUSPENDED);
+        long trialsExpiring14 = tenantRepository.countByStatusAndTrialEndsAtBetween(
+                TenantStatus.TRIAL, today, in14Days);
         long trialsExpiring7 = tenantRepository.countByStatusAndTrialEndsAtBetween(
                 TenantStatus.TRIAL, today, in7Days);
         long trialsExpiring48 = tenantRepository.countByStatusAndTrialEndsAtBetween(
@@ -268,7 +271,7 @@ public class SuperAdminTenantService {
 
         return new DashboardMetricsResponse(
                 total, active, trialsExpiring7, trialsExpiring48,
-                suspended, tenantDelta, activeDelta);
+                trialsExpiring14, suspended, tenantDelta, activeDelta);
     }
 
     /**

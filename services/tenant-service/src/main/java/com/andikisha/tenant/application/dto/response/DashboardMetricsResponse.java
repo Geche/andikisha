@@ -5,6 +5,7 @@ public record DashboardMetricsResponse(
         long activeTenants,
         long trialsExpiringIn7Days,
         long trialsExpiringIn48Hours,
+        long trialsExpiringIn14Days,
         long suspendedTenants,
         long tenantDeltaThisMonth,
         long activeDeltaThisMonth
