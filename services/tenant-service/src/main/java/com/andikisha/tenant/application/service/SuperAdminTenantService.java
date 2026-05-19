@@ -201,8 +201,14 @@ public class SuperAdminTenantService {
     public TenantSummaryResponse extendTrial(UUID tenantId, int additionalDays, String updatedBy) {
         Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
+        // Update Tenant.trialEndsAt (used by dashboard metrics and expiry alerts).
         tenant.extendTrial(additionalDays);
         Tenant saved = tenantRepository.save(tenant);
+
+        // Also update TenantLicence.endDate so the licence card and list page
+        // show the same extended date. Both fields must move atomically (TENANT-BACKLOG-003).
+        licencePlanService.extendCurrentLicenceEndDate(saved.getTenantId(), additionalDays, updatedBy);
+
         LicenceResponse licence = safeGetCurrentLicence(saved.getTenantId());
         return toSummaryWithLicence(saved, licence);
     }

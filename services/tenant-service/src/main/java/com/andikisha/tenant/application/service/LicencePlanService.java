@@ -34,6 +34,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -258,6 +259,26 @@ public class LicencePlanService {
                         TenantLicence::getTenantId,
                         l -> toResponse(l, planById),
                         (a, b) -> a));
+    }
+
+    /**
+     * Extend the current TRIAL licence's endDate by additionalDays so that
+     * TenantLicence.endDate stays in sync with Tenant.trialEndsAt after a
+     * SUPER_ADMIN trial extension (TENANT-BACKLOG-003 fix).
+     *
+     * No-op if the tenant has no active TRIAL licence (defensive).
+     */
+    @Transactional
+    public void extendCurrentLicenceEndDate(String tenantId, int additionalDays, String updatedBy) {
+        licenceRepository.findByTenantIdAndStatusIn(tenantId, List.of(LicenceStatus.TRIAL))
+                .ifPresent(licence -> {
+                    LocalDate current = licence.getEndDate() != null
+                            ? licence.getEndDate()
+                            : LocalDate.now(ZoneOffset.UTC);
+                    licence.setEndDate(current.plusDays(additionalDays));
+                    licence.setLastModifiedBy(updatedBy);
+                    licenceRepository.save(licence);
+                });
     }
 
     /**
