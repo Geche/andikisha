@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ExternalLink, Mail } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
 
@@ -9,8 +9,17 @@ type LoginError =
   | { kind: "general"; message: string }
   | { kind: "wrong_portal"; tenantPortalUrl?: string };
 
+function safeReturnTo(raw: string | null): string | null {
+  if (!raw) return null;
+  const decoded = decodeURIComponent(raw);
+  // Must be a same-origin path starting with / but not /login itself.
+  return decoded.startsWith("/") && !decoded.startsWith("/login") ? decoded : null;
+}
+
 export default function PlatformLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +50,7 @@ export default function PlatformLoginPage() {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace(returnTo ?? "/dashboard");
     } catch {
       setError({ kind: "general", message: "Something went wrong. Please try again." });
     } finally {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ExternalLink, Mail } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
 import { findCorrectDashboard } from "@andikisha/ui/auth";
@@ -10,8 +10,18 @@ type LoginError =
   | { kind: "general"; message: string }
   | { kind: "wrong_portal"; platformPortalUrl?: string };
 
+const RETURN_TO_ALLOWED = ["/my/", "/admin/"];
+
+function safeReturnTo(raw: string | null): string | null {
+  if (!raw) return null;
+  const decoded = decodeURIComponent(raw);
+  return RETURN_TO_ALLOWED.some((p) => decoded.startsWith(p)) ? decoded : null;
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -61,11 +71,12 @@ export default function LoginPage() {
         return;
       }
 
-      // Role-aware redirect — never hardcode /my/dashboard.
+      // If session expired with a returnTo param, validate and redirect there.
+      // Otherwise use role-aware default dashboard — never hardcode /my/dashboard.
       const roles = new Set<string>(
         data.user?.roles ?? (data.user?.role ? [data.user.role] : [])
       );
-      router.replace(findCorrectDashboard(roles));
+      router.replace(returnTo ?? findCorrectDashboard(roles));
     } catch {
       setError({ kind: "general", message: "Something went wrong. Please try again." });
     } finally {

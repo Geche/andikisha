@@ -87,6 +87,11 @@ export { RoleBadge } from "./components/RoleBadge";
 export { useOnlineStatus } from "./lib/useOnlineStatus";
 export { OfflineBadge } from "./components/OfflineBadge";
 
+// ── Session timeout ────────────────────────────────────────────────────────
+export { useIdleTimeout } from "./lib/useIdleTimeout";
+export type { IdleStatus } from "./lib/useIdleTimeout";
+export { IdleWarningBanner } from "./components/IdleWarningBanner";
+
 // ── Navigation & Shells ────────────────────────────────────────────────────
 export { TopBar } from "./components/TopBar";
 export { NavRail, NavRailItem, NavRailGroup } from "./components/NavRail";
