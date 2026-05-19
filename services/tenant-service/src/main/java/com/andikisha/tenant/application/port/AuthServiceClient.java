@@ -25,4 +25,14 @@ public interface AuthServiceClient {
                                String lastName,
                                String phone,
                                String temporaryPassword);
+
+    /**
+     * Reset the admin password for an existing tenant admin.
+     * Sets must_change_password = true and revokes all active sessions.
+     *
+     * @param tenantId          tenant identifier
+     * @param email             admin login email
+     * @param temporaryPassword new one-time password the admin must change on next login
+     */
+    void resetAdminPassword(String tenantId, String email, String temporaryPassword);
 }

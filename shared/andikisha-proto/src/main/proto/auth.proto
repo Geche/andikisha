@@ -10,6 +10,7 @@ service AuthService {
   rpc GetUserByEmployeeId(GetUserByEmployeeIdRequest) returns (UserResponse);
   rpc ValidateUssdSession(ValidateUssdSessionRequest) returns (ValidateUssdSessionResponse);
   rpc ProvisionTenantAdmin(ProvisionTenantAdminRequest) returns (ProvisionTenantAdminResponse);
+  rpc ResetTenantAdminPassword(ResetTenantAdminPasswordRequest) returns (ResetTenantAdminPasswordResponse);
 }
 
 message ValidateTokenRequest {
@@ -75,4 +76,14 @@ message ProvisionTenantAdminRequest {
 message ProvisionTenantAdminResponse {
   string user_id = 1;
   string email   = 2;
+}
+
+message ResetTenantAdminPasswordRequest {
+  string tenant_id     = 1;
+  string email         = 2;
+  string new_password  = 3;
+}
+
+message ResetTenantAdminPasswordResponse {
+  string user_id = 1;
 }

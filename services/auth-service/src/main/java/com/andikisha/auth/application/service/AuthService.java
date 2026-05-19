@@ -331,4 +331,29 @@ public class AuthService {
                 userResponse
         );
     }
+
+    /**
+     * Reset the tenant admin's password to a new temporary password.
+     * Sets must_change_password = true so the admin is forced to change
+     * on next login. All active refresh tokens are revoked.
+     *
+     * Called via gRPC by tenant-service on behalf of a SUPER_ADMIN action.
+     *
+     * @return the userId of the affected admin
+     * @throws ResourceNotFoundException if no user exists with this email in this tenant
+     */
+    @Transactional
+    public String resetTenantAdminPassword(String tenantId, String email, String newPassword) {
+        User user = userRepository.findByEmailAndTenantId(email, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User", "tenantId=" + tenantId + " email=" + email));
+
+        user.changePassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(true);
+        User saved = userRepository.save(user);
+
+        refreshTokenRepository.revokeAllByUserIdAndTenantId(saved.getId(), tenantId);
+
+        return saved.getId().toString();
+    }
 }

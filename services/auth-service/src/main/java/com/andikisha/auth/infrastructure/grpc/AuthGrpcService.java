@@ -11,6 +11,8 @@ import com.andikisha.proto.auth.CheckPermissionResponse;
 import com.andikisha.proto.auth.GetUserByEmployeeIdRequest;
 import com.andikisha.proto.auth.ProvisionTenantAdminRequest;
 import com.andikisha.proto.auth.ProvisionTenantAdminResponse;
+import com.andikisha.proto.auth.ResetTenantAdminPasswordRequest;
+import com.andikisha.proto.auth.ResetTenantAdminPasswordResponse;
 import com.andikisha.proto.auth.ValidateTokenRequest;
 import com.andikisha.proto.auth.ValidateTokenResponse;
 import com.andikisha.proto.auth.ValidateUssdSessionRequest;
@@ -216,6 +218,31 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
             log.error("Failed to provision tenant admin for tenant {}", request.getTenantId(), e);
             observer.onError(io.grpc.Status.INTERNAL
                     .withDescription("Failed to provision tenant admin")
+                    .asRuntimeException());
+        }
+    }
+
+    @Override
+    public void resetTenantAdminPassword(ResetTenantAdminPasswordRequest request,
+                                         StreamObserver<ResetTenantAdminPasswordResponse> observer) {
+        try {
+            String userId = authService.resetTenantAdminPassword(
+                    request.getTenantId(),
+                    request.getEmail(),
+                    request.getNewPassword()
+            );
+            observer.onNext(ResetTenantAdminPasswordResponse.newBuilder()
+                    .setUserId(userId)
+                    .build());
+            observer.onCompleted();
+        } catch (ResourceNotFoundException e) {
+            observer.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Admin user not found for tenant " + request.getTenantId())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            log.error("Failed to reset admin password for tenant {}", request.getTenantId(), e);
+            observer.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Failed to reset admin password")
                     .asRuntimeException());
         }
     }

@@ -70,6 +70,33 @@ On submit:
 
 ---
 
+## Notifications
+
+### NOTIFICATION-BACKLOG-001 — notification-service ignores all lifecycle events except TenantCreated
+
+**Raised:** 2026-05-19  
+**Priority:** High — required before the platform serves real paying customers.
+
+**Problem:**  
+`TenantEventListener` in `notification-service` handles exactly one event: `TenantCreatedEvent` (welcome email). The following events are published to RabbitMQ but produce no email notification:
+
+| Event | Published by | Missing notification |
+|---|---|---|
+| `TenantSuspendedEvent` | `LicenceStateMachineService` | Suspension notice to tenant admin |
+| `TenantReactivatedEvent` | `LicenceStateMachineService` | Reactivation confirmation to tenant admin |
+| `TenantCancelledEvent` | `SuperAdminTenantService` | Cancellation confirmation (required for legal/audit) |
+| `LicenceRenewedEvent` | `LicencePlanService` | Renewal confirmation to tenant admin |
+| `LicenceUpgradedEvent` | `LicencePlanService` | Upgrade confirmation to tenant admin |
+
+**Impact:** A suspended tenant has no way of knowing their account was suspended. A cancelled tenant receives no formal notification — this is a legal/audit risk for KDPA compliance.
+
+**What to build:**  
+Add cases to `TenantEventListener` for each event above. Write email templates for: suspension (with reason), reactivation, cancellation, renewal, upgrade. Use the existing `EmailService` / `NotificationService` pattern from `TenantCreatedEvent` handling.
+
+Also wire `audit-service` `TenantAuditListener` to handle `TenantCancelledEvent`, `TenantReactivatedEvent`, `LicenceRenewedEvent`, and `LicenceUpgradedEvent` (currently only handles `TenantCreatedEvent` and `TenantSuspendedEvent`).
+
+---
+
 ## Product
 
 ### PRODUCT-BACKLOG-001 — Bank EFT prominence in payroll disbursement UX

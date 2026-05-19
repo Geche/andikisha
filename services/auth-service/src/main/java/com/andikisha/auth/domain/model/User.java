@@ -117,4 +117,8 @@ public class User extends BaseEntity {
         this.mustChangePassword = false;
     }
 
+    public void setMustChangePassword(boolean value) {
+        this.mustChangePassword = value;
+    }
+
 }

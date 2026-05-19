@@ -4,6 +4,7 @@ import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.tenant.application.dto.request.CreateTenantWithLicenceRequest;
+import com.andikisha.tenant.application.dto.response.AdminPasswordResetResponse;
 import com.andikisha.tenant.application.dto.response.DashboardMetricsResponse;
 import com.andikisha.tenant.application.dto.response.LicenceResponse;
 import com.andikisha.tenant.application.dto.response.ProvisionedTenantResponse;
@@ -56,6 +57,7 @@ public class SuperAdminTenantService {
     private final TenantRepository tenantRepository;
     private final PlanRepository planRepository;
     private final LicencePlanService licencePlanService;
+    private final LicenceStateMachineService licenceStateMachine;
     private final AuthServiceClient authServiceClient;
     private final TenantEventPublisher tenantEventPublisher;
     private final PasswordGenerator passwordGenerator;
@@ -63,12 +65,14 @@ public class SuperAdminTenantService {
     public SuperAdminTenantService(TenantRepository tenantRepository,
                                    PlanRepository planRepository,
                                    LicencePlanService licencePlanService,
+                                   LicenceStateMachineService licenceStateMachine,
                                    AuthServiceClient authServiceClient,
                                    TenantEventPublisher tenantEventPublisher,
                                    PasswordGenerator passwordGenerator) {
         this.tenantRepository = tenantRepository;
         this.planRepository = planRepository;
         this.licencePlanService = licencePlanService;
+        this.licenceStateMachine = licenceStateMachine;
         this.authServiceClient = authServiceClient;
         this.tenantEventPublisher = tenantEventPublisher;
         this.passwordGenerator = passwordGenerator;
@@ -210,11 +214,44 @@ public class SuperAdminTenantService {
         if (tenant.getStatus() == TenantStatus.CANCELLED) {
             throw new BusinessRuleException("INVALID_STATE", "Tenant is already cancelled");
         }
+        // Cancel the licence first — validates the transition and records LicenceHistory.
+        // If the tenant has no cancellable licence (edge case: provisioning failed mid-way),
+        // the state machine throws ResourceNotFoundException, which rolls back the transaction
+        // and leaves the Tenant row unchanged. This is safer than silently leaving an orphaned
+        // licence in ACTIVE/TRIAL state while the Tenant row says CANCELLED.
+        licenceStateMachine.cancel(tenantId.toString(), updatedBy, "Tenant cancelled by SUPER_ADMIN");
+
         tenant.cancel();
         tenantRepository.save(tenant);
         log.info("Tenant {} cancelled by {}", tenantId, updatedBy);
         String tenantIdStr = tenant.getTenantId();
         publishAfterCommit(() -> tenantEventPublisher.publishTenantCancelled(tenantIdStr, updatedBy));
+    }
+
+    /**
+     * Reset the tenant admin's password to a new cryptographically-random temporary
+     * password and set must_change_password = true via the auth-service gRPC.
+     *
+     * The temporary password is returned in the response — the SUPER_ADMIN must
+     * share it with the tenant admin via a secure out-of-band channel (phone, secure
+     * message). It is not stored anywhere after this call.
+     */
+    @Transactional(readOnly = true)
+    public AdminPasswordResetResponse resetAdminPassword(UUID tenantId, String requestedBy) {
+        Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
+
+        String temporaryPassword = passwordGenerator.generate();
+        authServiceClient.resetAdminPassword(
+                tenant.getTenantId(),
+                tenant.getAdminEmail(),
+                temporaryPassword);
+
+        log.info("Admin password reset for tenantId={} by {}", tenantId, requestedBy);
+        return new AdminPasswordResetResponse(
+                tenant.getTenantId(),
+                tenant.getAdminEmail(),
+                temporaryPassword);
     }
 
     public Page<TenantSummaryResponse> filterTenants(List<TenantStatus> statuses, Pageable pageable) {

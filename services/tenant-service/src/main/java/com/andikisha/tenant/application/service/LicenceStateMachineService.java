@@ -185,6 +185,28 @@ public class LicenceStateMachineService {
     }
 
     /**
+     * Cancel the tenant's current licence.
+     *
+     * Accepts any non-CANCELLED status as the starting point (TRIAL, ACTIVE,
+     * GRACE_PERIOD, SUSPENDED, EXPIRED → CANCELLED are all valid transitions
+     * per the state machine table).  Records history and updates cache.
+     * Event publication is left to the caller (SuperAdminTenantService) so
+     * the Tenant aggregate cancel and the licence cancel stay in the same
+     * transaction.
+     */
+    @Transactional
+    public TenantLicence cancel(String tenantId, String cancelledBy, String reason) {
+        TenantLicence licence = licenceRepository.findByTenantIdAndStatusIn(
+                        tenantId,
+                        List.of(LicenceStatus.TRIAL, LicenceStatus.ACTIVE,
+                                LicenceStatus.GRACE_PERIOD, LicenceStatus.SUSPENDED,
+                                LicenceStatus.EXPIRED))
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "TenantLicence", "tenantId=" + tenantId + " (no cancellable licence found)"));
+        return applyTransition(licence, LicenceStatus.CANCELLED, cancelledBy, reason);
+    }
+
+    /**
      * Seed the Redis cache with the initial status for a newly created licence.
      * Called by {@link LicencePlanService} after first licence persistence so
      * the gateway filter never sees a cache miss for a brand-new tenant.

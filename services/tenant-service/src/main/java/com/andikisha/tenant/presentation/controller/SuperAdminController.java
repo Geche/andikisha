@@ -4,6 +4,7 @@ import com.andikisha.tenant.application.dto.request.CreateTenantWithLicenceReque
 import com.andikisha.tenant.application.dto.request.RenewLicenceRequest;
 import com.andikisha.tenant.application.dto.request.SuspendTenantRequest;
 import com.andikisha.tenant.application.dto.request.UpgradeLicenceRequest;
+import com.andikisha.tenant.application.dto.response.AdminPasswordResetResponse;
 import com.andikisha.tenant.application.dto.response.ExpiringLicenceResponse;
 import com.andikisha.tenant.application.dto.response.LicenceHistoryResponse;
 import com.andikisha.tenant.application.dto.response.LicenceResponse;
@@ -188,6 +189,12 @@ public class SuperAdminController {
     @Operation(summary = "Cancel (soft-delete) a tenant")
     public void cancelTenant(@PathVariable UUID tenantId) {
         superAdminTenantService.cancelTenant(tenantId, currentUserId());
+    }
+
+    @PostMapping("/tenants/{tenantId}/admin-password-reset")
+    @Operation(summary = "Reset the tenant admin password and return a new temporary password")
+    public AdminPasswordResetResponse resetAdminPassword(@PathVariable UUID tenantId) {
+        return superAdminTenantService.resetAdminPassword(tenantId, currentUserId());
     }
 
     @GetMapping("/tenants/{tenantId}/feature-flags")
