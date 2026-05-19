@@ -6,6 +6,24 @@ Items that were deferred during development with clear rationale. Ordered roughl
 
 ## Platform
 
+### PLATFORM-POLISH-001 — Trial widget sub-label copy is redundant when 7-day and 14-day counts are equal
+
+**Raised:** 2026-05-19  
+**Priority:** Low — cosmetic copy issue.
+
+**Problem:**  
+The "Trials Expiring (14 days)" `StatCard` on the platform-portal dashboard shows both the 14-day count as the primary value and "N expiring in 7 days" as the sub-label. When all expiring trials also fall within the 7-day window, the two numbers are the same (e.g., value = 2, sub-label = "2 expiring in 7 days"), which looks redundant without explanation.
+
+**Fix:**  
+Make the sub-label context-aware:
+- When 7-day count equals 14-day count: "All {n} expiring within 7 days"  
+- When 7-day count is less: "{n} expiring within 7 days"  
+- When 7-day count is 0: omit the sub-label entirely or show "None expiring within 7 days"
+
+**File:** `frontend/platform-portal/src/app/(platform)/dashboard/page.tsx` — `trialsCardVariant` and sub-label logic.
+
+---
+
 ### PLATFORM-BACKLOG-001 — Tenant creation UI in platform-portal
 
 **Raised:** 2026-05-18  
