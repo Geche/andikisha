@@ -50,6 +50,18 @@ On submit:
 
 ---
 
+### TENANT-BACKLOG-003 — extendTrial() updates Tenant.trialEndsAt but not TenantLicence.endDate
+
+**Raised:** 2026-05-19  
+**Priority:** Low — cosmetic inconsistency in the list page `End date` column after a trial extension.
+
+**Problem:**  
+`SuperAdminTenantService.extendTrial()` calls `tenant.extendTrial(additionalDays)` which extends `Tenant.trialEndsAt`. It does NOT update `TenantLicence.endDate`. The dashboard metrics use `tenantRepository.countByStatusAndTrialEndsAtBetween(...)` which reads `Tenant.trialEndsAt` — so expiry alerts are correct. But the `/tenants` list table shows `licence.endDate` (from `TenantSummaryResponse`) which stays stale after an extension.
+
+**Fix:** In `extendTrial()`, also call `licencePlanService.extendLicenceEndDate(tenantId, additionalDays)` or equivalent to update `TenantLicence.endDate` in the same transaction.
+
+---
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
