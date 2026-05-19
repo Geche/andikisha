@@ -19,7 +19,7 @@ Two portals, different usage patterns:
 
 | Portal | Idle timeout | Rationale |
 |---|---|---|
-| tenant-portal | 30 minutes | Matches common SaaS defaults. Balances security (shared office computers) against usability (payroll runs take 20–30 minutes and require periodic saves, not continuous interaction). |
+| tenant-portal | 30 minutes | 30 minutes accommodates form-heavy workflows like employee creation, payroll review, and benefit configuration where users may pause to consult documents or colleagues. Background-running operations (payroll calculation, M-Pesa disbursement) do not require continuous interaction and are not affected by idle timeout. |
 | platform-portal | 60 minutes | SUPER_ADMIN support calls routinely exceed 30 minutes. A 30-minute timeout would interrupt active customer sessions. |
 
 **Definition of idle:** no keyboard input, mouse click, or scroll event on the page within the threshold window. Background polling (React Query `refetchInterval`) does NOT reset the idle timer — only user-initiated interactions do.
@@ -132,13 +132,15 @@ Mount in the `(platform)/layout.tsx` root layout with `thresholdMs=3600000` (60 
 
 ---
 
-## 9. Open Questions
+## 9. Design Decisions (resolved)
 
-**Q1 — Should refresh token rotation be implemented before or after session timeout?**  
-Refresh token rotation (issuing a new refresh token on each access token refresh) closes a token theft window. It's independent of timeout but is naturally paired with it. Recommend implementing in the same sprint.
+**Q1 — Refresh token rotation: implement in same sprint. [RESOLVED]**  
+Rotation is already implemented in `AuthService.refresh()` — the used token is revoked and `generateTokenResponse()` issues a new one. No backend changes needed. The session timeout frontend work can call the existing `/refresh` endpoint and receive a rotated token automatically. Future enhancement: detect old-token reuse as theft signal and terminate all sessions for the user.
 
-**Q2 — returnTo validation: which paths are safe?**  
-`returnTo` should only accept paths starting with `/my/` or `/admin/` (tenant-portal) or `/` (platform-portal). Any other value redirects to the default dashboard. Needs an allowlist in the login page.
+**Q2 — returnTo validation: strict allowlist. [RESOLVED]**  
+- tenant-portal: `returnTo` must start with `/my/` or `/admin/` (exact prefix match).  
+- platform-portal: `returnTo` must start with `/` and must not be `/login`.  
+Any other value falls back to the default dashboard. Validation in the login page after successful authentication. Never trust the URL parameter — validate before redirecting.
 
-**Q3 — Idle timer reset on API polling: confirm exclusion.**  
-Background polling should not reset the idle timer. Confirm this matches the expectation — it means a user who has only background tabs open will still be timed out, even though the app is making requests.
+**Q3 — Idle timer on API polling: excluded. [RESOLVED]**  
+Background polling (`refetchInterval`) does not reset the idle timer. Only user-initiated interactions (mouse, keyboard, scroll, touchstart) reset it. Users with only background tabs open will be timed out as expected.

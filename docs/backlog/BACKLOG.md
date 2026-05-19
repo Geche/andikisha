@@ -6,6 +6,20 @@ Items that were deferred during development with clear rationale. Ordered roughl
 
 ## Platform
 
+### AUTH-BACKLOG-002 — No voluntary password change page for ADMIN role
+
+**Raised:** 2026-05-19  
+**Priority:** Medium — ADMIN users currently have no self-service path to change their password except by logging out and using forgot-password.
+
+**Problem:**  
+The change-password page at `/my/change-password` is the only password-change surface in tenant-portal. It is restricted to users with the EMPLOYEE role. ADMIN users without `mustChangePassword=true` are redirected away from `/my/change-password` to `/admin/dashboard` by the role check in middleware.
+
+The `mustChangePassword=true` path (after provisioning or SUPER_ADMIN reset) correctly allows any role through to `/my/change-password` by skipping role checks. But a voluntary password change by an ADMIN user has no path.
+
+**Fix:** Add `/admin/settings/password` page in the `(admin)` route group. Wire it to the same `POST /api/v1/auth/change-password` BFF endpoint. The change-password form logic is identical — only the route and surrounding chrome differ.
+
+---
+
 ### PLATFORM-POLISH-001 — Trial widget sub-label copy is redundant when 7-day and 14-day counts are equal
 
 **Raised:** 2026-05-19  
