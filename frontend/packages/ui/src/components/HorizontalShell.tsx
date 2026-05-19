@@ -38,7 +38,6 @@ function DropdownNavItem({ item }: { item: HorizontalNavItem }) {
   if (item.comingSoon) {
     return (
       <span
-        title="Coming soon"
         className="flex items-center gap-2 w-full px-3 py-2 text-[13px] rounded-md text-neutral-700 opacity-40 cursor-not-allowed select-none"
       >
         {Icon && <Icon size={14} className="text-neutral-500 flex-shrink-0" />}

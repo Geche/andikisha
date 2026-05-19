@@ -46,8 +46,8 @@ export function MoneyAmount({
         className
       )}
     >
-      <span className="text-[0.75em] text-neutral-500 mr-0.5 font-sans font-medium">{code}</span>
-      {formatted}
+      <span className="text-[0.75em] text-neutral-500 font-sans font-medium">{code}</span>
+      {" "}{formatted}
     </span>
   );
 }
