@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@source "../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @theme {
   /* ── Brand — Forest Green ── */
