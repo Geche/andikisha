@@ -495,8 +495,13 @@ export default function TenantDetailPage({
   });
 
   const cancelMut = useMutation({
-    mutationFn: () =>
-      apiClient.delete(`/api/v1/super-admin/tenants/${tenantId}`),
+    mutationFn: async () => {
+      const t0 = performance.now();
+      const result = await apiClient.delete(`/api/v1/super-admin/tenants/${tenantId}`);
+      // Issue 1 timing instrumentation — remove after baseline established
+      console.log(`[cancel] duration: ${Math.round(performance.now() - t0)}ms`);
+      return result;
+    },
     onSuccess: () => {
       invalidate();
       setActiveModal(null);

@@ -52,6 +52,11 @@ async function proxyRequest(request: NextRequest): Promise<NextResponse> {
     body,
   });
 
+  // 204/205/304 must not have a body — don't attempt to read one.
+  if (upstream.status === 204 || upstream.status === 205 || upstream.status === 304) {
+    return new NextResponse(null, { status: upstream.status });
+  }
+
   const contentType = upstream.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     const json = await upstream.json();
