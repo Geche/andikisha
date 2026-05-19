@@ -55,13 +55,28 @@ export async function middleware(request: NextRequest) {
       : [];
     const roleSet = new Set<string>(rawRoles.filter((r): r is string => typeof r === "string"));
 
+    // Build augmented headers early — needed for the change-password early-return path.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-user-id", String(payload.sub ?? ""));
+    requestHeaders.set("x-user-email", String(payload.email ?? ""));
+    requestHeaders.set("x-tenant-id", String(payload.tenantId ?? ""));
+    requestHeaders.set("x-user-role", String(rawRole ?? ""));
+    requestHeaders.set("x-user-roles", [...roleSet].join(","));
+    if (payload.employeeId) {
+      requestHeaders.set("x-employee-id", String(payload.employeeId));
+    }
+
     // Path evaluation — in priority order.
     // 1. Force change-password redirect for accounts requiring it.
-    //    Applies to any authenticated role — both employees and admins must set a real password.
-    //    Allow /my/change-password itself through to avoid redirect loops.
-    //    API routes allowed through so the change-password BFF works.
+    //    When the user IS on /my/change-password, skip ALL role-routing checks and allow
+    //    access regardless of role. Without this, ADMIN users (who lack the EMPLOYEE role)
+    //    hit the /my/* role check below and get bounced to /admin/dashboard, which then
+    //    redirects back here — causing an infinite loop.
     const mustChangePassword = payload.mustChangePassword === true;
-    if (mustChangePassword && pathname !== "/my/change-password") {
+    if (mustChangePassword) {
+      if (pathname === "/my/change-password") {
+        return NextResponse.next({ request: { headers: requestHeaders } });
+      }
       return NextResponse.redirect(new URL("/my/change-password", request.url));
     }
 
@@ -113,15 +128,7 @@ export async function middleware(request: NextRequest) {
     // IMPORTANT: NextResponse.next({ request: { headers } }) is the correct pattern.
     // response.headers.set(...) sets browser-facing headers only — NOT visible to Server
     // Components via await headers(). The request copy is what propagates to the server.
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-user-id", String(payload.sub ?? ""));
-    requestHeaders.set("x-user-email", String(payload.email ?? ""));
-    requestHeaders.set("x-tenant-id", String(payload.tenantId ?? ""));
-    requestHeaders.set("x-user-role", String(rawRole ?? ""));      // legacy single, backward compat
-    requestHeaders.set("x-user-roles", [...roleSet].join(","));    // set, B1-ready
-    if (payload.employeeId) {
-      requestHeaders.set("x-employee-id", String(payload.employeeId));
-    }
+    // (requestHeaders was built at the top of this block, before all redirect checks.)
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
     const response = NextResponse.redirect(new URL("/login", request.url));
