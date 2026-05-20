@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   let tenantId: string;
   try {
     const resolveRes = await fetch(
-      `${GATEWAY}/api/v1/public/tenants/resolve?slug=${encodeURIComponent(slug)}`
+      `${GATEWAY}/api/v1/public/workspaces/${encodeURIComponent(slug)}/resolve`
     );
     if (resolveRes.status === 404) {
       return NextResponse.json(

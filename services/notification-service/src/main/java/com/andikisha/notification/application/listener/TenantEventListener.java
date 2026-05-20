@@ -39,22 +39,18 @@ public class TenantEventListener {
     private void handleTenantCreated(TenantCreatedEvent event) {
         String subject = "Welcome to AndikishaHR — your workspace is ready";
 
-        // workspaceSlug can be null if notification-service runs a version ahead of
-        // tenant-service during a rolling deploy. Omit the workspace line in that case.
-        String workspaceLine = (event.getWorkspaceSlug() != null && !event.getWorkspaceSlug().isBlank())
-                ? "  Workspace:  " + event.getWorkspaceSlug() + "\n"
-                : "";
+        String workspace = event.getWorkspace();
+        String loginUrl = (workspace != null && !workspace.isBlank())
+                ? "https://app.andikishahr.com/" + workspace + "/login"
+                : "https://app.andikishahr.com/login";
 
         String body = "Dear Admin,\n\n"
                 + "Your organisation " + event.getTenantName()
                 + " has been registered on AndikishaHR.\n\n"
+                + "Sign in at: " + loginUrl + "\n\n"
                 + "Sign in details:\n"
-                + "  Login URL:  https://app.andikishahr.com/login\n"
-                + workspaceLine
-                + "  Email:      " + event.getAdminEmail() + "\n"
-                + "  Password:   (provided by your Andikisha account manager)\n\n"
-                + (workspaceLine.isBlank() ? "" :
-                    "Enter the workspace identifier above when you sign in for the first time.\n")
+                + "  Email:     " + event.getAdminEmail() + "\n"
+                + "  Password:  (provided by your Andikisha account manager)\n\n"
                 + "You will be prompted to set a new password immediately after logging in.\n\n"
                 + "Your trial period is 14 days. During this time you can:\n"
                 + "- Add employees and departments\n"
@@ -73,7 +69,7 @@ public class TenantEventListener {
                 event.getEventId(), event.getEventType()
         );
 
-        log.info("Welcome email queued for new tenant: {} (workspace: {})",
-                event.getTenantName(), event.getWorkspaceSlug());
+        log.info("Welcome email queued for new tenant: {} (workspace: {}, loginUrl: {})",
+                event.getTenantName(), workspace, loginUrl);
     }
 }
