@@ -181,6 +181,61 @@ Workaround (a /me/* endpoint) does not fix the root cause.
 
 ---
 
+### SEC-BACKLOG-002 — useRoleGuard fails open when user is null
+
+**Raised:** 2026-05-20  
+**Priority:** Medium — the specific security bug is fixed (Phase 2 mustChangePassword gate routes around it), but the underlying fail-open pattern remains.  
+**Found during:** Phase 0 investigation of the mustChangePassword sidebar rendering bug.
+
+**Problem:**  
+`useRoleGuard` in `frontend/tenant-portal/src/hooks/useRoleGuard.ts` is permissive when `useCurrentUser()` returns `null`:
+
+```typescript
+const roles = user
+  ? new Set<string>(user.roles.flatMap((r) => (r ? [r] : [])))
+  : null;
+
+const authorized = roles ? checkAuthorized(roles, area) : null;
+// ...
+if (authorized === false) return "redirecting";
+return "authorized";  // null authorized → permissive
+```
+
+When `user` is null (React Query hasn't resolved yet, or returned null after a 401), `authorized` is null and the guard returns `"authorized"` — granting access without confirming the user has the required role. This is fail-open.
+
+**Observed consequence:**  
+When a user with `mustChangePassword=true` logged in, `CurrentUserProvider` had a stale `user=null` in its React Query cache (from a 401 before login). The guard passed them through `EmployeeClientShell`, rendering the full employee sidebar inside the change-password gate. The user could see authenticated app chrome with a temporary password.
+
+**Why the Phase 2 fix routes around it (not through it):**  
+The middleware now intercepts `mustChangePassword=true` before any layout renders, redirecting to `/set-password` — a standalone route outside `(my)/` and `(admin)/` layouts. `useRoleGuard` is never invoked for users who need to set their password. The specific security bug is fixed. The fail-open guard itself still exists.
+
+**Risk of recurrence:**  
+Any scenario where:  
+1. A component renders inside a role-guarded layout, AND  
+2. `useCurrentUser()` returns null (slow network, cache miss, race condition between cookie being set and the first `GET /api/auth/me` refetch), AND  
+3. The middleware does not gate the route beforehand  
+
+...will silently grant access. Race conditions are hard to reproduce consistently, which makes them hard to catch in tests.
+
+**Fix:**  
+Change `useRoleGuard` to fail closed:
+
+```typescript
+// Fail closed: if user is unknown (null), deny access and wait.
+// Only render when role is positively confirmed.
+if (authorized !== true) return "loading";  // or "redirecting" with a spinner
+return "authorized";
+```
+
+This may require adding a loading state to `EmployeeClientShell` and `AdminRoleGuard` so the UI shows a spinner (or nothing) while the role resolves, rather than either rendering the full shell or immediately redirecting.
+
+**Trade-off:**  
+Fail-closed adds a visible flash (spinner or blank) during the 100–300ms before the background `/api/auth/me` refetch resolves. The alternative — a stale null state granting access — is a security bug. Accept the flash.
+
+**Coordinate with:** B1 UserContext work (SEC-BACKLOG-001). A proper `GatewayAuthentication` token with server-side headers would eliminate the race entirely (role known at SSR time, no client-side uncertainty). Until then, fail-closed is the safer default.
+
+---
+
 ## API Design
 
 ### API-BACKLOG-002 — SalaryStructure update should use PATCH semantics (null = no change, not zero)
