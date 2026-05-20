@@ -46,6 +46,12 @@ spring:
                 name: authCircuitBreaker
                 fallbackUri: forward:/fallback/auth-service
 
+        - id: public-tenant-resolve
+          uri: ${TENANT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/public/**
+          # No auth filter — this path is intentionally public
+
         - id: tenant-service
           uri: ${TENANT_SERVICE_URL:http://localhost:8083}
           predicates:
