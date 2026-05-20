@@ -8,6 +8,7 @@ import java.util.UUID;
 public record ProvisionedTenantResponse(
         UUID tenantId,
         String organisationName,
+        String workspaceSlug,
         UUID licenceKey,
         LicenceStatus licenceStatus,
         String planName,

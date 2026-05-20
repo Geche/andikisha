@@ -7,6 +7,7 @@ import java.util.UUID;
 public record TenantDetailResponse(
         UUID tenantId,
         String organisationName,
+        String workspaceSlug,
         String status,
         LocalDateTime createdAt,
         String adminEmail,

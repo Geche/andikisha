@@ -32,15 +32,18 @@ public class TenantService {
     private final PlanRepository planRepository;
     private final TenantMapper mapper;
     private final TenantEventPublisher eventPublisher;
+    private final SlugGeneratorService slugGeneratorService;
 
     public TenantService(TenantRepository tenantRepository,
                          PlanRepository planRepository,
                          TenantMapper mapper,
-                         TenantEventPublisher eventPublisher) {
+                         TenantEventPublisher eventPublisher,
+                         SlugGeneratorService slugGeneratorService) {
         this.tenantRepository = tenantRepository;
         this.planRepository = planRepository;
         this.mapper = mapper;
         this.eventPublisher = eventPublisher;
+        this.slugGeneratorService = slugGeneratorService;
     }
 
     @Transactional
@@ -60,13 +63,16 @@ public class TenantService {
                 .orElseThrow(() -> new BusinessRuleException(
                         "INVALID_PLAN", "Plan not found: " + planName));
 
+        String workspaceSlug = slugGeneratorService.generate(request.companyName(), null);
+
         Tenant tenant = Tenant.create(
                 request.companyName(),
                 request.country(),
                 request.currency(),
                 normalizedEmail,
                 request.adminPhone(),
-                plan
+                plan,
+                workspaceSlug
         );
 
         final Tenant savedTenant = tenantRepository.save(tenant);

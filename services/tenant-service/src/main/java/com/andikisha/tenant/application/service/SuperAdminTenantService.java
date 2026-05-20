@@ -61,6 +61,7 @@ public class SuperAdminTenantService {
     private final AuthServiceClient authServiceClient;
     private final TenantEventPublisher tenantEventPublisher;
     private final PasswordGenerator passwordGenerator;
+    private final SlugGeneratorService slugGeneratorService;
 
     public SuperAdminTenantService(TenantRepository tenantRepository,
                                    PlanRepository planRepository,
@@ -68,7 +69,8 @@ public class SuperAdminTenantService {
                                    LicenceStateMachineService licenceStateMachine,
                                    AuthServiceClient authServiceClient,
                                    TenantEventPublisher tenantEventPublisher,
-                                   PasswordGenerator passwordGenerator) {
+                                   PasswordGenerator passwordGenerator,
+                                   SlugGeneratorService slugGeneratorService) {
         this.tenantRepository = tenantRepository;
         this.planRepository = planRepository;
         this.licencePlanService = licencePlanService;
@@ -76,6 +78,7 @@ public class SuperAdminTenantService {
         this.authServiceClient = authServiceClient;
         this.tenantEventPublisher = tenantEventPublisher;
         this.passwordGenerator = passwordGenerator;
+        this.slugGeneratorService = slugGeneratorService;
     }
 
     @Transactional
@@ -98,10 +101,19 @@ public class SuperAdminTenantService {
             throw new BusinessRuleException("INVALID_PLAN", "Plan is not active: " + plan.getName());
         }
 
-        // 1. Create the tenant aggregate.
+        // 1. Generate (or validate and deduplicate) the workspace slug.
+        String workspaceSlug = slugGeneratorService.generate(
+                request.organisationName(), request.workspaceSlug());
+
+        // 2. Check slug uniqueness before creating tenant (gives a clear user-facing error).
+        if (tenantRepository.existsByWorkspaceSlug(workspaceSlug)) {
+            throw new DuplicateResourceException("Tenant", "workspaceSlug", workspaceSlug);
+        }
+
+        // 3. Create the tenant aggregate.
         Tenant tenant = Tenant.create(
                 request.organisationName(), DEFAULT_COUNTRY, DEFAULT_CURRENCY,
-                normalizedEmail, request.adminPhone(), plan);
+                normalizedEmail, request.adminPhone(), plan, workspaceSlug);
         Tenant savedTenant = tenantRepository.save(tenant);
 
         // 2. Create the initial licence row in the same transaction.
@@ -136,6 +148,7 @@ public class SuperAdminTenantService {
         return new ProvisionedTenantResponse(
                 savedTenant.getId(),
                 savedTenant.getCompanyName(),
+                savedTenant.getWorkspaceSlug(),
                 licence.getLicenceKey(),
                 licence.getStatus(),
                 plan.getName(),
@@ -158,6 +171,7 @@ public class SuperAdminTenantService {
         return new TenantDetailResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
+                tenant.getWorkspaceSlug(),
                 tenant.getStatus().name(),
                 tenant.getCreatedAt(),
                 tenant.getAdminEmail(),
@@ -189,6 +203,7 @@ public class SuperAdminTenantService {
         return new TenantSummaryResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
+                tenant.getWorkspaceSlug(),
                 tenant.getStatus().name(),
                 licence != null ? licence.planName() : tenant.getPlan().getName(),
                 licence != null ? licence.seatCount() : null,

@@ -49,5 +49,12 @@ public record CreateTenantWithLicenceRequest(
         BigDecimal agreedPriceKes,
 
         @Min(value = 0, message = "Trial days cannot be negative")
-        int trialDays
+        int trialDays,
+
+        @Pattern(
+                regexp = "^[a-z0-9]+(-[a-z0-9]+)*$",
+                message = "Workspace slug must be lowercase letters, numbers, and hyphens only"
+        )
+        @Size(max = 50, message = "Workspace slug must not exceed 50 characters")
+        String workspaceSlug   // nullable — auto-generated from organisationName if null
 ) {}
