@@ -22,7 +22,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
                         "/api/v1/auth/super-admin/**",
-                        "/api/v1/superadmin/**"
+                        "/api/v1/superadmin/**",
+                        "/api/v1/auth/reset-password"
                 );
     }
 }

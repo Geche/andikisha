@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 const GATEWAY = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
 const COOKIE_NAME = "tenant_token";
 
-// Simple in-memory rate limiter (10 attempts per 15 minutes per IP)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60 * 1000;
@@ -21,15 +20,6 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-/**
- * Base64url-decodes the JWT payload segment and returns all role claims as a Set.
- * Deliberately does NOT verify the signature — this is only for the SUPER_ADMIN rejection
- * check before the cookie is set. The cookie is never set for SUPER_ADMIN, so there is no
- * security risk in reading the unverified claim here.
- *
- * Handles both B0 (single `role` string) and B1 (`roles` array) claim shapes.
- * Returns an empty Set if the JWT is malformed — empty set never contains SUPER_ADMIN.
- */
 function extractRoles(token: string): Set<string> {
   try {
     const parts = token.split(".");
@@ -59,16 +49,62 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const body = await request.json() as { email?: string; password?: string };
+  const body = await request.json() as { workspace?: string; email?: string; password?: string };
 
-  const tenantId = process.env.TENANT_ID;
-  if (!tenantId) {
+  if (!body.workspace?.trim()) {
     return NextResponse.json(
-      { error: "PORTAL_NOT_CONFIGURED", message: "This portal is not linked to a tenant." },
+      { error: "WORKSPACE_REQUIRED", message: "Workspace identifier is required." },
+      { status: 400 }
+    );
+  }
+
+  // Step 1: Resolve workspace slug → tenantId via the public endpoint (no auth required)
+  const slug = body.workspace.trim().toLowerCase();
+  let tenantId: string;
+  try {
+    const resolveRes = await fetch(
+      `${GATEWAY}/api/v1/public/tenants/resolve?slug=${encodeURIComponent(slug)}`
+    );
+    if (resolveRes.status === 404) {
+      return NextResponse.json(
+        {
+          error: "WORKSPACE_NOT_FOUND",
+          message: `Workspace "${slug}" not found. Check the spelling or contact your administrator.`,
+        },
+        { status: 404 }
+      );
+    }
+    if (resolveRes.status === 403) {
+      return NextResponse.json(
+        {
+          error: "WORKSPACE_UNAVAILABLE",
+          message: "This workspace is not available. Contact support@andikisha.co.ke.",
+        },
+        { status: 403 }
+      );
+    }
+    if (!resolveRes.ok) {
+      return NextResponse.json(
+        { error: "RESOLVE_ERROR", message: "Unable to verify workspace. Please try again." },
+        { status: 502 }
+      );
+    }
+    const resolved = await resolveRes.json() as { tenantId?: string };
+    if (!resolved.tenantId) {
+      return NextResponse.json(
+        { error: "RESOLVE_ERROR", message: "Unable to verify workspace. Please try again." },
+        { status: 502 }
+      );
+    }
+    tenantId = resolved.tenantId;
+  } catch {
+    return NextResponse.json(
+      { error: "RESOLVE_ERROR", message: "Unable to reach authentication service. Please try again." },
       { status: 503 }
     );
   }
 
+  // Step 2: Log in with the resolved tenantId
   const upstream = await fetch(`${GATEWAY}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Tenant-ID": tenantId },
@@ -85,11 +121,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Bad upstream response" }, { status: 502 });
   }
 
-  // Reject SUPER_ADMIN at this portal — they belong in the platform portal.
-  // extractRoles returns an empty Set on parse failure, so no false rejection.
-  // B0/B1 bridge: checks both role (string) and roles (array) claims.
+  // Reject SUPER_ADMIN at the tenant portal — they belong in the platform portal.
   if (extractRoles(data.accessToken).has("SUPER_ADMIN")) {
-    // Cookie is never set. The JWT is never persisted.
     return NextResponse.json(
       {
         error: "WRONG_PORTAL",

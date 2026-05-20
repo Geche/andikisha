@@ -22,6 +22,15 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeReturnTo(searchParams.get("returnTo"));
+  const workspaceParam = searchParams.get("workspace") ?? "";
+
+  const [workspace, setWorkspace] = useState(() => {
+    if (workspaceParam) return workspaceParam;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("andikisha_last_workspace") ?? "";
+    }
+    return "";
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +50,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ workspace, email, password }),
       });
       // res.json() returns unknown — narrow each field explicitly
       const raw = await res.json() as Record<string, unknown>;
@@ -69,6 +78,11 @@ export default function LoginPage() {
         }
         setError({ kind: "general", message: data.message ?? "Invalid credentials. Please try again." });
         return;
+      }
+
+      // Persist workspace for next visit
+      if (typeof window !== "undefined") {
+        localStorage.setItem("andikisha_last_workspace", workspace);
       }
 
       // If session expired with a returnTo param, validate and redirect there.
@@ -104,6 +118,27 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Workspace */}
+          <div>
+            <label className="block text-[13.5px] font-medium text-neutral-700 mb-1.5">
+              Workspace
+            </label>
+            <input
+              type="text"
+              value={workspace}
+              onChange={(e) =>
+                setWorkspace(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+              }
+              placeholder="your-workspace"
+              required
+              autoComplete="organization"
+              className="w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[14px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 placeholder:text-neutral-400 font-mono transition-colors"
+            />
+            <p className="mt-1 text-[11.5px] text-neutral-400">
+              Your workspace identifier — provided by Andikisha during account setup.
+            </p>
+          </div>
+
           {/* Email */}
           <div>
             <label className="block text-[13.5px] font-medium text-neutral-700 mb-1.5">
@@ -237,7 +272,7 @@ export default function LoginPage() {
                     await fetch("/api/auth/forgot-password", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ email: forgotEmail }),
+                      body: JSON.stringify({ email: forgotEmail, workspace: workspace }),
                     });
                     setForgotSent(true);
                   } finally {
