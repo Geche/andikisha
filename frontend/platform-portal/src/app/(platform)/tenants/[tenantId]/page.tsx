@@ -36,6 +36,7 @@ interface LicenceInfo {
 interface TenantDetail {
   tenantId: string;
   organisationName: string;
+  workspaceSlug: string;
   status: string;
   createdAt: string;
   adminEmail: string;
@@ -610,8 +611,25 @@ export default function TenantDetailPage({
                 </Badge>
               </div>
             </div>
-            <div className="px-5 pb-3 flex items-center gap-6 text-[12px] text-neutral-400">
+            <div className="px-5 pb-3 flex items-center gap-6 flex-wrap text-[12px] text-neutral-400">
               <span>Tenant ID: <span className="font-mono text-neutral-600" title={tenantId}>{tenantId.slice(0, 8)}…</span></span>
+              <span className="flex items-center gap-1.5">
+                Workspace:{" "}
+                <code className="font-mono text-neutral-700 bg-neutral-100 px-1.5 py-0.5 rounded text-[11px]">
+                  {data.workspaceSlug}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(data.workspaceSlug);
+                    toast("Workspace slug copied");
+                  }}
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                  aria-label="Copy workspace slug"
+                >
+                  <Copy size={11} />
+                </button>
+              </span>
               <span>Created: {fmtDate(data.createdAt)}</span>
             </div>
 
