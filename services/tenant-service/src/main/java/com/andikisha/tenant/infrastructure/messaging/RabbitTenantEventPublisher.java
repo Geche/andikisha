@@ -33,7 +33,8 @@ public class RabbitTenantEventPublisher implements TenantEventPublisher {
                 tenant.getCountry(),
                 tenant.getCurrency(),
                 tenant.getPlan().getName(),
-                tenant.getAdminEmail()
+                tenant.getAdminEmail(),
+                tenant.getWorkspaceSlug()
         );
         publishAfterCommit(() -> {
             rabbitTemplate.convertAndSend(RabbitMqConfig.TENANT_EXCHANGE, "tenant.created", event);
