@@ -20,9 +20,9 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     Optional<Tenant> findByAdminEmail(String adminEmail);
 
-    Optional<Tenant> findByWorkspaceSlug(String workspaceSlug);
+    Optional<Tenant> findByWorkspace(String workspace);
 
-    boolean existsByWorkspaceSlug(String workspaceSlug);
+    boolean existsByWorkspace(String workspace);
 
     boolean existsByAdminEmail(String adminEmail);
 

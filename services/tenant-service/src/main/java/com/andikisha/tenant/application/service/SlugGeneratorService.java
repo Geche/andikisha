@@ -26,25 +26,29 @@ public class SlugGeneratorService {
         return deduplicate(base);
     }
 
-    /** Converts free text to kebab-case, max 50 chars. */
+    /** Converts free text to kebab-case, max 20 chars, starting and ending with alphanumeric. */
     public static String toSlug(String name) {
         String slug = name.toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-+|-+$", "");
-        return slug.length() > 50 ? slug.substring(0, 50).replaceAll("-+$", "") : slug;
+        if (slug.length() > 20) {
+            slug = slug.substring(0, 20).replaceAll("-+$", "");
+        }
+        return slug;
     }
 
     private String deduplicate(String base) {
-        if (!tenantRepository.existsByWorkspaceSlug(base)) {
+        if (!tenantRepository.existsByWorkspace(base)) {
             return base;
         }
-        String truncBase = base.length() > 47 ? base.substring(0, 47) : base;
+        // Reserve 3 chars for the suffix (-N), keeping base ≤ 17 chars.
+        String truncBase = base.length() > 17 ? base.substring(0, 17) : base;
         int n = 1;
         String candidate;
         do {
             candidate = truncBase + "-" + n;
             n++;
-        } while (tenantRepository.existsByWorkspaceSlug(candidate));
+        } while (tenantRepository.existsByWorkspace(candidate));
         return candidate;
     }
 }
