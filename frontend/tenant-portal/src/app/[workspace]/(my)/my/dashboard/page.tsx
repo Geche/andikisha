@@ -5,6 +5,7 @@ import { AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { PageHeader, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface EmployeeProfile {
   id: string;
@@ -86,6 +87,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function DashboardPage() {
+  const workspace = useWorkspace();
   const currentUser = useCurrentUser();
   const employeeId = currentUser?.employeeId;
 
@@ -181,7 +183,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <p className="text-[13.5px] font-bold text-neutral-900">Recent Payslips</p>
-              <Link href="/my/payslips" className="text-[12px] font-semibold text-brand-700 hover:underline">
+              <Link href={`/${workspace}/my/payslips`} className="text-[12px] font-semibold text-brand-700 hover:underline">
                 View all →
               </Link>
             </div>
@@ -212,7 +214,7 @@ export default function DashboardPage() {
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
               <p className="text-[13.5px] font-bold text-neutral-900">Leave Requests</p>
-              <Link href="/my/leave" className="text-[12px] font-semibold text-brand-700 hover:underline">
+              <Link href={`/${workspace}/my/leave`} className="text-[12px] font-semibold text-brand-700 hover:underline">
                 Apply + view all →
               </Link>
             </div>

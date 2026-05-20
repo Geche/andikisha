@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, AlertCircle, Clock, Printer } from "lucide-react";
 import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -141,6 +142,7 @@ function Skeleton() {
 export default function PayslipDetailPage() {
   const params = useParams<{ runId: string; payslipId: string }>();
   const { runId, payslipId } = params;
+  const workspace = useWorkspace();
 
   const { data: slip, isLoading, isError } = useQuery<PaySlip>({
     queryKey: ["payslip", payslipId],
@@ -166,7 +168,7 @@ export default function PayslipDetailPage() {
               Print
             </button>
             <Link
-              href={`/admin/payroll/${runId}`}
+              href={`/${workspace}/admin/payroll/${runId}`}
               className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
             >
               <ArrowLeft size={14} />

@@ -6,6 +6,7 @@ import {
   Clock, FileCheck, BarChart2, UserCircle, Settings, LogOut,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { logout } from "@/lib/auth";
 
 interface NavGroup {
@@ -19,35 +20,38 @@ interface NavGroup {
   }[];
 }
 
-const GROUPS: NavGroup[] = [
-  {
-    label: "General",
-    items: [
-      { label: "Dashboard", href: "/admin/dashboard", icon: Home },
-    ],
-  },
-  {
-    label: "HR",
-    spacer: true,
-    items: [
-      { label: "Employees", href: "/admin/employees", icon: Users },
-      { label: "Payroll",   href: "/admin/payroll",   icon: CreditCard },
-      { label: "Leave",     href: "/admin/leave",     icon: Calendar },
-    ],
-  },
-  {
-    label: "Operations",
-    spacer: true,
-    items: [
-      { label: "Time & Attendance", href: "/admin/attendance", icon: Clock,     locked: true },
-      { label: "Statutory Filings", href: "/admin/compliance", icon: FileCheck, locked: true },
-      { label: "Analytics",         href: "/admin/analytics",  icon: BarChart2, locked: true },
-    ],
-  },
-];
-
 export function AdminNav() {
   const pathname = usePathname();
+  const workspace = useWorkspace();
+  const base = `/${workspace}`;
+
+  const GROUPS: NavGroup[] = [
+    {
+      label: "General",
+      items: [
+        { label: "Dashboard", href: `${base}/admin/dashboard`, icon: Home },
+      ],
+    },
+    {
+      label: "HR",
+      spacer: true,
+      items: [
+        { label: "Employees", href: `${base}/admin/employees`, icon: Users },
+        { label: "Payroll",   href: `${base}/admin/payroll`,   icon: CreditCard },
+        { label: "Leave",     href: `${base}/admin/leave`,     icon: Calendar },
+      ],
+    },
+    {
+      label: "Operations",
+      spacer: true,
+      items: [
+        { label: "Time & Attendance", href: `${base}/admin/attendance`, icon: Clock,     locked: true },
+        { label: "Statutory Filings", href: `${base}/admin/compliance`, icon: FileCheck, locked: true },
+        { label: "Analytics",         href: `${base}/admin/analytics`,  icon: BarChart2, locked: true },
+      ],
+    },
+  ];
+
   return (
     <>
       {GROUPS.map((group, gi) => (
@@ -73,10 +77,13 @@ export function AdminNav() {
 
 export function AdminNavFooter() {
   const pathname = usePathname();
+  const workspace = useWorkspace();
+  const base = `/${workspace}`;
+
   return (
     <>
-      <NavRailItem label="My profile" href="/my/profile"   icon={UserCircle} theme="light" active={pathname.startsWith("/my/profile")} />
-      <NavRailItem label="Settings"   href="/admin/settings" icon={Settings} theme="light" active={pathname.startsWith("/admin/settings")} />
+      <NavRailItem label="My profile" href={`${base}/my/profile`}     icon={UserCircle} theme="light" active={pathname.startsWith(`${base}/my/profile`)} />
+      <NavRailItem label="Settings"   href={`${base}/admin/settings`} icon={Settings}   theme="light" active={pathname.startsWith(`${base}/admin/settings`)} />
       <button
         onClick={() => void logout()}
         className={cn(

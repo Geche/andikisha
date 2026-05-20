@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { EmployeeShell, ProfileMenu } from "@andikisha/ui";
 import { useBottomNavItems, EmployeeDesktopNav } from "./EmployeeNav";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface EmployeeClientShellProps {
   userEmail: string;
@@ -14,10 +15,11 @@ export function EmployeeClientShell({ userEmail, children }: EmployeeClientShell
   const authStatus = useRoleGuard("employee");
   const bottomNav = useBottomNavItems();
   const router = useRouter();
+  const workspace = useWorkspace();
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
+    router.replace(workspace ? `/${workspace}/login` : "/login");
   }
 
   if (authStatus === "redirecting") return null;

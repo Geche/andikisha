@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, AlertCircle } from "lucide-react";
 import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface PaymentSummary {
   failed: number;
@@ -81,6 +82,7 @@ function statusBadge(status: RunStatus): { cls: string; label: string } {
 // Uses staleTime=5min so re-navigating to this page doesn't trigger re-fetches.
 function RunRow({ run }: { run: PayrollRun }) {
   const badge = statusBadge(run.status);
+  const workspace = useWorkspace();
 
   const { data: summary } = useQuery<PaymentSummary>({
     queryKey: ["payment-summary", run.id],
@@ -115,7 +117,7 @@ function RunRow({ run }: { run: PayrollRun }) {
       </td>
       <td className="px-6 py-4 text-neutral-500">{formatDate(run.createdAt)}</td>
       <td className="px-6 py-4">
-        <Link href={`/admin/payroll/${run.id}`} className="text-[12.5px] font-semibold text-brand-700 hover:underline">
+        <Link href={`/${workspace}/admin/payroll/${run.id}`} className="text-[12.5px] font-semibold text-brand-700 hover:underline">
           View
         </Link>
       </td>
@@ -143,6 +145,7 @@ function TableSkeleton() {
 }
 
 export default function PayrollPage() {
+  const workspace = useWorkspace();
   const [page, setPage] = useState(0);
 
   const { data, isLoading, isError, refetch } = useQuery<PagedResponse<PayrollRun>>({
@@ -164,7 +167,7 @@ export default function PayrollPage() {
         subtitle={isLoading ? "Loading…" : `${totalElements.toLocaleString()} run${totalElements !== 1 ? "s" : ""}`}
         actions={
           <Link
-            href="/admin/payroll/new"
+            href={`/${workspace}/admin/payroll/new`}
             className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + Run Payroll

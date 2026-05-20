@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { PageHeader, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ const selectCls =
 
 export default function NewPayrollRunPage() {
   const router = useRouter();
+  const workspace = useWorkspace();
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -68,7 +70,7 @@ export default function NewPayrollRunPage() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["payroll-runs"] });
       toast("Payroll run created — calculate to generate payslips", "success");
-      router.push(`/admin/payroll/${data.id}`);
+      router.push(`/${workspace}/admin/payroll/${data.id}`);
     },
     onError: (err) => {
       const msg =
@@ -92,7 +94,7 @@ export default function NewPayrollRunPage() {
         subtitle="Initiate a new payroll calculation"
         actions={
           <Link
-            href="/admin/payroll"
+            href={`/${workspace}/admin/payroll`}
             className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <ArrowLeft size={14} />

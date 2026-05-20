@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { PageHeader, InlineAlert, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -131,6 +132,7 @@ const EMPTY: FieldState = {
 
 export default function NewEmployeePage() {
   const router = useRouter();
+  const workspace = useWorkspace();
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -163,7 +165,7 @@ export default function NewEmployeePage() {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ["employees"] });
       toast("Employee added successfully", "success");
-      router.push(`/admin/employees/${data.id}`);
+      router.push(`/${workspace}/admin/employees/${data.id}`);
     },
     onError: (err) => {
       const msg = err.response?.data?.message ?? "Failed to add employee. Please try again.";
@@ -219,7 +221,7 @@ export default function NewEmployeePage() {
         title="Add Employee"
         actions={
           <Link
-            href="/admin/employees"
+            href={`/${workspace}/admin/employees`}
             className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
           >
             <ArrowLeft size={14} />

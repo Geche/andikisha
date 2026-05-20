@@ -12,6 +12,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ function StepCard({
   children,
 }: StepCardProps) {
   const router = useRouter();
+  const workspace = useWorkspace();
   const isComplete = status === "complete";
   const isLocked = status === "locked";
 
@@ -179,6 +181,7 @@ export function WorkspaceSetupChecklist({
   onStepComplete,
 }: WorkspaceSetupChecklistProps) {
   const router = useRouter();
+  const workspace = useWorkspace();
   const queryClient = useQueryClient();
   const [s1, s2, s3, s4] = getStatuses(state);
 
@@ -216,7 +219,7 @@ export function WorkspaceSetupChecklist({
         description="Departments group employees and structure your payroll reports."
         status={s1}
         completeLabel={`${deptCount} department${deptCount === 1 ? "" : "s"} created`}
-        viewHref="/admin/settings/departments"
+        viewHref={`/${workspace}/admin/settings/departments`}
       >
         <Button
           variant="primary"
@@ -228,7 +231,7 @@ export function WorkspaceSetupChecklist({
         </Button>
         <Button
           variant="outline"
-          onClick={() => router.push("/admin/settings/departments")}
+          onClick={() => router.push(`/${workspace}/admin/settings/departments`)}
           className="w-full sm:w-auto"
         >
           Add custom department
@@ -243,7 +246,7 @@ export function WorkspaceSetupChecklist({
         description="Positions define job titles and grade levels."
         status={s2}
         completeLabel={`${posCount} position${posCount === 1 ? "" : "s"} created`}
-        viewHref="/admin/settings/positions"
+        viewHref={`/${workspace}/admin/settings/positions`}
       >
         <Button
           variant="primary"
@@ -255,7 +258,7 @@ export function WorkspaceSetupChecklist({
         </Button>
         <Button
           variant="outline"
-          onClick={() => router.push("/admin/settings/positions")}
+          onClick={() => router.push(`/${workspace}/admin/settings/positions`)}
           className="w-full sm:w-auto"
         >
           Add custom position
@@ -271,11 +274,11 @@ export function WorkspaceSetupChecklist({
         status={s3}
         lockReason="Add departments and positions first"
         completeLabel={`${empCount} employee${empCount === 1 ? "" : "s"} added`}
-        viewHref="/admin/employees"
+        viewHref={`/${workspace}/admin/employees`}
       >
         <Button
           variant="primary"
-          onClick={() => router.push("/admin/employees/new")}
+          onClick={() => router.push(`/${workspace}/admin/employees/new`)}
           className="w-full sm:w-auto"
         >
           Add employee
@@ -291,11 +294,11 @@ export function WorkspaceSetupChecklist({
         status={s4}
         lockReason="Add your first employee first"
         completeLabel="First payroll run complete"
-        viewHref="/admin/payroll"
+        viewHref={`/${workspace}/admin/payroll`}
       >
         <Button
           variant="primary"
-          onClick={() => router.push("/admin/payroll/new")}
+          onClick={() => router.push(`/${workspace}/admin/payroll/new`)}
           className="w-full sm:w-auto"
         >
           Run payroll

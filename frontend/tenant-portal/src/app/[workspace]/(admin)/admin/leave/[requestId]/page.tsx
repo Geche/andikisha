@@ -8,6 +8,7 @@ import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { ApproveModal } from "../_components/ApproveModal";
 import { RejectModal } from "../_components/RejectModal";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   type LeaveRequest,
   leaveTypeLabel,
@@ -55,6 +56,7 @@ export default function LeaveRequestDetailPage({
   params: Promise<{ requestId: string }>;
 }) {
   const { requestId } = use(params);
+  const workspace = useWorkspace();
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
 
@@ -90,7 +92,7 @@ export default function LeaveRequestDetailPage({
         actions={
           <div className="flex items-center gap-2">
             <Link
-              href="/admin/leave"
+              href={`/${workspace}/admin/leave`}
               className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
             >
               <ArrowLeft size={14} />

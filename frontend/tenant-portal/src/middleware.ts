@@ -2,18 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { findCorrectDashboard, ADMIN_ROLES } from "@andikisha/ui/auth";
 
+// Paths that never require authentication.
 const PUBLIC_PATHS = ["/login"];
-const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/preview", "/reset-password/"];
-
-// /set-password is an authenticated route (requires a valid JWT) but renders
-// outside any (my)/(admin) layout — no sidebar, no nav. Handled separately below.
-const SET_PASSWORD_PATH = "/set-password";
+const PUBLIC_PREFIXES = ["/api/", "/_next/", "/preview", "/reset-password/"];
 
 function isPublic(pathname: string): boolean {
-  return (
-    PUBLIC_PATHS.includes(pathname) ||
-    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
-  );
+  // Bare /login — ask-when-missing screen.
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return true;
+  // /{workspace}/login — workspace-specific login page. No token required.
+  if (/^\/[^/]+\/login(\/)?$/.test(pathname)) return true;
+  return false;
 }
 
 function isAsset(pathname: string): boolean {
@@ -23,6 +22,21 @@ function isAsset(pathname: string): boolean {
     pathname.startsWith("/images") ||
     pathname.startsWith("/sw-my.js")
   );
+}
+
+/**
+ * Extracts the workspace segment from a /{workspace}/... path.
+ * Returns empty string for paths that don't start with a workspace segment.
+ */
+function workspaceFromPath(pathname: string): string {
+  const parts = pathname.split("/");
+  // parts[0] = "" (leading slash), parts[1] = workspace candidate
+  const candidate = parts[1] ?? "";
+  // Exclude known non-workspace root segments
+  if (!candidate || ["login", "api", "_next", "preview", "reset-password", "favicon.ico"].includes(candidate)) {
+    return "";
+  }
+  return candidate;
 }
 
 export async function middleware(request: NextRequest) {
@@ -48,9 +62,6 @@ export async function middleware(request: NextRequest) {
 
     const { payload } = await jwtVerify(token, secret);
 
-    // B0/B1 transition-ready role extraction.
-    // Today (B0): JWT carries single 'role' claim.
-    // Post-B1: JWT carries 'roles' array — same code works.
     const rawRole = payload.role as string | undefined;
     const rawRoles: string[] = Array.isArray(payload.roles)
       ? (payload.roles as string[])
@@ -59,7 +70,6 @@ export async function middleware(request: NextRequest) {
       : [];
     const roleSet = new Set<string>(rawRoles.filter((r): r is string => typeof r === "string"));
 
-    // Build augmented headers early — needed for /set-password and all downstream routes.
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", String(payload.sub ?? ""));
     requestHeaders.set("x-user-email", String(payload.email ?? ""));
@@ -70,74 +80,56 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set("x-employee-id", String(payload.employeeId));
     }
 
-    // Path evaluation — in priority order.
     const mustChangePassword = payload.mustChangePassword === true;
+    const workspace = workspaceFromPath(pathname);
+    const setPasswordPath = workspace ? `/${workspace}/set-password` : "/set-password";
+    const loginPath = workspace ? `/${workspace}/login` : "/login";
 
     // 1. Forced-password-change gate.
-    //    /set-password is a standalone full-page route (no sidebar, no nav).
-    //    When mustChangePassword=true: all authenticated routes redirect here.
-    //    When mustChangePassword=false: accessing /set-password directly redirects to dashboard
-    //    (prevents navigating back to the gate after completing it).
+    //    When mustChangePassword=true: all authenticated routes redirect to /{workspace}/set-password.
+    //    When mustChangePassword=false: /{workspace}/set-password redirects to correct dashboard.
     if (mustChangePassword) {
-      if (pathname === SET_PASSWORD_PATH) {
+      if (pathname === setPasswordPath) {
         return NextResponse.next({ request: { headers: requestHeaders } });
       }
-      return NextResponse.redirect(new URL(SET_PASSWORD_PATH, request.url));
+      return NextResponse.redirect(new URL(setPasswordPath, request.url));
     }
-    if (pathname === SET_PASSWORD_PATH) {
-      // Password already set — redirect to correct dashboard so the gate can't be revisited.
-      return NextResponse.redirect(new URL(findCorrectDashboard(roleSet), request.url));
+    if (pathname === setPasswordPath) {
+      return NextResponse.redirect(
+        new URL(`/${workspace}${findCorrectDashboard(roleSet)}`, request.url)
+      );
     }
 
     // 2. SUPER_ADMIN anywhere → platform portal
     if (roleSet.has("SUPER_ADMIN")) {
       const redirectTo = process.env.NEXT_PUBLIC_PLATFORM_PORTAL_URL ?? "/access-denied";
-      console.info("[middleware] role-redirect", {
-        userId: payload.sub,
-        path: pathname,
-        redirectTo,
-        roles: [...roleSet],
-      });
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
 
-    // 3. /admin/* with no admin role → correct dashboard
-    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    // 3. /{workspace}/admin/* with no admin role → correct workspace dashboard
+    const adminPrefix = workspace ? `/${workspace}/admin` : "/admin";
+    if (pathname === adminPrefix || pathname.startsWith(adminPrefix + "/")) {
       let hasAdminRole = false;
       for (const r of ADMIN_ROLES) {
         if (roleSet.has(r)) { hasAdminRole = true; break; }
       }
       if (!hasAdminRole) {
-        const redirectTo = findCorrectDashboard(roleSet);
-        console.info("[middleware] role-redirect", {
-          userId: payload.sub,
-          path: pathname,
-          redirectTo,
-          roles: [...roleSet],
-        });
-        return NextResponse.redirect(new URL(redirectTo, request.url));
+        return NextResponse.redirect(
+          new URL(`/${workspace}${findCorrectDashboard(roleSet)}`, request.url)
+        );
       }
     }
 
-    // 4. /my/* without EMPLOYEE role → correct dashboard
-    if (pathname === "/my" || pathname.startsWith("/my/")) {
+    // 4. /{workspace}/my/* without EMPLOYEE role → correct workspace dashboard
+    const myPrefix = workspace ? `/${workspace}/my` : "/my";
+    if (pathname === myPrefix || pathname.startsWith(myPrefix + "/")) {
       if (!roleSet.has("EMPLOYEE")) {
-        const redirectTo = findCorrectDashboard(roleSet);
-        console.info("[middleware] role-redirect", {
-          userId: payload.sub,
-          path: pathname,
-          redirectTo,
-          roles: [...roleSet],
-        });
-        return NextResponse.redirect(new URL(redirectTo, request.url));
+        return NextResponse.redirect(
+          new URL(`/${workspace}${findCorrectDashboard(roleSet)}`, request.url)
+        );
       }
     }
 
-    // 5. Allowed — forward augmented headers to Server Components via request context.
-    // IMPORTANT: NextResponse.next({ request: { headers } }) is the correct pattern.
-    // response.headers.set(...) sets browser-facing headers only — NOT visible to Server
-    // Components via await headers(). The request copy is what propagates to the server.
-    // (requestHeaders was built at the top of this block, before all redirect checks.)
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
     const response = NextResponse.redirect(new URL("/login", request.url));

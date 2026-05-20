@@ -7,6 +7,7 @@ import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock } from "lucide-reac
 import { PageHeader, BaseModal, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -637,6 +638,7 @@ export default function EmployeeDetailPage({
   params: Promise<{ employeeId: string }>;
 }) {
   const { employeeId } = use(params);
+  const workspace = useWorkspace();
   const [showEdit, setShowEdit]   = useState(false);
   const [showSalary, setShowSalary] = useState(false);
 
@@ -676,7 +678,7 @@ export default function EmployeeDetailPage({
         actions={
           <div className="flex items-center gap-2">
             <Link
-              href="/admin/employees"
+              href={`/${workspace}/admin/employees`}
               className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
             >
               <ArrowLeft size={14} />

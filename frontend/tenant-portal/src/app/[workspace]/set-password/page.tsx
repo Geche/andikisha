@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
 import { findCorrectDashboard } from "@andikisha/ui/auth";
 
 export default function SetPasswordPage() {
   const router = useRouter();
+  const params = useParams();
+  const workspace = typeof params.workspace === "string" ? params.workspace : "";
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword]         = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,13 +66,13 @@ export default function SetPasswordPage() {
 
       if (data.redirectToLogin) {
         // Re-authentication failed after change — send to login (edge case)
-        router.replace("/login");
+        router.replace(workspace ? `/${workspace}/login` : "/login");
         return;
       }
 
       // Fresh JWT is set in the cookie by the BFF. Navigate to the correct dashboard.
       const roles = new Set<string>(data.roles ?? []);
-      router.replace(findCorrectDashboard(roles));
+      router.replace(`/${workspace}${findCorrectDashboard(roles)}`);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {

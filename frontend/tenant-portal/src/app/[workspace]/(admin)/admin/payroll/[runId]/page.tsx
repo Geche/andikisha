@@ -10,6 +10,7 @@ import {
 import { PageHeader, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -263,6 +264,7 @@ function PaymentSummaryPanel({ summary }: { summary: PaymentSummary }) {
 
 export default function PayrollRunDetailPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = use(params);
+  const workspace = useWorkspace();
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -491,7 +493,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
               )}
               <ActionButtons />
               <Link
-                href="/admin/payroll"
+                href={`/${workspace}/admin/payroll`}
                 className="flex items-center gap-1.5 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
               >
                 <ArrowLeft size={14} />
@@ -644,7 +646,7 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
                             </td>
                             <td className="px-6 py-3.5">
                               <Link
-                                href={`/admin/payroll/${runId}/payslips/${slip.id}`}
+                                href={`/${workspace}/admin/payroll/${runId}/payslips/${slip.id}`}
                                 className="text-[12px] font-semibold text-brand-700 hover:underline whitespace-nowrap"
                               >
                                 View

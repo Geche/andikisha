@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { PageHeader } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ function TableSkeleton() {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EmployeesPage() {
+  const workspace = useWorkspace();
   const [page, setPage] = useState(0);
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [search, setSearch] = useState("");
@@ -209,7 +211,7 @@ export default function EmployeesPage() {
         }
         actions={
           <Link
-            href="/admin/employees/new"
+            href={`/${workspace}/admin/employees/new`}
             className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
           >
             + Add Employee
@@ -318,7 +320,7 @@ export default function EmployeesPage() {
                       <td className="px-6 py-4 text-neutral-500">{formatDate(emp.hireDate)}</td>
                       <td className="px-6 py-4">
                         <Link
-                          href={`/admin/employees/${emp.id}`}
+                          href={`/${workspace}/admin/employees/${emp.id}`}
                           className="text-[12.5px] font-semibold text-brand-700 hover:underline"
                         >
                           View
