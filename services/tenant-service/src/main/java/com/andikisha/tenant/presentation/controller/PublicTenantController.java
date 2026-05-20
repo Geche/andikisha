@@ -2,9 +2,9 @@ package com.andikisha.tenant.presentation.controller;
 
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.tenant.application.dto.response.TenantSlugResponse;
+import com.andikisha.tenant.application.service.TenantService;
 import com.andikisha.tenant.domain.model.Tenant;
 import com.andikisha.tenant.domain.model.TenantStatus;
-import com.andikisha.tenant.domain.repository.TenantRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/public/tenants")
 public class PublicTenantController {
 
-    private final TenantRepository tenantRepository;
+    private final TenantService tenantService;
 
-    public PublicTenantController(TenantRepository tenantRepository) {
-        this.tenantRepository = tenantRepository;
+    public PublicTenantController(TenantService tenantService) {
+        this.tenantService = tenantService;
     }
 
     /**
@@ -30,7 +30,7 @@ public class PublicTenantController {
      */
     @GetMapping("/resolve")
     public ResponseEntity<TenantSlugResponse> resolve(@RequestParam String slug) {
-        Tenant tenant = tenantRepository.findByWorkspaceSlug(slug.toLowerCase())
+        Tenant tenant = tenantService.findByWorkspaceSlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Workspace", slug));
 
         if (tenant.getStatus() == TenantStatus.CANCELLED

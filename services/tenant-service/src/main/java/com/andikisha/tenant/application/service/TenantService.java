@@ -192,4 +192,8 @@ public class TenantService {
 
         return mapper.toResponse(savedTenant);
     }
+
+    public java.util.Optional<Tenant> findByWorkspaceSlug(String slug) {
+        return tenantRepository.findByWorkspaceSlug(slug.toLowerCase());
+    }
 }
