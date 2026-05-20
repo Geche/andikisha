@@ -29,6 +29,7 @@ interface PlanOption {
 interface ProvisionedTenant {
   tenantId: string;
   organisationName: string;
+  workspaceSlug: string;
   licenceKey: string;
   licenceStatus: string;
   planName: string;
@@ -62,6 +63,14 @@ function SuccessModal({
   onDone: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState(false);
+
+  function handleCopySlug() {
+    navigator.clipboard.writeText(result.workspaceSlug).then(() => {
+      setCopiedSlug(true);
+      setTimeout(() => setCopiedSlug(false), 2500);
+    });
+  }
 
   function handleCopy() {
     navigator.clipboard.writeText(result.temporaryPassword).then(() => {
@@ -88,6 +97,41 @@ function SuccessModal({
           </h2>
           <p className="text-[13px] text-neutral-500 mt-1">
             {result.organisationName} has been set up successfully.
+          </p>
+        </div>
+
+        {/* Workspace identifier — tell the SUPER_ADMIN what to communicate to the customer */}
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-brand-800 mb-2">
+            Workspace Identifier
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            <code className="font-mono text-[18px] font-bold text-brand-950">
+              {result.workspaceSlug}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopySlug}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-300 text-[12px] font-semibold bg-white hover:bg-brand-100 transition-colors flex-shrink-0"
+            >
+              {copiedSlug ? (
+                <>
+                  <Check size={13} className="text-brand-600" />
+                  <span className="text-brand-700">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} className="text-neutral-500" />
+                  <span className="text-neutral-700">Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+          <p className="mt-1.5 text-[11.5px] text-brand-700">
+            Login URL:{" "}
+            <span className="font-mono">
+              app.andikishahr.com/login?workspace={result.workspaceSlug}
+            </span>
           </p>
         </div>
 
@@ -162,6 +206,15 @@ function SuccessModal({
 
 const PHONE_RE = /^(\+254|0)7\d{8}$/;
 
+function toSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/, "")
+    .slice(0, 50)
+    .replace(/-+$/, "");
+}
+
 function validate(fields: {
   organisationName: string;
   adminEmail: string;
@@ -208,6 +261,8 @@ export default function ProvisionTenantPage() {
   const [seatCount, setSeatCount]               = useState("5");
   const [agreedPriceKes, setAgreedPriceKes]     = useState("");
   const [trialDays, setTrialDays]               = useState("0");
+  const [workspaceSlug, setWorkspaceSlug]       = useState("");
+  const [slugEdited, setSlugEdited]             = useState(false);
 
   const [errors, setErrors]       = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -228,6 +283,13 @@ export default function ProvisionTenantPage() {
       setAgreedPriceKes(String(selected.monthlyPrice));
     }
   }, [planId, plans]);
+
+  // Auto-generate workspace slug from org name unless the user has manually edited it
+  useEffect(() => {
+    if (!slugEdited) {
+      setWorkspaceSlug(toSlug(organisationName));
+    }
+  }, [organisationName, slugEdited]);
 
   // Annual reference price
   const selectedPlan = plans.find((p) => p.id === planId);
@@ -260,6 +322,7 @@ export default function ProvisionTenantPage() {
         seatCount: parseInt(seatCount, 10),
         agreedPriceKes: parseFloat(agreedPriceKes),
         trialDays: parseInt(trialDays, 10),
+        workspaceSlug: workspaceSlug || undefined,
       });
       setResult(res.data as ProvisionedTenant);
     } catch (err: unknown) {
@@ -321,6 +384,37 @@ export default function ProvisionTenantPage() {
                   error={!!errors.organisationName}
                 />
               </FormField>
+              <div className="mt-4">
+                <label
+                  htmlFor="workspaceSlug"
+                  className="block text-[13px] font-medium text-neutral-700 mb-1.5"
+                >
+                  Workspace identifier
+                </label>
+                <input
+                  id="workspaceSlug"
+                  type="text"
+                  value={workspaceSlug}
+                  onChange={(e) => {
+                    setSlugEdited(true);
+                    setWorkspaceSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9-]/g, "")
+                        .replace(/--+/g, "-")
+                    );
+                  }}
+                  placeholder="acme-corp"
+                  maxLength={50}
+                  className="w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[13.5px] text-neutral-900 bg-white focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 font-mono"
+                />
+                <p className="mt-1 text-[12px] text-neutral-500">
+                  Auto-generated from organisation name. Customers use this to sign in.{" "}
+                  <span className="font-mono text-neutral-600">
+                    app.andikishahr.com/login?workspace={workspaceSlug || "…"}
+                  </span>
+                </p>
+              </div>
             </section>
 
             {/* Section 2 — Admin Account */}
