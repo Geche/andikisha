@@ -49,9 +49,7 @@ public class TenantService {
     @Transactional
     public TenantResponse create(CreateTenantRequest request) {
         String normalizedEmail = request.adminEmail().toLowerCase().trim();
-        if (tenantRepository.existsByAdminEmail(normalizedEmail)) {
-            throw new DuplicateResourceException("Tenant", "adminEmail", normalizedEmail);
-        }
+        // Behavior A: same email allowed across tenants.
         if (tenantRepository.existsByCompanyNameAndCountry(
                 request.companyName(), request.country())) {
             throw new DuplicateResourceException(

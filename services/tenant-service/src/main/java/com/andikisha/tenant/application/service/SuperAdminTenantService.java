@@ -102,9 +102,9 @@ public class SuperAdminTenantService {
                     + "Use a work email address, or set bypassWorkEmailCheck=true to override.");
         }
 
-        if (tenantRepository.existsByAdminEmail(normalizedEmail)) {
-            throw new DuplicateResourceException("Tenant", "adminEmail", normalizedEmail);
-        }
+        // Behavior A: same email is allowed across tenants (consultant-as-admin pattern).
+        // The DB composite UNIQUE(admin_email, tenant_id) enforces within-tenant uniqueness.
+        // No pre-creation email check needed — the new tenant gets a fresh UUID tenant_id.
         if (tenantRepository.existsByCompanyNameAndCountry(
                 request.organisationName(), DEFAULT_COUNTRY)) {
             throw new DuplicateResourceException(

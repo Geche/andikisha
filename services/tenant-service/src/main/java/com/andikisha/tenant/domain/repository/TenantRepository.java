@@ -26,6 +26,8 @@ public interface TenantRepository extends JpaRepository<Tenant, UUID> {
 
     boolean existsByAdminEmail(String adminEmail);
 
+    boolean existsByAdminEmailAndTenantId(String adminEmail, String tenantId);
+
     boolean existsByCompanyNameAndCountry(String companyName, String country);
 
     Page<Tenant> findByStatus(TenantStatus status, Pageable pageable);
