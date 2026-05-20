@@ -62,11 +62,14 @@ public class Tenant extends BaseEntity {
     @Column(name = "suspension_reason", length = 500)
     private String suspensionReason;
 
+    @Column(name = "workspace_slug", nullable = false, unique = true, length = 50)
+    private String workspaceSlug;
+
     protected Tenant() {}
 
     public static Tenant create(String companyName, String country,
                                 String currency, String adminEmail,
-                                String adminPhone, Plan plan) {
+                                String adminPhone, Plan plan, String workspaceSlug) {
         Tenant tenant = new Tenant();
         tenant.companyName = companyName;
         tenant.country = country.toUpperCase();
@@ -78,6 +81,7 @@ public class Tenant extends BaseEntity {
         tenant.trialEndsAt = LocalDate.now().plusDays(14);
         tenant.payFrequency = "MONTHLY";
         tenant.payDay = 28;
+        tenant.workspaceSlug = workspaceSlug;
         return tenant;
     }
 
@@ -179,4 +183,5 @@ public class Tenant extends BaseEntity {
     public String getPayFrequency() { return payFrequency; }
     public int getPayDay() { return payDay; }
     public String getSuspensionReason() { return suspensionReason; }
+    public String getWorkspaceSlug() { return workspaceSlug; }
 }
