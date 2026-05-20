@@ -22,6 +22,7 @@ public final class GatewayPublicPaths {
 
     /** Path prefixes requiring no JWT and no tenant header. */
     public static final List<String> PREFIXES = List.of(
+        "/api/v1/public/",
         "/api/v1/callbacks/",
         "/actuator/health",
         "/actuator/info",

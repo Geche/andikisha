@@ -18,6 +18,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(tenantInterceptor())
                 .addPathPatterns("/api/**")
+                // Public endpoints — no X-Tenant-ID required (workspace slug resolution for login)
+                .excludePathPatterns("/api/v1/public/**")
                 // Tenant CRUD uses explicit tenantId path params, not TenantContext
                 .excludePathPatterns("/api/v1/tenants", "/api/v1/tenants/**")
                 // Plan listing is public (needed during signup before a tenant exists)
