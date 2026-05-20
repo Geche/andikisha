@@ -181,6 +181,40 @@ Workaround (a /me/* endpoint) does not fix the root cause.
 
 ---
 
+### SEC-BACKLOG-003 — Access-token window after password reset
+
+**Raised:** 2026-05-20  
+**Priority:** Low — V1 deliberate risk acceptance; documented for future re-evaluation.  
+**Decision:** Accept for V1. No code change.
+
+**Problem:**  
+When a tenant admin's password is reset (e.g., suspected account compromise), refresh tokens are revoked immediately by `AuthService.changePassword()` which calls `refreshTokenRepository.revokeAllByUserIdAndTenantId()`. This prevents session extension. However, the existing access token (JWT) remains valid until its TTL expires — up to 1 hour. During that window, an attacker with the stolen access token can continue making authenticated API calls even after the password reset.
+
+**Scenarios where this matters:**
+
+| Scenario | Impact |
+|---|---|
+| Admin forgot password, calls support for reset | Not logged in; mid-session case does not apply. No exposure. |
+| Admin account suspected compromised, SUPER_ADMIN resets password | Attacker may hold an active access token. It survives the reset for up to the remaining TTL. |
+
+**Current mitigation:**  
+Refresh-token revocation caps exposure to the remaining access-token lifetime (at most the configured TTL, typically 1 hour from issuance). The attacker cannot extend the session past that window.
+
+**Why accepted for V1:**  
+Full immediate invalidation requires one of:  
+(a) Middleware checking `token.iat` against `user.password_changed_at` on every request — adds a DB read (or Redis lookup) to the hot path.  
+(b) A Redis token denylist checked per request — same per-request overhead, plus operational complexity.  
+
+The threat model for V1 (Kenyan SME HR product, low-frequency admin operations, no bulk-payment or PII-extraction API) does not justify the added latency and infrastructure complexity. The refresh-token revocation already in place provides meaningful containment.
+
+**If full immediate invalidation is needed later:**  
+Preferred option: add `password_changed_at TIMESTAMP` to the `users` table. `JwtVerificationFilter` reads this once per request (Redis-cached with a short TTL, e.g. 60s) and rejects tokens issued before the timestamp. This is stateless-friendly and adds one cache read per request.  
+Alternative: Redis token denylist — higher operational cost, same result.
+
+**Note:** This is a deliberate documented acceptance, not an undiscovered assumption.
+
+---
+
 ### SEC-BACKLOG-002 — useRoleGuard fails open when user is null
 
 **Raised:** 2026-05-20  
