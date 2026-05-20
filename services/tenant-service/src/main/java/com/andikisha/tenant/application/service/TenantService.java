@@ -63,7 +63,7 @@ public class TenantService {
                 .orElseThrow(() -> new BusinessRuleException(
                         "INVALID_PLAN", "Plan not found: " + planName));
 
-        String workspaceSlug = slugGeneratorService.generate(request.companyName(), null);
+        String workspace = slugGeneratorService.generate(request.companyName(), null);
 
         Tenant tenant = Tenant.create(
                 request.companyName(),
@@ -72,7 +72,7 @@ public class TenantService {
                 normalizedEmail,
                 request.adminPhone(),
                 plan,
-                workspaceSlug
+                workspace
         );
 
         final Tenant savedTenant = tenantRepository.save(tenant);
@@ -193,7 +193,7 @@ public class TenantService {
         return mapper.toResponse(savedTenant);
     }
 
-    public java.util.Optional<Tenant> findByWorkspaceSlug(String slug) {
-        return tenantRepository.findByWorkspaceSlug(slug.toLowerCase());
+    public java.util.Optional<Tenant> findByWorkspace(String workspace) {
+        return tenantRepository.findByWorkspace(workspace.toLowerCase());
     }
 }

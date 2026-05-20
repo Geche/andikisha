@@ -52,9 +52,11 @@ public record CreateTenantWithLicenceRequest(
         int trialDays,
 
         @Pattern(
-                regexp = "^[a-z0-9]+(-[a-z0-9]+)*$",
-                message = "Workspace slug must be lowercase letters, numbers, and hyphens only"
+                regexp = "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+                message = "Workspace must be lowercase letters, numbers, or hyphens and start/end with alphanumeric"
         )
-        @Size(max = 50, message = "Workspace slug must not exceed 50 characters")
-        String workspaceSlug   // nullable — auto-generated from organisationName if null
+        @Size(max = 20, message = "Workspace must not exceed 20 characters")
+        String workspace,      // nullable — auto-generated from organisationName if null
+
+        Boolean bypassWorkEmailCheck  // nullable — if true, skips the consumer-domain warning
 ) {}

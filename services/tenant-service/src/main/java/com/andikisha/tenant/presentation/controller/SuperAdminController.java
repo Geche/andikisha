@@ -12,6 +12,7 @@ import com.andikisha.tenant.application.dto.response.ProvisionedTenantResponse;
 import com.andikisha.tenant.application.dto.response.SuperAdminAnalyticsResponse;
 import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
+import com.andikisha.tenant.application.dto.response.WorkspaceAvailabilityResponse;
 import com.andikisha.tenant.application.dto.request.ExtendTrialRequest;
 import com.andikisha.tenant.application.dto.response.FeatureFlagResponse;
 import com.andikisha.tenant.application.service.FeatureFlagService;
@@ -195,6 +196,18 @@ public class SuperAdminController {
     @Operation(summary = "Reset the tenant admin password and return a new temporary password")
     public AdminPasswordResetResponse resetAdminPassword(@PathVariable UUID tenantId) {
         return superAdminTenantService.resetAdminPassword(tenantId, currentUserId());
+    }
+
+    @GetMapping("/workspaces/{workspace}/available")
+    @Operation(summary = "Check whether a workspace identifier is available for use")
+    public WorkspaceAvailabilityResponse checkWorkspaceAvailability(
+            @PathVariable @Pattern(
+                    regexp = "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+                    message = "Workspace must be lowercase letters, numbers, or hyphens and start/end with alphanumeric"
+            )
+            @Size(max = 20)
+            String workspace) {
+        return new WorkspaceAvailabilityResponse(superAdminTenantService.isWorkspaceAvailable(workspace));
     }
 
     @GetMapping("/tenants/{tenantId}/feature-flags")

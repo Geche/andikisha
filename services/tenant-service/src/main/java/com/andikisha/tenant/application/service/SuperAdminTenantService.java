@@ -81,10 +81,26 @@ public class SuperAdminTenantService {
         this.slugGeneratorService = slugGeneratorService;
     }
 
+    private static final java.util.Set<String> CONSUMER_EMAIL_DOMAINS = java.util.Set.of(
+            "gmail.com", "yahoo.com", "yahoo.co.ke", "hotmail.com", "outlook.com",
+            "live.com", "icloud.com", "me.com", "protonmail.com", "aol.com"
+    );
+
     @Transactional
     public ProvisionedTenantResponse createTenantWithLicence(CreateTenantWithLicenceRequest request,
                                                              String createdBy) {
         String normalizedEmail = request.adminEmail().toLowerCase(Locale.ROOT).trim();
+
+        // Work-domain check: block consumer email domains unless explicitly bypassed.
+        String emailDomain = normalizedEmail.contains("@")
+                ? normalizedEmail.substring(normalizedEmail.indexOf('@') + 1)
+                : "";
+        if (CONSUMER_EMAIL_DOMAINS.contains(emailDomain)
+                && !Boolean.TRUE.equals(request.bypassWorkEmailCheck())) {
+            throw new BusinessRuleException("CONSUMER_EMAIL_DOMAIN",
+                    "Admin email uses a personal domain (" + emailDomain + "). "
+                    + "Use a work email address, or set bypassWorkEmailCheck=true to override.");
+        }
 
         if (tenantRepository.existsByAdminEmail(normalizedEmail)) {
             throw new DuplicateResourceException("Tenant", "adminEmail", normalizedEmail);
@@ -101,19 +117,19 @@ public class SuperAdminTenantService {
             throw new BusinessRuleException("INVALID_PLAN", "Plan is not active: " + plan.getName());
         }
 
-        // 1. Generate (or validate and deduplicate) the workspace slug.
-        String workspaceSlug = slugGeneratorService.generate(
-                request.organisationName(), request.workspaceSlug());
+        // 1. Generate (or validate and deduplicate) the workspace.
+        String workspace = slugGeneratorService.generate(
+                request.organisationName(), request.workspace());
 
-        // 2. Check slug uniqueness before creating tenant (gives a clear user-facing error).
-        if (tenantRepository.existsByWorkspaceSlug(workspaceSlug)) {
-            throw new DuplicateResourceException("Tenant", "workspaceSlug", workspaceSlug);
+        // 2. Check workspace uniqueness before creating tenant (gives a clear user-facing 409).
+        if (tenantRepository.existsByWorkspace(workspace)) {
+            throw new DuplicateResourceException("Tenant", "workspace", workspace);
         }
 
         // 3. Create the tenant aggregate.
         Tenant tenant = Tenant.create(
                 request.organisationName(), DEFAULT_COUNTRY, DEFAULT_CURRENCY,
-                normalizedEmail, request.adminPhone(), plan, workspaceSlug);
+                normalizedEmail, request.adminPhone(), plan, workspace);
         Tenant savedTenant = tenantRepository.save(tenant);
 
         // 2. Create the initial licence row in the same transaction.
@@ -148,7 +164,7 @@ public class SuperAdminTenantService {
         return new ProvisionedTenantResponse(
                 savedTenant.getId(),
                 savedTenant.getCompanyName(),
-                savedTenant.getWorkspaceSlug(),
+                savedTenant.getWorkspace(),
                 licence.getLicenceKey(),
                 licence.getStatus(),
                 plan.getName(),
@@ -171,7 +187,7 @@ public class SuperAdminTenantService {
         return new TenantDetailResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
-                tenant.getWorkspaceSlug(),
+                tenant.getWorkspace(),
                 tenant.getStatus().name(),
                 tenant.getCreatedAt(),
                 tenant.getAdminEmail(),
@@ -203,7 +219,7 @@ public class SuperAdminTenantService {
         return new TenantSummaryResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
-                tenant.getWorkspaceSlug(),
+                tenant.getWorkspace(),
                 tenant.getStatus().name(),
                 licence != null ? licence.planName() : tenant.getPlan().getName(),
                 licence != null ? licence.seatCount() : null,
@@ -273,6 +289,10 @@ public class SuperAdminTenantService {
                 tenant.getTenantId(),
                 tenant.getAdminEmail(),
                 temporaryPassword);
+    }
+
+    public boolean isWorkspaceAvailable(String workspace) {
+        return !tenantRepository.existsByWorkspace(workspace);
     }
 
     public Page<TenantSummaryResponse> filterTenants(List<TenantStatus> statuses, Pageable pageable) {
