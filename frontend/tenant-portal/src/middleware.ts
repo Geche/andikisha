@@ -5,6 +5,10 @@ import { findCorrectDashboard, ADMIN_ROLES } from "@andikisha/ui/auth";
 const PUBLIC_PATHS = ["/login"];
 const PUBLIC_PREFIXES = ["/api/auth/", "/_next/", "/preview", "/reset-password/"];
 
+// /set-password is an authenticated route (requires a valid JWT) but renders
+// outside any (my)/(admin) layout — no sidebar, no nav. Handled separately below.
+const SET_PASSWORD_PATH = "/set-password";
+
 function isPublic(pathname: string): boolean {
   return (
     PUBLIC_PATHS.includes(pathname) ||
@@ -55,7 +59,7 @@ export async function middleware(request: NextRequest) {
       : [];
     const roleSet = new Set<string>(rawRoles.filter((r): r is string => typeof r === "string"));
 
-    // Build augmented headers early — needed for the change-password early-return path.
+    // Build augmented headers early — needed for /set-password and all downstream routes.
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", String(payload.sub ?? ""));
     requestHeaders.set("x-user-email", String(payload.email ?? ""));
@@ -67,17 +71,22 @@ export async function middleware(request: NextRequest) {
     }
 
     // Path evaluation — in priority order.
-    // 1. Force change-password redirect for accounts requiring it.
-    //    When the user IS on /my/change-password, skip ALL role-routing checks and allow
-    //    access regardless of role. Without this, ADMIN users (who lack the EMPLOYEE role)
-    //    hit the /my/* role check below and get bounced to /admin/dashboard, which then
-    //    redirects back here — causing an infinite loop.
     const mustChangePassword = payload.mustChangePassword === true;
+
+    // 1. Forced-password-change gate.
+    //    /set-password is a standalone full-page route (no sidebar, no nav).
+    //    When mustChangePassword=true: all authenticated routes redirect here.
+    //    When mustChangePassword=false: accessing /set-password directly redirects to dashboard
+    //    (prevents navigating back to the gate after completing it).
     if (mustChangePassword) {
-      if (pathname === "/my/change-password") {
+      if (pathname === SET_PASSWORD_PATH) {
         return NextResponse.next({ request: { headers: requestHeaders } });
       }
-      return NextResponse.redirect(new URL("/my/change-password", request.url));
+      return NextResponse.redirect(new URL(SET_PASSWORD_PATH, request.url));
+    }
+    if (pathname === SET_PASSWORD_PATH) {
+      // Password already set — redirect to correct dashboard so the gate can't be revisited.
+      return NextResponse.redirect(new URL(findCorrectDashboard(roleSet), request.url));
     }
 
     // 2. SUPER_ADMIN anywhere → platform portal

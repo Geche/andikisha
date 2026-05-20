@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff } from "lucide-react";
+import { LogoFull } from "@andikisha/ui";
+import { findCorrectDashboard } from "@andikisha/ui/auth";
 
-export default function ChangePasswordPage() {
+export default function SetPasswordPage() {
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword]         = useState("");
@@ -48,14 +50,27 @@ export default function ChangePasswordPage() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
+      const data = await res.json() as {
+        ok?: boolean;
+        message?: string;
+        roles?: string[];
+        redirectToLogin?: boolean;
+      };
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { message?: string };
         setError(data.message ?? "Failed to change password. Check your current password and try again.");
         return;
       }
 
-      // Cookie cleared by BFF. Redirect to login for a fresh session.
-      router.replace("/login");
+      if (data.redirectToLogin) {
+        // Re-authentication failed after change — send to login (edge case)
+        router.replace("/login");
+        return;
+      }
+
+      // Fresh JWT is set in the cookie by the BFF. Navigate to the correct dashboard.
+      const roles = new Set<string>(data.roles ?? []);
+      router.replace(findCorrectDashboard(roles));
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -64,8 +79,17 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
-      <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm w-full max-w-[400px] p-8">
+    <div
+      className="min-h-screen flex flex-col items-center justify-between px-4 py-8"
+      style={{
+        background: "linear-gradient(135deg, #071E13 0%, #0B3D2E 50%, #166A50 100%)",
+      }}
+    >
+      <div className="w-full flex justify-center pt-2">
+        <LogoFull className="h-[28px] w-auto brightness-0 invert" />
+      </div>
+
+      <div className="bg-white border border-neutral-200 rounded-2xl shadow-2xl w-full max-w-[420px] px-8 py-10">
         <div className="flex items-center justify-center w-12 h-12 bg-brand-50 rounded-xl mb-5">
           <Lock size={22} className="text-brand-700" />
         </div>
@@ -76,7 +100,6 @@ export default function ChangePasswordPage() {
         </p>
 
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
-          {/* Current (temporary) password */}
           <div>
             <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
               Current (temporary) password
@@ -101,7 +124,6 @@ export default function ChangePasswordPage() {
             </div>
           </div>
 
-          {/* New password */}
           <div>
             <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
               New password
@@ -138,7 +160,6 @@ export default function ChangePasswordPage() {
             )}
           </div>
 
-          {/* Confirm password */}
           <div>
             <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
               Confirm new password
@@ -168,6 +189,10 @@ export default function ChangePasswordPage() {
           </button>
         </form>
       </div>
+
+      <p className="text-[12px] text-white/50 pb-2">
+        &copy; {new Date().getFullYear()} AndikishaHR Limited. All rights reserved.
+      </p>
     </div>
   );
 }
