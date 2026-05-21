@@ -97,6 +97,31 @@ jobs:
             kubectl rollout status deployment/${SVC} -n andikisha --timeout=10m
           done
 
+      - name: Smoke test (api-gateway health)
+        run: |
+          # TODO: replace the LoadBalancer hostname lookup with your production
+          # DNS name once it is stable (e.g. api.andikisha.com). The retry loop
+          # handles the LB case for now.
+          # 18 attempts × 10 s = 3 minutes maximum wait.
+          GATEWAY=""
+          for i in {1..18}; do
+            GATEWAY=$(kubectl get svc api-gateway -n andikisha-production \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$GATEWAY" ] && break
+            echo "Waiting for LoadBalancer hostname (attempt $i/18)..."
+            sleep 10
+          done
+          if [ -z "$GATEWAY" ]; then
+            echo "ERROR: api-gateway LoadBalancer hostname not assigned after 3 minutes."
+            exit 1
+          fi
+          echo "Smoke-testing http://${GATEWAY}/actuator/health"
+          curl -sf --retry 5 --retry-delay 10 http://${GATEWAY}/actuator/health || {
+            echo "ERROR: api-gateway health check failed — investigate before declaring the deploy successful."
+            exit 1
+          }
+          echo "Production smoke test passed."
+
       - name: Commit image tags to git
         env:
           TAG: ${{ github.event.inputs.image_tag }}
