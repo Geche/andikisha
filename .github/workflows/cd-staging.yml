@@ -90,8 +90,7 @@ jobs:
                     integration-hub-service analytics-service audit-service)
           for SVC in "${SERVICES[@]}"; do
             echo "Waiting for $SVC..."
-            kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m || \
-              echo "WARNING: ${SVC} rollout timed out or failed"
+            kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m
           done
 
       - name: Smoke test
