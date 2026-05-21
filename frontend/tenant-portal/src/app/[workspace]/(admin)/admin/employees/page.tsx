@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AlertTriangle, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
-import { PageHeader } from "@andikisha/ui";
+import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -153,6 +153,7 @@ function TableSkeleton() {
 export default function EmployeesPage() {
   const workspace = useWorkspace();
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -183,11 +184,11 @@ export default function EmployeesPage() {
   }
 
   const { data, isLoading, isError, refetch } = useQuery<PagedResponse<EmployeeSummary>>({
-    queryKey: ["employees", page, status, debouncedSearch, sortField, sortDir],
+    queryKey: ["employees", page, pageSize, status, debouncedSearch, sortField, sortDir],
     queryFn: () => {
       const params: Record<string, string | number> = {
         page,
-        size: 25,
+        size: pageSize,
         sort: `${sortField},${sortDir}`,
       };
       if (status !== "ALL") params.status = status;
@@ -219,7 +220,7 @@ export default function EmployeesPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {/* Filter tabs + search row */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-1 border-b border-neutral-200 flex-1">
@@ -335,29 +336,15 @@ export default function EmployeesPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between text-[13px]">
-            <p className="text-neutral-500">
-              Page {page + 1} of {totalPages} · {totalElements.toLocaleString()} employees
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          currentPage={page}
+          totalPages={totalPages}
+          totalCount={totalElements}
+          pageSize={pageSize}
+          itemLabel="employees"
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+        />
       </div>
     </div>
   );

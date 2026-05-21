@@ -14,6 +14,7 @@ import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
 import com.andikisha.tenant.application.dto.response.WorkspaceAvailabilityResponse;
 import com.andikisha.tenant.application.dto.request.ExtendTrialRequest;
+import com.andikisha.tenant.application.dto.request.UpdateWorkspaceRequest;
 import com.andikisha.tenant.application.dto.response.FeatureFlagResponse;
 import com.andikisha.tenant.application.service.FeatureFlagService;
 import com.andikisha.tenant.application.service.LicencePlanService;
@@ -196,6 +197,15 @@ public class SuperAdminController {
     @Operation(summary = "Reset the tenant admin password and return a new temporary password")
     public AdminPasswordResetResponse resetAdminPassword(@PathVariable UUID tenantId) {
         return superAdminTenantService.resetAdminPassword(tenantId, currentUserId());
+    }
+
+    @PatchMapping("/tenants/{tenantId}/workspace")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Update the workspace identifier for a tenant")
+    public void updateWorkspace(
+            @PathVariable UUID tenantId,
+            @RequestBody @Valid UpdateWorkspaceRequest request) {
+        superAdminTenantService.updateWorkspace(tenantId, request.workspace(), currentUserId());
     }
 
     @GetMapping("/workspaces/{workspace}/available")

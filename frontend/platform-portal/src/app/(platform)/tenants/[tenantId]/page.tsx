@@ -1,12 +1,12 @@
 "use client";
 
-import { use, useState, type FormEvent } from "react";
+import { use, useRef, useState, type FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Building2, AlertTriangle, Check, Copy,
   ToggleLeft, ToggleRight, Plus, ChevronRight,
-  ShieldAlert, ShieldCheck, Timer, KeyRound, XCircle,
+  ShieldAlert, ShieldCheck, Timer, KeyRound, XCircle, Pencil,
 } from "lucide-react";
 import {
   PageHeader, Button, Badge, Spinner, InlineAlert,
@@ -36,7 +36,7 @@ interface LicenceInfo {
 interface TenantDetail {
   tenantId: string;
   organisationName: string;
-  workspaceSlug: string;
+  workspace: string;
   status: string;
   createdAt: string;
   adminEmail: string;
@@ -339,6 +339,112 @@ function CancelModal({ orgName, onConfirm, onClose, loading, error }: {
   );
 }
 
+// ─── Workspace edit modal ─────────────────────────────────────────────────────
+
+const WORKSPACE_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+
+function WorkspaceEditModal({
+  currentWorkspace,
+  onSuccess,
+  onClose,
+  loading,
+  error,
+}: {
+  currentWorkspace: string;
+  onSuccess: (newWorkspace: string) => void;
+  onClose: () => void;
+  loading: boolean;
+  error: string | null;
+}) {
+  const [value, setValue] = useState(currentWorkspace);
+  const [checking, setChecking] = useState(false);
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const formatValid =
+    value.length > 0 &&
+    value.length <= 20 &&
+    WORKSPACE_RE.test(value);
+  const isUnchanged = value === currentWorkspace;
+  const canSubmit = formatValid && !isUnchanged && available === true && !loading;
+
+  function handleChange(v: string) {
+    setValue(v);
+    setAvailable(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!WORKSPACE_RE.test(v) || v === currentWorkspace || v.length === 0) return;
+    setChecking(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await apiClient.get<{ available: boolean }>(
+          `/api/v1/super-admin/workspaces/${encodeURIComponent(v)}/available`
+        );
+        setAvailable(res.data.available);
+      } catch {
+        setAvailable(null);
+      } finally {
+        setChecking(false);
+      }
+    }, 400);
+  }
+
+  let hint: string | undefined;
+  if (value.length > 20) hint = "Maximum 20 characters";
+  else if (value.length > 0 && !WORKSPACE_RE.test(value))
+    hint = "Only lowercase letters, numbers, and hyphens. Must start and end with a letter or number.";
+  else if (isUnchanged) hint = "Enter a different workspace to save";
+  else if (checking) hint = "Checking availability…";
+  else if (available === false) hint = "This workspace is already taken";
+  else if (available === true) hint = "Available";
+
+  return (
+    <ConfirmModal title="Change workspace" onClose={onClose}>
+      <div className="flex items-start gap-2.5 rounded-xl bg-amber-light border border-amber px-4 py-3">
+        <AlertTriangle size={15} className="text-amber flex-shrink-0 mt-0.5" />
+        <p className="text-[12.5px] text-amber-text leading-relaxed">
+          Changing the workspace will break existing login links. The tenant admin and all employees
+          will need the new URL:{" "}
+          <span className="font-semibold">
+            andikishahr.com/{value || "…"}/login
+          </span>
+          . The welcome email already sent will no longer work.
+        </p>
+      </div>
+      {error && <InlineAlert variant="error">{error}</InlineAlert>}
+      <FormField
+        label="New workspace"
+        htmlFor="workspace-edit"
+        required
+        hint={hint}
+      >
+        <Input
+          id="workspace-edit"
+          value={value}
+          onChange={(e) => handleChange(e.target.value.toLowerCase())}
+          placeholder="e.g. acme-corp"
+          maxLength={21}
+          error={
+            (value.length > 0 && !WORKSPACE_RE.test(value)) ||
+            available === false
+          }
+        />
+      </FormField>
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button disabled={!canSubmit} onClick={() => onSuccess(value)}>
+          {loading ? (
+            <><Spinner size="sm" className="mr-1.5" />Saving…</>
+          ) : (
+            "Save workspace"
+          )}
+        </Button>
+      </div>
+    </ConfirmModal>
+  );
+}
+
 // ─── Feature flag inline confirm ──────────────────────────────────────────────
 
 function FlagToggleRow({
@@ -399,7 +505,7 @@ function FlagToggleRow({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type ModalType = "suspend" | "reactivate" | "extend-trial" | "reset-password" | "cancel" | null;
+type ModalType = "suspend" | "reactivate" | "extend-trial" | "reset-password" | "cancel" | "edit-workspace" | null;
 
 export default function TenantDetailPage({
   params,
@@ -420,7 +526,7 @@ export default function TenantDetailPage({
 
   // ── Data queries ────────────────────────────────────────────────────────────
 
-  const { data, isLoading, isError } = useQuery<TenantDetail>({
+  const { data, isLoading, isError, error, refetch } = useQuery<TenantDetail>({
     queryKey: ["tenant", tenantId],
     queryFn: () => apiClient.get(`/api/v1/super-admin/tenants/${tenantId}`).then((r) => r.data),
     retry: false,
@@ -511,6 +617,24 @@ export default function TenantDetailPage({
     onError: () => setActionError("Cancellation failed. The account may already be cancelled."),
   });
 
+  const updateWorkspaceMut = useMutation({
+    mutationFn: (newWorkspace: string) =>
+      apiClient.patch(`/api/v1/super-admin/tenants/${tenantId}/workspace`, { workspace: newWorkspace }),
+    onSuccess: (_, newWorkspace) => {
+      invalidate();
+      setActiveModal(null);
+      toast(`Workspace updated to '${newWorkspace}'`);
+    },
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      setActionError(
+        status === 409
+          ? "That workspace is already taken. Choose a different one."
+          : "Failed to update workspace. Try again."
+      );
+    },
+  });
+
   async function toggleFlag(key: string, enable: boolean) {
     setPendingFlagKey(key);
     try {
@@ -567,10 +691,189 @@ export default function TenantDetailPage({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (isError) {
+    const is404 = (error as { response?: { status?: number } })?.response?.status === 404;
     return (
       <>
-        <PageHeader title="Tenant" actions={<Button variant="secondary" size="sm" onClick={() => router.push("/tenants")}><ArrowLeft size={13} className="mr-1" />All Tenants</Button>} />
-        <div className="px-8 py-8"><InlineAlert variant="error">Tenant not found or failed to load. It may have been deleted.</InlineAlert></div>
+        <PageHeader
+          title="Tenant"
+          actions={<Button variant="secondary" size="sm" onClick={() => router.push("/tenants")}><ArrowLeft size={13} className="mr-1" />All Tenants</Button>}
+        />
+        <div className="px-8 py-8 flex flex-col gap-3 max-w-xl">
+          <InlineAlert variant="error">
+            {is404
+              ? "No tenant with this ID exists."
+              : "Couldn't load this tenant. Check your connection."}
+          </InlineAlert>
+          {!is404 && (
+            <Button variant="secondary" size="sm" onClick={() => void refetch()} className="self-start">
+              Try again
+            </Button>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // ── Cancelled tenant — read-only retention record ───────────────────────────
+
+  if (!isLoading && data && isCancelled) {
+    const cancelEvent = [...history].reverse().find((e) => e.newStatus === "CANCELLED");
+    const cancelDate = cancelEvent?.changedAt ?? null;
+    // No user-by-ID endpoint exists in auth-service; resolution would require a new endpoint
+    // + proxy allowlist change. The actor is always SUPER_ADMIN, so use a readable fallback.
+    const cancelActor = cancelEvent?.changedBy ? "a platform administrator" : null;
+    const cancelReason = cancelEvent?.changeReason ?? null;
+
+    const retentionDate = cancelDate
+      ? (() => { const d = new Date(cancelDate); d.setFullYear(d.getFullYear() + 7); return d.toISOString(); })()
+      : null;
+
+    return (
+      <>
+        <PageHeader
+          title={orgName}
+          subtitle="Cancelled account"
+          actions={
+            <Button variant="secondary" size="sm" onClick={() => router.push("/tenants")}>
+              <ArrowLeft size={13} className="mr-1" />All Tenants
+            </Button>
+          }
+        />
+
+        <div className="px-8 py-6 max-w-5xl mx-auto flex flex-col gap-5">
+
+          {/* 3.1 Cancellation banner — muted neutral, not red */}
+          <div className="border-l-4 border-neutral-300 bg-neutral-50 rounded-r-xl px-5 py-4">
+            <p className="text-[13.5px] font-semibold text-neutral-700">
+              {historyLoading
+                ? "Loading cancellation details…"
+                : <>
+                    This tenant was cancelled on {fmtDate(cancelDate)}
+                    {cancelActor ? ` by ${cancelActor}` : ""}.
+                  </>
+              }
+            </p>
+            {cancelReason && (
+              <p className="text-[13px] text-neutral-500 mt-1">{cancelReason}</p>
+            )}
+          </div>
+
+          {/* 3.2 Identity strip */}
+          <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="p-5 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                <Building2 size={18} className="text-neutral-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[16px] font-bold text-near-black truncate">{data.organisationName}</p>
+                <p className="text-[12px] text-neutral-500 truncate">{data.adminEmail}</p>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {data.adminPhone && (
+                  <span className="text-[12px] text-neutral-500 hidden sm:block">{data.adminPhone}</span>
+                )}
+                <span className="inline-flex items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-500">
+                  Cancelled
+                </span>
+              </div>
+            </div>
+            <div className="px-5 pb-3 flex items-center gap-6 flex-wrap text-[12px] text-neutral-400">
+              <span>Tenant ID: <span className="font-mono text-neutral-600" title={tenantId}>{tenantId.slice(0, 8)}…</span></span>
+              <span className="flex items-center gap-1.5">
+                Workspace:{" "}
+                <code className="font-mono text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded text-[11px]">
+                  {data.workspace}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(data.workspace); toast("Workspace copied"); }}
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                  aria-label="Copy workspace"
+                >
+                  <Copy size={11} />
+                </button>
+              </span>
+              <span>Created: {fmtDate(data.createdAt)}</span>
+            </div>
+          </div>
+
+          {/* 3.3 Licence history — centrepiece for cancelled tenants */}
+          <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-neutral-100">
+              <p className="text-[14px] font-bold text-near-black">Licence History</p>
+            </div>
+            {historyLoading ? (
+              <div className="flex justify-center py-8"><Spinner /></div>
+            ) : history.length === 0 ? (
+              <p className="px-5 py-8 text-[13px] text-neutral-400 text-center">No history entries.</p>
+            ) : (
+              <div className="divide-y divide-neutral-100">
+                {[...history].reverse().map((entry) => (
+                  <div key={entry.id} className="px-5 py-3 flex items-start gap-4">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className={`w-2 h-2 rounded-full mt-1.5 ${entry.newStatus === "CANCELLED" ? "bg-neutral-500" : "bg-neutral-300"}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge status={licenceStatusBadge(entry.previousStatus || "draft")}>{entry.previousStatus || "—"}</Badge>
+                        <span className="text-[12px] text-neutral-400">→</span>
+                        <Badge status={licenceStatusBadge(entry.newStatus)}>{entry.newStatus}</Badge>
+                        {entry.changeReason && (
+                          <span className="text-[12px] text-neutral-500 truncate max-w-[240px]">{entry.changeReason}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-[12px] text-neutral-500">{fmtDateTime(entry.changedAt)}</p>
+                      <p className="text-[11px] text-neutral-400 font-mono cursor-default" title={entry.changedBy ?? ""}>
+                        {formatChangedBy(entry.changedBy)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 3.4 Retention statement */}
+          {retentionDate && (
+            <div className="bg-surface border border-neutral-200 rounded-xl px-5 py-4">
+              <p className="text-[13px] text-neutral-600">
+                Data retained until <span className="font-semibold text-near-black">{fmtDate(retentionDate)}</span> per KRA record-keeping requirements.
+              </p>
+            </div>
+          )}
+
+          {/* 3.5 Retained data acknowledgement */}
+          <div className="bg-surface border border-neutral-200 rounded-xl px-5 py-4">
+            <p className="text-[13px] text-neutral-500">
+              Employee and payroll records for this tenant are retained and available on request.
+            </p>
+          </div>
+
+          {/* Step 4 — Actions: reset password only */}
+          <div className="bg-surface border border-neutral-200 rounded-xl p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-3">Actions</p>
+            <Button size="sm" onClick={() => openModal("reset-password")}>
+              <KeyRound size={14} className="mr-1.5" />Reset password for historical data access
+            </Button>
+          </div>
+
+        </div>
+
+        {/* Reuse the existing reset-password modal */}
+        {activeModal === "reset-password" && (
+          <ResetPasswordModal
+            adminEmail={data.adminEmail}
+            onConfirm={() => resetPasswordMut.mutate()}
+            onClose={() => setActiveModal(null)}
+            loading={resetPasswordMut.isPending}
+            error={actionError}
+          />
+        )}
+        {passwordResult && (
+          <PasswordResultModal result={passwordResult} onClose={() => setPasswordResult(null)} />
+        )}
       </>
     );
   }
@@ -616,18 +919,26 @@ export default function TenantDetailPage({
               <span className="flex items-center gap-1.5">
                 Workspace:{" "}
                 <code className="font-mono text-neutral-700 bg-neutral-100 px-1.5 py-0.5 rounded text-[11px]">
-                  {data.workspaceSlug}
+                  {data.workspace}
                 </code>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText(data.workspaceSlug);
-                    toast("Workspace slug copied");
+                    navigator.clipboard.writeText(data.workspace);
+                    toast("Workspace copied");
                   }}
                   className="text-neutral-400 hover:text-neutral-600 transition-colors"
-                  aria-label="Copy workspace slug"
+                  aria-label="Copy workspace"
                 >
                   <Copy size={11} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openModal("edit-workspace")}
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                  aria-label="Edit workspace"
+                >
+                  <Pencil size={11} />
                 </button>
               </span>
               <span>Created: {fmtDate(data.createdAt)}</span>
@@ -909,6 +1220,15 @@ export default function TenantDetailPage({
           onConfirm={() => cancelMut.mutate()}
           onClose={() => setActiveModal(null)}
           loading={cancelMut.isPending}
+          error={actionError}
+        />
+      )}
+      {activeModal === "edit-workspace" && data && (
+        <WorkspaceEditModal
+          currentWorkspace={data.workspace}
+          onSuccess={(newWorkspace) => updateWorkspaceMut.mutate(newWorkspace)}
+          onClose={() => setActiveModal(null)}
+          loading={updateWorkspaceMut.isPending}
           error={actionError}
         />
       )}

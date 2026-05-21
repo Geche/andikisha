@@ -520,6 +520,33 @@ Kenya Employment Act, 2007 §52: the employer must provide a Certificate of Serv
 
 ---
 
+## Frontend
+
+### UI-BACKLOG-002 — Consolidate custom tables onto the DataTable primitive
+
+**Raised:** 2026-05-20  
+**Priority:** Low — cosmetic inconsistency; no functional impact.
+
+**Problem:**  
+Five tenant-portal tables use bespoke `<table>` implementations while platform-portal uses the `<DataTable>` primitive from `@andikisha/ui`. This is two patterns for the same job.
+
+**Affected tables:**
+- `[workspace]/(admin)/admin/employees/page.tsx`
+- `[workspace]/(admin)/admin/payroll/page.tsx`
+- `[workspace]/(admin)/admin/leave/page.tsx`
+- `[workspace]/(my)/my/attendance/page.tsx`
+- `[workspace]/(my)/my/payslips/page.tsx`
+
+**Current state after 2026-05-20:**  
+Pagination duplication is resolved — all five tables now use the shared `<PaginationBar>` primitive. The remaining inconsistency is the table-body implementation only.
+
+**Recommended approach:**  
+Migrate each custom table to `<DataTable>` incrementally — when each is next touched for a feature or bug fix — rather than in one big refactor that risks regressions across five working surfaces. Do not migrate tables solely for consistency; wait until there is another reason to touch the file.
+
+**Long-term target:** All tables use `<DataTable>`.
+
+---
+
 ## Infrastructure
 
 ### INFRA-BACKLOG-002 — Remove orphaned employee-portal and admin-portal directories

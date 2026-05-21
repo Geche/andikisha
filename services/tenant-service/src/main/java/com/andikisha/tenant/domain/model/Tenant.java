@@ -184,4 +184,8 @@ public class Tenant extends BaseEntity {
     public int getPayDay() { return payDay; }
     public String getSuspensionReason() { return suspensionReason; }
     public String getWorkspace() { return workspace; }
+
+    public void updateWorkspace(String newWorkspace) {
+        this.workspace = newWorkspace;
+    }
 }

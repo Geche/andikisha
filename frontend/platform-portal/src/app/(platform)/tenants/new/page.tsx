@@ -29,7 +29,7 @@ interface PlanOption {
 interface ProvisionedTenant {
   tenantId: string;
   organisationName: string;
-  workspaceSlug: string;
+  workspace: string;
   licenceKey: string;
   licenceStatus: string;
   planName: string;
@@ -66,7 +66,7 @@ function SuccessModal({
   const [copiedSlug, setCopiedSlug] = useState(false);
 
   function handleCopySlug() {
-    navigator.clipboard.writeText(result.workspaceSlug).then(() => {
+    navigator.clipboard.writeText(result.workspace).then(() => {
       setCopiedSlug(true);
       setTimeout(() => setCopiedSlug(false), 2500);
     });
@@ -107,7 +107,7 @@ function SuccessModal({
           </p>
           <div className="flex items-center justify-between gap-3">
             <code className="font-mono text-[18px] font-bold text-brand-950">
-              {result.workspaceSlug}
+              {result.workspace}
             </code>
             <button
               type="button"
@@ -130,7 +130,7 @@ function SuccessModal({
           <p className="mt-1.5 text-[11.5px] text-brand-700">
             Login URL:{" "}
             <span className="font-mono">
-              app.andikishahr.com/login?workspace={result.workspaceSlug}
+              app.andikishahr.com/{result.workspace}/login
             </span>
           </p>
         </div>
@@ -322,7 +322,7 @@ export default function ProvisionTenantPage() {
         seatCount: parseInt(seatCount, 10),
         agreedPriceKes: parseFloat(agreedPriceKes),
         trialDays: parseInt(trialDays, 10),
-        workspaceSlug: workspaceSlug || undefined,
+        workspace: workspaceSlug || undefined,
       });
       setResult(res.data as ProvisionedTenant);
     } catch (err: unknown) {
@@ -411,7 +411,7 @@ export default function ProvisionTenantPage() {
                 <p className="mt-1 text-[12px] text-neutral-500">
                   Auto-generated from organisation name. Customers use this to sign in.{" "}
                   <span className="font-mono text-neutral-600">
-                    app.andikishahr.com/login?workspace={workspaceSlug || "…"}
+                    app.andikishahr.com/{workspaceSlug || "…"}/login
                   </span>
                 </p>
               </div>

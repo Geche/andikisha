@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
-import { PageHeader } from "@andikisha/ui";
+import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { ApproveModal } from "./_components/ApproveModal";
 import { RejectModal } from "./_components/RejectModal";
@@ -61,6 +61,7 @@ function TableSkeleton() {
 
 export default function LeavePage() {
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [approveTarget, setApproveTarget] = useState<LeaveRequest | null>(null);
   const [rejectTarget, setRejectTarget] = useState<LeaveRequest | null>(null);
@@ -79,11 +80,11 @@ export default function LeavePage() {
   const pendingCount = pendingData?.totalElements ?? null;
 
   const { data, isLoading, isError, refetch } = useQuery<PagedResponse<LeaveRequest>>({
-    queryKey: ["leave-requests", page, statusFilter],
+    queryKey: ["leave-requests", page, pageSize, statusFilter],
     queryFn: () => {
       const params: Record<string, string | number> = {
         page,
-        size: 25,
+        size: pageSize,
         sort: "createdAt,desc",
       };
       if (statusFilter !== "ALL") params.status = statusFilter;
@@ -113,7 +114,7 @@ export default function LeavePage() {
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader title="Leave Management" subtitle={subtitleText} />
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {/* Status tabs */}
         <div className="border-b border-neutral-200">
           <nav className="flex items-center gap-0" aria-label="Leave status filter">
@@ -246,29 +247,15 @@ export default function LeavePage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between text-[13px]">
-            <p className="text-neutral-500">
-              Page {page + 1} of {totalPages}
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          currentPage={page}
+          totalPages={totalPages}
+          totalCount={totalElements}
+          pageSize={pageSize}
+          itemLabel="requests"
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+        />
       </div>
 
       {/* Modals */}

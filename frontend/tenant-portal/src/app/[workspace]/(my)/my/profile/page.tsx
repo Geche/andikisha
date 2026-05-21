@@ -67,7 +67,7 @@ export default function ProfilePage() {
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader title="My Profile" subtitle="Your personal and employment details" />
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-5">
         {isError && (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
             <AlertTriangle size={15} className="flex-shrink-0" />

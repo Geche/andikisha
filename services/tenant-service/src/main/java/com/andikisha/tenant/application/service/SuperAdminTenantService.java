@@ -183,7 +183,11 @@ public class SuperAdminTenantService {
     public TenantDetailResponse getTenantDetail(UUID tenantId) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new TenantNotFoundException(tenantId));
-        LicenceResponse currentLicence = safeGetCurrentLicence(tenant.getTenantId());
+        // Cancelled tenants have no active licence — skip the fetch to avoid
+        // poisoning the shared transaction via ResourceNotFoundException.
+        LicenceResponse currentLicence = tenant.getStatus() == TenantStatus.CANCELLED
+                ? null
+                : safeGetCurrentLicence(tenant.getTenantId());
         return new TenantDetailResponse(
                 tenant.getId(),
                 tenant.getCompanyName(),
@@ -293,6 +297,22 @@ public class SuperAdminTenantService {
 
     public boolean isWorkspaceAvailable(String workspace) {
         return !tenantRepository.existsByWorkspace(workspace);
+    }
+
+    @Transactional
+    public void updateWorkspace(UUID tenantId, String newWorkspace, String requestedBy) {
+        Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
+
+        if (tenant.getWorkspace().equals(newWorkspace)) {
+            throw new BusinessRuleException("Workspace is already set to '" + newWorkspace + "'");
+        }
+        if (tenantRepository.existsByWorkspace(newWorkspace)) {
+            throw new DuplicateResourceException("Tenant", "workspace", newWorkspace);
+        }
+
+        tenant.updateWorkspace(newWorkspace);
+        log.info("Workspace updated for tenantId={} to '{}' by {}", tenantId, newWorkspace, requestedBy);
     }
 
     public Page<TenantSummaryResponse> filterTenants(List<TenantStatus> statuses, Pageable pageable) {

@@ -283,7 +283,12 @@ public class LicencePlanService {
 
     /**
      * Get the current active-ish licence as a response DTO.
+     * noRollbackFor: ResourceNotFoundException is an expected outcome when a tenant has no
+     * active licence (e.g. CANCELLED). Without this, catching the exception in a caller
+     * that shares the transaction still leaves the transaction marked rollback-only, causing
+     * UnexpectedRollbackException. Callers that need null-safe behaviour use safeGetCurrentLicence.
      */
+    @Transactional(readOnly = true, noRollbackFor = ResourceNotFoundException.class)
     public LicenceResponse getCurrentLicence(String tenantId) {
         TenantLicence licence = licenceRepository.findByTenantIdAndStatusIn(tenantId,
                         List.of(LicenceStatus.TRIAL, LicenceStatus.ACTIVE,

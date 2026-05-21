@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { cn } from "../utils";
 import { Skeleton } from "./Skeleton";
+import { PaginationBar, type PaginationBarProps } from "./PaginationBar";
 
 interface Column {
   key: string;
@@ -18,6 +19,8 @@ interface DataTableProps {
   isLoading?: boolean;
   onRowClick?: (row: Record<string, ReactNode>, index: number) => void;
   className?: string;
+  /** When provided, renders a PaginationBar below the table. */
+  pagination?: Omit<PaginationBarProps, "className">;
 }
 
 const ALIGN_TH: Record<string, string> = {
@@ -39,11 +42,13 @@ export function DataTable({
   isLoading = false,
   onRowClick,
   className,
+  pagination,
 }: DataTableProps) {
   const clickable = typeof onRowClick === "function";
 
   return (
-    <div className={cn("bg-surface border border-neutral-200 rounded-xl overflow-hidden", className)}>
+    <div className={cn("flex flex-col gap-3", className)}>
+    <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-neutral-50 border-b border-neutral-200">
@@ -107,6 +112,8 @@ export function DataTable({
           )}
         </tbody>
       </table>
+    </div>
+    {pagination && <PaginationBar {...pagination} />}
     </div>
   );
 }

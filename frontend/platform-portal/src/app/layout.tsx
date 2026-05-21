@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" suppressHydrationWarning className={roboto.variable}>
-      <body className="font-body antialiased bg-surface text-near-black">
+      <body className="font-body antialiased bg-surface text-near-black" suppressHydrationWarning>
         {/*
           QueryProvider must wrap CurrentUserProvider because CurrentUserProvider
           uses useQuery internally. Inverting this order causes a "No QueryClient" error.

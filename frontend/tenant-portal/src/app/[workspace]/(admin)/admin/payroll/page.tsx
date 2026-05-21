@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AlertTriangle, AlertCircle } from "lucide-react";
-import { PageHeader } from "@andikisha/ui";
+import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -147,12 +147,13 @@ function TableSkeleton() {
 export default function PayrollPage() {
   const workspace = useWorkspace();
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data, isLoading, isError, refetch } = useQuery<PagedResponse<PayrollRun>>({
-    queryKey: ["payroll-runs", page],
+    queryKey: ["payroll-runs", page, pageSize],
     queryFn: () =>
       apiClient
-        .get("/api/v1/payroll/runs", { params: { page, size: 20, sort: "createdAt,desc" } })
+        .get("/api/v1/payroll/runs", { params: { page, size: pageSize, sort: "createdAt,desc" } })
         .then((r) => r.data),
   });
 
@@ -175,7 +176,7 @@ export default function PayrollPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {isError && (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
             <AlertTriangle size={15} className="flex-shrink-0" />
@@ -218,27 +219,15 @@ export default function PayrollPage() {
           </div>
         )}
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between text-[13px]">
-            <p className="text-neutral-500">Page {page + 1} of {totalPages}</p>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3.5 py-2 border border-neutral-200 rounded-lg font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <PaginationBar
+          currentPage={page}
+          totalPages={totalPages}
+          totalCount={totalElements}
+          pageSize={pageSize}
+          itemLabel="runs"
+          onPageChange={setPage}
+          onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+        />
       </div>
     </div>
   );

@@ -111,3 +111,6 @@ export { PageHeader } from "./components/PageHeader";
 export { QueryProvider } from "./components/QueryProvider";
 export { SidebarShell } from "./components/SidebarShell";
 export type { NavItem, NavSection } from "./components/SidebarShell";
+
+export { PaginationBar } from "./components/PaginationBar";
+export type { PaginationBarProps } from "./components/PaginationBar";

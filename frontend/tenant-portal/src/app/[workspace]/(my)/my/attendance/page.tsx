@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Clock } from "lucide-react";
-import { PageHeader } from "@andikisha/ui";
+import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface AttendanceRecord {
@@ -60,12 +60,13 @@ function fmt12(time: string | null) {
 export default function AttendancePage() {
   const [month, setMonth] = useState(MONTH_OPTIONS[0].value);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
 
   const { data, isLoading, isError } = useQuery<PagedResponse<AttendanceRecord>>({
-    queryKey: ["attendance", month, page],
+    queryKey: ["attendance", month, page, pageSize],
     queryFn: () =>
       apiClient
-        .get(`/api/v1/attendance/my?month=${month}&page=${page}&size=25&sort=date,desc`)
+        .get(`/api/v1/attendance/my?month=${month}&page=${page}&size=${pageSize}&sort=date,desc`)
         .then((r) => r.data),
   });
 
@@ -92,7 +93,7 @@ export default function AttendancePage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-5">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-5">
         {isError && (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
             <AlertTriangle size={15} className="flex-shrink-0" />
@@ -162,27 +163,17 @@ export default function AttendancePage() {
                   ))}
                 </tbody>
               </table>
-              {(data?.totalPages ?? 0) > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-neutral-100">
-                  <p className="text-[12px] text-neutral-400">Page {page + 1} of {data?.totalPages}</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
-                      disabled={page === 0}
-                      className="text-[12px] font-semibold text-neutral-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 border border-neutral-200 rounded-lg"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setPage((p) => p + 1)}
-                      disabled={page + 1 >= (data?.totalPages ?? 1)}
-                      className="text-[12px] font-semibold text-neutral-500 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 border border-neutral-200 rounded-lg"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
+              <div className="px-6 py-4 border-t border-neutral-100">
+                <PaginationBar
+                  currentPage={page}
+                  totalPages={data?.totalPages ?? 0}
+                  totalCount={data?.totalElements ?? 0}
+                  pageSize={pageSize}
+                  itemLabel="records"
+                  onPageChange={setPage}
+                  onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+                />
+              </div>
             </>
           )}
         </div>

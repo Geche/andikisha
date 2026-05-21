@@ -209,7 +209,7 @@ export default function DashboardPage() {
           title="Welcome to AndikishaHR"
           subtitle="Let's get your workspace set up."
         />
-        <div className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
           <div className="max-w-2xl">
             <WorkspaceSetupChecklist
               state={{ deptCount, posCount, empCount, payrollCount }}
@@ -252,7 +252,7 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-6">
         {allErrored && (
           <InlineAlert variant="error">
             Could not load dashboard data. Check your connection to the backend services.
