@@ -97,6 +97,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-test, frontend]
     if: github.event_name == 'push'
+    # id-token: write is required for OIDC ECR login on master pushes.
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: af-south-1
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
     strategy:
       fail-fast: false
       matrix:
@@ -132,13 +139,49 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      # PREREQUISITE — confirm the 13 ECR repositories exist before this goes live.
+      # Run from a machine with AWS access:
+      #   aws ecr describe-repositories --region af-south-1 \
+      #     --query 'repositories[].repositoryName' --output text
+      # Expected repositories (one per service):
+      #   andikisha/api-gateway  andikisha/auth-service  andikisha/tenant-service
+      #   andikisha/employee-service  andikisha/payroll-service
+      #   andikisha/compliance-service  andikisha/time-attendance-service
+      #   andikisha/leave-service  andikisha/document-service
+      #   andikisha/notification-service  andikisha/integration-hub-service
+      #   andikisha/analytics-service  andikisha/audit-service
+      # If any repository is missing, create it before merging this branch.
+      # The promote-not-rebuild model in cd-staging.yml and the ECR preflight in
+      # cd-production.yml both assume all 13 repositories exist.
+      - name: Configure AWS credentials (OIDC)
+        if: github.ref == 'refs/heads/master'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/master'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Prepare image tags
+        id: meta
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "tags=${{ env.ECR_REGISTRY }}/andikisha/${{ matrix.service }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tags=andikisha/${{ matrix.service }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: infrastructure/docker/Dockerfile.service
           build-args: SERVICE_NAME=${{ matrix.service }}
-          push: false
-          tags: andikisha/${{ matrix.service }}:${{ github.sha }}
+          push: ${{ steps.meta.outputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
