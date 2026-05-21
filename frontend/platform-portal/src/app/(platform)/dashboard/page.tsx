@@ -295,7 +295,7 @@ export default function DashboardPage() {
                 const id = row["_id"];
                 if (typeof id === "string") router.push(`/tenants/${id}`);
               }}
-              className="border-0 rounded-none"
+              className="border-0 rounded-none overflow-visible"
             />
           </div>
 

@@ -75,16 +75,16 @@ function StatusTabs({
   onChange: (v: TenantStatus) => void;
 }) {
   return (
-    <div className="flex gap-0 border-b border-neutral-200">
+    <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
       {STATUS_TABS.map((tab) => (
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
           className={
-            "px-4 py-2.5 text-[13px] font-semibold border-b-2 -mb-px transition-colors " +
+            "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all " +
             (active === tab.value
-              ? "border-b-brand-900 text-neutral-900"
-              : "border-b-transparent text-neutral-500 hover:text-neutral-800")
+              ? "bg-surface text-near-black shadow-sm"
+              : "text-neutral-500 hover:text-neutral-700")
           }
         >
           {tab.label}
@@ -196,7 +196,7 @@ export default function TenantsPage() {
 
         <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
           {/* Tabs + search bar */}
-          <div className="flex items-center justify-between px-5 pt-4 gap-4">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 gap-4">
             <StatusTabs active={statusFilter} onChange={handleStatusChange} />
             <div className="relative flex-shrink-0">
               <Search
@@ -237,7 +237,7 @@ export default function TenantsPage() {
               const id = row["_id"];
               if (typeof id === "string") router.push(`/tenants/${id}`);
             }}
-            className="border-0 rounded-none"
+            className="border-0 rounded-none overflow-visible"
           />
 
           {/* Pagination footer */}

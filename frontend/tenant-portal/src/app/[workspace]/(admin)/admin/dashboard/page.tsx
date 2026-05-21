@@ -340,16 +340,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Period tabs */}
-          <div className="flex items-center gap-0 mt-3 border-b border-neutral-100">
+          <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 mt-3 self-start">
             {CHART_PERIODS.map((p) => (
               <button
                 key={p}
                 onClick={() => setChartPeriod(p)}
-                className={`px-4 py-2 text-[13px] font-semibold border-b-2 transition-colors -mb-px ${
-                  chartPeriod === p
-                    ? "border-brand-900 text-brand-900"
-                    : "border-transparent text-neutral-400 hover:text-neutral-500"
-                }`}
+                className={
+                  "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all whitespace-nowrap " +
+                  (chartPeriod === p
+                    ? "bg-surface text-near-black shadow-sm"
+                    : "text-neutral-400 hover:text-neutral-500")
+                }
               >
                 {p}
               </button>
@@ -405,7 +406,7 @@ export default function DashboardPage() {
               const id = row["_id"];
               if (typeof id === "string") router.push(`/${workspace}/admin/payroll/${id}`);
             }}
-            className="border-0 rounded-none"
+            className="border-0 rounded-none overflow-visible"
           />
         </div>
       </div>

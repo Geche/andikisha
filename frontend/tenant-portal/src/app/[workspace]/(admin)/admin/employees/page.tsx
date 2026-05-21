@@ -102,7 +102,7 @@ function SortHeader({
   const active = current === field;
   return (
     <th
-      className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-800 transition-colors whitespace-nowrap"
+      className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide cursor-pointer select-none hover:text-neutral-800 transition-colors whitespace-nowrap"
       onClick={() => onSort(field)}
     >
       <span className="inline-flex items-center gap-1">
@@ -223,16 +223,17 @@ export default function EmployeesPage() {
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {/* Filter tabs + search row */}
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-1 border-b border-neutral-200 flex-1">
+          <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
             {STATUS_TABS.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => handleTabChange(tab.value)}
-                className={`px-4 py-2.5 text-[13px] font-semibold border-b-2 transition-colors -mb-px whitespace-nowrap ${
-                  status === tab.value
-                    ? "border-brand-900 text-brand-900"
-                    : "border-transparent text-neutral-500 hover:text-neutral-700"
-                }`}
+                className={
+                  "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all whitespace-nowrap " +
+                  (status === tab.value
+                    ? "bg-surface text-near-black shadow-sm"
+                    : "text-neutral-500 hover:text-neutral-700")
+                }
               >
                 {tab.label}
               </button>
@@ -275,14 +276,14 @@ export default function EmployeesPage() {
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="bg-neutral-50 border-b border-neutral-100">
+                <tr className="border-b border-neutral-100">
                   <SortHeader label="Name"       field="firstName"     current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Employee #" field="employeeNumber" current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Department" field="departmentName" current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Position"   field="positionTitle"  current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Status"     field="status"         current={sortField} dir={sortDir} onSort={handleSort} />
                   <SortHeader label="Hire Date"  field="hireDate"       current={sortField} dir={sortDir} onSort={handleSort} />
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide w-16">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide w-16">
                     Actions
                   </th>
                 </tr>
