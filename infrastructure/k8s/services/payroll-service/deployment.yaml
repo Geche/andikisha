@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8084"
     spec:
       terminationGracePeriodSeconds: 60
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: payroll-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: payroll-service
           image: andikisha/payroll-service:latest

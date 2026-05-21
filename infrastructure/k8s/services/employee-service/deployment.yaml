@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8082"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: employee-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: employee-service
           image: andikisha/employee-service:latest

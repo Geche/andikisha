@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8092"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: audit-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: audit-service
           image: andikisha/audit-service:latest
