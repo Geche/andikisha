@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: time-attendance-service
+  namespace: andikisha
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: time-attendance-service

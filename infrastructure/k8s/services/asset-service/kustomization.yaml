@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Release 02 placeholder — add deployment.yaml, service.yaml, and hpa.yaml
+# to this list when the service is implemented.
+resources:
+  - pdb.yaml
+  # - deployment.yaml
+  # - service.yaml
+  # - hpa.yaml
+  # - anti-affinity-patch.yaml

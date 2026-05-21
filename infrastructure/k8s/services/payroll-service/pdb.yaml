@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: payroll-service
+  namespace: andikisha
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: payroll-service
