@@ -105,13 +105,25 @@ jobs:
             git push origin master
           fi
 
-      - name: Smoke test
+      - name: Smoke test (api-gateway health)
         run: |
-          sleep 10
-          GATEWAY=$(kubectl get svc api-gateway -n andikisha \
-            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
-          if [ -n "$GATEWAY" ]; then
-            curl -sf --retry 3 --retry-delay 5 http://${GATEWAY}/actuator/health
-          else
-            echo "LoadBalancer IP not yet assigned — skipping smoke test"
+          # Retry loop: cloud LoadBalancers take time to receive a hostname after
+          # a rollout. 12 attempts × 10 s = 2 minutes maximum wait.
+          GATEWAY=""
+          for i in {1..12}; do
+            GATEWAY=$(kubectl get svc api-gateway -n andikisha \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$GATEWAY" ] && break
+            echo "Waiting for LoadBalancer hostname (attempt $i/12)..."
+            sleep 10
+          done
+          if [ -z "$GATEWAY" ]; then
+            echo "ERROR: api-gateway LoadBalancer hostname not assigned after 2 minutes."
+            exit 1
           fi
+          echo "Smoke-testing http://${GATEWAY}/actuator/health"
+          curl -sf --retry 5 --retry-delay 5 http://${GATEWAY}/actuator/health || {
+            echo "ERROR: api-gateway health check failed — deployment may be unhealthy."
+            exit 1
+          }
+          echo "Smoke test passed."
