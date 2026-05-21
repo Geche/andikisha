@@ -72,6 +72,39 @@ jobs:
             kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m
           done
 
+      - name: Commit image tags to git
+        env:
+          TAG: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Move to master HEAD so the push is a fast-forward.
+          # The kustomization.yaml checked out at the CI SHA still carries :latest
+          # (or the previous deploy's tag); we re-run kustomize edit here on top of
+          # the freshest master before committing.
+          git fetch origin master
+          git checkout master
+          git pull --ff-only origin master
+          REGISTRY=${{ env.ECR_REGISTRY }}/andikisha
+          SERVICES=(api-gateway auth-service tenant-service employee-service \
+                    payroll-service compliance-service time-attendance-service \
+                    leave-service document-service notification-service \
+                    integration-hub-service analytics-service audit-service)
+          IMAGES=""
+          for SERVICE in "${SERVICES[@]}"; do
+            IMAGES="${IMAGES} andikisha/${SERVICE}=${REGISTRY}/${SERVICE}:${TAG}"
+          done
+          cd infrastructure/k8s && kustomize edit set image ${IMAGES} && cd -
+          git add infrastructure/k8s/kustomization.yaml
+          if git diff --cached --quiet; then
+            echo "kustomization.yaml already reflects this deployment — nothing to commit."
+          else
+            # [skip ci] prevents CI from triggering on this bot push, which would
+            # otherwise re-trigger staging CD via the workflow_run event.
+            git commit -m "chore(deploy): record staging image tags ${TAG:0:7} [skip ci]"
+            git push origin master
+          fi
+
       - name: Smoke test
         run: |
           sleep 10
