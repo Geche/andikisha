@@ -82,6 +82,7 @@ function StatusTabs({
           onClick={() => onChange(tab.value)}
           className={
             "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all " +
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-900/50 " +
             (active === tab.value
               ? "bg-surface text-near-black shadow-sm"
               : "text-neutral-500 hover:text-neutral-700")

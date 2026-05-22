@@ -340,13 +340,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Period tabs */}
-          <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 mt-3 self-start">
+          <div className="inline-flex items-center gap-1 bg-neutral-100 rounded-lg p-1 mt-3">
             {CHART_PERIODS.map((p) => (
               <button
                 key={p}
                 onClick={() => setChartPeriod(p)}
                 className={
                   "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all whitespace-nowrap " +
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-900/50 " +
                   (chartPeriod === p
                     ? "bg-surface text-near-black shadow-sm"
                     : "text-neutral-400 hover:text-neutral-500")

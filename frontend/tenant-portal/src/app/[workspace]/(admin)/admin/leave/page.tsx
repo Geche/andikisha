@@ -116,13 +116,14 @@ export default function LeavePage() {
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {/* Status tabs */}
-        <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 self-start">
+        <div className="inline-flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => handleTabChange(tab.value)}
               className={
                 "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all whitespace-nowrap " +
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-900/50 " +
                 (statusFilter === tab.value
                   ? "bg-surface text-near-black shadow-sm"
                   : "text-neutral-500 hover:text-neutral-700")
@@ -158,22 +159,22 @@ export default function LeavePage() {
                   <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Employee
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Leave Type
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Dates
                   </th>
                   <th className="bg-neutral-50 text-center px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Days
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Submitted
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
