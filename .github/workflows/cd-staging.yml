@@ -13,7 +13,7 @@ concurrency:
 env:
   AWS_REGION: af-south-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
-  EKS_CLUSTER: andikisha-staging
+  EKS_CLUSTER: andikishahr-andikishahr
 
 jobs:
   deploy:
@@ -57,7 +57,7 @@ jobs:
           for SERVICE in "${SERVICES[@]}"; do
             IMAGES="${IMAGES} andikisha/${SERVICE}=${REGISTRY}/${SERVICE}:${TAG}"
           done
-          cd infrastructure/k8s
+          cd infrastructure/k8s/base
           kustomize edit set image ${IMAGES}
           kubectl apply -k .
 
@@ -94,8 +94,8 @@ jobs:
           for SERVICE in "${SERVICES[@]}"; do
             IMAGES="${IMAGES} andikisha/${SERVICE}=${REGISTRY}/${SERVICE}:${TAG}"
           done
-          cd infrastructure/k8s && kustomize edit set image ${IMAGES} && cd -
-          git add infrastructure/k8s/kustomization.yaml
+          cd infrastructure/k8s/base && kustomize edit set image ${IMAGES} && cd -
+          git add infrastructure/k8s/base/kustomization.yaml
           if git diff --cached --quiet; then
             echo "kustomization.yaml already reflects this deployment — nothing to commit."
           else

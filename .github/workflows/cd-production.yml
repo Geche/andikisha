@@ -13,7 +13,7 @@ on:
 env:
   AWS_REGION: af-south-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
-  EKS_CLUSTER: andikisha-production
+  EKS_CLUSTER: andikishahr-andikishahr
 
 jobs:
   deploy-production:
@@ -76,7 +76,7 @@ jobs:
         run: |
           TAG=${{ github.event.inputs.image_tag }}
           REGISTRY=${{ env.ECR_REGISTRY }}/andikisha
-          cd infrastructure/k8s
+          cd infrastructure/k8s/base
           SERVICES=(api-gateway auth-service tenant-service employee-service \
                     payroll-service compliance-service time-attendance-service \
                     leave-service document-service notification-service \
@@ -105,7 +105,7 @@ jobs:
           # 18 attempts × 10 s = 3 minutes maximum wait.
           GATEWAY=""
           for i in {1..18}; do
-            GATEWAY=$(kubectl get svc api-gateway -n andikisha-production \
+            GATEWAY=$(kubectl get svc api-gateway -n andikisha \
               -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
             [ -n "$GATEWAY" ] && break
             echo "Waiting for LoadBalancer hostname (attempt $i/18)..."
@@ -131,7 +131,7 @@ jobs:
           # Production checks out master HEAD by default (no ref: override), so the
           # kustomize edit above already modified the file in this working directory.
           # We just commit that modification.
-          git add infrastructure/k8s/kustomization.yaml
+          git add infrastructure/k8s/base/kustomization.yaml
           if git diff --cached --quiet; then
             echo "kustomization.yaml already reflects this deployment — nothing to commit."
           else
