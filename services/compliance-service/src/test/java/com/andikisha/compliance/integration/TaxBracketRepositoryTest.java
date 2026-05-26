@@ -5,13 +5,12 @@ import com.andikisha.compliance.domain.model.TaxBracket;
 import com.andikisha.compliance.domain.repository.TaxBracketRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.jdbc.Sql;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -24,14 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // @DataJpaTest wraps every test method in a transaction that is rolled back after the
 // test. This means rows saved during a test are never visible to other tests, and the
-// Flyway V4 seed data (5 KE brackets) is always present at the start of each test.
+// V4 seed data (5 KE brackets) is always present at the start of each test via @Sql.
 // No @BeforeEach deleteAll() is needed or desirable — a full-table delete without a
 // WHERE clause is never safe to use as boilerplate.
 @DataJpaTest
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers(disabledWithoutDocker = true)
-@Import(FlywayAutoConfiguration.class)
+@Sql("/db/migration/V4__seed_kenya_rates.sql")
 class TaxBracketRepositoryTest {
 
     @Container
@@ -45,9 +44,10 @@ class TaxBracketRepositoryTest {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.flyway.enabled", () -> "true");
-        registry.add("spring.flyway.locations", () -> "classpath:db/migration");
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+        registry.add("spring.flyway.enabled", () -> "false");
     }
 
     @Autowired
