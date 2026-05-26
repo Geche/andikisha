@@ -119,6 +119,7 @@ class EmployeeGrpcServiceTest {
                 "PERMANENT", "ACTIVE",
                 BigDecimal.valueOf(100_000), BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 BigDecimal.valueOf(100_000), "KES",
                 LocalDate.now().minusMonths(1), null, null,
                 null, null, LocalDateTime.now()

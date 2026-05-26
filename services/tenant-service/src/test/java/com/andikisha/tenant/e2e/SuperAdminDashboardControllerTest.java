@@ -39,7 +39,7 @@ class SuperAdminDashboardControllerTest {
     void getMetrics_asSuperAdmin_returns200WithKpiFields() throws Exception {
         when(superAdminTenantService.getDashboardMetrics())
                 .thenReturn(new DashboardMetricsResponse(
-                        42L, 30L, 5L, 2L, 4L, 7L, 5L));
+                        42L, 30L, 5L, 2L, 3L, 4L, 7L, 5L));
 
         mockMvc.perform(get("/api/v1/super-admin/dashboard/metrics")
                         .header("X-User-ID", "system")

@@ -61,7 +61,7 @@ class EmployeeRepositoryTest {
     private Employee buildEmployee(String tenantId, String number, String nationalId, String phone) {
         SalaryStructure salary = new SalaryStructure(
                 Money.of(BigDecimal.valueOf(100_000), "KES"),
-                null, null, null, null);
+                null, null, null, null, null);
         return Employee.create(
                 tenantId, number, "John", "Doe",
                 nationalId, phone, null,

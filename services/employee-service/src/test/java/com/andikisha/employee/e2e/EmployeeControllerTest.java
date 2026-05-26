@@ -230,6 +230,7 @@ class EmployeeControllerTest {
                         "PERMANENT", "ACTIVE",
                         java.math.BigDecimal.valueOf(150_000), java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
                         java.math.BigDecimal.ZERO, java.math.BigDecimal.ZERO,
+                        java.math.BigDecimal.ZERO,
                         java.math.BigDecimal.valueOf(150_000), "KES",
                         java.time.LocalDate.now().minusMonths(1), null, null,
                         null, null, java.time.LocalDateTime.now()
@@ -264,6 +265,7 @@ class EmployeeControllerTest {
                 "PERMANENT", "ACTIVE",
                 BigDecimal.valueOf(150_000), BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 BigDecimal.valueOf(150_000), "KES",
                 LocalDate.now().minusMonths(1), null, null,
                 null, null, LocalDateTime.now()

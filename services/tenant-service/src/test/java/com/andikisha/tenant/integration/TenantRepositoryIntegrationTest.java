@@ -57,7 +57,8 @@ class TenantRepositoryIntegrationTest {
     private Tenant buildAndSave(String company, String email, String phone) {
         Plan plan = planRepository.findByNameAndTenantId("Starter", "SYSTEM")
                 .orElseThrow(() -> new IllegalStateException("Starter plan not seeded"));
-        Tenant tenant = Tenant.create(company, "KE", "KES", email, phone, plan);
+        String workspace = company.toLowerCase().replaceAll("[^a-z0-9]", "");
+        Tenant tenant = Tenant.create(company, "KE", "KES", email, phone, plan, workspace);
         return tenantRepository.save(tenant);
     }
 

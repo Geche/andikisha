@@ -177,7 +177,7 @@ class TenantServiceTest {
     @Test
     void suspend_alreadySuspended_throwsBusinessRuleException() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000004", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000004", mock(Plan.class), "ws4");
         // Suspend once first
         tenant.suspend("initial reason");
 
@@ -197,7 +197,7 @@ class TenantServiceTest {
     @Test
     void changePlan_onCancelledTenant_throwsBusinessRuleException() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000005", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000005", mock(Plan.class), "ws5");
         tenant.cancel();
 
         when(tenantRepository.findByIdAndTenantId(id, id.toString()))
@@ -220,7 +220,7 @@ class TenantServiceTest {
     @Test
     void isActive_activeStatus_returnsTrue() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000006", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000006", mock(Plan.class), "ws6");
         tenant.activate();
         when(tenantRepository.findByIdAndTenantId(id, id.toString()))
                 .thenReturn(Optional.of(tenant));
@@ -231,7 +231,7 @@ class TenantServiceTest {
     @Test
     void isActive_suspendedStatus_returnsFalse() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000007", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000007", mock(Plan.class), "ws7");
         tenant.suspend("non-payment");
         when(tenantRepository.findByIdAndTenantId(id, id.toString()))
                 .thenReturn(Optional.of(tenant));
@@ -261,6 +261,6 @@ class TenantServiceTest {
     }
 
     private Tenant buildTrialTenant() {
-        return Tenant.create("Trial Co", "KE", "KES", "trial@co.ke", "+254722000099", mock(Plan.class));
+        return Tenant.create("Trial Co", "KE", "KES", "trial@co.ke", "+254722000099", mock(Plan.class), "trialco");
     }
 }

@@ -65,7 +65,7 @@ class SuperAdminControllerTest {
     @Test
     void extendTrial_happyPath_returns200() throws Exception {
         TenantSummaryResponse summary = new TenantSummaryResponse(
-                TENANT_ID, "Acme Corp", "TRIAL", "Starter",
+                TENANT_ID, "Acme Corp", "acme", "TRIAL", "Starter",
                 10, LocalDate.of(2026, 6, 30), "admin@acme.com", LocalDateTime.now());
         when(superAdminTenantService.extendTrial(eq(TENANT_ID), eq(14), any()))
                 .thenReturn(summary);
@@ -153,7 +153,7 @@ class SuperAdminControllerTest {
     void getTenantDetail_returns200WithEnrichedFields() throws Exception {
         com.andikisha.tenant.application.dto.response.TenantDetailResponse detail =
                 new com.andikisha.tenant.application.dto.response.TenantDetailResponse(
-                        TENANT_ID, "Acme Corp", "ACTIVE",
+                        TENANT_ID, "Acme Corp", "acme", "ACTIVE",
                         java.time.LocalDateTime.of(2026, 1, 15, 10, 0),
                         "admin@acme.com", "+254700000001",
                         "P051234567A", "6000001", "SH/001/001",
