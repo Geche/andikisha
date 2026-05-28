@@ -46,6 +46,9 @@ COPY frontend/${FRONTEND_NAME}/                ./frontend/${FRONTEND_NAME}/
 
 RUN pnpm --filter "${FRONTEND_NAME}" run build
 
+# Ensure public directory exists — some apps don't have one
+RUN mkdir -p /app/frontend/${FRONTEND_NAME}/public
+
 # Bake the server entry-point path so the runner stage needs no build args.
 RUN echo "#!/bin/sh" > /start.sh && \
     echo "exec node /app/frontend/${FRONTEND_NAME}/server.js" >> /start.sh && \
