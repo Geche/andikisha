@@ -1,0 +1,86 @@
+# infrastructure/docker/Dockerfile.frontend
+#
+# Build any Next.js frontend in the pnpm workspace:
+#   docker build -f infrastructure/docker/Dockerfile.frontend \
+#     --build-arg FRONTEND_NAME=tenant-portal \
+#     -t andikisha/tenant-portal:latest .
+#
+# FRONTEND_NAME must match the package name in package.json
+# (tenant-portal | platform-portal)
+
+# ── Base ───────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+# ── Stage 1: Install dependencies ─────────────────────────────────────────────
+FROM base AS deps
+WORKDIR /app
+
+# Copy workspace manifest and lockfile so pnpm can resolve the workspace graph.
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+
+# Copy each workspace package.json so pnpm installs them without full source.
+COPY frontend/packages/ui/package.json              ./frontend/packages/ui/
+COPY frontend/packages/api-client/package.json      ./frontend/packages/api-client/
+COPY frontend/packages/shared-types/package.json    ./frontend/packages/shared-types/
+
+ARG FRONTEND_NAME
+COPY frontend/${FRONTEND_NAME}/package.json         ./frontend/${FRONTEND_NAME}/
+
+RUN pnpm install --frozen-lockfile
+
+# ── Stage 2: Build ─────────────────────────────────────────────────────────────
+FROM base AS builder
+WORKDIR /app
+ARG FRONTEND_NAME
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=deps /app/node_modules             ./node_modules
+COPY --from=deps /app/frontend                 ./frontend
+
+# Copy full source for shared packages and the target app.
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY frontend/packages/                        ./frontend/packages/
+COPY frontend/${FRONTEND_NAME}/                ./frontend/${FRONTEND_NAME}/
+
+RUN pnpm --filter "${FRONTEND_NAME}" run build
+
+# Bake the server entry-point path so the runner stage needs no build args.
+RUN echo "#!/bin/sh" > /start.sh && \
+    echo "exec node /app/frontend/${FRONTEND_NAME}/server.js" >> /start.sh && \
+    chmod +x /start.sh
+
+# ── Stage 3: Runtime ───────────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+WORKDIR /app
+ARG FRONTEND_NAME
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser  --system --uid 1001 nextjs
+
+# The standalone output already bundles required node_modules.
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/${FRONTEND_NAME}/.next/standalone ./
+
+# Static assets and public dir must sit alongside the standalone output.
+COPY --from=builder --chown=nextjs:nodejs \
+    /app/frontend/${FRONTEND_NAME}/.next/static \
+    ./frontend/${FRONTEND_NAME}/.next/static
+
+COPY --from=builder --chown=nextjs:nodejs \
+    /app/frontend/${FRONTEND_NAME}/public \
+    ./frontend/${FRONTEND_NAME}/public
+
+# Startup script generated at build time with the correct server path.
+COPY --from=builder /start.sh /start.sh
+
+USER nextjs
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 3000
+
+ENTRYPOINT ["/start.sh"]

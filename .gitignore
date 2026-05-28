@@ -63,3 +63,6 @@ config/env/.env
 ## Infrastructure Terraform
 infrastructure/docker/.env
 
+# Dokploy / VPS secrets
+.env
+

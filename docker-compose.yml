@@ -1,0 +1,526 @@
+# docker-compose.yml — Dokploy / VPS deployment
+#
+# Pulls pre-built images from ghcr.io (pushed by GitHub Actions on every
+# master merge).  Single PostgreSQL instance with all 12 databases created
+# by infrastructure/docker/init-db.sql at first boot.
+#
+# Prerequisites on the VPS:
+#   1. Copy this file and .env (derived from .env.example) to the VPS.
+#   2. docker compose pull && docker compose up -d
+#
+# Traefik is managed by Dokploy — do NOT define a traefik service here.
+# Services that need external routing declare traefik labels and attach to
+# the dokploy-network external network.
+#
+# Domains (set in .env):
+#   TENANT_DOMAIN   — e.g. app.andikisha.co.ke
+#   PLATFORM_DOMAIN — e.g. platform.andikisha.co.ke
+#   API_DOMAIN      — e.g. api.andikisha.co.ke
+#
+# Replace OWNER below with your GitHub username / org that owns the repo
+# (the part of ghcr.io/OWNER/andikisha/...).
+# Or override GHCR_OWNER in your .env file.
+
+name: andikisha
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - internal
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "5"
+
+x-java-defaults: &java-defaults
+  <<: *service-defaults
+  deploy:
+    resources:
+      limits:
+        memory: 512m
+
+x-spring-env: &spring-env
+  SPRING_PROFILES_ACTIVE: prod
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: ${RABBITMQ_USER}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASS}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ${REDIS_PASS}
+  ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+x-db-env: &db-env
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USERNAME: ${POSTGRES_USER}
+  DB_PASSWORD: ${POSTGRES_PASS}
+
+# ─── Infrastructure ───────────────────────────────────────────────────────────
+
+services:
+
+  postgres:
+    <<: *service-defaults
+    image: postgres:16-alpine
+    container_name: andikisha-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+      POSTGRES_DB: andikisha_auth
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  redis:
+    <<: *service-defaults
+    image: redis:7-alpine
+    container_name: andikisha-redis
+    command: redis-server --requirepass ${REDIS_PASS}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+  rabbitmq:
+    <<: *service-defaults
+    image: rabbitmq:3.13-management-alpine
+    container_name: andikisha-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  zipkin:
+    <<: *service-defaults
+    image: openzipkin/zipkin:3
+    container_name: andikisha-zipkin
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9411/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+# ─── Backend services ─────────────────────────────────────────────────────────
+
+  auth-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/auth-service:latest
+    container_name: andikisha-auth-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8081"
+      GRPC_PORT: "9081"
+      DB_NAME: andikisha_auth
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  tenant-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-service:latest
+    container_name: andikisha-tenant-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8083"
+      GRPC_PORT: "9083"
+      DB_NAME: andikisha_tenant
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_GRPC_PORT: "9081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  employee-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/employee-service:latest
+    container_name: andikisha-employee-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8082"
+      GRPC_PORT: "9082"
+      DB_NAME: andikisha_employee
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  payroll-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/payroll-service:latest
+    container_name: andikisha-payroll-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8084"
+      GRPC_PORT: "9084"
+      DB_NAME: andikisha_payroll
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
+      LEAVE_SERVICE_HOST: leave-service
+      LEAVE_GRPC_PORT: "9087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      employee-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  compliance-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/compliance-service:latest
+    container_name: andikisha-compliance-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8085"
+      GRPC_PORT: "9085"
+      DB_NAME: andikisha_compliance
+      PAYROLL_SERVICE_HOST: payroll-service
+      PAYROLL_SERVICE_GRPC_PORT: "9084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payroll-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  leave-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/leave-service:latest
+    container_name: andikisha-leave-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8087"
+      GRPC_PORT: "9087"
+      DB_NAME: andikisha_leave
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  time-attendance-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/time-attendance-service:latest
+    container_name: andikisha-time-attendance-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8086"
+      GRPC_PORT: "9086"
+      DB_NAME: andikisha_time
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  document-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/document-service:latest
+    container_name: andikisha-document-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8088"
+      GRPC_PORT: "9088"
+      DB_NAME: andikisha_document
+      PAYROLL_SERVICE_HOST: payroll-service
+      PAYROLL_GRPC_PORT: "9084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payroll-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  notification-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/notification-service:latest
+    container_name: andikisha-notification-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8089"
+      GRPC_PORT: "9089"
+      DB_NAME: andikisha_notify
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-noreply@andikisha.co.ke}
+      SMS_API_KEY: ${SMS_API_KEY:-}
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  integration-hub-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/integration-hub-service:latest
+    container_name: andikisha-integration-hub-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8090"
+      GRPC_PORT: "9090"
+      DB_NAME: andikisha_integration
+      MPESA_ENABLED: ${MPESA_ENABLED:-false}
+      MPESA_ENV: ${MPESA_ENV:-sandbox}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      BANK_TRANSFER_ENABLED: "false"
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY}
+      MPESA_CALLBACK_IP_VALIDATION_DISABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  analytics-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/analytics-service:latest
+    container_name: andikisha-analytics-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8091"
+      GRPC_PORT: "9091"
+      DB_NAME: andikisha_analytics
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  audit-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/audit-service:latest
+    container_name: andikisha-audit-service
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8092"
+      DB_NAME: andikisha_audit
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  api-gateway:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/api-gateway:latest
+    container_name: andikisha-api-gateway
+    environment:
+      <<: *spring-env
+      SERVER_PORT: "8080"
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      TENANT_SERVICE_URL: http://tenant-service:8083
+      EMPLOYEE_SERVICE_URL: http://employee-service:8082
+      PAYROLL_SERVICE_URL: http://payroll-service:8084
+      COMPLIANCE_SERVICE_URL: http://compliance-service:8085
+      ATTENDANCE_SERVICE_URL: http://time-attendance-service:8086
+      LEAVE_SERVICE_URL: http://leave-service:8087
+      DOCUMENT_SERVICE_URL: http://document-service:8088
+      NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      INTEGRATION_SERVICE_URL: http://integration-hub-service:8090
+      ANALYTICS_SERVICE_URL: http://analytics-service:8091
+      AUDIT_SERVICE_URL: http://audit-service:8092
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      tenant-service:
+        condition: service_healthy
+      employee-service:
+        condition: service_healthy
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.api-gateway.entrypoints=websecure"
+      - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+# ─── Frontends ────────────────────────────────────────────────────────────────
+
+  tenant-portal:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-portal:latest
+    container_name: andikisha-tenant-portal
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tenant-portal.rule=Host(`${TENANT_DOMAIN}`)"
+      - "traefik.http.routers.tenant-portal.entrypoints=websecure"
+      - "traefik.http.routers.tenant-portal.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tenant-portal.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  platform-portal:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/platform-portal:latest
+    container_name: andikisha-platform-portal
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.platform-portal.rule=Host(`${PLATFORM_DOMAIN}`)"
+      - "traefik.http.routers.platform-portal.entrypoints=websecure"
+      - "traefik.http.routers.platform-portal.tls.certresolver=letsencrypt"
+      - "traefik.http.services.platform-portal.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+# ─── Networks & Volumes ───────────────────────────────────────────────────────
+
+networks:
+  internal:
+    driver: bridge
+  dokploy-network:
+    external: true
+
+volumes:
+  pg_data:
+  redis_data:
+  rabbitmq_data:
