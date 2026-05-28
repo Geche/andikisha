@@ -17,14 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,32 +30,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * End-to-end integration test for the licence application service backed
- * by a real PostgreSQL via Testcontainers. RabbitMQ and Redis are mocked
+ * by H2 in PostgreSQL-compatibility mode. RabbitMQ and Redis are mocked
  * because the tests verify DB-state, not infrastructure round-trips.
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@Testcontainers(disabledWithoutDocker = true)
 @Transactional
 @Sql("/db/test-data/seed_plans.sql")
 class LicencePlanServiceIT {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("andikisha_tenant_licence_it")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-        registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.PostgreSQLDialect");
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-        registry.add("spring.flyway.enabled", () -> "false");
-    }
 
     @MockitoBean private ConnectionFactory connectionFactory;
     @MockitoBean private RabbitTemplate rabbitTemplate;
