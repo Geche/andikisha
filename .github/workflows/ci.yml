@@ -244,6 +244,11 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Trigger redeploy
+        env:
+          WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
         run: |
-          curl -s -X GET "${{ secrets.DOKPLOY_WEBHOOK_URL }}" \
-            -w "\nHTTP status: %{http_code}\n"
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "DOKPLOY_WEBHOOK_URL secret not set — skipping redeploy trigger"
+            exit 0
+          fi
+          curl -s -X GET "$WEBHOOK_URL" -w "\nHTTP status: %{http_code}\n"
