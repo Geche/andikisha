@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8089"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: notification-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: notification-service
           image: andikisha/notification-service:latest

@@ -18,7 +18,14 @@ interface DataTableProps {
   emptyMessage?: string;
   isLoading?: boolean;
   onRowClick?: (row: Record<string, ReactNode>, index: number) => void;
+  /**
+   * Applied to the inner card wrapper (border, rounded, overflow). Use this to
+   * override card styling when embedding DataTable inside a parent container that
+   * already provides the border and rounded corners — e.g. className="border-0 rounded-none overflow-visible".
+   */
   className?: string;
+  /** Applied to the outer flex wrapper (gap between table and PaginationBar). */
+  wrapperClassName?: string;
   /** When provided, renders a PaginationBar below the table. */
   pagination?: Omit<PaginationBarProps, "className">;
 }
@@ -42,22 +49,23 @@ export function DataTable({
   isLoading = false,
   onRowClick,
   className,
+  wrapperClassName,
   pagination,
 }: DataTableProps) {
   const clickable = typeof onRowClick === "function";
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-    <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
+    <div className={cn("flex flex-col gap-3", wrapperClassName)}>
+    <div className={cn("bg-surface border border-neutral-200 rounded-xl overflow-hidden", className)}>
       <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-neutral-50 border-b border-neutral-200">
+          <tr className="border-b border-neutral-200">
             {columns.map((col) => (
               <th
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
                 className={cn(
-                  "text-[11px] font-semibold uppercase tracking-wide text-neutral-400 px-5 py-3",
+                  "bg-neutral-50 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 px-5 py-3",
                   ALIGN_TH[col.align ?? "left"]
                 )}
               >

@@ -13,21 +13,24 @@ concurrency:
 env:
   AWS_REGION: af-south-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
-  EKS_CLUSTER: andikisha-staging
+  EKS_CLUSTER: andikishahr-andikishahr
 
 jobs:
-  push-and-deploy:
-    name: Push Images & Deploy to Staging
+  deploy:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
     environment: staging
     if: github.event.workflow_run.conclusion == 'success'
     permissions:
       id-token: write
-      contents: read
+      contents: write   # required for the bot commit that records the deployed tag
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -38,39 +41,14 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: gradle
-
-      - name: Build all fat JARs
-        run: ./gradlew bootJar --parallel --no-daemon
-
-      - name: Build and push all Docker images
-        run: |
-          SERVICES=(api-gateway auth-service tenant-service employee-service \
-                    payroll-service compliance-service time-attendance-service \
-                    leave-service document-service notification-service \
-                    integration-hub-service analytics-service audit-service)
-          for SERVICE in "${SERVICES[@]}"; do
-            IMAGE_TAG="${{ env.ECR_REGISTRY }}/andikisha/${SERVICE}:${{ github.sha }}"
-            docker build \
-              --build-arg SERVICE_NAME=${SERVICE} \
-              -f infrastructure/docker/Dockerfile.service \
-              -t ${IMAGE_TAG} .
-            docker push ${IMAGE_TAG}
-          done
-
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
 
       - name: Deploy with kustomize
+        env:
+          TAG: ${{ github.event.workflow_run.head_sha }}
         run: |
-          TAG=${{ github.sha }}
           REGISTRY=${{ env.ECR_REGISTRY }}/andikisha
-          cd infrastructure/k8s
           SERVICES=(api-gateway auth-service tenant-service employee-service \
                     payroll-service compliance-service time-attendance-service \
                     leave-service document-service notification-service \
@@ -79,6 +57,7 @@ jobs:
           for SERVICE in "${SERVICES[@]}"; do
             IMAGES="${IMAGES} andikisha/${SERVICE}=${REGISTRY}/${SERVICE}:${TAG}"
           done
+          cd infrastructure/k8s/base
           kustomize edit set image ${IMAGES}
           kubectl apply -k .
 
@@ -90,17 +69,61 @@ jobs:
                     integration-hub-service analytics-service audit-service)
           for SVC in "${SERVICES[@]}"; do
             echo "Waiting for $SVC..."
-            kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m || \
-              echo "WARNING: ${SVC} rollout timed out or failed"
+            kubectl rollout status deployment/${SVC} -n andikisha --timeout=5m
           done
 
-      - name: Smoke test
+      - name: Commit image tags to git
+        env:
+          TAG: ${{ github.event.workflow_run.head_sha }}
         run: |
-          sleep 10
-          GATEWAY=$(kubectl get svc api-gateway -n andikisha \
-            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
-          if [ -n "$GATEWAY" ]; then
-            curl -sf --retry 3 --retry-delay 5 http://${GATEWAY}/actuator/health
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Move to master HEAD so the push is a fast-forward.
+          # The kustomization.yaml checked out at the CI SHA still carries :latest
+          # (or the previous deploy's tag); we re-run kustomize edit here on top of
+          # the freshest master before committing.
+          git fetch origin master
+          git checkout master
+          git pull --ff-only origin master
+          REGISTRY=${{ env.ECR_REGISTRY }}/andikisha
+          SERVICES=(api-gateway auth-service tenant-service employee-service \
+                    payroll-service compliance-service time-attendance-service \
+                    leave-service document-service notification-service \
+                    integration-hub-service analytics-service audit-service)
+          IMAGES=""
+          for SERVICE in "${SERVICES[@]}"; do
+            IMAGES="${IMAGES} andikisha/${SERVICE}=${REGISTRY}/${SERVICE}:${TAG}"
+          done
+          cd infrastructure/k8s/base && kustomize edit set image ${IMAGES} && cd -
+          git add infrastructure/k8s/base/kustomization.yaml
+          if git diff --cached --quiet; then
+            echo "kustomization.yaml already reflects this deployment — nothing to commit."
           else
-            echo "LoadBalancer IP not yet assigned — skipping smoke test"
+            # [skip ci] prevents CI from triggering on this bot push, which would
+            # otherwise re-trigger staging CD via the workflow_run event.
+            git commit -m "chore(deploy): record staging image tags ${TAG:0:7} [skip ci]"
+            git push origin master
           fi
+
+      - name: Smoke test (api-gateway health)
+        run: |
+          # Retry loop: cloud LoadBalancers take time to receive a hostname after
+          # a rollout. 12 attempts × 10 s = 2 minutes maximum wait.
+          GATEWAY=""
+          for i in {1..12}; do
+            GATEWAY=$(kubectl get svc api-gateway -n andikisha \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$GATEWAY" ] && break
+            echo "Waiting for LoadBalancer hostname (attempt $i/12)..."
+            sleep 10
+          done
+          if [ -z "$GATEWAY" ]; then
+            echo "ERROR: api-gateway LoadBalancer hostname not assigned after 2 minutes."
+            exit 1
+          fi
+          echo "Smoke-testing http://${GATEWAY}/actuator/health"
+          curl -sf --retry 5 --retry-delay 5 http://${GATEWAY}/actuator/health || {
+            echo "ERROR: api-gateway health check failed — deployment may be unhealthy."
+            exit 1
+          }
+          echo "Smoke test passed."

@@ -7,6 +7,7 @@ import com.andikisha.tenant.application.dto.request.UpdateTenantRequest;
 import com.andikisha.tenant.application.dto.response.TenantResponse;
 import com.andikisha.tenant.application.mapper.TenantMapper;
 import com.andikisha.tenant.application.port.TenantEventPublisher;
+import com.andikisha.tenant.application.service.SlugGeneratorService;
 import com.andikisha.tenant.application.service.TenantService;
 import com.andikisha.tenant.domain.exception.TenantNotFoundException;
 import com.andikisha.tenant.domain.model.Plan;
@@ -41,6 +42,7 @@ class TenantServiceTest {
     @Mock private PlanRepository planRepository;
     @Mock private TenantMapper mapper;
     @Mock private TenantEventPublisher eventPublisher;
+    @Mock private SlugGeneratorService slugGeneratorService;
 
     @InjectMocks private TenantService tenantService;
 
@@ -53,10 +55,10 @@ class TenantServiceTest {
         );
 
         Plan plan = mock(Plan.class);
-        when(tenantRepository.existsByAdminEmail("admin@acme.co.ke")).thenReturn(false);
         when(tenantRepository.existsByCompanyNameAndCountry("Acme Ltd", "KE")).thenReturn(false);
         when(planRepository.findByNameAndTenantId("Starter", "SYSTEM"))
                 .thenReturn(Optional.of(plan));
+        when(slugGeneratorService.generate("Acme Ltd", null)).thenReturn("acme-ltd");
         when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var expectedResponse = new TenantResponse(
@@ -82,21 +84,6 @@ class TenantServiceTest {
     }
 
     @Test
-    void create_withDuplicateEmail_throwsDuplicateException() {
-        var request = new CreateTenantRequest(
-                "Acme Ltd", "KE", "KES",
-                "existing@acme.co.ke", "+254722000001",
-                "Starter"
-        );
-
-        when(tenantRepository.existsByAdminEmail("existing@acme.co.ke")).thenReturn(true);
-
-        assertThatThrownBy(() -> tenantService.create(request))
-                .isInstanceOf(DuplicateResourceException.class)
-                .hasMessageContaining("adminEmail");
-    }
-
-    @Test
     void create_withDuplicateCompanyName_throwsDuplicateException() {
         var request = new CreateTenantRequest(
                 "Existing Company", "KE", "KES",
@@ -104,7 +91,6 @@ class TenantServiceTest {
                 "Starter"
         );
 
-        when(tenantRepository.existsByAdminEmail("new@company.co.ke")).thenReturn(false);
         when(tenantRepository.existsByCompanyNameAndCountry("Existing Company", "KE"))
                 .thenReturn(true);
 
@@ -118,7 +104,6 @@ class TenantServiceTest {
         var request = new CreateTenantRequest(
                 "New Co", "KE", "KES", "ceo@new.co.ke", "+254722000002", "NonExistentPlan"
         );
-        when(tenantRepository.existsByAdminEmail(any())).thenReturn(false);
         when(tenantRepository.existsByCompanyNameAndCountry(any(), any())).thenReturn(false);
         when(planRepository.findByNameAndTenantId("NonExistentPlan", "SYSTEM"))
                 .thenReturn(Optional.empty());
@@ -177,7 +162,7 @@ class TenantServiceTest {
     @Test
     void suspend_alreadySuspended_throwsBusinessRuleException() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000004", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000004", mock(Plan.class), "ws4");
         // Suspend once first
         tenant.suspend("initial reason");
 
@@ -197,7 +182,7 @@ class TenantServiceTest {
     @Test
     void changePlan_onCancelledTenant_throwsBusinessRuleException() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000005", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000005", mock(Plan.class), "ws5");
         tenant.cancel();
 
         when(tenantRepository.findByIdAndTenantId(id, id.toString()))
@@ -220,7 +205,7 @@ class TenantServiceTest {
     @Test
     void isActive_activeStatus_returnsTrue() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000006", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000006", mock(Plan.class), "ws6");
         tenant.activate();
         when(tenantRepository.findByIdAndTenantId(id, id.toString()))
                 .thenReturn(Optional.of(tenant));
@@ -231,7 +216,7 @@ class TenantServiceTest {
     @Test
     void isActive_suspendedStatus_returnsFalse() {
         UUID id = UUID.randomUUID();
-        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000007", mock(Plan.class));
+        Tenant tenant = Tenant.create("Co", "KE", "KES", "a@b.ke", "+254722000007", mock(Plan.class), "ws7");
         tenant.suspend("non-payment");
         when(tenantRepository.findByIdAndTenantId(id, id.toString()))
                 .thenReturn(Optional.of(tenant));
@@ -261,6 +246,6 @@ class TenantServiceTest {
     }
 
     private Tenant buildTrialTenant() {
-        return Tenant.create("Trial Co", "KE", "KES", "trial@co.ke", "+254722000099", mock(Plan.class));
+        return Tenant.create("Trial Co", "KE", "KES", "trial@co.ke", "+254722000099", mock(Plan.class), "trialco");
     }
 }

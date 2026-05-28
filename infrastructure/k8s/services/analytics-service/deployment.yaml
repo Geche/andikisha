@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8091"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: analytics-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: analytics-service
           image: andikisha/analytics-service:latest

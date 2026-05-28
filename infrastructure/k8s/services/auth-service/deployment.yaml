@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8081"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: auth-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: auth-service
           image: andikisha/auth-service:latest

@@ -602,16 +602,16 @@ export default function PayrollRunDetailPage({ params }: { params: Promise<{ run
               <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
                 <table className="w-full text-[13px]">
                   <thead>
-                    <tr className="bg-neutral-50 border-b border-neutral-100">
-                      <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Employee</th>
-                      <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">#</th>
-                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Gross</th>
-                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">PAYE</th>
-                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">NSSF</th>
-                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">SHIF</th>
-                      <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Net</th>
-                      <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Payment</th>
-                      <th className="px-6 py-3" />
+                    <tr className="border-b border-neutral-100">
+                      <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Employee</th>
+                      <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">#</th>
+                      <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Gross</th>
+                      <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">PAYE</th>
+                      <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">NSSF</th>
+                      <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">SHIF</th>
+                      <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Net</th>
+                      <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Payment</th>
+                      <th className="bg-neutral-50 px-6 py-3" />
                     </tr>
                   </thead>
                   <tbody>

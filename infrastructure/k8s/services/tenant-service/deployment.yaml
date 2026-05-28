@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8083"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: tenant-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: tenant-service
           image: andikisha/tenant-service:latest

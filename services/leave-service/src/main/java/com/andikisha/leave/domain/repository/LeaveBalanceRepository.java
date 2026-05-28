@@ -23,7 +23,7 @@ public interface LeaveBalanceRepository extends JpaRepository<LeaveBalance, UUID
     Optional<LeaveBalance> findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
             String tenantId, UUID employeeId, LeaveType leaveType, int year);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
         UPDATE LeaveBalance lb SET lb.frozen = true
         WHERE lb.tenantId = :tenantId AND lb.employeeId = :employeeId

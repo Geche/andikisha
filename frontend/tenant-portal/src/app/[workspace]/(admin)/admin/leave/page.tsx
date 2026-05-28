@@ -116,22 +116,22 @@ export default function LeavePage() {
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {/* Status tabs */}
-        <div className="border-b border-neutral-200">
-          <nav className="flex items-center gap-0" aria-label="Leave status filter">
-            {STATUS_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => handleTabChange(tab.value)}
-                className={`px-4 py-2.5 text-[13px] font-semibold transition-colors -mb-px ${
-                  statusFilter === tab.value
-                    ? "border-b-2 border-brand-900 text-brand-900"
-                    : "text-neutral-500 hover:text-neutral-700 border-b-2 border-transparent"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+        <div className="inline-flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
+          {STATUS_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => handleTabChange(tab.value)}
+              className={
+                "px-3 py-1.5 text-[13px] font-semibold rounded-md transition-all whitespace-nowrap " +
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-900/50 " +
+                (statusFilter === tab.value
+                  ? "bg-surface text-near-black shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700")
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Error */}
@@ -155,26 +155,26 @@ export default function LeavePage() {
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="bg-neutral-50 border-b border-neutral-100">
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                <tr className="border-b border-neutral-100">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Employee
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Leave Type
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Dates
                   </th>
-                  <th className="text-center px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-center px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Days
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Submitted
                   </th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>

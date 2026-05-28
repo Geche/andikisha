@@ -13,7 +13,7 @@ on:
 env:
   AWS_REGION: af-south-1
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.af-south-1.amazonaws.com
-  EKS_CLUSTER: andikisha-production
+  EKS_CLUSTER: andikishahr-andikishahr
 
 jobs:
   deploy-production:
@@ -24,7 +24,7 @@ jobs:
     if: github.event.inputs.confirm == 'DEPLOY'
     permissions:
       id-token: write
-      contents: read
+      contents: write   # required for the bot commit that records the deployed tag
 
     steps:
       - name: Checkout
@@ -39,11 +39,44 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}
 
+      - name: Verify images exist in ECR
+        env:
+          TAG: ${{ github.event.inputs.image_tag }}
+        run: |
+          # Fail fast before touching the cluster if any image is missing.
+          # A typo in image_tag would otherwise only surface as ImagePullBackOff
+          # minutes after kubectl apply has already replaced the running pods.
+          SERVICES=(api-gateway auth-service tenant-service employee-service \
+                    payroll-service compliance-service time-attendance-service \
+                    leave-service document-service notification-service \
+                    integration-hub-service analytics-service audit-service)
+          MISSING=0
+          for SERVICE in "${SERVICES[@]}"; do
+            echo -n "Checking andikisha/${SERVICE}:${TAG} ... "
+            if aws ecr describe-images \
+                --region ${{ env.AWS_REGION }} \
+                --repository-name "andikisha/${SERVICE}" \
+                --image-ids imageTag="${TAG}" \
+                --query 'imageDetails[0].imageDigest' \
+                --output text 2>/dev/null | grep -q '^sha256:'; then
+              echo "OK"
+            else
+              echo "MISSING"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            echo "ERROR: $MISSING image(s) not found in ECR for tag ${TAG}."
+            echo "Confirm the tag was pushed by CI before retrying this workflow."
+            exit 1
+          fi
+          echo "All images verified in ECR."
+
       - name: Deploy to production
         run: |
           TAG=${{ github.event.inputs.image_tag }}
           REGISTRY=${{ env.ECR_REGISTRY }}/andikisha
-          cd infrastructure/k8s
+          cd infrastructure/k8s/base
           SERVICES=(api-gateway auth-service tenant-service employee-service \
                     payroll-service compliance-service time-attendance-service \
                     leave-service document-service notification-service \
@@ -63,3 +96,47 @@ jobs:
                      integration-hub-service analytics-service audit-service; do
             kubectl rollout status deployment/${SVC} -n andikisha --timeout=10m
           done
+
+      - name: Smoke test (api-gateway health)
+        run: |
+          # TODO: replace the LoadBalancer hostname lookup with your production
+          # DNS name once it is stable (e.g. api.andikisha.com). The retry loop
+          # handles the LB case for now.
+          # 18 attempts × 10 s = 3 minutes maximum wait.
+          GATEWAY=""
+          for i in {1..18}; do
+            GATEWAY=$(kubectl get svc api-gateway -n andikisha \
+              -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+            [ -n "$GATEWAY" ] && break
+            echo "Waiting for LoadBalancer hostname (attempt $i/18)..."
+            sleep 10
+          done
+          if [ -z "$GATEWAY" ]; then
+            echo "ERROR: api-gateway LoadBalancer hostname not assigned after 3 minutes."
+            exit 1
+          fi
+          echo "Smoke-testing http://${GATEWAY}/actuator/health"
+          curl -sf --retry 5 --retry-delay 10 http://${GATEWAY}/actuator/health || {
+            echo "ERROR: api-gateway health check failed — investigate before declaring the deploy successful."
+            exit 1
+          }
+          echo "Production smoke test passed."
+
+      - name: Commit image tags to git
+        env:
+          TAG: ${{ github.event.inputs.image_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Production checks out master HEAD by default (no ref: override), so the
+          # kustomize edit above already modified the file in this working directory.
+          # We just commit that modification.
+          git add infrastructure/k8s/base/kustomization.yaml
+          if git diff --cached --quiet; then
+            echo "kustomization.yaml already reflects this deployment — nothing to commit."
+          else
+            # [skip ci] prevents CI from triggering on this bot push and thereby
+            # prevents staging CD from firing via the workflow_run event.
+            git commit -m "chore(deploy): record production image tags ${TAG:0:7} [skip ci]"
+            git push origin HEAD:master
+          fi

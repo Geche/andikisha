@@ -63,7 +63,7 @@ class EmployeeServiceTest {
                 "Jane", "Doe", "12345678", "+254722123456",
                 "jane@test.com", "A123456789B", "1234567", "9876543",
                 "PERMANENT", BigDecimal.valueOf(150_000),
-                null, null, null, null, "KES",
+                null, null, null, null, null, "KES",
                 null, null, null, null, null
         );
 
@@ -91,7 +91,7 @@ class EmployeeServiceTest {
                 null, "A123456789B", "1234567", "9876543",
                 "PERMANENT", BigDecimal.valueOf(150_000),
                 null, null, null, null, null,
-                null, null, null, null, null
+                null, null, null, null, null, null
         );
 
         when(employeeRepository.existsByTenantIdAndNationalId(TENANT_ID, "12345678")).thenReturn(true);
@@ -109,7 +109,7 @@ class EmployeeServiceTest {
                 null, "A001234567B", "1234567", "9876543",
                 "PERMANENT", BigDecimal.valueOf(150_000),
                 null, null, null, null, null,
-                null, null, null, null, null
+                null, null, null, null, null, null
         );
 
         when(employeeRepository.existsByTenantIdAndNationalId(TENANT_ID, "12345678")).thenReturn(false);

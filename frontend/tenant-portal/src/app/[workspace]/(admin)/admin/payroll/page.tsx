@@ -193,15 +193,15 @@ export default function PayrollPage() {
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
             <table className="w-full text-[13px]">
               <thead>
-                <tr className="bg-neutral-50 border-b border-neutral-100">
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Period</th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Frequency</th>
-                  <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Employees</th>
-                  <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Total Gross</th>
-                  <th className="text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Total Net</th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Status</th>
-                  <th className="text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Date</th>
-                  <th className="px-6 py-3" />
+                <tr className="border-b border-neutral-100">
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Period</th>
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Frequency</th>
+                  <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Employees</th>
+                  <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Total Gross</th>
+                  <th className="bg-neutral-50 text-right px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Total Net</th>
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Status</th>
+                  <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">Date</th>
+                  <th className="bg-neutral-50 px-6 py-3" />
                 </tr>
               </thead>
               <tbody>

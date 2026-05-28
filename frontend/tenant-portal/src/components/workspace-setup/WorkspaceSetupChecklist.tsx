@@ -70,7 +70,6 @@ function StepCard({
   children,
 }: StepCardProps) {
   const router = useRouter();
-  const workspace = useWorkspace();
   const isComplete = status === "complete";
   const isLocked = status === "locked";
 
@@ -207,7 +206,7 @@ export function WorkspaceSetupChecklist({
     onSuccess: invalidateSetup,
   });
 
-  const { deptCount, posCount, empCount, payrollCount } = state;
+  const { deptCount, posCount, empCount } = state;
 
   return (
     <div className="flex flex-col gap-4">

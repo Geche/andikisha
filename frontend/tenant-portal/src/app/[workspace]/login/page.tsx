@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { Eye, EyeOff, ExternalLink, Mail } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
@@ -9,18 +10,6 @@ import { findCorrectDashboard } from "@andikisha/ui/auth";
 type LoginError =
   | { kind: "general"; message: string }
   | { kind: "wrong_portal"; platformPortalUrl?: string };
-
-const RETURN_TO_ALLOWED = ["/my/", "/admin/"];
-
-function safeReturnTo(raw: string | null, workspace: string): string | null {
-  if (!raw) return null;
-  const decoded = decodeURIComponent(raw);
-  // Accept both bare /my/... paths and workspace-prefixed /{workspace}/my/... paths
-  const stripped = decoded.startsWith(`/${workspace}/`) ? decoded.slice(workspace.length + 1) : decoded;
-  return RETURN_TO_ALLOWED.some((p) => stripped.startsWith(p))
-    ? `/${workspace}${stripped.startsWith("/") ? stripped : `/${stripped}`}`
-    : null;
-}
 
 export default function WorkspaceLoginPage() {
   const router = useRouter();
@@ -188,9 +177,9 @@ export default function WorkspaceLoginPage() {
 
           <p className="text-center text-[12.5px] text-neutral-400">
             Wrong workspace?{" "}
-            <a href="/login" className="text-brand-800 font-medium hover:underline">
+            <Link href="/login" className="text-brand-800 font-medium hover:underline">
               Go back
-            </a>
+            </Link>
           </p>
         </form>
       </div>

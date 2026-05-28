@@ -83,7 +83,6 @@ export async function middleware(request: NextRequest) {
     const mustChangePassword = payload.mustChangePassword === true;
     const workspace = workspaceFromPath(pathname);
     const setPasswordPath = workspace ? `/${workspace}/set-password` : "/set-password";
-    const loginPath = workspace ? `/${workspace}/login` : "/login";
 
     // 1. Forced-password-change gate.
     //    When mustChangePassword=true: all authenticated routes redirect to /{workspace}/set-password.

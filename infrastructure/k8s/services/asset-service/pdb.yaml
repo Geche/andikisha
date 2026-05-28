@@ -1,0 +1,13 @@
+# Release 02 placeholder — service not yet deployed.
+# minAvailable is 1 (matches the 2-replica pattern used by most Release 01 services).
+# Revisit when the deployment.yaml is written and the replica count is set.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: asset-service
+  namespace: andikisha
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: asset-service

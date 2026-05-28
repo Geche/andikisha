@@ -10,45 +10,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Testcontainers(disabledWithoutDocker = true)
+@ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@TestPropertySource(properties = {
-        "spring.flyway.enabled=true",
-        "spring.jpa.hibernate.ddl-auto=validate"
-})
-@Import(com.andikisha.tenant.TenantServiceApplication.class)
+@Sql("/db/test-data/seed_plans.sql")
 class TenantRepositoryIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("andikisha_tenant_test")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void configureDataSource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.flyway.url", postgres::getJdbcUrl);
-        registry.add("spring.flyway.user", postgres::getUsername);
-        registry.add("spring.flyway.password", postgres::getPassword);
-    }
 
     @Autowired private TenantRepository tenantRepository;
     @Autowired private PlanRepository planRepository;
@@ -57,7 +32,8 @@ class TenantRepositoryIntegrationTest {
     private Tenant buildAndSave(String company, String email, String phone) {
         Plan plan = planRepository.findByNameAndTenantId("Starter", "SYSTEM")
                 .orElseThrow(() -> new IllegalStateException("Starter plan not seeded"));
-        Tenant tenant = Tenant.create(company, "KE", "KES", email, phone, plan);
+        String workspace = company.toLowerCase().replaceAll("[^a-z0-9]", "");
+        Tenant tenant = Tenant.create(company, "KE", "KES", email, phone, plan, workspace);
         return tenantRepository.save(tenant);
     }
 

@@ -25,6 +25,15 @@ spec:
         prometheus.io/port: "8086"
     spec:
       terminationGracePeriodSeconds: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: time-attendance-service
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: time-attendance-service
           image: andikisha/time-attendance-service:latest

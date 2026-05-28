@@ -1,0 +1,22 @@
+# Release 02 placeholder — anti-affinity patch.
+# This is a Kustomize strategic merge patch. To activate:
+# 1. Add a deployment.yaml and service.yaml for this service.
+# 2. Uncomment - anti-affinity-patch.yaml in kustomization.yaml.
+# 3. Uncomment - deployment.yaml and - service.yaml in kustomization.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-service
+  namespace: andikisha
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: expense-service
+                topologyKey: kubernetes.io/hostname
