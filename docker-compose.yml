@@ -512,6 +512,26 @@ services:
         limits:
           memory: 256m
 
+  landing:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/landing:latest
+    container_name: andikisha-landing
+    environment:
+      NODE_ENV: production
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.rule=Host(`${LANDING_DOMAIN}`)"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
+      - "traefik.http.services.landing.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
 # ─── Networks & Volumes ───────────────────────────────────────────────────────
 
 networks:
