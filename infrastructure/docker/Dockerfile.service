@@ -1,68 +1,25 @@
 # infrastructure/docker/Dockerfile.service
-# Place this file at: andikisha-microservices/infrastructure/docker/Dockerfile.service
 #
-# Build any service by passing SERVICE_NAME as a build arg:
+# Packages a pre-built Spring Boot fat JAR into a minimal JRE image.
+# The JAR must be built BEFORE docker build runs (CI does this via:
+#   ./gradlew :services:<SERVICE_NAME>:bootJar --no-daemon
+# )
+#
+# Build:
 #   docker build -f infrastructure/docker/Dockerfile.service \
 #     --build-arg SERVICE_NAME=auth-service \
 #     -t andikisha/auth-service:latest .
-#
-# Examples:
-#   --build-arg SERVICE_NAME=auth-service
-#   --build-arg SERVICE_NAME=employee-service
-#   --build-arg SERVICE_NAME=tenant-service
-#   --build-arg SERVICE_NAME=payroll-service
-#   --build-arg SERVICE_NAME=leave-service
 
-# ── Stage 1: Build ─────────────────────────────────────────────────────────
-FROM eclipse-temurin:21.0.5_11-jdk-alpine AS builder
-WORKDIR /app
-
-# Copy Gradle wrapper and root build files first.
-# Docker caches this layer separately so dependency resolution
-# does not re-run on every source change.
-COPY gradle/ gradle/
-COPY gradlew build.gradle.kts settings.gradle.kts gradle.properties ./
-
-# Copy shared libraries that all services depend on.
-COPY shared/ shared/
-
-# Copy the specific service module.
-ARG SERVICE_NAME
-COPY services/${SERVICE_NAME}/ services/${SERVICE_NAME}/
-
-RUN chmod +x gradlew
-
-# Step 1 — run generateProto so Gradle downloads the protoc-gen-grpc-java binary.
-# It will FAIL because the binary is not yet executable — that is expected.
-RUN ./gradlew :shared:andikisha-proto:generateProto --no-daemon 2>&1 || true
-
-# Step 2 — make every downloaded .exe in the Gradle cache executable.
-# This runs as its own layer so the permission change is committed to the
-# filesystem before the next RUN instruction starts.
-RUN find /root/.gradle -name "*.exe" -type f -exec chmod +x {} \;
-
-# Step 3 — build the fat JAR. generateProto will now succeed because the
-# binary is executable.
-RUN ./gradlew :services:${SERVICE_NAME}:bootJar -x test --no-daemon
-
-# ── Stage 2: Runtime ───────────────────────────────────────────────────────
 FROM eclipse-temurin:21.0.5_11-jre-alpine
 WORKDIR /app
 
-# Create a non-root user and group to run the service.
-# Never run Spring Boot services as root in any environment.
 RUN addgroup --system appgroup && adduser --system appuser --ingroup appgroup
 
-# Pull the fat JAR from the build stage.
 ARG SERVICE_NAME
-COPY --from=builder /app/services/${SERVICE_NAME}/build/libs/*.jar app.jar
+COPY services/${SERVICE_NAME}/build/libs/*.jar app.jar
 
-# Switch to the non-root user before the entrypoint.
 USER appuser
 
-# 8080 = HTTP (REST), 9090 = gRPC
-# Override in Kubernetes manifests or docker-compose.yml with the
-# correct per-service ports (e.g. 8081/9081 for auth-service).
 EXPOSE 8080 9090
 
 ENTRYPOINT ["java", \
