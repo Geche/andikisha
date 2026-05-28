@@ -14,6 +14,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -42,6 +43,7 @@ class LicencePlanServiceIT {
     @MockitoBean private ConnectionFactory connectionFactory;
     @MockitoBean private RabbitTemplate rabbitTemplate;
     @MockitoBean private RedisConnectionFactory redisConnectionFactory;
+    @MockitoBean private ReactiveRedisConnectionFactory reactiveRedisConnectionFactory;
     @MockitoBean private StringRedisTemplate stringRedisTemplate;
 
     @Autowired private LicencePlanService licencePlanService;
