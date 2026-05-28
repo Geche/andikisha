@@ -30,13 +30,19 @@ COPY shared/ shared/
 ARG SERVICE_NAME
 COPY services/${SERVICE_NAME}/ services/${SERVICE_NAME}/
 
-# Pre-download protoc plugin binaries and mark them executable.
-# On Alpine the downloaded .exe artifacts are not executable by default;
-# running generateProto once pulls them into the Gradle cache, then
-# the find+chmod makes them runnable for the real bootJar build.
-RUN chmod +x gradlew && \
-    (./gradlew :shared:andikisha-proto:generateProto --no-daemon 2>&1 || true) && \
-    find /root/.gradle -name "*.exe" -exec chmod +x {} \; 2>/dev/null || true
+RUN chmod +x gradlew
+
+# Step 1 — run generateProto so Gradle downloads the protoc-gen-grpc-java binary.
+# It will FAIL because the binary is not yet executable — that is expected.
+RUN ./gradlew :shared:andikisha-proto:generateProto --no-daemon 2>&1 || true
+
+# Step 2 — make every downloaded .exe in the Gradle cache executable.
+# This runs as its own layer so the permission change is committed to the
+# filesystem before the next RUN instruction starts.
+RUN find /root/.gradle -name "*.exe" -type f -exec chmod +x {} \;
+
+# Step 3 — build the fat JAR. generateProto will now succeed because the
+# binary is executable.
 RUN ./gradlew :services:${SERVICE_NAME}:bootJar -x test --no-daemon
 
 # ── Stage 2: Runtime ───────────────────────────────────────────────────────
