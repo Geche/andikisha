@@ -16,11 +16,13 @@ WORKDIR /app
 RUN addgroup --system appgroup && adduser --system appuser --ingroup appgroup
 
 ARG SERVICE_NAME
-COPY services/${SERVICE_NAME}/build/libs/*.jar app.jar
+COPY services/${SERVICE_NAME}/build/libs/ /tmp/jars/
+RUN find /tmp/jars -name '*.jar' ! -name '*plain*' | head -1 | xargs -I{} cp {} app.jar && \
+    rm -rf /tmp/jars
 
 USER appuser
 
-EXPOSE 8080 9090
+EXPOSE 8080-8092 9081-9092
 
 ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \

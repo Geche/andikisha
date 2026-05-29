@@ -51,7 +51,7 @@ RUN mkdir -p /app/frontend/${FRONTEND_NAME}/public
 
 # Bake the server entry-point path so the runner stage needs no build args.
 RUN echo "#!/bin/sh" > /start.sh && \
-    echo "exec node /app/frontend/${FRONTEND_NAME}/server.js" >> /start.sh && \
+    echo "exec node /app/server.js" >> /start.sh && \
     chmod +x /start.sh
 
 # ── Stage 3: Runtime ───────────────────────────────────────────────────────────
@@ -65,14 +65,14 @@ RUN addgroup --system --gid 1001 nodejs && \
 # The standalone output already bundles required node_modules.
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/${FRONTEND_NAME}/.next/standalone ./
 
-# Static assets and public dir must sit alongside the standalone output.
+# Static assets and public dir must be co-located with server.js at /app.
 COPY --from=builder --chown=nextjs:nodejs \
     /app/frontend/${FRONTEND_NAME}/.next/static \
-    ./frontend/${FRONTEND_NAME}/.next/static
+    ./.next/static
 
 COPY --from=builder --chown=nextjs:nodejs \
     /app/frontend/${FRONTEND_NAME}/public \
-    ./frontend/${FRONTEND_NAME}/public
+    ./public
 
 # Startup script generated at build time with the correct server path.
 COPY --from=builder /start.sh /start.sh

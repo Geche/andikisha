@@ -16,12 +16,22 @@
 #   TENANT_DOMAIN   — e.g. app.andikisha.co.ke
 #   PLATFORM_DOMAIN — e.g. platform.andikisha.co.ke
 #   API_DOMAIN      — e.g. api.andikisha.co.ke
+#   LANDING_DOMAIN  — e.g. andikisha.co.ke
 #
 # Replace OWNER below with your GitHub username / org that owns the repo
 # (the part of ghcr.io/OWNER/andikisha/...).
 # Or override GHCR_OWNER in your .env file.
 
 name: andikisha
+
+x-required-env:
+  _ghcr_owner: ${GHCR_OWNER:?Set GHCR_OWNER in .env — lowercase GitHub username/org owning the ghcr.io packages}
+  _api_domain: ${API_DOMAIN:?Set API_DOMAIN in .env — e.g. api.andikisha.co.ke}
+  _tenant_domain: ${TENANT_DOMAIN:?Set TENANT_DOMAIN in .env — e.g. app.andikisha.co.ke}
+  _platform_domain: ${PLATFORM_DOMAIN:?Set PLATFORM_DOMAIN in .env — e.g. platform.andikisha.co.ke}
+  _landing_domain: ${LANDING_DOMAIN:?Set LANDING_DOMAIN in .env — e.g. andikisha.co.ke}
+  _jwt_secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+  _credential_key: ${CREDENTIAL_ENCRYPTION_KEY:?Set CREDENTIAL_ENCRYPTION_KEY in .env}
 
 x-service-defaults: &service-defaults
   restart: unless-stopped
@@ -71,13 +81,16 @@ services:
       POSTGRES_DB: andikisha_auth
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./infrastructure/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./infrastructure/docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test:
+        - "CMD-SHELL"
+        - "pg_isready -U ${POSTGRES_USER} && psql -U ${POSTGRES_USER} -tc \"SELECT count(*) FROM pg_database WHERE datname LIKE 'andikisha_%'\" | grep -q 12"
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 20s
+    stop_grace_period: 30s
     deploy:
       resources:
         limits:
@@ -95,6 +108,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    stop_grace_period: 10s
     deploy:
       resources:
         limits:
@@ -115,6 +129,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    stop_grace_period: 30s
     deploy:
       resources:
         limits:
@@ -139,7 +154,7 @@ services:
 
   auth-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/auth-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/auth-service:${RELEASE_TAG:-latest}
     container_name: andikisha-auth-service
     environment:
       <<: [*spring-env, *db-env]
@@ -161,7 +176,7 @@ services:
 
   tenant-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-service:${RELEASE_TAG:-latest}
     container_name: andikisha-tenant-service
     environment:
       <<: [*spring-env, *db-env]
@@ -186,7 +201,7 @@ services:
 
   employee-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/employee-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/employee-service:${RELEASE_TAG:-latest}
     container_name: andikisha-employee-service
     environment:
       <<: [*spring-env, *db-env]
@@ -207,7 +222,7 @@ services:
 
   payroll-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/payroll-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/payroll-service:${RELEASE_TAG:-latest}
     container_name: andikisha-payroll-service
     environment:
       <<: [*spring-env, *db-env]
@@ -234,7 +249,7 @@ services:
 
   compliance-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/compliance-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/compliance-service:${RELEASE_TAG:-latest}
     container_name: andikisha-compliance-service
     environment:
       <<: [*spring-env, *db-env]
@@ -259,7 +274,7 @@ services:
 
   leave-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/leave-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/leave-service:${RELEASE_TAG:-latest}
     container_name: andikisha-leave-service
     environment:
       <<: [*spring-env, *db-env]
@@ -280,7 +295,7 @@ services:
 
   time-attendance-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/time-attendance-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/time-attendance-service:${RELEASE_TAG:-latest}
     container_name: andikisha-time-attendance-service
     environment:
       <<: [*spring-env, *db-env]
@@ -301,7 +316,7 @@ services:
 
   document-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/document-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/document-service:${RELEASE_TAG:-latest}
     container_name: andikisha-document-service
     environment:
       <<: [*spring-env, *db-env]
@@ -326,7 +341,7 @@ services:
 
   notification-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/notification-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/notification-service:${RELEASE_TAG:-latest}
     container_name: andikisha-notification-service
     environment:
       <<: [*spring-env, *db-env]
@@ -354,7 +369,7 @@ services:
 
   integration-hub-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/integration-hub-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/integration-hub-service:${RELEASE_TAG:-latest}
     container_name: andikisha-integration-hub-service
     environment:
       <<: [*spring-env, *db-env]
@@ -373,6 +388,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
       interval: 30s
@@ -382,7 +399,7 @@ services:
 
   analytics-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/analytics-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/analytics-service:${RELEASE_TAG:-latest}
     container_name: andikisha-analytics-service
     environment:
       <<: [*spring-env, *db-env]
@@ -394,6 +411,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health"]
       interval: 30s
@@ -403,8 +422,10 @@ services:
 
   audit-service:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/audit-service:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/audit-service:${RELEASE_TAG:-latest}
     container_name: andikisha-audit-service
+    # audit-service is event-driven only — it consumes RabbitMQ events and
+    # exposes a REST API. No gRPC server; omitting GRPC_PORT is intentional.
     environment:
       <<: [*spring-env, *db-env]
       SERVER_PORT: "8092"
@@ -423,7 +444,7 @@ services:
 
   api-gateway:
     <<: *java-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/api-gateway:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/api-gateway:${RELEASE_TAG:-latest}
     container_name: andikisha-api-gateway
     environment:
       <<: *spring-env
@@ -457,6 +478,11 @@ services:
       - dokploy-network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.api-gateway-http.rule=Host(`${API_DOMAIN}`)"
+      - "traefik.http.routers.api-gateway-http.entrypoints=web"
+      - "traefik.http.routers.api-gateway-http.middlewares=https-redirect@docker"
       - "traefik.http.routers.api-gateway.rule=Host(`${API_DOMAIN}`)"
       - "traefik.http.routers.api-gateway.entrypoints=websecure"
       - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
@@ -472,16 +498,25 @@ services:
 
   tenant-portal:
     <<: *service-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-portal:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-portal:${RELEASE_TAG:-latest}
     container_name: andikisha-tenant-portal
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - internal
       - dokploy-network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.tenant-portal-http.rule=Host(`${TENANT_DOMAIN}`)"
+      - "traefik.http.routers.tenant-portal-http.entrypoints=web"
+      - "traefik.http.routers.tenant-portal-http.middlewares=https-redirect@docker"
       - "traefik.http.routers.tenant-portal.rule=Host(`${TENANT_DOMAIN}`)"
       - "traefik.http.routers.tenant-portal.entrypoints=websecure"
       - "traefik.http.routers.tenant-portal.tls.certresolver=letsencrypt"
@@ -493,16 +528,25 @@ services:
 
   platform-portal:
     <<: *service-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/platform-portal:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/platform-portal:${RELEASE_TAG:-latest}
     container_name: andikisha-platform-portal
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - internal
       - dokploy-network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.platform-portal-http.rule=Host(`${PLATFORM_DOMAIN}`)"
+      - "traefik.http.routers.platform-portal-http.entrypoints=web"
+      - "traefik.http.routers.platform-portal-http.middlewares=https-redirect@docker"
       - "traefik.http.routers.platform-portal.rule=Host(`${PLATFORM_DOMAIN}`)"
       - "traefik.http.routers.platform-portal.entrypoints=websecure"
       - "traefik.http.routers.platform-portal.tls.certresolver=letsencrypt"
@@ -514,15 +558,24 @@ services:
 
   landing:
     <<: *service-defaults
-    image: ghcr.io/${GHCR_OWNER}/andikisha/landing:latest
+    image: ghcr.io/${GHCR_OWNER}/andikisha/landing:${RELEASE_TAG:-latest}
     container_name: andikisha-landing
     environment:
       NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - internal
       - dokploy-network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.landing-http.rule=Host(`${LANDING_DOMAIN}`)"
+      - "traefik.http.routers.landing-http.entrypoints=web"
+      - "traefik.http.routers.landing-http.middlewares=https-redirect@docker"
       - "traefik.http.routers.landing.rule=Host(`${LANDING_DOMAIN}`)"
       - "traefik.http.routers.landing.entrypoints=websecure"
       - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
