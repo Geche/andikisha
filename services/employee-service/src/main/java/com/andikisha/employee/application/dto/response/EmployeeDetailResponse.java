@@ -43,5 +43,9 @@ public record EmployeeDetailResponse(
         LocalDate terminationDate,
         String bankName,
         String bankAccountNumber,
+        String personalEmail,
+        String emergencyContactName,
+        String emergencyContactPhone,
+        String avatarUrl,
         LocalDateTime createdAt
 ) {}

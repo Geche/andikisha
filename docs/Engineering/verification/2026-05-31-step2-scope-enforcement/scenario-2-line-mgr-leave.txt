@@ -1,0 +1,56 @@
+LINE_MANAGER leave requests (Engineering only):
+{
+    "content": [
+        {
+            "id": "bc4135d0-614f-4951-a1d6-6928375d7ac1",
+            "employeeId": "b99b2927-24e3-4c2f-a84b-6c614b5b6d4d",
+            "employeeName": "David Ochieng",
+            "leaveType": "SICK",
+            "startDate": "2026-06-03",
+            "endDate": "2026-06-04",
+            "days": 2.0,
+            "reason": "Flu",
+            "status": "PENDING",
+            "hasMedicalCert": false,
+            "createdAt": "2026-05-30T22:11:56.713044"
+        },
+        {
+            "id": "9dfab27d-10c8-40ac-a172-19bbc4e385dc",
+            "employeeId": "e6dc1450-e34e-4a3d-bfd0-3eeaa559f0ff",
+            "employeeName": "Alice Kamau",
+            "leaveType": "ANNUAL",
+            "startDate": "2026-06-10",
+            "endDate": "2026-06-14",
+            "days": 5.0,
+            "reason": "Annual holiday",
+            "status": "PENDING",
+            "hasMedicalCert": false,
+            "createdAt": "2026-05-30T22:11:56.713044"
+        }
+    ],
+    "pageable": {
+        "pageNumber": 0,
+        "pageSize": 20,
+        "sort": {
+            "sorted": false,
+            "unsorted": true,
+            "empty": true
+        },
+        "offset": 0,
+        "paged": true,
+        "unpaged": false
+    },
+    "totalElements": 2,
+    "totalPages": 1,
+    "last": true,
+    "numberOfElements": 2,
+    "first": true,
+    "size": 20,
+    "number": 0,
+    "sort": {
+        "sorted": false,
+        "unsorted": true,
+        "empty": true
+    },
+    "empty": false
+}

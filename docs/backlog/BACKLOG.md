@@ -4,7 +4,144 @@ Items that were deferred during development with clear rationale. Ordered roughl
 
 ---
 
+## Engineering Practice
+
+### EMP-BACKLOG-002 — Relax NOT NULL constraints on employees.nhif_number and employees.national_id
+
+**Raised:** 2026-06-01
+**Priority:** Medium — V1 workaround in place; no functional regression, but semantic inconsistency.
+
+**Background:**
+The `employees` table has `nhif_number VARCHAR(20) NOT NULL` and `national_id VARCHAR(20) NOT NULL`. These constraints date from the single-employee creation flow where both fields are required at creation time.
+
+Bulk upload (`BulkUploadService.createFromRow()`) does not require these fields — they are listed as optional in the upload template. The V1 workaround inserts:
+- `nhif_number = ""` (empty string) when the CSV row has no SHIF number
+- `national_id = "PENDING-{empNum}"` when the CSV row has no national ID
+
+This creates a semantic-versus-structural null inconsistency: the column is structurally non-null but semantically blank. A downstream query for `nhif_number IS NULL` would not match these rows even though they have no real SHIF number.
+
+**Fix:**
+```sql
+-- Flyway migration V10
+ALTER TABLE employees ALTER COLUMN nhif_number DROP NOT NULL;
+ALTER TABLE employees ALTER COLUMN national_id DROP NOT NULL;
+```
+
+Then remove the placeholder logic from `BulkUploadService.createFromRow()`:
+```java
+// Remove:
+if (nationalId.isEmpty()) nationalId = "PENDING-" + empNum;
+// Replace nhifNum fallback with null:
+nhifNum.isBlank() ? null : nhifNum,
+```
+
+The single-employee creation endpoint (`POST /api/v1/employees`) already validates `nhifNumber` and `nationalId` as required via the `CreateEmployeeRequest` Jakarta validation annotations — removing the DB constraint does not make them optional for the HR creation flow.
+
+**Preconditions before migrating:**
+1. Clean up existing `"PENDING-*"` nationalId values and `""` nhifNumber values from bulk-uploaded rows (query and update with real values or explicit NULL)
+2. Confirm no application code does `nhif_number IS NOT NULL` as a meaningful business check
+
+---
+
+### VERIFICATION-NOTE-001 — Behavioral verification gates have caught real bugs; discipline is justified by evidence
+
+**Raised:** 2026-05-31
+**Type:** Process note — not a feature backlog item. Recorded here so the evidence is searchable alongside the work it validated.
+
+**Finding:**
+Across Steps 3 and 5, behavioral verification gates (curl tests, DB queries, live-service tests) surfaced two real defects that passed all build-level checks:
+
+1. **Leave-service test cascade (Step 3):** Adding `EmployeeGrpcClient` to leave-service broke `contextLoads()` because the full Spring context couldn't wire the gRPC channel. This cascaded into 20 failing integration tests (`JdbcBatchUpdateException` on simple `save()` calls) due to Spring's context cache poisoning. Build reported `BUILD SUCCESSFUL` for the service JAR; tests failed only when the context was loaded against a real H2 DB in the test suite. Fixed by adding `@MockitoBean EmployeeGrpcClient` to `LeaveServiceApplicationTest`.
+
+2. **Audit log masking defect (Step 5):** `EmployeeService.update()` was logging `"****" + fullAccountNumber` (e.g. `****1234567890`) instead of `"****" + last4` (e.g. `****7890`). The service compiled, all unit tests passed, and the endpoint returned HTTP 200. The defect was only visible when querying `employee_history` after a live PUT call. Fixed by extracting a `maskAccount()` helper and corrected the one bad row in the database (see `docs/Engineering/backfill/2026-05-31-audit-log-masking-fix.md`).
+
+**Implication:**
+Behavioral verification — running actual API calls against a live service and checking database state — is not redundant with build-level checks. It catches:
+- Context wiring bugs that compile but fail at runtime
+- Data formatting bugs that apply incorrect logic but return HTTP 200
+- Cross-layer discrepancies between what the code does and what the DB stores
+
+**Policy:**
+Continue requiring behavioral verification on all user-touching surfaces and regulated data paths (tier-2 fields, audit log, session revocation, role enforcement). Screenshots and DB queries in the initial verification report, not as a second-pass addition after prompting.
+
+---
+
 ## Platform
+
+### EMP-BACKLOG-001 — Implement ListEmployees gRPC RPC (paginated + department filter)
+
+**Raised:** 2026-05-31
+**Priority:** Medium — the RPC is defined in employee.proto but unimplemented in EmployeeGrpcService.
+
+**Background:**
+`employee.proto` defines `rpc ListEmployees(ListEmployeesRequest) returns (ListEmployeesResponse)` with an optional `department_id` filter field. The gRPC server in `EmployeeGrpcService` does not implement this method.
+
+This was discovered during Step 2 visual verification: `EmployeeGrpcClient` in leave-service initially called `stub.listEmployees()` for department-scope filtering of leave requests and received `grpc-status: UNIMPLEMENTED`.
+
+**Workaround in place:** Leave-service's `EmployeeGrpcClient.getEmployeesByDepartment()` now calls `listActiveByTenant` and filters by `departmentId` client-side. This is acceptable at SME scale (< 1000 employees) but is inefficient at larger dataset sizes.
+
+**Fix:** Implement `listEmployees()` in `EmployeeGrpcService` with the optional `department_id` and `status` filter parameters, and proper pagination support. Then update leave-service's `EmployeeGrpcClient.getEmployeesByDepartment()` to call it directly.
+
+---
+
+### AUTH-BACKLOG-005 — Migrate hardcoded scope mapping in CallerScopeResolver to read from role_permissions
+
+**Raised:** 2026-05-31
+**Priority:** Deferred — only relevant when the premium per-tenant custom-roles tier is built.
+
+**Background:**
+`CallerScopeResolver` in both services hardcodes the role → scope mapping:
+
+- `services/employee-service/src/main/java/com/andikisha/employee/application/service/CallerScopeResolver.java`
+- `services/leave-service/src/main/java/com/andikisha/leave/application/service/CallerScopeResolver.java`
+
+The mapping matches the `SYSTEM`-tenant seed data in `role_permissions` exactly and is correct for V1. It is acceptable as long as all tenants share the same fixed role definitions.
+
+**When this becomes load-bearing:**
+The premium per-tenant role customization feature (deferred per `docs/Engineering/2026-05-22-role-permissions-onboarding-plan.md`) makes `role_permissions` tenant-specific. At that point, a hardcoded mapping would silently ignore per-tenant configuration.
+
+**Fix:**
+Replace the `switch` statement in each resolver with a call to auth-service via gRPC:
+```
+authService.getScope(tenantId, role, resource, action) → ScopeType
+```
+Or add a `GetRoleScope(tenantId, role, resource, action)` RPC to `auth.proto` that queries `role_permissions` directly.
+
+**IMPORTANT — deletion rule:** The hardcoded constants must be **deleted**, not retained as fallbacks. A fallback to hardcoded values defeats per-tenant configuration; if the gRPC call fails, the right behavior is to deny access (fail-closed), not silently fall back to a default.
+
+**Scope:** 2 files, 1 new gRPC RPC in auth.proto, 1 new handler in AuthGrpcService.
+
+---
+
+### AUTH-BACKLOG-004 — Upgrade V14 NOT VALID constraints to VALIDATE after backfill remediation
+
+**Raised:** 2026-05-31
+**Priority:** Medium — correctness gap: existing rows with null `employee_id` on operational roles are not caught by the V14 constraints until manually validated.
+
+**Background:**
+Migration `V14__enforce_employee_id_invariants.sql` adds two CHECK constraints with `NOT VALID`:
+- `chk_superadmin_no_employee_id` — SUPER_ADMIN must have null `employee_id`
+- `chk_operational_role_requires_employee_id` — non-ADMIN, non-SUPER_ADMIN must have non-null `employee_id`
+
+`NOT VALID` means new INSERTs and UPDATEs are enforced immediately, but existing rows in violation are not checked. This was intentional to avoid blocking the migration on legacy dev data.
+
+The backfill audit (`docs/Engineering/backfill/2026-05-31-null-employee-id-audit.md`) identified 25 HIGH-confidence EMPLOYEE users with null `employee_id` (all dev seed data) and 1 LOW-confidence orphan. Once those rows are manually remediated, the constraints can be promoted to full validation.
+
+**Fix:**
+After all violating rows are remediated:
+```sql
+ALTER TABLE users VALIDATE CONSTRAINT chk_superadmin_no_employee_id;
+ALTER TABLE users VALIDATE CONSTRAINT chk_operational_role_requires_employee_id;
+```
+
+This upgrades both constraints from `NOT VALID` to fully enforced, closing the gap for existing rows.
+
+**Preconditions:**
+1. All HIGH-confidence backfill rows manually linked (see backfill audit)
+2. LOW-confidence row (`hr@acmekenya.co.ke`) investigated and either linked or deactivated
+3. Verified no other nulls remain: `SELECT COUNT(*) FROM users WHERE role NOT IN ('SUPER_ADMIN','ADMIN') AND employee_id IS NULL` → must return 0
+
+---
 
 ### AUTH-BACKLOG-002 — No voluntary password change page for ADMIN role
 

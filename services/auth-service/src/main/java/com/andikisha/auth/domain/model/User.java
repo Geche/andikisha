@@ -110,6 +110,10 @@ public class User extends BaseEntity {
     }
 
     public void linkEmployee(UUID employeeId) {
+        if (this.role == Role.SUPER_ADMIN) {
+            throw new com.andikisha.common.exception.BusinessRuleException(
+                    "SUPER_ADMIN users must not be linked to an employee record.");
+        }
         this.employeeId = employeeId;
     }
 

@@ -122,7 +122,9 @@ class EmployeeGrpcServiceTest {
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(100_000), "KES",
                 LocalDate.now().minusMonths(1), null, null,
-                null, null, LocalDateTime.now()
+                null, null,
+                null, null, null, null, // personalEmail, emergencyContactName, emergencyContactPhone, avatarUrl
+                LocalDateTime.now()
         );
     }
 }

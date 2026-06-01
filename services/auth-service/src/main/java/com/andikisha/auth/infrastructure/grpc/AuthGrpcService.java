@@ -201,13 +201,17 @@ public class AuthGrpcService extends AuthServiceGrpc.AuthServiceImplBase {
     public void provisionTenantAdmin(ProvisionTenantAdminRequest request,
                                      StreamObserver<ProvisionTenantAdminResponse> observer) {
         try {
+            UUID employeeId = (request.getEmployeeId() != null && !request.getEmployeeId().isBlank())
+                    ? UUID.fromString(request.getEmployeeId())
+                    : null;
             String userId = authService.provisionTenantAdmin(
                     request.getTenantId(),
                     request.getEmail(),
                     request.getFirstName(),
                     request.getLastName(),
                     request.getPhone(),
-                    request.getTemporaryPassword()
+                    request.getTemporaryPassword(),
+                    employeeId
             );
             observer.onNext(ProvisionTenantAdminResponse.newBuilder()
                     .setUserId(userId)

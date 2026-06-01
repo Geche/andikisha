@@ -1,0 +1,62 @@
+LINE_MANAGER employee list (3 Engineering):
+{
+    "content": [
+        {
+            "id": "7af7992f-08ea-4429-89de-7709f873b4c3",
+            "employeeNumber": "EMP-0029",
+            "firstName": "Lawrence",
+            "lastName": "Chege",
+            "phoneNumber": "0725437441",
+            "departmentName": "Engineering",
+            "positionTitle": "Software Engineer",
+            "status": "ON_PROBATION",
+            "hireDate": "2026-05-13"
+        },
+        {
+            "id": "b99b2927-24e3-4c2f-a84b-6c614b5b6d4d",
+            "employeeNumber": "EMP-0027",
+            "firstName": "David",
+            "lastName": "Ochieng",
+            "phoneNumber": "0712345999",
+            "departmentName": "Engineering",
+            "positionTitle": "Software Engineer",
+            "status": "ON_PROBATION",
+            "hireDate": "2026-05-15"
+        },
+        {
+            "id": "e6dc1450-e34e-4a3d-bfd0-3eeaa559f0ff",
+            "employeeNumber": "EMP-0005",
+            "firstName": "Alice",
+            "lastName": "Kamau",
+            "phoneNumber": "0739548273",
+            "departmentName": "Engineering",
+            "status": "ON_PROBATION",
+            "hireDate": "2025-01-15"
+        }
+    ],
+    "pageable": {
+        "pageNumber": 0,
+        "pageSize": 20,
+        "sort": {
+            "sorted": false,
+            "unsorted": true,
+            "empty": true
+        },
+        "offset": 0,
+        "paged": true,
+        "unpaged": false
+    },
+    "totalPages": 1,
+    "totalElements": 3,
+    "last": true,
+    "first": true,
+    "numberOfElements": 3,
+    "size": 20,
+    "number": 0,
+    "sort": {
+        "sorted": false,
+        "unsorted": true,
+        "empty": true
+    },
+    "empty": false
+}

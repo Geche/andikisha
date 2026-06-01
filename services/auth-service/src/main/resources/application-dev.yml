@@ -52,6 +52,12 @@ app:
   # when provisioning a new tenant's admin account. Never use this value in prod.
   provision-secret: "dev-provision-secret-replace-in-prod"
 
+grpc:
+  client:
+    employee-service:
+      address: static://localhost:9082
+      negotiation-type: plaintext
+
 springdoc:
   api-docs:
     enabled: true

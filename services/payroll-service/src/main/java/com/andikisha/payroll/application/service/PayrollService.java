@@ -413,13 +413,15 @@ public class PayrollService {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static final SimpleGrantedAuthority ROLE_ADMIN      = new SimpleGrantedAuthority("ROLE_ADMIN");
-    private static final SimpleGrantedAuthority ROLE_HR_MANAGER = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
-    private static final SimpleGrantedAuthority ROLE_HR         = new SimpleGrantedAuthority("ROLE_HR");
+    private static final SimpleGrantedAuthority ROLE_ADMIN           = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority ROLE_HR_MANAGER      = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
+    private static final SimpleGrantedAuthority ROLE_HR              = new SimpleGrantedAuthority("ROLE_HR");
+    private static final SimpleGrantedAuthority ROLE_PAYROLL_OFFICER = new SimpleGrantedAuthority("ROLE_PAYROLL_OFFICER");
 
     /**
      * Employees may only read their own payslips.
-     * ADMIN, HR_MANAGER, and HR roles may read any payslip within the tenant.
+     * ADMIN, HR_MANAGER, HR, and PAYROLL_OFFICER may read any payslip within the tenant.
+     * Scope mapping matches the SYSTEM seed data (payroll:read:all for PAYROLL_OFFICER).
      */
     private void enforcePayslipOwnership(UUID targetEmployeeId, Authentication authentication) {
         if (authentication == null) {
@@ -427,7 +429,8 @@ public class PayrollService {
         }
         boolean isPrivileged = authentication.getAuthorities().contains(ROLE_ADMIN)
                 || authentication.getAuthorities().contains(ROLE_HR_MANAGER)
-                || authentication.getAuthorities().contains(ROLE_HR);
+                || authentication.getAuthorities().contains(ROLE_HR)
+                || authentication.getAuthorities().contains(ROLE_PAYROLL_OFFICER);
         if (isPrivileged) {
             return;
         }

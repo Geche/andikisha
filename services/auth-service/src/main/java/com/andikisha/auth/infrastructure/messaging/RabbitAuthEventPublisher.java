@@ -3,10 +3,12 @@ package com.andikisha.auth.infrastructure.messaging;
 import com.andikisha.auth.application.port.AuthEventPublisher;
 import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.infrastructure.config.RabbitMqConfig;
+import com.andikisha.events.auth.AdminPasswordResetEvent;
 import com.andikisha.events.auth.EmployeeUserProvisionedEvent;
 import com.andikisha.events.auth.PasswordResetRequestedEvent;
 import com.andikisha.events.auth.UserDeactivatedEvent;
 import com.andikisha.events.auth.UserRegisteredEvent;
+import com.andikisha.events.auth.UserRoleChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -58,5 +60,20 @@ public class RabbitAuthEventPublisher implements AuthEventPublisher {
         var event = new PasswordResetRequestedEvent(tenantId, email, resetToken);
         rabbitTemplate.convertAndSend(RabbitMqConfig.AUTH_EXCHANGE, "auth.password_reset_requested", event);
         log.info("Published PasswordResetRequested for email={}", email);
+    }
+
+    @Override
+    public void publishRoleChanged(String tenantId, String changerId,
+                                   String targetUserId, String oldRole, String newRole) {
+        var event = new UserRoleChangedEvent(tenantId, changerId, targetUserId, oldRole, newRole);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.AUTH_EXCHANGE, "auth.role_changed", event);
+        log.info("Published RoleChanged: target={} {} → {}", targetUserId, oldRole, newRole);
+    }
+
+    @Override
+    public void publishAdminPasswordReset(String tenantId, String performedBy, String targetUserId) {
+        var event = new AdminPasswordResetEvent(tenantId, performedBy, targetUserId);
+        rabbitTemplate.convertAndSend(RabbitMqConfig.AUTH_EXCHANGE, "auth.admin_password_reset", event);
+        log.info("Published AdminPasswordReset: performedBy={} target={}", performedBy, targetUserId);
     }
 }

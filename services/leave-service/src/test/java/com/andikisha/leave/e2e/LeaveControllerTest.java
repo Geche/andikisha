@@ -364,7 +364,7 @@ class LeaveControllerTest {
 
     @Test
     void listRequests_withInvalidStatus_returns422() throws Exception {
-        when(leaveService.listRequests(eq("BOGUS"), any()))
+        when(leaveService.listRequests(any(), any(), eq("BOGUS"), any()))
                 .thenThrow(new BusinessRuleException("INVALID_STATUS", "Unknown leave status: BOGUS"));
 
         mockMvc.perform(get("/api/v1/leave/requests")
@@ -378,7 +378,7 @@ class LeaveControllerTest {
 
     @Test
     void listRequests_returnsPage() throws Exception {
-        when(leaveService.listRequests(any(), any()))
+        when(leaveService.listRequests(any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(
                         List.of(minimalRequestResponse("PENDING")),
                         PageRequest.of(0, 20), 1));
@@ -393,12 +393,15 @@ class LeaveControllerTest {
     }
 
     @Test
-    void listRequests_withEmployeeRole_returns403() throws Exception {
+    void listRequests_withEmployeeRole_returns200WithOwnScope() throws Exception {
+        // EMPLOYEE now has access to GET /requests — filtered to own records via CallerScopeResolver (OWN scope)
+        when(leaveService.listRequests(any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
         mockMvc.perform(get("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
                         .header("X-User-Role", "EMPLOYEE"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     // ------------------------------------------------------------------

@@ -106,6 +106,22 @@ public class Employee extends BaseEntity {
     @Column(name = "bank_branch", length = 100)
     private String bankBranch;
 
+    // ── Tier-1 self-service fields (employee edits directly) ──
+    @Column(name = "personal_email", length = 255)
+    private String personalEmail;
+
+    @Column(name = "emergency_contact_name", length = 200)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 20)
+    private String emergencyContactPhone;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(name = "pending_activation", nullable = false)
+    private boolean pendingActivation = false;
+
     protected Employee() {}
 
     public static Employee create(String tenantId, String employeeNumber,
@@ -159,6 +175,22 @@ public class Employee extends BaseEntity {
         this.bankName = bankName;
         this.bankAccountNumber = accountNumber;
         this.bankBranch = branch;
+    }
+
+    public void updateTier1Profile(String phoneNumber, String personalEmail,
+                                   String emergencyContactName, String emergencyContactPhone) {
+        if (phoneNumber != null && !phoneNumber.isBlank()) this.phoneNumber = phoneNumber;
+        if (personalEmail != null) this.personalEmail = personalEmail.isBlank() ? null : personalEmail.toLowerCase().trim();
+        if (emergencyContactName != null) this.emergencyContactName = emergencyContactName.isBlank() ? null : emergencyContactName.trim();
+        if (emergencyContactPhone != null) this.emergencyContactPhone = emergencyContactPhone.isBlank() ? null : emergencyContactPhone.trim();
+    }
+
+    public void updateAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public void setPendingActivation(boolean pending) {
+        this.pendingActivation = pending;
     }
 
     public void updateSalary(SalaryStructure newSalary) {

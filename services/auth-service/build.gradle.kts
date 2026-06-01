@@ -40,8 +40,8 @@ dependencies {
     // Redis (plan tier cache for JWT plan claim)
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
-    // gRPC server (exposes auth stubs to other services)
-    implementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
+    // gRPC — combined starter (server: exposes auth stubs; client: calls employee-service for dept checks)
+    implementation("net.devh:grpc-spring-boot-starter:$grpcStarterVersion")
 
     // Mapping
     implementation("org.mapstruct:mapstruct:$mapstructVersion")
@@ -75,6 +75,6 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
     testImplementation("org.testcontainers:rabbitmq:$testcontainersVersion")
     testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-    testImplementation("net.devh:grpc-server-spring-boot-starter:$grpcStarterVersion")
+    testImplementation("net.devh:grpc-spring-boot-starter:$grpcStarterVersion")
     testRuntimeOnly("com.h2database:h2")
 }

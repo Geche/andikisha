@@ -13,4 +13,9 @@ public interface AuthEventPublisher {
                                         String employeeNumber, String tempPassword);
 
     void publishPasswordResetRequested(String tenantId, String email, String resetToken);
+
+    void publishRoleChanged(String tenantId, String changerId,
+                            String targetUserId, String oldRole, String newRole);
+
+    void publishAdminPasswordReset(String tenantId, String performedBy, String targetUserId);
 }

@@ -4,9 +4,12 @@ import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.leave.application.dto.request.SubmitLeaveRequest;
 import com.andikisha.leave.application.dto.response.LeaveRequestResponse;
+import com.andikisha.common.scope.ResolvedScope;
 import com.andikisha.leave.application.mapper.LeaveMapper;
 import com.andikisha.leave.application.port.LeaveEventPublisher;
+import com.andikisha.leave.application.service.CallerScopeResolver;
 import com.andikisha.leave.application.service.LeaveService;
+import com.andikisha.leave.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.leave.domain.exception.LeaveRequestNotFoundException;
 import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeavePolicy;
@@ -52,6 +55,8 @@ class LeaveServiceTest {
     @Mock private LeavePolicyRepository policyRepository;
     @Mock private LeaveMapper mapper;
     @Mock private LeaveEventPublisher eventPublisher;
+    @Mock private CallerScopeResolver scopeResolver;
+    @Mock private EmployeeGrpcClient employeeGrpcClient;
 
     @InjectMocks private LeaveService leaveService;
 
@@ -417,17 +422,19 @@ class LeaveServiceTest {
 
     @Test
     void listRequests_withValidStatus_filtersCorrectly() {
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.all());
         when(requestRepository.findByTenantIdAndStatusOrderByCreatedAtDesc(
                 eq(TENANT_ID), eq(LeaveRequestStatus.PENDING), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        var result = leaveService.listRequests("PENDING", PageRequest.of(0, 20));
+        var result = leaveService.listRequests("HR_MANAGER", null, "PENDING", PageRequest.of(0, 20));
         assertThat(result).isEmpty();
     }
 
     @Test
     void listRequests_withInvalidStatus_throwsBusinessRule() {
-        assertThatThrownBy(() -> leaveService.listRequests("BOGUS", PageRequest.of(0, 20)))
+        // scope resolver is not reached — status parse fails first
+        assertThatThrownBy(() -> leaveService.listRequests("HR_MANAGER", null, "BOGUS", PageRequest.of(0, 20)))
                 .isInstanceOf(BusinessRuleException.class)
                 .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
                         .isEqualTo("INVALID_STATUS"));
@@ -435,10 +442,11 @@ class LeaveServiceTest {
 
     @Test
     void listRequests_withNullStatus_returnsAllRequests() {
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.all());
         when(requestRepository.findByTenantIdOrderByCreatedAtDesc(eq(TENANT_ID), any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        var result = leaveService.listRequests(null, PageRequest.of(0, 20));
+        var result = leaveService.listRequests("HR_MANAGER", null, null, PageRequest.of(0, 20));
         assertThat(result).isEmpty();
     }
 

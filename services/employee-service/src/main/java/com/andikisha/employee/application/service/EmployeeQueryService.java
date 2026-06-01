@@ -1,5 +1,7 @@
 package com.andikisha.employee.application.service;
 
+import com.andikisha.common.scope.ResolvedScope;
+import com.andikisha.common.scope.ScopeType;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.employee.application.dto.response.EmployeeDetailResponse;
 import com.andikisha.employee.application.dto.response.EmployeeSummaryResponse;
@@ -9,6 +11,7 @@ import com.andikisha.employee.domain.model.EmploymentStatus;
 import com.andikisha.employee.domain.repository.EmployeeRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +24,14 @@ public class EmployeeQueryService {
 
     private final EmployeeRepository repository;
     private final EmployeeMapper mapper;
+    private final CallerScopeResolver scopeResolver;
 
-    public EmployeeQueryService(EmployeeRepository repository, EmployeeMapper mapper) {
+    public EmployeeQueryService(EmployeeRepository repository,
+                                EmployeeMapper mapper,
+                                CallerScopeResolver scopeResolver) {
         this.repository = repository;
         this.mapper = mapper;
+        this.scopeResolver = scopeResolver;
     }
 
     public EmployeeDetailResponse findById(UUID id) {
@@ -42,12 +49,34 @@ public class EmployeeQueryService {
                         "Employee", email));
     }
 
-    public Page<EmployeeSummaryResponse> findAll(String departmentId,
+    public Page<EmployeeSummaryResponse> findAll(String callerRole,
+                                                 String callerEmployeeId,
+                                                 String departmentId,
                                                  String status,
                                                  String search,
                                                  Pageable pageable) {
         String tenantId = TenantContext.requireTenantId();
 
+        ResolvedScope scope = scopeResolver.resolve(callerRole, tenantId, callerEmployeeId);
+
+        if (scope.type() == ScopeType.OWN) {
+            // EMPLOYEE: single-record filtered list
+            if (callerEmployeeId == null || callerEmployeeId.isBlank()) {
+                return Page.empty(pageable);
+            }
+            return repository.findByTenantIdAndId(tenantId, UUID.fromString(callerEmployeeId), pageable)
+                    .map(mapper::toSummary);
+        }
+
+        // For DEPARTMENT scope, force departmentId to be the caller's dept
+        // (ignore any client-supplied departmentId query param — scope wins)
+        if (scope.type() == ScopeType.DEPARTMENT) {
+            return repository.findByTenantIdAndDepartmentId(
+                            tenantId, scope.departmentId(), pageable)
+                    .map(mapper::toSummary);
+        }
+
+        // ALL scope — apply optional client filters normally
         if (search != null && !search.isBlank()) {
             return repository.searchByTenantId(tenantId, search, pageable)
                     .map(mapper::toSummary);

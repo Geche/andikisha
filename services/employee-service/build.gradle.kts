@@ -41,6 +41,9 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
+    // Excel template generation and bulk-upload parsing
+    implementation("org.apache.poi:poi-ooxml:5.2.5")
+
     // API docs
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")
 

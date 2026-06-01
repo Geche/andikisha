@@ -1,11 +1,13 @@
 package com.andikisha.auth.application.service;
 
 import com.andikisha.auth.application.dto.request.ChangePasswordRequest;
+import com.andikisha.auth.application.dto.request.ChangeRoleRequest;
 import com.andikisha.auth.application.dto.request.ForgotPasswordRequest;
 import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
 import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
+import com.andikisha.auth.application.dto.response.AdminPasswordResetResponse;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.mapper.UserMapper;
@@ -19,8 +21,11 @@ import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.RefreshTokenRepository;
 import com.andikisha.auth.domain.repository.RolePermissionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
+import com.andikisha.auth.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.infrastructure.cache.RedisKeys;
+import com.andikisha.common.scope.DepartmentScopeException;
 import io.jsonwebtoken.JwtException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
@@ -48,6 +53,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final AuthEventPublisher eventPublisher;
     private final StringRedisTemplate redisTemplate;
+    private final EmployeeGrpcClient employeeGrpcClient;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -56,7 +62,8 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        UserMapper userMapper,
                        AuthEventPublisher eventPublisher,
-                       StringRedisTemplate redisTemplate) {
+                       StringRedisTemplate redisTemplate,
+                       EmployeeGrpcClient employeeGrpcClient) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.rolePermissionRepository = rolePermissionRepository;
@@ -65,6 +72,7 @@ public class AuthService {
         this.userMapper = userMapper;
         this.eventPublisher = eventPublisher;
         this.redisTemplate = redisTemplate;
+        this.employeeGrpcClient = employeeGrpcClient;
     }
 
     @Transactional
@@ -77,11 +85,15 @@ public class AuthService {
         if (userRepository.existsByPhoneNumberAndTenantId(request.phoneNumber(), tenantId)) {
             throw new DuplicateResourceException("User", "phoneNumber", request.phoneNumber());
         }
+        if (userRepository.existsByEmployeeIdAndTenantId(request.employeeId(), tenantId)) {
+            throw new DuplicateResourceException("User", "employeeId", request.employeeId().toString());
+        }
 
         String passwordHash = passwordEncoder.encode(request.password());
 
         User user = User.create(tenantId, request.email(),
                 request.phoneNumber(), passwordHash, Role.EMPLOYEE);
+        user.linkEmployee(request.employeeId());
         user = userRepository.save(user);
 
         final User savedUser = user;
@@ -102,7 +114,8 @@ public class AuthService {
     @Transactional
     public String provisionTenantAdmin(String tenantId, String email,
                                        String firstName, String lastName,
-                                       String phone, String temporaryPassword) {
+                                       String phone, String temporaryPassword,
+                                       UUID employeeId) {
         if (userRepository.existsByEmailAndTenantId(email, tenantId)) {
             // Idempotent — if called twice, return existing userId
             return userRepository.findByEmailAndTenantId(email, tenantId)
@@ -112,6 +125,17 @@ public class AuthService {
         }
         String passwordHash = passwordEncoder.encode(temporaryPassword);
         User admin = User.create(tenantId, email, phone, passwordHash, Role.ADMIN);
+        if (employeeId != null) {
+            admin.linkEmployee(employeeId);
+        } else {
+            // TODO: ADMIN created without employeeId at tenant provisioning time (chicken-and-egg —
+            // no employee-service records exist yet). The EmployeeCreatedListener will link the
+            // admin to their employee record once they create one in employee-service.
+            // Tracked: docs/Engineering/2026-05-22-role-permissions-onboarding-plan.md §1.1
+            org.slf4j.LoggerFactory.getLogger(AuthService.class).warn(
+                    "Provisioning ADMIN user without employeeId: tenantId={} email={}. " +
+                    "Link must be established when admin creates their employee record.", tenantId, email);
+        }
         User savedAdmin = userRepository.save(admin);
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -132,7 +156,18 @@ public class AuthService {
                                         String employeeId) {
         if (userRepository.existsByEmailAndTenantId(email, tenantId)) {
             return userRepository.findByEmailAndTenantId(email, tenantId)
-                    .map(u -> u.getId().toString())
+                    .map(existing -> {
+                        // If user exists but has no employeeId yet (e.g. ADMIN creating their own
+                        // employee record), link it now.
+                        if (existing.getEmployeeId() == null && existing.getRole() != Role.SUPER_ADMIN) {
+                            existing.linkEmployee(UUID.fromString(employeeId));
+                            userRepository.save(existing);
+                            org.slf4j.LoggerFactory.getLogger(AuthService.class).info(
+                                    "Linked employeeId={} to existing user id={} tenantId={}",
+                                    employeeId, existing.getId(), tenantId);
+                        }
+                        return existing.getId().toString();
+                    })
                     .orElseThrow(() -> new IllegalStateException(
                             "User exists by email but not found for tenantId=" + tenantId));
         }
@@ -355,5 +390,150 @@ public class AuthService {
         refreshTokenRepository.revokeAllByUserIdAndTenantId(saved.getId(), tenantId);
 
         return saved.getId().toString();
+    }
+
+    /**
+     * Change a user's role. Enforces:
+     * - SUPER_ADMIN cannot be assigned and target cannot be SUPER_ADMIN.
+     * - If the new role has any :department permission, the target's linked employee
+     *   must have a department (Option C).
+     * - Revokes all refresh tokens so the user re-authenticates with the new role.
+     * - Publishes a RoleChanged audit event.
+     */
+    @Transactional
+    public UserResponse changeUserRole(UUID changerId, UUID targetUserId, ChangeRoleRequest request) {
+        String tenantId = TenantContext.requireTenantId();
+
+        Role newRole;
+        try {
+            newRole = Role.valueOf(request.role().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException("INVALID_ROLE", "Unknown role: " + request.role());
+        }
+
+        if (newRole == Role.SUPER_ADMIN) {
+            throw new BusinessRuleException("FORBIDDEN_ROLE",
+                    "SUPER_ADMIN cannot be assigned through this endpoint.");
+        }
+
+        User target = userRepository.findByIdAndTenantId(targetUserId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
+
+        if (target.getRole() == Role.SUPER_ADMIN) {
+            throw new BusinessRuleException("FORBIDDEN_TARGET",
+                    "Cannot change the role of a SUPER_ADMIN user.");
+        }
+
+        // Option C: if the new role requires department scope, verify the employee has one
+        boolean needsDept = rolePermissionRepository
+                .findPermissionStringsByTenantIdAndRole("SYSTEM", newRole)
+                .stream()
+                .anyMatch(p -> p.endsWith(":department"));
+
+        if (needsDept) {
+            String employeeId = target.getEmployeeId() != null
+                    ? target.getEmployeeId().toString() : null;
+            if (employeeId == null) {
+                throw new DepartmentScopeException(
+                        "Cannot assign " + newRole.name()
+                        + " — the employee must be assigned to a department first.");
+            }
+            boolean hasDept = employeeGrpcClient.getEmployee(tenantId, employeeId)
+                    .filter(e -> !e.getDepartmentId().isBlank())
+                    .isPresent();
+            if (!hasDept) {
+                throw new DepartmentScopeException(
+                        "Cannot assign " + newRole.name()
+                        + " — the employee must be assigned to a department first.");
+            }
+        }
+
+        Role oldRole = target.getRole();
+        target.changeRole(newRole);
+        User saved = userRepository.save(target);
+
+        // Revoke all refresh tokens — user must re-authenticate to get new role JWT
+        refreshTokenRepository.revokeAllByUserIdAndTenantId(targetUserId, tenantId);
+
+        // Audit event
+        final String changerIdStr = changerId.toString();
+        final String targetIdStr  = targetUserId.toString();
+        final String oldRoleStr   = oldRole.name();
+        final String newRoleStr   = newRole.name();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishRoleChanged(tenantId, changerIdStr, targetIdStr,
+                            oldRoleStr, newRoleStr);
+                }
+            });
+        } else {
+            eventPublisher.publishRoleChanged(tenantId, changerIdStr, targetIdStr,
+                    oldRoleStr, newRoleStr);
+        }
+
+        return userMapper.toResponse(saved);
+    }
+
+    /**
+     * Admin-initiated password reset. ADMIN and HR_MANAGER may reset any employee's password.
+     * HR_MANAGER may not reset an ADMIN's password.
+     * Generates a temp password, sets mustChangePassword, revokes refresh tokens, emits audit event.
+     */
+    @Transactional
+    public AdminPasswordResetResponse adminPasswordReset(UUID performerId, Role performerRole,
+                                                          UUID targetUserId) {
+        String tenantId = TenantContext.requireTenantId();
+
+        User target = userRepository.findByIdAndTenantId(targetUserId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
+
+        if (target.getRole() == Role.SUPER_ADMIN) {
+            throw new BusinessRuleException("FORBIDDEN_TARGET",
+                    "Cannot reset a SUPER_ADMIN password.");
+        }
+        if (performerRole == Role.HR_MANAGER && target.getRole() == Role.ADMIN) {
+            throw new BusinessRuleException("FORBIDDEN_TARGET",
+                    "HR_MANAGER cannot reset an ADMIN password.");
+        }
+
+        String tempPassword = com.andikisha.common.util.PasswordGenerator.generate();
+        target.changePassword(passwordEncoder.encode(tempPassword));
+        target.setMustChangePassword(true);
+        userRepository.save(target);
+
+        refreshTokenRepository.revokeAllByUserIdAndTenantId(targetUserId, tenantId);
+
+        final String performerIdStr = performerId.toString();
+        final String targetIdStr    = targetUserId.toString();
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishAdminPasswordReset(tenantId, performerIdStr, targetIdStr);
+                }
+            });
+        } else {
+            eventPublisher.publishAdminPasswordReset(tenantId, performerIdStr, targetIdStr);
+        }
+
+        return new AdminPasswordResetResponse(
+                target.getId().toString(),
+                target.getEmail(),
+                tempPassword);
+    }
+
+    /**
+     * Provisions a user account for an employee who was bulk-uploaded.
+     * Called by employee-service during the activation step.
+     * Returns the email and generated temp password so HR can hand it to the employee.
+     */
+    @Transactional
+    public com.andikisha.auth.application.dto.response.ProvisionEmployeeResponse provisionForActivation(
+            String tenantId, UUID employeeId, String email, String phone) {
+        String tempPassword = com.andikisha.common.util.PasswordGenerator.generate();
+        provisionEmployeeUser(tenantId, email, phone, tempPassword, employeeId.toString());
+        return new com.andikisha.auth.application.dto.response.ProvisionEmployeeResponse(email, tempPassword);
     }
 }

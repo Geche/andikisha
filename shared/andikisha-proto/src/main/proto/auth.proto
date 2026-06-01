@@ -71,6 +71,7 @@ message ProvisionTenantAdminRequest {
   string last_name          = 4;
   string phone              = 5;
   string temporary_password = 6;
+  string employee_id        = 7; // optional — empty string means no link yet
 }
 
 message ProvisionTenantAdminResponse {

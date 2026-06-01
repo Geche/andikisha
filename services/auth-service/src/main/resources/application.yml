@@ -75,6 +75,10 @@ app:
 grpc:
   server:
     port: ${GRPC_PORT:9081}
+  client:
+    employee-service:
+      address: static://${EMPLOYEE_SERVICE_HOST:employee-service}:${EMPLOYEE_GRPC_PORT:9082}
+      negotiation-type: plaintext
 
 management:
   endpoints:

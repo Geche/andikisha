@@ -1,0 +1,80 @@
+HR_MANAGER employee list (all 31):
+[first 5 of 31 employees shown]
+{
+  "content": [
+    {
+      "id": "d23161d6-0cd1-428f-a1c9-31933f45d2ee",
+      "employeeNumber": "EMP-0028",
+      "firstName": "Amara",
+      "lastName": "Kamau",
+      "phoneNumber": "0733100200",
+      "status": "ON_PROBATION",
+      "hireDate": "2026-05-16"
+    },
+    {
+      "id": "f5376e69-b610-4c5c-a9fe-0958044da2c7",
+      "employeeNumber": "EMP-0003",
+      "firstName": "Brian",
+      "lastName": "Ochieng",
+      "phoneNumber": "+254722100200",
+      "status": "ON_PROBATION",
+      "hireDate": "2026-03-01"
+    },
+    {
+      "id": "7af7992f-08ea-4429-89de-7709f873b4c3",
+      "employeeNumber": "EMP-0029",
+      "firstName": "Lawrence",
+      "lastName": "Chege",
+      "phoneNumber": "0725437441",
+      "departmentName": "Engineering",
+      "positionTitle": "Software Engineer",
+      "status": "ON_PROBATION",
+      "hireDate": "2026-05-13"
+    },
+    {
+      "id": "b99b2927-24e3-4c2f-a84b-6c614b5b6d4d",
+      "employeeNumber": "EMP-0027",
+      "firstName": "David",
+      "lastName": "Ochieng",
+      "phoneNumber": "0712345999",
+      "departmentName": "Engineering",
+      "positionTitle": "Software Engineer",
+      "status": "ON_PROBATION",
+      "hireDate": "2026-05-15"
+    },
+    {
+      "id": "a26e4215-21d7-4d0d-8579-c315fb6635c4",
+      "employeeNumber": "EMP-0004",
+      "firstName": "Jane",
+      "lastName": "Wanjiru",
+      "phoneNumber": "+254711222335",
+      "status": "ON_PROBATION",
+      "hireDate": "2026-01-15"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 20,
+    "sort": {
+      "sorted": false,
+      "unsorted": true,
+      "empty": true
+    },
+    "offset": 0,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 2,
+  "totalElements": 31,
+  "last": false,
+  "first": true,
+  "numberOfElements": 20,
+  "size": 20,
+  "number": 0,
+  "sort": {
+    "sorted": false,
+    "unsorted": true,
+    "empty": true
+  },
+  "empty": false
+}

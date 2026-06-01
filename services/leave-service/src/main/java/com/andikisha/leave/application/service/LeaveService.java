@@ -1,11 +1,14 @@
 package com.andikisha.leave.application.service;
 
 import com.andikisha.common.exception.BusinessRuleException;
+import com.andikisha.common.scope.ResolvedScope;
+import com.andikisha.common.scope.ScopeType;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.leave.application.dto.request.SubmitLeaveRequest;
 import com.andikisha.leave.application.dto.response.LeaveRequestResponse;
 import com.andikisha.leave.application.mapper.LeaveMapper;
 import com.andikisha.leave.application.port.LeaveEventPublisher;
+import com.andikisha.leave.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.leave.domain.exception.LeaveRequestNotFoundException;
 import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeavePolicy;
@@ -39,17 +42,23 @@ public class LeaveService {
     private final LeavePolicyRepository policyRepository;
     private final LeaveMapper mapper;
     private final LeaveEventPublisher eventPublisher;
+    private final CallerScopeResolver scopeResolver;
+    private final EmployeeGrpcClient employeeGrpcClient;
 
     public LeaveService(LeaveRequestRepository requestRepository,
                         LeaveBalanceRepository balanceRepository,
                         LeavePolicyRepository policyRepository,
                         LeaveMapper mapper,
-                        LeaveEventPublisher eventPublisher) {
+                        LeaveEventPublisher eventPublisher,
+                        CallerScopeResolver scopeResolver,
+                        EmployeeGrpcClient employeeGrpcClient) {
         this.requestRepository = requestRepository;
         this.balanceRepository = balanceRepository;
         this.policyRepository = policyRepository;
         this.mapper = mapper;
         this.eventPublisher = eventPublisher;
+        this.scopeResolver = scopeResolver;
+        this.employeeGrpcClient = employeeGrpcClient;
     }
 
     @Transactional
@@ -249,21 +258,47 @@ public class LeaveService {
         return mapper.toResponse(request);
     }
 
-    public Page<LeaveRequestResponse> listRequests(String status, Pageable pageable) {
+    public Page<LeaveRequestResponse> listRequests(String callerRole, String callerEmployeeId,
+                                                     String status, Pageable pageable) {
         String tenantId = TenantContext.requireTenantId();
+
+        LeaveRequestStatus requestStatus = null;
         if (status != null) {
-            LeaveRequestStatus requestStatus;
             try {
                 requestStatus = LeaveRequestStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new BusinessRuleException("INVALID_STATUS", "Unknown leave status: " + status);
             }
-            return requestRepository.findByTenantIdAndStatusOrderByCreatedAtDesc(
-                            tenantId, requestStatus, pageable)
-                    .map(mapper::toResponse);
         }
-        return requestRepository.findByTenantIdOrderByCreatedAtDesc(tenantId, pageable)
-                .map(mapper::toResponse);
+
+        ResolvedScope scope = scopeResolver.resolve(callerRole, tenantId, callerEmployeeId);
+
+        if (scope.type() == ScopeType.ALL) {
+            return requestStatus != null
+                    ? requestRepository.findByTenantIdAndStatusOrderByCreatedAtDesc(tenantId, requestStatus, pageable).map(mapper::toResponse)
+                    : requestRepository.findByTenantIdOrderByCreatedAtDesc(tenantId, pageable).map(mapper::toResponse);
+        }
+
+        if (scope.type() == ScopeType.DEPARTMENT) {
+            java.util.List<java.util.UUID> deptEmployeeIds = employeeGrpcClient
+                    .getEmployeesByDepartment(tenantId, scope.departmentId().toString())
+                    .stream()
+                    .map(e -> java.util.UUID.fromString(e.getId()))
+                    .toList();
+            if (deptEmployeeIds.isEmpty()) {
+                return org.springframework.data.domain.Page.empty(pageable);
+            }
+            return requestStatus != null
+                    ? requestRepository.findByTenantIdAndStatusAndEmployeeIdInOrderByCreatedAtDesc(tenantId, requestStatus, deptEmployeeIds, pageable).map(mapper::toResponse)
+                    : requestRepository.findByTenantIdAndEmployeeIdInOrderByCreatedAtDesc(tenantId, deptEmployeeIds, pageable).map(mapper::toResponse);
+        }
+
+        // OWN scope — filter to caller's own requests
+        if (callerEmployeeId == null || callerEmployeeId.isBlank()) {
+            return org.springframework.data.domain.Page.empty(pageable);
+        }
+        return requestRepository.findByTenantIdAndEmployeeIdOrderByCreatedAtDesc(
+                tenantId, java.util.UUID.fromString(callerEmployeeId), pageable).map(mapper::toResponse);
     }
 
     public Page<LeaveRequestResponse> listEmployeeRequests(UUID employeeId, Pageable pageable) {

@@ -1,6 +1,7 @@
 package com.andikisha.common.exception;
 
 import com.andikisha.common.dto.ErrorResponse;
+import com.andikisha.common.scope.DepartmentScopeException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +83,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("CONCURRENT_MODIFICATION",
                         "This record was modified by another request. Please retry."));
+    }
+
+    @ExceptionHandler(DepartmentScopeException.class)
+    public ResponseEntity<ErrorResponse> handleDepartmentScope(DepartmentScopeException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("DEPARTMENT_REQUIRED", ex.getMessage()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

@@ -74,6 +74,14 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 return unauthorized(exchange, "MISSING_TENANT_CLAIM", "Token missing tenantId claim");
             }
 
+            // Assertion: non-SUPER_ADMIN authenticated users should always carry an employeeId.
+            // Logs but does NOT block — surfaces any remaining gap without breaking flows.
+            if ((employeeId == null || employeeId.isBlank())
+                    && !"SUPER_ADMIN".equals(role)) {
+                log.warn("Authenticated user has no employeeId in JWT: userId={} role={} path={}",
+                        userId, role, path);
+            }
+
             // Strip any client-supplied identity headers BEFORE setting validated values
             // to prevent spoofing (mutate().header() appends, not replaces).
             // Also strip X-Internal-Request so external clients cannot forge this sentinel

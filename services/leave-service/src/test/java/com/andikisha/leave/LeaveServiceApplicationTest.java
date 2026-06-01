@@ -1,5 +1,6 @@
 package com.andikisha.leave;
 
+import com.andikisha.leave.infrastructure.grpc.EmployeeGrpcClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -29,6 +30,11 @@ class LeaveServiceApplicationTest {
 
     @MockitoBean
     private RabbitTemplate rabbitTemplate;
+
+    // GrpcClientAutoConfiguration is excluded above, so the @GrpcClient channel
+    // for EmployeeGrpcClient cannot be auto-wired. Mock the whole client.
+    @MockitoBean
+    private EmployeeGrpcClient employeeGrpcClient;
 
     @Test
     void contextLoads() {

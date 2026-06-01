@@ -194,19 +194,23 @@ class EmployeeControllerTest {
     }
 
     @Test
-    @org.junit.jupiter.api.DisplayName("GET /api/v1/employees with EMPLOYEE role returns 403")
-    void listEmployees_withEmployeeRole_returns403() throws Exception {
+    @org.junit.jupiter.api.DisplayName("GET /api/v1/employees with EMPLOYEE role returns 200 with OWN scope")
+    void listEmployees_withEmployeeRole_returns200WithOwnScope() throws Exception {
+        // EMPLOYEE now has access — filtered to own record via CallerScopeResolver (OWN scope)
+        when(queryService.findAll(any(), any(), any(), any(), any(), any()))
+                .thenReturn(org.springframework.data.domain.Page.empty());
         mockMvc.perform(get("/api/v1/employees")
                         .header("X-User-ID", "emp-user-1")
                         .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", "00000000-0000-0000-0000-000000000001")
                         .header("X-Tenant-ID", "tenant-abc"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
     @org.junit.jupiter.api.DisplayName("GET /api/v1/employees with HR_MANAGER role returns 200")
     void listEmployees_withHrManagerRole_returns200() throws Exception {
-        when(queryService.findAll(any(), any(), any(), any()))
+        when(queryService.findAll(any(), any(), any(), any(), any(), any()))
                 .thenReturn(org.springframework.data.domain.Page.empty());
         mockMvc.perform(get("/api/v1/employees")
                         .header("X-User-ID", "hr-user-1")
@@ -233,7 +237,9 @@ class EmployeeControllerTest {
                         java.math.BigDecimal.ZERO,
                         java.math.BigDecimal.valueOf(150_000), "KES",
                         java.time.LocalDate.now().minusMonths(1), null, null,
-                        null, null, java.time.LocalDateTime.now()
+                        null, null,
+                        null, null, null, null, // personalEmail, emergencyContactName, emergencyContactPhone, avatarUrl
+                        java.time.LocalDateTime.now()
                 ));
         mockMvc.perform(get("/api/v1/employees/{id}", employeeId)
                         .header("X-User-ID", employeeId)
@@ -268,7 +274,9 @@ class EmployeeControllerTest {
                 BigDecimal.ZERO,
                 BigDecimal.valueOf(150_000), "KES",
                 LocalDate.now().minusMonths(1), null, null,
-                null, null, LocalDateTime.now()
+                null, null,
+                null, null, null, null,  // personalEmail, emergencyContactName, emergencyContactPhone, avatarUrl
+                LocalDateTime.now()
         );
     }
 }

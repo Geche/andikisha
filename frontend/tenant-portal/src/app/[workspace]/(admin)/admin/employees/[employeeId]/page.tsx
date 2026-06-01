@@ -3,8 +3,8 @@
 import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock } from "lucide-react";
-import { PageHeader, BaseModal, useToast } from "@andikisha/ui";
+import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock, ShieldCheck, KeyRound } from "lucide-react";
+import { PageHeader, BaseModal, useToast, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -51,6 +51,26 @@ interface EmployeeDetail {
 
 interface DeptOption { id: string; name: string; }
 interface PosOption  { id: string; title: string; }
+
+interface UserAccount {
+  id: string;
+  email: string;
+  role: string;
+  active: boolean;
+}
+
+// Roles assignable by ADMIN (no SUPER_ADMIN, no ADMIN — must not enable self-elevation)
+const ASSIGNABLE_ROLES = [
+  { value: "EMPLOYEE",        label: "Employee" },
+  { value: "HR_OFFICER",      label: "HR Officer" },
+  { value: "PAYROLL_OFFICER", label: "Payroll Officer" },
+  { value: "HR_MANAGER",      label: "HR Manager" },
+  { value: "LINE_MANAGER",    label: "Line Manager" },
+] as const;
+
+function roleLabel(role: string): string {
+  return ASSIGNABLE_ROLES.find((r) => r.value === role)?.label ?? role;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -578,6 +598,278 @@ function TerminateModal({
   );
 }
 
+// ─── Reset Password Modal ─────────────────────────────────────────────────────
+
+interface PasswordResetResult {
+  userId: string;
+  email: string;
+  temporaryPassword: string;
+}
+
+function ResetPasswordModal({
+  userAccount,
+  employeeName,
+  onClose,
+}: {
+  userAccount: UserAccount;
+  employeeName: string;
+  onClose: () => void;
+}) {
+  const [result, setResult] = useState<PasswordResetResult | null>(null);
+  const [copied, setCopied] = useState(false);
+  const toast = useToast();
+
+  const mutation = useMutation<PasswordResetResult, AxiosError<{ message?: string }>, void>({
+    mutationFn: () =>
+      apiClient
+        .post<PasswordResetResult>(`/api/v1/auth/users/${userAccount.id}/admin-password-reset`)
+        .then((r) => r.data),
+    onSuccess: (data) => {
+      setResult(data);
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message ?? "Failed to reset password.";
+      toast(msg, "error");
+      onClose();
+    },
+  });
+
+  function handleCopy() {
+    if (!result) return;
+    void navigator.clipboard.writeText(result.temporaryPassword).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }
+
+  // Step 1 — Confirmation
+  if (!result) {
+    return (
+      <BaseModal labelId="reset-pw-modal-title" onClose={mutation.isPending ? onClose : onClose}>
+        <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[440px] p-6 flex flex-col gap-4">
+          <h2 id="reset-pw-modal-title" className="text-[16px] font-bold text-neutral-900">
+            Reset Password
+          </h2>
+          <p className="text-[13px] text-neutral-600">
+            Reset the password for{" "}
+            <span className="font-semibold text-near-black">{employeeName}</span>?
+            A temporary password will be generated. They will be required to set a new password on next login.
+          </p>
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={mutation.isPending}
+              className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate()}
+              className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
+            >
+              {mutation.isPending ? "Generating…" : "Reset Password"}
+            </button>
+          </div>
+        </div>
+      </BaseModal>
+    );
+  }
+
+  // Step 2 — Temp password display (no auto-close)
+  return (
+    <BaseModal labelId="reset-pw-result-title" onClose={onClose}>
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[460px] p-6 flex flex-col gap-4">
+        <h2 id="reset-pw-result-title" className="text-[16px] font-bold text-neutral-900">
+          Password Reset
+        </h2>
+        <p className="text-[13px] text-neutral-500">
+          New temporary password for{" "}
+          <span className="font-semibold text-near-black">{result.email}</span>
+        </p>
+
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 flex flex-col gap-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+            Temporary Password
+          </p>
+          <div className="flex items-center gap-3">
+            <code className="flex-1 font-mono text-[18px] font-bold text-near-black tracking-wider break-all">
+              {result.temporaryPassword}
+            </code>
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-neutral-200 text-[12px] font-semibold bg-white hover:bg-neutral-100 transition-colors flex-shrink-0"
+            >
+              {copied ? (
+                <span className="text-brand-700">Copied!</span>
+              ) : (
+                <span className="text-neutral-700">Copy</span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5 rounded-xl bg-amber-light border border-amber px-4 py-3">
+          <AlertTriangle size={15} className="text-amber flex-shrink-0 mt-0.5" />
+          <p className="text-[12.5px] text-amber-text leading-relaxed">
+            Share this with the employee directly. They will be required to change it on first login.
+            This password will not be shown again.
+          </p>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] px-6 py-2.5 rounded-lg transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
+// ─── Change Role Modal ────────────────────────────────────────────────────────
+
+function ChangeRoleModal({
+  userAccount,
+  employeeId,
+  employeeName,
+  workspace,
+  onClose,
+}: {
+  userAccount: UserAccount;
+  employeeId: string;
+  employeeName: string;
+  workspace: string;
+  onClose: () => void;
+}) {
+  const [selectedRole, setSelectedRole] = useState<string>(userAccount.role);
+  const [confirmed, setConfirmed] = useState(false);
+  const [deptError, setDeptError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const mutation = useMutation<UserAccount, AxiosError<{ error?: string; message?: string }>, string>({
+    mutationFn: (role) =>
+      apiClient
+        .patch<UserAccount>(`/api/v1/auth/users/${userAccount.id}/role`, { role })
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["employee-user", employeeId] });
+      toast(`Role updated to ${roleLabel(selectedRole)}`, "success");
+      onClose();
+    },
+    onError: (err) => {
+      const errCode = err.response?.data?.error;
+      const msg = err.response?.data?.message ?? "Failed to change role.";
+      if (errCode === "DEPARTMENT_REQUIRED") {
+        setDeptError(msg);
+      } else {
+        toast(msg, "error");
+      }
+    },
+  });
+
+  const hasChanged = selectedRole !== userAccount.role;
+
+  return (
+    <BaseModal labelId="change-role-modal-title" onClose={onClose}>
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[440px] flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-neutral-100">
+          <h2 id="change-role-modal-title" className="text-[16px] font-bold text-neutral-900">
+            Change Role
+          </h2>
+          <p className="text-[13px] text-neutral-500 mt-0.5">{employeeName}</p>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-4">
+          {/* Current role */}
+          <div className="flex items-center justify-between bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-200">
+            <span className="text-[12.5px] text-neutral-500">Current role</span>
+            <span className="text-[13px] font-semibold text-near-black">{roleLabel(userAccount.role)}</span>
+          </div>
+
+          {/* New role selector */}
+          <div>
+            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
+              New Role
+            </label>
+            <select
+              value={selectedRole}
+              onChange={(e) => { setSelectedRole(e.target.value); setDeptError(null); }}
+              disabled={mutation.isPending}
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 disabled:bg-neutral-50"
+            >
+              {ASSIGNABLE_ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Option C error — department required */}
+          {deptError && (
+            <div className="bg-amber-light border border-amber rounded-lg px-4 py-3 text-[12.5px] text-amber-text">
+              <p className="font-semibold mb-1">{deptError}</p>
+              <Link
+                href={`/${workspace}/admin/employees/${employeeId}`}
+                className="underline underline-offset-2 hover:opacity-80 font-medium"
+                onClick={onClose}
+              >
+                Go to employee profile to set department →
+              </Link>
+            </div>
+          )}
+
+          {/* Confirmation step */}
+          {hasChanged && !deptError && (
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                disabled={mutation.isPending}
+                className="mt-0.5 accent-brand-900"
+              />
+              <span className="text-[12.5px] text-neutral-600">
+                I confirm changing <strong>{employeeName}</strong>&apos;s role from{" "}
+                <strong>{roleLabel(userAccount.role)}</strong> to{" "}
+                <strong>{roleLabel(selectedRole)}</strong>. Their active session will be
+                invalidated and they will need to log in again.
+              </span>
+            </label>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-neutral-100 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={mutation.isPending}
+            className="flex-1 border border-neutral-200 text-neutral-600 hover:bg-neutral-50 font-semibold text-[13.5px] py-2.5 rounded-lg transition-colors disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!hasChanged || !confirmed || mutation.isPending}
+            onClick={() => mutation.mutate(selectedRole)}
+            className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
+          >
+            {mutation.isPending ? "Saving…" : "Change Role"}
+          </button>
+        </div>
+      </div>
+    </BaseModal>
+  );
+}
+
 // ─── Actions dropdown ─────────────────────────────────────────────────────────
 
 function ActionsMenu({
@@ -639,8 +931,14 @@ export default function EmployeeDetailPage({
 }) {
   const { employeeId } = use(params);
   const workspace = useWorkspace();
-  const [showEdit, setShowEdit]   = useState(false);
-  const [showSalary, setShowSalary] = useState(false);
+  const currentUser = useCurrentUser();
+  const [showEdit, setShowEdit]           = useState(false);
+  const [showSalary, setShowSalary]       = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showResetPw, setShowResetPw]     = useState(false);
+
+  const isAdmin = currentUser?.roles.includes("ADMIN")      ?? false;
+  const isHrMgr = currentUser?.roles.includes("HR_MANAGER") ?? false;
 
   const { data: employee, isLoading, isError, refetch } = useQuery<EmployeeDetail>({
     queryKey: ["employee", employeeId],
@@ -661,6 +959,23 @@ export default function EmployeeDetailPage({
   });
 
   const hasPayslips = (payslipPage?.totalElements ?? 0) > 0;
+
+  // Fetch the linked auth user for role display and role-change action
+  const { data: userAccount } = useQuery<UserAccount>({
+    queryKey: ["employee-user", employeeId],
+    queryFn: () =>
+      apiClient
+        .get<UserAccount>(`/api/v1/auth/users/by-employee/${employeeId}`)
+        .then((r) => r.data)
+        .catch(() => null as unknown as UserAccount),
+    enabled: Boolean(employeeId) && isAdmin,
+    staleTime: 30_000,
+  });
+
+  // Hide Change Role on caller's own profile (Task 3.6)
+  const isOwnProfile  = currentUser?.employeeId === employeeId;
+  const canChangeRole = isAdmin && !isOwnProfile && userAccount != null;
+  const canResetPw    = (isAdmin || isHrMgr) && !isOwnProfile && userAccount != null;
 
   const fullName = employee ? `${employee.firstName} ${employee.lastName}` : "Employee";
   const subtitle =
@@ -693,6 +1008,15 @@ export default function EmployeeDetailPage({
                   <Pencil size={13} />
                   Edit
                 </button>
+                {canResetPw && (
+                  <button
+                    onClick={() => setShowResetPw(true)}
+                    className="flex items-center gap-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-semibold text-[13px] h-9 px-3.5 rounded-lg transition-colors"
+                  >
+                    <KeyRound size={13} />
+                    Reset password
+                  </button>
+                )}
                 <ActionsMenu
                   status={employee.status}
                   employeeId={employee.id}
@@ -820,6 +1144,53 @@ export default function EmployeeDetailPage({
                 </div>
               )}
             </InfoCard>
+
+            {/* Role — ADMIN only, hidden on own profile */}
+            {isAdmin && (
+              <InfoCard
+                title="System Role"
+                action={
+                  canChangeRole ? (
+                    <button
+                      onClick={() => setShowRoleModal(true)}
+                      className="flex items-center gap-1 text-[11.5px] font-semibold text-brand-700 hover:text-brand-900 transition-colors"
+                    >
+                      <ShieldCheck size={11} />
+                      Change role
+                    </button>
+                  ) : undefined
+                }
+              >
+                {userAccount ? (
+                  <>
+                    <InfoRow
+                      label="Current role"
+                      value={
+                        <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold bg-brand-50 text-brand-800 px-2.5 py-1 rounded-full border border-brand-200">
+                          <ShieldCheck size={10} />
+                          {roleLabel(userAccount.role)}
+                        </span>
+                      }
+                    />
+                    <InfoRow
+                      label="Account status"
+                      value={
+                        <span className={`text-[11.5px] font-semibold ${userAccount.active ? "text-brand-700" : "text-neutral-400"}`}>
+                          {userAccount.active ? "Active" : "Inactive"}
+                        </span>
+                      }
+                    />
+                    {isOwnProfile && (
+                      <p className="text-[11px] text-neutral-400 italic mt-1">
+                        Role change unavailable on your own profile.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-[12.5px] text-neutral-400">No linked user account.</p>
+                )}
+              </InfoCard>
+            )}
           </div>
         ) : null}
       </div>
@@ -836,6 +1207,22 @@ export default function EmployeeDetailPage({
         <SalaryModal
           employee={employee}
           onClose={() => setShowSalary(false)}
+        />
+      )}
+      {employee && userAccount && showRoleModal && canChangeRole && (
+        <ChangeRoleModal
+          userAccount={userAccount}
+          employeeId={employee.id}
+          employeeName={fullName}
+          workspace={workspace}
+          onClose={() => setShowRoleModal(false)}
+        />
+      )}
+      {employee && userAccount && showResetPw && canResetPw && (
+        <ResetPasswordModal
+          userAccount={userAccount}
+          employeeName={fullName}
+          onClose={() => setShowResetPw(false)}
         />
       )}
     </div>

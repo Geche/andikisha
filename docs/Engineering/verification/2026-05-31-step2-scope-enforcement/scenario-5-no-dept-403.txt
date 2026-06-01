@@ -1,0 +1,3 @@
+LINE_MANAGER no dept — Option C 403:
+{"error":"DEPARTMENT_REQUIRED","message":"Your account does not have a department assigned. Contact your administrator.","timestamp":"2026-05-31T01:26:57.516716"}
+HTTP Status: 403

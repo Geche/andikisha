@@ -28,6 +28,12 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, UUID
     Page<LeaveRequest> findByTenantIdOrderByCreatedAtDesc(
             String tenantId, Pageable pageable);
 
+    Page<LeaveRequest> findByTenantIdAndEmployeeIdInOrderByCreatedAtDesc(
+            String tenantId, List<UUID> employeeIds, Pageable pageable);
+
+    Page<LeaveRequest> findByTenantIdAndStatusAndEmployeeIdInOrderByCreatedAtDesc(
+            String tenantId, LeaveRequestStatus status, List<UUID> employeeIds, Pageable pageable);
+
     @Query("""
         SELECT lr FROM LeaveRequest lr
         WHERE lr.tenantId = :tenantId

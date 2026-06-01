@@ -270,6 +270,8 @@ services:
       SERVER_PORT: "8087"
       GRPC_PORT: "9087"
       DB_NAME: andikisha_leave
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
     depends_on:
       postgres:
         condition: service_healthy

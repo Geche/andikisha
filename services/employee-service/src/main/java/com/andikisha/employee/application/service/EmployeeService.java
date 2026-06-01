@@ -5,6 +5,7 @@ import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.employee.application.dto.request.CreateEmployeeRequest;
 import com.andikisha.employee.application.dto.request.UpdateEmployeeRequest;
+import com.andikisha.employee.application.dto.request.UpdateProfileRequest;
 import com.andikisha.employee.application.dto.request.UpdateSalaryRequest;
 import com.andikisha.employee.application.dto.response.EmployeeDetailResponse;
 import com.andikisha.employee.application.mapper.EmployeeMapper;
@@ -173,11 +174,37 @@ public class EmployeeService {
         }
 
         if (request.bankName() != null) {
+            // Tier-2 audit: bank details
+            if (!java.util.Objects.equals(request.bankName(), employee.getBankName())) {
+                historyRepository.save(EmployeeHistory.record(tenantId, employeeId,
+                        "FIELD_CHANGE", "bankName",
+                        employee.getBankName(), request.bankName(), updatedBy));
+            }
+            if (!java.util.Objects.equals(request.bankAccountNumber(), employee.getBankAccountNumber())) {
+                historyRepository.save(EmployeeHistory.record(tenantId, employeeId,
+                        "FIELD_CHANGE", "bankAccountNumber",
+                        maskAccount(employee.getBankAccountNumber()),
+                        maskAccount(request.bankAccountNumber()),
+                        updatedBy));
+            }
             employee.updateBankDetails(
                     request.bankName(), request.bankAccountNumber(), request.bankBranch());
         }
 
         if (request.kraPin() != null || request.nhifNumber() != null || request.nssfNumber() != null) {
+            // Tier-2 audit: statutory IDs
+            if (request.kraPin() != null && !request.kraPin().equals(employee.getKraPin())) {
+                historyRepository.save(EmployeeHistory.record(tenantId, employeeId,
+                        "FIELD_CHANGE", "kraPin", employee.getKraPin(), request.kraPin(), updatedBy));
+            }
+            if (request.nhifNumber() != null && !request.nhifNumber().equals(employee.getNhifNumber())) {
+                historyRepository.save(EmployeeHistory.record(tenantId, employeeId,
+                        "FIELD_CHANGE", "nhifNumber", employee.getNhifNumber(), request.nhifNumber(), updatedBy));
+            }
+            if (request.nssfNumber() != null && !request.nssfNumber().equals(employee.getNssfNumber())) {
+                historyRepository.save(EmployeeHistory.record(tenantId, employeeId,
+                        "FIELD_CHANGE", "nssfNumber", employee.getNssfNumber(), request.nssfNumber(), updatedBy));
+            }
             employee.updateStatutoryIds(request.kraPin(), request.nhifNumber(), request.nssfNumber());
         }
 
@@ -270,6 +297,36 @@ public class EmployeeService {
      * Defers event publication until after the current transaction commits.
      * If no transaction is active, publishes immediately.
      */
+    @Transactional
+    public EmployeeDetailResponse selfUpdateProfile(UUID employeeId, UpdateProfileRequest request) {
+        String tenantId = TenantContext.requireTenantId();
+        Employee employee = employeeRepository.findByIdAndTenantId(employeeId, tenantId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        employee.updateTier1Profile(
+                request.phoneNumber(),
+                request.personalEmail(),
+                request.emergencyContactName(),
+                request.emergencyContactPhone());
+        employee = employeeRepository.save(employee);
+        final Employee saved = employee;
+        publishAfterCommit(() -> eventPublisher.publishEmployeeUpdated(saved, employeeId.toString()));
+        return mapper.toDetailResponse(employee);
+    }
+
+    @Transactional
+    public EmployeeDetailResponse updateAvatarUrl(UUID employeeId, String avatarUrl) {
+        String tenantId = TenantContext.requireTenantId();
+        Employee employee = employeeRepository.findByIdAndTenantId(employeeId, tenantId)
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
+        employee.updateAvatarUrl(avatarUrl);
+        return mapper.toDetailResponse(employeeRepository.save(employee));
+    }
+
+    private static String maskAccount(String acct) {
+        if (acct == null || acct.isBlank()) return null;
+        return "****" + (acct.length() > 4 ? acct.substring(acct.length() - 4) : acct);
+    }
+
     private void publishAfterCommit(Runnable publishAction) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(

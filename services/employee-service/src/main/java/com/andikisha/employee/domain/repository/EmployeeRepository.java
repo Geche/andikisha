@@ -20,6 +20,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     Page<Employee> findByTenantId(String tenantId, Pageable pageable);
 
+    Page<Employee> findByTenantIdAndId(String tenantId, UUID id, Pageable pageable);
+
     Page<Employee> findByTenantIdAndStatus(String tenantId, EmploymentStatus status, Pageable pageable);
 
     Page<Employee> findByTenantIdAndDepartmentId(String tenantId, UUID departmentId, Pageable pageable);
@@ -59,4 +61,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     @Query("SELECT MAX(e.employeeNumber) FROM Employee e WHERE e.tenantId = :tenantId")
     String findMaxEmployeeNumber(String tenantId);
+
+    List<Employee> findByTenantIdAndPendingActivationTrue(String tenantId);
 }

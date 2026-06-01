@@ -105,13 +105,15 @@ public class LeaveController {
     }
 
     @GetMapping("/requests")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER')")
-    @Operation(summary = "List leave requests (filterable by status)")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR', 'ADMIN', 'LINE_MANAGER', 'EMPLOYEE')")
+    @Operation(summary = "List leave requests — scoped by role: ALL (HR/ADMIN), DEPARTMENT (LINE_MANAGER), OWN (EMPLOYEE)")
     public Page<LeaveRequestResponse> listRequests(
             @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-Employee-ID", required = false) String employeeId,
             @RequestParam(required = false) String status,
             Pageable pageable) {
-        return leaveService.listRequests(status, pageable);
+        return leaveService.listRequests(role, employeeId, status, pageable);
     }
 
     @GetMapping("/requests/{id}")

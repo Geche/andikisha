@@ -243,15 +243,29 @@ jobs:
     needs: [docker-build, docker-frontend]
     if: github.ref == 'refs/heads/master'
     steps:
-      - name: Trigger redeploy
+      - name: Trigger redeploy via Dokploy API
         env:
-          WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
+          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
+          DOKPLOY_HOST: ${{ secrets.DOKPLOY_HOST }}
         run: |
-          if [ -z "$WEBHOOK_URL" ]; then
-            echo "DOKPLOY_WEBHOOK_URL secret not set — skipping redeploy trigger"
+          if [ -z "$DOKPLOY_API_TOKEN" ] || [ -z "$DOKPLOY_HOST" ]; then
+            echo "DOKPLOY_API_TOKEN or DOKPLOY_HOST secret not set — skipping redeploy trigger"
             exit 0
           fi
-          curl -s -X GET "$WEBHOOK_URL" -w "\nHTTP status: %{http_code}\n"
+          echo "Triggering Dokploy redeploy for andikisha-stack..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${DOKPLOY_HOST}/api/compose.redeploy" \
+            -H "Authorization: Bearer ${DOKPLOY_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"composeId":"andikisha-stack-m1ytsf"}')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+          echo "Response: $BODY"
+          echo "HTTP status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "ERROR: Dokploy API returned HTTP $HTTP_STATUS"
+            exit 1
+          fi
 
       - name: Verify deploy health
         env:
@@ -261,17 +275,17 @@ jobs:
             echo "API_DOMAIN secret not set — skipping health verification"
             exit 0
           fi
-          echo "Waiting 60s for Dokploy to pull and restart containers..."
-          sleep 60
+          echo "Waiting 90s for Dokploy to pull and restart containers..."
+          sleep 90
           echo "Polling https://${API_DOMAIN}/actuator/health..."
-          for i in {1..15}; do
+          for i in {1..20}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
                      "https://${API_DOMAIN}/actuator/health" 2>/dev/null || echo "000")
             if [ "$STATUS" = "200" ]; then
-              echo "Deploy healthy (attempt $i/15)"
+              echo "Deploy healthy (attempt $i/20)"
               exit 0
             fi
-            echo "Attempt $i/15: HTTP $STATUS — waiting 15s..."
+            echo "Attempt $i/20: HTTP $STATUS — waiting 15s..."
             sleep 15
           done
-          echo "ERROR: api-gateway did not return 200 after 15 attempts" && exit 1
+          echo "ERROR: api-gateway did not return 200 after 20 attempts" && exit 1

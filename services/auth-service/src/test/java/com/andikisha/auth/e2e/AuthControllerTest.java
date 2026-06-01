@@ -71,7 +71,8 @@ class AuthControllerTest {
                                 {
                                   "email": "jane@example.com",
                                   "phoneNumber": "+254700000001",
-                                  "password": "SecurePass1"
+                                  "password": "SecurePass1",
+                                  "employeeId": "00000000-0000-0000-0000-000000000001"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -107,7 +108,8 @@ class AuthControllerTest {
                                 {
                                   "email": "jane@example.com",
                                   "phoneNumber": "+254700000001",
-                                  "password": "SecurePass1"
+                                  "password": "SecurePass1",
+                                  "employeeId": "00000000-0000-0000-0000-000000000001"
                                 }
                                 """))
                 .andExpect(status().isConflict())
