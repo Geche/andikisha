@@ -172,12 +172,10 @@ function SectionCard({
 function AvatarUpload({
   avatarUrl,
   initials,
-  employeeId,
   onUpload,
 }: {
   avatarUrl: string | null;
   initials: string;
-  employeeId: string;
   onUpload: (url: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -311,7 +309,6 @@ export default function ProfilePage() {
             <AvatarUpload
               avatarUrl={profile.avatarUrl}
               initials={initials}
-              employeeId={profile.id}
               onUpload={() => void queryClient.invalidateQueries({ queryKey: ["my-profile"] })}
             />
             <div className="flex-1 min-w-0">
