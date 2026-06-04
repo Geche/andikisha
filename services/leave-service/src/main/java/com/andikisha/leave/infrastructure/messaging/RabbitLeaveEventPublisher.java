@@ -35,13 +35,8 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getEndDate(),
                 request.getDays()
         );
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.requested", event);
-                log.info("Published leave requested for {}", request.getEmployeeName());
-            }
-        });
+        sendAfterCommit(RabbitMqConfig.LEAVE_EXCHANGE, "leave.requested", event);
+        log.info("Queued leave.requested event for {}", request.getEmployeeName());
     }
 
     @Override
@@ -56,13 +51,8 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getDays(),
                 request.getReviewedBy().toString()
         );
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.approved", event);
-                log.info("Published leave approved for {}", request.getEmployeeName());
-            }
-        });
+        sendAfterCommit(RabbitMqConfig.LEAVE_EXCHANGE, "leave.approved", event);
+        log.info("Queued leave.approved event for {}", request.getEmployeeName());
     }
 
     @Override
@@ -75,13 +65,8 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getRejectionReason(),
                 request.getReviewedBy().toString()
         );
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.rejected", event);
-                log.info("Published leave rejected for {}", request.getEmployeeName());
-            }
-        });
+        sendAfterCommit(RabbitMqConfig.LEAVE_EXCHANGE, "leave.rejected", event);
+        log.info("Queued leave.rejected event for {}", request.getEmployeeName());
     }
 
     @Override
@@ -95,12 +80,34 @@ public class RabbitLeaveEventPublisher implements LeaveEventPublisher {
                 request.getRejectionReason(),
                 request.getReviewedBy().toString()
         );
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                rabbitTemplate.convertAndSend(RabbitMqConfig.LEAVE_EXCHANGE, "leave.reversed", event);
-                log.info("Published leave reversed for {}", request.getEmployeeName());
-            }
-        });
+        sendAfterCommit(RabbitMqConfig.LEAVE_EXCHANGE, "leave.reversed", event);
+        log.info("Queued leave.reversed event for {}", request.getEmployeeName());
+    }
+
+    /**
+     * Defers the RabbitMQ send until after the surrounding transaction commits.
+     * If no transaction is active (e.g. called from a test or non-transactional context),
+     * sends immediately so the event is never silently dropped.
+     */
+    private void sendAfterCommit(String exchange, String routingKey, Object event) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    doSend(exchange, routingKey, event);
+                }
+            });
+        } else {
+            doSend(exchange, routingKey, event);
+        }
+    }
+
+    private void doSend(String exchange, String routingKey, Object event) {
+        try {
+            rabbitTemplate.convertAndSend(exchange, routingKey, event);
+        } catch (Exception e) {
+            log.error("Failed to publish event [{}] to {}/{}: {}",
+                    event.getClass().getSimpleName(), exchange, routingKey, e.getMessage(), e);
+        }
     }
 }

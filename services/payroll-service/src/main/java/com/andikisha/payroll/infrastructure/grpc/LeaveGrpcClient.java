@@ -9,10 +9,12 @@ import com.andikisha.proto.leave.LeaveBalanceResponse;
 import com.andikisha.proto.leave.LeaveBalancesResponse;
 import com.andikisha.proto.leave.LeaveServiceGrpc;
 import io.grpc.Channel;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -20,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Component
@@ -28,22 +31,32 @@ public class LeaveGrpcClient {
     private static final Logger log = LoggerFactory.getLogger(LeaveGrpcClient.class);
 
     private final LeaveServiceGrpc.LeaveServiceBlockingStub stub;
+    private final long deadlineSeconds;
 
-    public LeaveGrpcClient(@GrpcClient("leave-service") Channel channel) {
+    public LeaveGrpcClient(
+            @GrpcClient("leave-service") Channel channel,
+            @Value("${app.grpc.deadline-seconds.leave-service:30}") long deadlineSeconds) {
         this.stub = LeaveServiceGrpc.newBlockingStub(channel);
+        this.deadlineSeconds = deadlineSeconds;
     }
 
     public List<LeaveBalanceResponse> getLeaveBalances(String tenantId, String employeeId, int year) {
         try {
-            LeaveBalancesResponse response = stub.getLeaveBalances(
-                    GetLeaveBalancesRequest.newBuilder()
-                            .setTenantId(tenantId)
-                            .setEmployeeId(employeeId)
-                            .setYear(year)
-                            .build());
+            LeaveBalancesResponse response = stub.withDeadlineAfter(deadlineSeconds, TimeUnit.SECONDS)
+                    .getLeaveBalances(
+                            GetLeaveBalancesRequest.newBuilder()
+                                    .setTenantId(tenantId)
+                                    .setEmployeeId(employeeId)
+                                    .setYear(year)
+                                    .build());
             return response.getBalancesList();
         } catch (StatusRuntimeException e) {
-            log.warn("Failed to fetch leave balances for employee {}: {}", employeeId, e.getStatus());
+            if (e.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
+                log.error("leave-service.getLeaveBalances timed out after {}s for employee {}",
+                        deadlineSeconds, employeeId);
+            } else {
+                log.warn("Failed to fetch leave balances for employee {}: {}", employeeId, e.getStatus());
+            }
             return Collections.emptyList();
         }
     }
@@ -51,36 +64,48 @@ public class LeaveGrpcClient {
     public Optional<LeaveBalanceResponse> getLeaveBalance(String tenantId, String employeeId,
                                                           String leaveType, int year) {
         try {
-            LeaveBalanceResponse response = stub.getLeaveBalance(
-                    GetLeaveBalanceRequest.newBuilder()
-                            .setTenantId(tenantId)
-                            .setEmployeeId(employeeId)
-                            .setLeaveType(leaveType)
-                            .setYear(year)
-                            .build());
+            LeaveBalanceResponse response = stub.withDeadlineAfter(deadlineSeconds, TimeUnit.SECONDS)
+                    .getLeaveBalance(
+                            GetLeaveBalanceRequest.newBuilder()
+                                    .setTenantId(tenantId)
+                                    .setEmployeeId(employeeId)
+                                    .setLeaveType(leaveType)
+                                    .setYear(year)
+                                    .build());
             return Optional.of(response);
         } catch (StatusRuntimeException e) {
-            if (e.getStatus().getCode() == io.grpc.Status.Code.NOT_FOUND) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
                 return Optional.empty();
             }
-            log.warn("Failed to fetch {} leave balance for employee {}: {}",
-                    leaveType, employeeId, e.getStatus());
+            if (e.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
+                log.error("leave-service.getLeaveBalance timed out after {}s for employee {} type {}",
+                        deadlineSeconds, employeeId, leaveType);
+            } else {
+                log.warn("Failed to fetch {} leave balance for employee {}: {}",
+                        leaveType, employeeId, e.getStatus());
+            }
             return Optional.empty();
         }
     }
 
     public List<EmployeeLeaveBalances> getLeaveBalancesBatch(String tenantId, List<String> employeeIds, int year) {
         try {
-            var response = stub.getLeaveBalancesBatch(
-                    GetLeaveBalancesBatchRequest.newBuilder()
-                            .setTenantId(tenantId)
-                            .addAllEmployeeIds(employeeIds)
-                            .setYear(year)
-                            .build());
+            var response = stub.withDeadlineAfter(deadlineSeconds, TimeUnit.SECONDS)
+                    .getLeaveBalancesBatch(
+                            GetLeaveBalancesBatchRequest.newBuilder()
+                                    .setTenantId(tenantId)
+                                    .addAllEmployeeIds(employeeIds)
+                                    .setYear(year)
+                                    .build());
             return response.getResultsList();
         } catch (StatusRuntimeException e) {
-            log.warn("Failed to fetch batch leave balances for tenant {} ({}): {}",
-                    tenantId, employeeIds.size() + " employees", e.getStatus());
+            if (e.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
+                log.error("leave-service.getLeaveBalancesBatch timed out after {}s for {} employees in tenant {}",
+                        deadlineSeconds, employeeIds.size(), tenantId);
+            } else {
+                log.warn("Failed to fetch batch leave balances for tenant {} ({}): {}",
+                        tenantId, employeeIds.size() + " employees", e.getStatus());
+            }
             // safe fallback: return empty list so payroll run continues with zero leave deductions
             return Collections.emptyList();
         }
@@ -88,19 +113,26 @@ public class LeaveGrpcClient {
 
     public Map<String, BigDecimal> getUnpaidLeaveDaysForPeriod(String tenantId, List<String> employeeIds, int year, int month) {
         try {
-            var response = stub.getUnpaidLeaveDaysForPeriod(
-                    GetUnpaidLeaveDaysForPeriodRequest.newBuilder()
-                            .setTenantId(tenantId)
-                            .addAllEmployeeIds(employeeIds)
-                            .setYear(year)
-                            .setMonth(month)
-                            .build());
+            var response = stub.withDeadlineAfter(deadlineSeconds, TimeUnit.SECONDS)
+                    .getUnpaidLeaveDaysForPeriod(
+                            GetUnpaidLeaveDaysForPeriodRequest.newBuilder()
+                                    .setTenantId(tenantId)
+                                    .addAllEmployeeIds(employeeIds)
+                                    .setYear(year)
+                                    .setMonth(month)
+                                    .build());
             return response.getResultsList().stream()
                     .collect(Collectors.toMap(
                             com.andikisha.proto.leave.EmployeeUnpaidDays::getEmployeeId,
                             r -> new BigDecimal(r.getUnpaidDays())));
         } catch (StatusRuntimeException e) {
-            log.warn("Failed to fetch unpaid leave days for period {}/{} tenant {}: {}", year, month, tenantId, e.getStatus());
+            if (e.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED) {
+                log.error("leave-service.getUnpaidLeaveDaysForPeriod timed out after {}s for {}/{} tenant {}",
+                        deadlineSeconds, year, month, tenantId);
+            } else {
+                log.warn("Failed to fetch unpaid leave days for period {}/{} tenant {}: {}",
+                        year, month, tenantId, e.getStatus());
+            }
             return Collections.emptyMap();
         }
     }

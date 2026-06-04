@@ -1,0 +1,8 @@
+# Production profile — overrides application.yml for production deployments.
+# Swagger and OpenAPI docs are disabled: the full API surface must not be
+# publicly accessible in production via the /services/* gateway prefix.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

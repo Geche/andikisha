@@ -62,6 +62,12 @@ grpc:
       enable-keep-alive: true
       keep-alive-time: 30s
 
+app:
+  grpc:
+    deadline-seconds:
+      employee-service: ${EMPLOYEE_GRPC_DEADLINE_SECONDS:30}
+      leave-service: ${LEAVE_GRPC_DEADLINE_SECONDS:30}
+
 management:
   endpoints:
     web:

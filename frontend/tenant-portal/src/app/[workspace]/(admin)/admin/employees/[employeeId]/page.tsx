@@ -753,6 +753,7 @@ function ChangeRoleModal({
   const [deptError, setDeptError] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const currentUser = useCurrentUser();
 
   const mutation = useMutation<UserAccount, AxiosError<{ error?: string; message?: string }>, string>({
     mutationFn: (role) =>
@@ -761,6 +762,11 @@ function ChangeRoleModal({
         .then((r) => r.data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["employee-user", employeeId] });
+      // If the role change targets the currently logged-in user, refetch their cached
+      // identity immediately so the UI reflects the new role without waiting 60 seconds.
+      if (currentUser?.employeeId === employeeId) {
+        void queryClient.invalidateQueries({ queryKey: ["current-user"] });
+      }
       toast(`Role updated to ${roleLabel(selectedRole)}`, "success");
       onClose();
     },
