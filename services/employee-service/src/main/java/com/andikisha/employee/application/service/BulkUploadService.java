@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -171,6 +172,20 @@ public class BulkUploadService {
         depts.forEach(d -> deptMap.put(d.getName().toLowerCase(), d.getId()));
         poses.forEach(p -> posMap.put(p.getTitle().toLowerCase(),  p.getId()));
 
+        // Pre-pass: build in-file nationalId → [rowNumbers] map to detect duplicates within the upload.
+        // Only non-blank values are considered; blank nationalId rows are not duplicates of each other.
+        Map<String, List<Integer>> inFileDuplicateNationalIds = new HashMap<>();
+        int scanRow = 2;
+        for (Map<String,String> row : rows) {
+            String natId = row.getOrDefault("nationalId", "").trim();
+            if (!natId.isBlank()) {
+                inFileDuplicateNationalIds.computeIfAbsent(natId, k -> new ArrayList<>()).add(scanRow);
+            }
+            scanRow++;
+        }
+        // Keep only entries that appear more than once — these are the in-file duplicates.
+        inFileDuplicateNationalIds.entrySet().removeIf(e -> e.getValue().size() <= 1);
+
         List<BulkRowError> errors = new ArrayList<>();
         List<Map<String,String>> validRows = new ArrayList<>();
         int rowNum = 2; // 1-based, skip header
@@ -178,7 +193,8 @@ public class BulkUploadService {
         for (Map<String,String> row : rows) {
             List<BulkRowError> rowErrors = validateRow(row, rowNum, tenantId, deptMap, posMap,
                     depts.stream().map(Department::getName).toList(),
-                    poses.stream().map(Position::getTitle).toList());
+                    poses.stream().map(Position::getTitle).toList(),
+                    inFileDuplicateNationalIds);
             if (rowErrors.isEmpty()) {
                 validRows.add(row);
             }
@@ -198,7 +214,8 @@ public class BulkUploadService {
 
     private List<BulkRowError> validateRow(Map<String,String> row, int rowNum, String tenantId,
                                             Map<String,UUID> deptMap, Map<String,UUID> posMap,
-                                            List<String> deptNames, List<String> posNames) {
+                                            List<String> deptNames, List<String> posNames,
+                                            Map<String, List<Integer>> inFileDuplicateNationalIds) {
         List<BulkRowError> errs = new ArrayList<>();
 
         // Required fields
@@ -220,6 +237,24 @@ public class BulkUploadService {
             errs.add(new BulkRowError(rowNum, "workEmail", email, "Invalid email format"));
         } else if (employeeRepository.existsByTenantIdAndEmail(tenantId, email)) {
             errs.add(new BulkRowError(rowNum, "workEmail", email, "Email already exists in tenant"));
+        }
+
+        // nationalId uniqueness — only checked when a value is provided (field is optional)
+        String nationalId = row.getOrDefault("nationalId", "").trim();
+        if (!nationalId.isBlank()) {
+            // Cross-file: check against existing employees in the database
+            if (employeeRepository.existsByTenantIdAndNationalId(tenantId, nationalId)) {
+                errs.add(new BulkRowError(rowNum, "nationalId", nationalId,
+                        "National ID '" + nationalId + "' is already registered for another employee in this tenant."));
+            }
+            // In-file: check for duplicates within this upload
+            if (inFileDuplicateNationalIds.containsKey(nationalId)) {
+                String rowList = inFileDuplicateNationalIds.get(nationalId).stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "));
+                errs.add(new BulkRowError(rowNum, "nationalId", nationalId,
+                        "National ID '" + nationalId + "' appears in multiple rows of this upload (rows: " + rowList + ")."));
+            }
         }
 
         // Role
