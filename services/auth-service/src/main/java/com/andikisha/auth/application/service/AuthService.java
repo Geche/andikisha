@@ -528,10 +528,20 @@ public class AuthService {
      * Provisions a user account for an employee who was bulk-uploaded.
      * Called by employee-service during the activation step.
      * Returns the email and generated temp password so HR can hand it to the employee.
+     *
+     * Throws {@link com.andikisha.auth.domain.exception.UserAlreadyActivatedException} when
+     * the employee already has a linked user account. Activation and password-reset are
+     * semantically distinct; HR should use the admin password-reset action instead.
      */
     @Transactional
     public com.andikisha.auth.application.dto.response.ProvisionEmployeeResponse provisionForActivation(
             String tenantId, UUID employeeId, String email, String phone) {
+        // Refuse when this employee's account already exists. Using the employeeId link
+        // (not email) is more reliable: an employee's email could theoretically be reused
+        // across tenants, but the employeeId link is inherently tenant-scoped.
+        if (userRepository.existsByEmployeeIdAndTenantId(employeeId, tenantId)) {
+            throw new com.andikisha.auth.domain.exception.UserAlreadyActivatedException(employeeId);
+        }
         String tempPassword = com.andikisha.common.util.PasswordGenerator.generate();
         provisionEmployeeUser(tenantId, email, phone, tempPassword, employeeId.toString());
         return new com.andikisha.auth.application.dto.response.ProvisionEmployeeResponse(email, tempPassword);

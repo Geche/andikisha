@@ -466,11 +466,23 @@ public class BulkUploadService {
             String tempPwd = body != null ? (String) body.get("temporaryPassword") : null;
             return new ActivationResult(emp.getId(),
                     emp.getFirstName() + " " + emp.getLastName(),
-                    emp.getEmail(), tempPwd, true, null);
+                    emp.getEmail(), tempPwd, true, null, null);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // Try to extract the machine-readable error code from the auth-service response.
+            String errorCode = null;
+            String errorMessage = e.getMessage();
+            try {
+                Map<?,?> body = objectMapper.readValue(e.getResponseBodyAsString(), Map.class);
+                errorCode    = (String) body.get("error");
+                errorMessage = (String) body.get("message");
+            } catch (Exception ignored) { /* fall through with raw message */ }
+            return new ActivationResult(emp.getId(),
+                    emp.getFirstName() + " " + emp.getLastName(),
+                    emp.getEmail(), null, false, errorCode, errorMessage);
         } catch (Exception e) {
             return new ActivationResult(emp.getId(),
                     emp.getFirstName() + " " + emp.getLastName(),
-                    emp.getEmail(), null, false, e.getMessage());
+                    emp.getEmail(), null, false, null, e.getMessage());
         }
     }
 

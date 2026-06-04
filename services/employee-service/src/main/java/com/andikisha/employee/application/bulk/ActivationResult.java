@@ -8,4 +8,5 @@ public record ActivationResult(
         String email,
         String tempPassword,
         boolean success,
+        String errorCode,    // machine-readable error code for frontend branching (e.g. USER_ALREADY_ACTIVATED)
         String errorMessage) {}

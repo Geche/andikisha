@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, AlertTriangle, Download } from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertTriangle, Download, UserX } from "lucide-react";
 import { PageHeader, BaseModal, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
@@ -28,6 +28,7 @@ interface ActivationResult {
   email: string | null;
   tempPassword: string | null;
   success: boolean;
+  errorCode: string | null;   // machine-readable, e.g. "USER_ALREADY_ACTIVATED"
   errorMessage: string | null;
 }
 
@@ -40,10 +41,12 @@ function ActivationResultModal({
   results: ActivationResult[];
   onClose: () => void;
 }) {
+  const workspace = useWorkspace();
   const [copied, setCopied] = useState(false);
 
-  const successful = results.filter((r) => r.success);
-  const failed     = results.filter((r) => !r.success);
+  const successful      = results.filter((r) => r.success);
+  const alreadyActive   = results.filter((r) => !r.success && r.errorCode === "USER_ALREADY_ACTIVATED");
+  const otherFailed     = results.filter((r) => !r.success && r.errorCode !== "USER_ALREADY_ACTIVATED");
 
   function downloadPasswords() {
     const rows = [
@@ -61,20 +64,22 @@ function ActivationResultModal({
 
   return (
     <BaseModal labelId="activation-result-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[600px] max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[620px] max-h-[85vh] flex flex-col">
         <div className="px-6 py-5 border-b border-neutral-100">
           <h2 id="activation-result-title" className="text-[16px] font-bold text-neutral-900">
             Activation Complete
           </h2>
           <p className="text-[13px] text-neutral-500 mt-0.5">
-            {successful.length} account{successful.length !== 1 ? "s" : ""} activated
-            {failed.length > 0 && `, ${failed.length} failed`}
+            {successful.length} activated
+            {alreadyActive.length > 0 && `, ${alreadyActive.length} already active`}
+            {otherFailed.length > 0 && `, ${otherFailed.length} failed`}
           </p>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+          {/* ── Successful activations ── */}
           {successful.length > 0 && (
-            <>
+            <div className="space-y-3">
               <div className="flex items-start gap-2.5 rounded-xl bg-amber-light border border-amber px-4 py-3">
                 <AlertTriangle size={14} className="text-amber flex-shrink-0 mt-0.5" />
                 <p className="text-[12.5px] text-amber-text leading-relaxed">
@@ -102,14 +107,54 @@ function ActivationResultModal({
                   </tbody>
                 </table>
               </div>
-            </>
+            </div>
           )}
 
-          {failed.length > 0 && (
-            <div>
-              <p className="text-[12px] font-semibold text-red-600 mb-2">Failed activations:</p>
-              {failed.map((r) => (
-                <div key={r.employeeId} className="text-[12px] text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-1">
+          {/* ── Already-active employees — actionable, not an error ── */}
+          {alreadyActive.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[12.5px] font-semibold text-neutral-700">
+                <UserX size={14} className="text-amber flex-shrink-0" />
+                {alreadyActive.length === 1
+                  ? "1 employee already has an account"
+                  : `${alreadyActive.length} employees already have accounts`}
+              </div>
+              <div className="text-[12px] text-neutral-500 mb-2">
+                These employees already have active login accounts. Use the password reset action on their profile to issue new credentials.
+              </div>
+              <div className="space-y-1.5">
+                {alreadyActive.map((r) => (
+                  <div
+                    key={r.employeeId}
+                    className="flex items-center justify-between bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-2.5"
+                  >
+                    <div>
+                      <span className="text-[13px] font-medium text-near-black">{r.employeeName}</span>
+                      {r.email && (
+                        <span className="text-[12px] text-neutral-500 ml-2">{r.email}</span>
+                      )}
+                    </div>
+                    <Link
+                      href={`/${workspace}/admin/employees/${r.employeeId}`}
+                      onClick={onClose}
+                      className="text-[12px] font-semibold text-brand-700 hover:text-brand-900 transition-colors whitespace-nowrap ml-4"
+                    >
+                      Open profile →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Other failures ── */}
+          {otherFailed.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[12px] font-semibold text-red-600">
+                {otherFailed.length} activation{otherFailed.length !== 1 ? "s" : ""} failed:
+              </p>
+              {otherFailed.map((r) => (
+                <div key={r.employeeId} className="text-[12px] text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                   {r.employeeName}: {r.errorMessage}
                 </div>
               ))}
