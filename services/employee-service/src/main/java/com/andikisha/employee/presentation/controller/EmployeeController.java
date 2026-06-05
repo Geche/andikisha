@@ -63,15 +63,15 @@ public class EmployeeController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get the calling employee's own record (self-service)")
     public EmployeeDetailResponse getMe(@RequestHeader("X-User-Email") String email) {
         return queryService.findByEmail(email);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'PAYROLL_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
-    @Operation(summary = "List employees — scoped by role: ALL (HR/Admin), DEPARTMENT (LINE_MANAGER), OWN (EMPLOYEE)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
+    @Operation(summary = "List employees — scoped by role: ALL (HR_OFFICER/HR_MANAGER/Admin), DEPARTMENT (LINE_MANAGER), OWN (EMPLOYEE)")
     public Page<EmployeeSummaryResponse> list(
             @RequestHeader(value = "X-User-Role", required = false) String role,
             @RequestHeader(value = "X-Employee-ID", required = false) String employeeId,
@@ -83,14 +83,14 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR') or #id.toString().equals(authentication.name)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER') or #id.toString().equals(authentication.name)")
     @Operation(summary = "Get employee by ID")
     public EmployeeDetailResponse getById(@PathVariable UUID id) {
         return queryService.findById(id);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN')")
     @Operation(summary = "Update employee details")
     public EmployeeDetailResponse update(
             @RequestHeader("X-User-ID") String userId,

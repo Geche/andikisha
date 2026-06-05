@@ -97,6 +97,8 @@ This was discovered during Step 2 visual verification: `EmployeeGrpcClient` in l
 
 The mapping matches the `SYSTEM`-tenant seed data in `role_permissions` exactly and is correct for V1. It is acceptable as long as all tenants share the same fixed role definitions.
 
+**2026-06-05 update (M-3 fix):** HR_OFFICER has been added to the hardcoded mapping (ALL scope on employee:read/update and leave:read). The legacy `HR` role has been removed from the mapping and deprecated (V15 migration). When this backlog item is eventually implemented, the DB-driven query must include HR_OFFICER with `employee:read:all`, `employee:update:all`, and `leave:read:all`.
+
 **When this becomes load-bearing:**
 The premium per-tenant role customization feature (deferred per `docs/Engineering/2026-05-22-role-permissions-onboarding-plan.md`) makes `role_permissions` tenant-specific. At that point, a hardcoded mapping would silently ignore per-tenant configuration.
 

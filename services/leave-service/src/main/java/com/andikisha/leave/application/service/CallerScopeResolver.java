@@ -17,10 +17,15 @@ import java.util.UUID;
  *   3. DEPARTMENT scope → gRPC lookup to employee-service for caller's departmentId
  *      If employeeId is blank or employee has no department → DepartmentScopeException (Option C)
  *
- * Scope mapping (leave resource, matches V14 seed):
- *   HR_MANAGER, HR → ALL
- *   LINE_MANAGER    → DEPARTMENT
- *   EMPLOYEE, other → OWN
+ * Scope mapping (leave resource, matches V15 seed):
+ *   HR_MANAGER, HR_OFFICER → ALL
+ *   LINE_MANAGER           → DEPARTMENT
+ *   EMPLOYEE, other        → OWN
+ *
+ * Note: the legacy 'HR' role was deprecated in V15 and replaced by HR_OFFICER.
+ * The 'HR' case has been removed from this mapping; no users should hold HR role.
+ * HR_OFFICER has leave:read:all but NOT leave:approve — approval stays with
+ * HR_MANAGER, ADMIN, and LINE_MANAGER (for their department).
  */
 @Component
 public class CallerScopeResolver {
@@ -39,9 +44,13 @@ public class CallerScopeResolver {
 
         // Step 2 — derive scope from role for the leave resource
         ScopeType scopeType = switch (role == null ? "" : role) {
-            case "HR_MANAGER", "HR" -> ScopeType.ALL;
+            case "HR_MANAGER", "HR_OFFICER" -> ScopeType.ALL;
             case "LINE_MANAGER" -> ScopeType.DEPARTMENT;
-            default -> ScopeType.OWN;
+            default -> {
+                org.slf4j.LoggerFactory.getLogger(CallerScopeResolver.class)
+                    .warn("Unknown role '{}' defaulting to OWN scope on leave resource", role);
+                yield ScopeType.OWN;
+            }
         };
 
         if (scopeType == ScopeType.ALL) {

@@ -18,10 +18,13 @@ import java.util.UUID;
  *      (no gRPC needed — employee-service is the source of truth)
  *      If employeeId blank or employee has no department → DepartmentScopeException (Option C)
  *
- * Scope mapping (employee resource, matches V14 seed):
- *   HR_MANAGER, HR, PAYROLL_OFFICER → ALL
- *   LINE_MANAGER                    → DEPARTMENT
- *   EMPLOYEE, other                 → OWN
+ * Scope mapping (employee resource, matches V15 seed):
+ *   HR_MANAGER, HR_OFFICER, PAYROLL_OFFICER → ALL
+ *   LINE_MANAGER                            → DEPARTMENT
+ *   EMPLOYEE, other                         → OWN
+ *
+ * Note: the legacy 'HR' role was deprecated in V15 and replaced by HR_OFFICER.
+ * The 'HR' case has been removed from this mapping; no users should hold HR role.
  */
 @Component
 public class CallerScopeResolver {
@@ -40,9 +43,13 @@ public class CallerScopeResolver {
 
         // Step 2 — derive scope for the employee resource
         ScopeType scopeType = switch (role == null ? "" : role) {
-            case "HR_MANAGER", "HR", "PAYROLL_OFFICER" -> ScopeType.ALL;
+            case "HR_MANAGER", "HR_OFFICER", "PAYROLL_OFFICER" -> ScopeType.ALL;
             case "LINE_MANAGER" -> ScopeType.DEPARTMENT;
-            default -> ScopeType.OWN;
+            default -> {
+                org.slf4j.LoggerFactory.getLogger(CallerScopeResolver.class)
+                    .warn("Unknown role '{}' defaulting to OWN scope on employee resource", role);
+                yield ScopeType.OWN;
+            }
         };
 
         if (scopeType == ScopeType.ALL) {
