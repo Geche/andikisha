@@ -1,5 +1,6 @@
 package com.andikisha.employee.application.mapper;
 
+import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.employee.application.dto.response.DepartmentResponse;
 import com.andikisha.employee.application.dto.response.EmployeeDetailResponse;
 import com.andikisha.employee.application.dto.response.EmployeeResponse;
@@ -10,6 +11,8 @@ import com.andikisha.employee.domain.model.Employee;
 import com.andikisha.employee.domain.model.Position;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
+import java.math.BigDecimal;
 
 @Mapper(componentModel = "spring")
 public interface EmployeeMapper {
@@ -25,7 +28,7 @@ public interface EmployeeMapper {
     @Mapping(target = "transportAllowance", source = "salaryStructure.transportAllowance.amount")
     @Mapping(target = "medicalAllowance",   source = "salaryStructure.medicalAllowance.amount")
     @Mapping(target = "otherAllowances",    source = "salaryStructure.otherAllowances.amount")
-    @Mapping(target = "grossPay",   expression = "java(e.getSalaryStructure().grossPay().getAmount())")
+    @Mapping(target = "grossPay",   expression = "java(computeGrossPay(e))")
     @Mapping(target = "currency",   source = "salaryStructure.basicSalary.currency")
     @Mapping(target = "gender",     expression = "java(e.getGender() != null ? e.getGender().name() : null)")
     EmployeeResponse toResponse(Employee e);
@@ -42,7 +45,7 @@ public interface EmployeeMapper {
     @Mapping(target = "medicalAllowance",      source = "salaryStructure.medicalAllowance.amount")
     @Mapping(target = "otherAllowances",       source = "salaryStructure.otherAllowances.amount")
     @Mapping(target = "helbMonthlyDeduction",  source = "salaryStructure.helbMonthlyDeduction.amount")
-    @Mapping(target = "grossPay",   expression = "java(e.getSalaryStructure().grossPay().getAmount())")
+    @Mapping(target = "grossPay",   expression = "java(computeGrossPay(e))")
     @Mapping(target = "currency",   source = "salaryStructure.basicSalary.currency")
     @Mapping(target = "gender",     expression = "java(e.getGender() != null ? e.getGender().name() : null)")
     EmployeeDetailResponse toDetailResponse(Employee e);
@@ -57,4 +60,20 @@ public interface EmployeeMapper {
     DepartmentResponse toResponse(Department d);
 
     PositionResponse toResponse(Position p);
+
+    /**
+     * Computes grossPay from the employee's SalaryStructure.
+     * Throws rather than silently returning zero — a null SalaryStructure indicates
+     * a data integrity problem that must surface loudly at the mapping boundary.
+     */
+    default BigDecimal computeGrossPay(Employee e) {
+        if (e.getSalaryStructure() == null) {
+            throw new BusinessRuleException(
+                "INCOMPLETE_SALARY_STRUCTURE",
+                "Employee " + e.getId() + " has no salary structure. " +
+                "Update the employee's salary details before mapping."
+            );
+        }
+        return e.getSalaryStructure().grossPay().getAmount();
+    }
 }

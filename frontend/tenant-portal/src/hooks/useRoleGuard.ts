@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useCurrentUser } from "@andikisha/ui";
 import { ADMIN_ROLES, findCorrectDashboard } from "@andikisha/ui/auth";
 
-type AuthStatus = "authorized" | "redirecting";
+type AuthStatus = "authorized" | "redirecting" | "loading";
 
 function checkAuthorized(roles: Set<string>, area: "employee" | "admin"): boolean {
   return area === "employee"
@@ -19,6 +19,7 @@ export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
   const params = useParams();
   const workspace = typeof params.workspace === "string" ? params.workspace : "";
 
+  // roles is null when the user is still loading — treat that as "loading", not "authorized"
   const roles = user
     ? new Set<string>(user.roles.flatMap((r) => (r ? [r] : [])))
     : null;
@@ -32,6 +33,7 @@ export function useRoleGuard(area: "employee" | "admin"): AuthStatus {
     }
   }, [authorized, roles, router, workspace]);
 
+  if (authorized === null) return "loading";   // user not yet fetched — default-deny
   if (authorized === false) return "redirecting";
   return "authorized";
 }

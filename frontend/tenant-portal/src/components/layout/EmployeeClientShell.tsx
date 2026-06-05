@@ -22,7 +22,9 @@ export function EmployeeClientShell({ userEmail, children }: EmployeeClientShell
     router.replace(workspace ? `/${workspace}/login` : "/login");
   }
 
-  if (authStatus === "redirecting") return null;
+  // "loading": user role not yet fetched — render nothing (no flash of employee content)
+  // "redirecting": wrong role — render nothing while redirect fires
+  if (authStatus !== "authorized") return null;
 
   return (
     <EmployeeShell
