@@ -1,0 +1,24 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg1);padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  label{display:block;font-size:12px;font-weight:500;color:var(--fg2);margin-bottom:6px}
+  .field{position:relative}
+  .ctrl{width:100%;box-sizing:border-box;font-family:var(--font-sans);font-size:14px;color:var(--fg1);padding:9px 12px;border:1px solid var(--border-strong);border-radius:8px;background:#fff}
+  .ctrl::placeholder{color:var(--fg4)}
+  .ctrl.icon{padding-left:34px}
+  .lucide-lead{position:absolute;left:11px;top:34px;color:var(--fg3);width:16px;height:16px}
+  .focused{border-color:var(--green-600);box-shadow:var(--shadow-focus)}
+  .err{border-color:var(--danger)}
+  .hint{font-size:11px;color:var(--danger);margin-top:5px}
+  .full{grid-column:1/-1}
+</style></head>
+<body>
+  <div class="field"><label>Full name</label><input class="ctrl" value="Amani Okello"></div>
+  <div class="field"><label>Work email</label><i data-lucide="mail" class="lucide-lead"></i><input class="ctrl icon" placeholder="name@company.com"></div>
+  <div class="field"><label>Department</label><input class="ctrl focused" value="People Ops"></div>
+  <div class="field"><label>Employee ID</label><input class="ctrl err" value="—"><div class="hint">This field is required</div></div>
+  <div class="field full"><label>Notes</label><input class="ctrl" placeholder="Add a note…" disabled style="background:var(--bg2);color:var(--fg4)"></div>
+  <script>lucide.createIcons();</script>
+</body></html>

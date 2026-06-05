@@ -1,0 +1,32 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg2);padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-xs)}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .ic{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;flex:none}
+  .ic.green{background:var(--green-700)}
+  .ic.amber{background:var(--amber-500);color:var(--green-900)}
+  .ttl{font-size:13px;font-weight:600;color:var(--fg2)}
+  .bot{display:flex;align-items:flex-end;justify-content:space-between}
+  .num{font-size:28px;font-weight:700;color:var(--fg1);line-height:1;letter-spacing:-0.02em}
+  .sub{font-size:12px;color:var(--fg3);margin-top:5px}
+  .pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--fg1);background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:2px 4px 2px 9px}
+  .pill .chip{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
+  .up{background:var(--success)}
+  .down{background:var(--danger)}
+</style></head>
+<body>
+  <div class="card">
+    <div class="top"><div class="ic green"><i data-lucide="users"></i></div><div class="ttl">Total Employees</div></div>
+    <div class="bot"><div><div class="num">1,848</div><div class="sub">Headcount overview</div></div>
+      <span class="pill">+18%<span class="chip up"><i data-lucide="arrow-up-right"></i></span></span></div>
+  </div>
+  <div class="card">
+    <div class="top"><div class="ic amber"><i data-lucide="clock-alert"></i></div><div class="ttl">Late Arrivals</div></div>
+    <div class="bot"><div><div class="num">12</div><div class="sub">Delayed logins today</div></div>
+      <span class="pill">−16%<span class="chip down"><i data-lucide="arrow-down-right"></i></span></span></div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body></html>

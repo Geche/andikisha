@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg1);padding:20px}
+  .scale{display:grid;grid-template-columns:repeat(11,1fr);gap:6px}
+  .sw{height:64px;border-radius:8px;border:1px solid rgba(2,17,12,.06)}
+  .lab{display:grid;grid-template-columns:repeat(11,1fr);gap:6px;margin-top:8px}
+  .lab span{font-size:10px;color:var(--fg3);text-align:center}
+  .core{outline:2px solid var(--green-900);outline-offset:2px}
+  h3{font-size:13px;margin:0 0 14px;color:var(--fg1);font-weight:600;letter-spacing:.01em}
+  .hex{display:grid;grid-template-columns:repeat(11,1fr);gap:6px;margin-top:2px}
+  .hex span{font-size:8.5px;color:var(--fg4);text-align:center;font-family:var(--font-mono)}
+</style></head>
+<body>
+  <h3>Primary — Forest Green · core <b style="font-family:var(--font-mono);font-weight:400">700 #0b3d2e</b></h3>
+  <div class="scale">
+    <div class="sw" style="background:var(--green-25)"></div>
+    <div class="sw" style="background:var(--green-50)"></div>
+    <div class="sw" style="background:var(--green-100)"></div>
+    <div class="sw" style="background:var(--green-200)"></div>
+    <div class="sw" style="background:var(--green-300)"></div>
+    <div class="sw" style="background:var(--green-400)"></div>
+    <div class="sw" style="background:var(--green-500)"></div>
+    <div class="sw" style="background:var(--green-600)"></div>
+    <div class="sw core" style="background:var(--green-700)"></div>
+    <div class="sw" style="background:var(--green-800)"></div>
+    <div class="sw" style="background:var(--green-900)"></div>
+  </div>
+  <div class="lab"><span>25</span><span>50</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span><span>600</span><span>700</span><span>800</span><span>900</span></div>
+</body></html>

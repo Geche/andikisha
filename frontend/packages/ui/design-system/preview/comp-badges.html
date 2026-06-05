@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg1);padding:22px 24px}
+  .row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:13px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;line-height:1.4}
+  .badge .dot{width:6px;height:6px;border-radius:50%}
+  .b-green{background:var(--green-50);color:var(--green-700)}
+  .b-amber{background:var(--amber-50);color:var(--amber-700)}
+  .b-success{background:var(--success-bg);color:var(--success)}
+  .b-warn{background:var(--warning-bg);color:#b45309}
+  .b-danger{background:var(--danger-bg);color:var(--danger)}
+  .b-neutral{background:var(--neutral-100);color:var(--fg2)}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 9px;border-radius:6px;border:1px solid var(--border);color:var(--fg2);background:#fff}
+  .tag .lucide{width:13px;height:13px;color:var(--fg3)}
+  .lab{font-size:10.5px;color:var(--fg3);font-family:var(--font-mono);width:60px;flex:none}
+</style></head>
+<body>
+  <div class="row"><span class="lab">status</span>
+    <span class="badge b-success"><span class="dot" style="background:var(--success)"></span>Active</span>
+    <span class="badge b-warn"><span class="dot" style="background:var(--warning)"></span>On leave</span>
+    <span class="badge b-danger"><span class="dot" style="background:var(--danger)"></span>Offboarded</span>
+    <span class="badge b-neutral"><span class="dot" style="background:var(--fg4)"></span>Invited</span>
+  </div>
+  <div class="row"><span class="lab">brand</span>
+    <span class="badge b-green">Full-time</span>
+    <span class="badge b-amber">Payroll due</span>
+    <span class="badge b-green"><i data-lucide="circle-check" style="width:13px;height:13px"></i>Approved</span>
+  </div>
+  <div class="row"><span class="lab">tags</span>
+    <span class="tag"><i data-lucide="tag"></i>Engineering</span>
+    <span class="tag"><i data-lucide="map-pin"></i>Nairobi</span>
+    <span class="tag">Remote<i data-lucide="x"></i></span>
+  </div>
+  <script>lucide.createIcons();</script>
+</body></html>

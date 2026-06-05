@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg1);padding:20px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+  .bar{height:48px}
+  .meta{padding:8px 10px}
+  .meta .n{font-size:12px;font-weight:600;color:var(--fg1)}
+  .meta .h{font-size:10.5px;color:var(--fg3);font-family:var(--font-mono)}
+  .soft{height:20px}
+  h3{font-size:13px;margin:0 0 14px;color:var(--fg1);font-weight:600}
+</style></head>
+<body>
+  <h3>Semantic — status colors (solid + soft)</h3>
+  <div class="grid">
+    <div class="item"><div class="bar" style="background:var(--success)"></div><div class="soft" style="background:var(--success-bg)"></div><div class="meta"><div class="n">Success</div><div class="h">#16a34a</div></div></div>
+    <div class="item"><div class="bar" style="background:var(--warning)"></div><div class="soft" style="background:var(--warning-bg)"></div><div class="meta"><div class="n">Warning</div><div class="h">#f59e0b</div></div></div>
+    <div class="item"><div class="bar" style="background:var(--danger)"></div><div class="soft" style="background:var(--danger-bg)"></div><div class="meta"><div class="n">Danger</div><div class="h">#dc2626</div></div></div>
+    <div class="item"><div class="bar" style="background:var(--info)"></div><div class="soft" style="background:var(--info-bg)"></div><div class="meta"><div class="n">Info</div><div class="h">#1b84ff</div></div></div>
+  </div>
+</body></html>
