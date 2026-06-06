@@ -158,7 +158,13 @@ VERIFICATION-NOTE-001 practice — a passing build is not sufficient.
 
 - **R1 — landing `@apply` under v4.** v4 still supports `@layer components` + `@apply` of **utility** classes; landing's `@apply` uses utilities (`bg-amber`, `rounded-lg`, `px-6`, `text-ink-900`), so it should port, but `@apply` of any *component* class breaks. Mitigation: audit each `@apply` for non-utility tokens during Step 3; convert offenders to direct utilities. Verify by building landing, not by inspection alone.
 - **R2 — `content` → `@source`.** v4 drops `content` globs for `@source`. landing's globs (`./app`, `./components`, `./content/**/*.mdx`) map directly. Risk: MDX content classes missed → purged styles. Mitigation: include the MDX `@source` and screenshot a blog page.
-- **R3 — shared `@theme` import resolution.** Unverified that Tailwind v4 processes a `@theme` block delivered via `@import "@andikisha/ui/theme.css"` through Next's `@tailwindcss/postcss`. Mitigation: **spike this first** on tenant-portal before committing Step 2; fallback options if it fails — (a) `@import` a relative path (`../../../packages/ui/src/theme.css`) instead of the package subpath, or (b) re-export the `@theme` from each app's `globals.css` via `@import` ordering. Requires the `exports` map entry from Step 1.
+- **R3 — shared `@theme` import resolution. ✅ RESOLVED (2026-06-06).** Proven that
+  Tailwind v4 processes a `@theme` delivered via `@import "@andikisha/ui/theme.css"`
+  (package subpath via the `exports` map + workspace symlink): the postcss spike
+  registered the imported token identically to an inline one, and the **real
+  `next dev` build** of tenant-portal compiled `/login` → HTTP 200 with the
+  shared theme live (Step 2a, commit `b34ea37`; assertions in VERIFICATION-NOTE-001).
+  The relative-path / re-export fallbacks were not needed.
 - **R4 — `brand-*` rename blast radius (456 sites / 85 files).** Resolved by alias-then-migrate (above); no big-bang. The offset (`brand-900`==`green-700`, `brand-950/800/700/500` orphaned) means aliases must map to *current* hex, not to the nearest green, or mid-tones shift unintentionally.
 - **R5 — `neutral-*` global shift.** Unavoidable (name collision). Deliberate, screenshot-verified at Step 2; per-step escape hatch to pin a cool value.
 - **R6 — Roboto via CDN in the bundle (carried flag).** `design-system/colors_and_type.css` still `@import`s Google Fonts for Roboto. Prototype-only; out of this plan's app scope, but decide separately (self-host vs accept). Does not affect the apps (they use `next/font`).
