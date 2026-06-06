@@ -27,4 +27,15 @@ condition to clear it.
 - **Clear when:** backend login is restored → log in to each portal, capture the
   dashboard + a table screen, attach to `VERIFICATION-NOTE-001`, and confirm (a)
   the warm-neutral shift reads correctly and (b) no regression on dense surfaces.
-- **Blocks:** merge of `chore/frontend-design-system-tokens` → `master`.
+- **Progress (2026-06-06):** backend **P1 fixed** (real api-gateway restored on
+  `:8080`, `resolve` + super-admin login work end-to-end).
+  - **Platform portal — CLEARED.** Dashboard + tenants table captured and
+    verified: warm neutrals correct on dense tables, `Provision Tenant` primary =
+    green-700, status badges + pagination intact, no regression.
+    `verification/2026-06-06-step2-platform-{dashboard,tenants}.png`.
+  - **Tenant portal — still open.** The demo admin password (`Admin@123!`, from
+    21-day-old memory) returns `INVALID_CREDENTIALS` — changed since. Needs the
+    current admin password (or a reset) to capture `/admin/dashboard` + an admin
+    table. Slug confirmed: `andikisha-demo`.
+- **Blocks:** merge of `chore/frontend-design-system-tokens` → `master`
+  (tenant-portal dense surface still unverified).

@@ -121,4 +121,19 @@ pending the backend fix or an alternative valid session.
 - **Status: PROVISIONALLY CLOSED.** VERIF-DEBT-001 **blocks merge to master**
   until the dense-surface visual check is completed.
 
+### 2026-06-06 — Step 2 dense surfaces: PLATFORM verified (P1 fixed)
+
+- **Backend P1 fixed:** the real api-gateway was brought up on `:8080` (it wasn't
+  running; an unrelated project held the port). `resolve` now returns clean JSON
+  unauthenticated; super-admin login works; tenant slug = `andikisha-demo`.
+- **Platform portal dense surfaces — PASS** (Playwright + cached chromium, super-admin
+  session): `/dashboard` (200) and `/tenants` (200). Warm neutrals read correctly
+  on the dense tables (headers/dividers/text), `Provision Tenant` primary = green-700,
+  status badges + pagination intact, no regression. Evidence:
+  `verification/2026-06-06-step2-platform-{dashboard,tenants}.png`.
+- **Tenant portal dense surfaces — still pending:** demo admin password from memory
+  is `INVALID_CREDENTIALS`; awaiting current password (tracked in VERIF-DEBT-001).
+- **Step 2 remains PROVISIONALLY CLOSED** until the tenant-portal dense surface is
+  captured.
+
 _(entries appended per step as the migration executes)_
