@@ -88,15 +88,25 @@ method used (or fallback + reason), checklist result.
   no regression ✅.
 - **Result: login surface PASS.**
 
-### ⚠️ Step 2 NOT CLOSED — authenticated surfaces pending
+### ⚠️ Step 2 NOT CLOSED — authenticated surfaces blocked by a backend issue
 
-Login pages alone don't exercise the warm-neutral shift (they're mostly green +
-white card). Per directive, Step 2 closure requires **dashboard + one table screen
-per portal** verified. Automated headless capture is blocked in this environment:
-gateway 401s direct `resolve` calls, the tenant `workspace` slug lookup (DB query)
-was denied as out-of-scope, and Playwright's JS package isn't installed. **Handoff:**
-human eyeball on the dev servers (creds + URLs in the step report), or provide the
-workspace slug + approval to install Playwright for automated capture. Closure
-entry to be appended once those surfaces are confirmed.
+Login pages don't exercise the warm-neutral shift (mostly green + white card).
+Closure requires **dashboard + one table screen per portal**, which need an
+authenticated session — and that is currently **impossible in this stack**:
+
+- The running **api-gateway returns `401` with `WWW-Authenticate: Basic realm="Realm"`**
+  on the supposedly-public resolve endpoint
+  `/api/v1/public/workspaces/{slug}/resolve` — identical for `demo` and a random
+  slug, so it is **endpoint-level Spring Security**, not a wrong slug, licence, or
+  Playwright issue. (Redis licence cache was seeded; `actuator/health` is 200.)
+- This makes the BFF login return `RESOLVE_ERROR`, so **no login works** —
+  automated or manual. The gateway must `permitAll` that route (or the BFF must
+  attach the SYSTEM JWT) before any authenticated surface can be reached.
+
+Tooling readiness (so capture is immediate once login is restored): **Playwright-core
+1.60 with the cached chromium is installed and smoke-tested working**; the
+mechanical gate already proves the shift at the token level (assertion B4:
+cool `#6b7280`/`#1f2937` = 0 in both portals' compiled CSS). Closure deferred
+pending the backend fix or an alternative valid session.
 
 _(entries appended per step as the migration executes)_
