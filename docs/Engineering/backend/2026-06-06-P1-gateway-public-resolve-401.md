@@ -79,6 +79,24 @@ running on this port, from which commit" a one-curl check:
 - **Fail-fast on identity:** log bound port + `spring.application.name` + commit id
   at startup so a wrong/stale process is obvious in logs.
 
+## Prevention (port allocation)
+The deeper cause was a **port collision between two local projects**: AndikishaHR's
+api-gateway defaults to `:8080`, and so does `arusifiti/apps/core-api`. Whichever
+starts first owns `:8080`; the other silently doesn't, and callers hit the wrong
+app. Eliminate the ambiguity by giving each project a **distinct, non-overlapping
+local port range**:
+
+- **AndikishaHR** already uses the `808x` / `908x` block (gateway 8080, services
+  8081–8092, gRPC 9081–9092) — keep it.
+- **arusifiti** must move to a **different reserved band** (e.g. `:4000`-range or
+  `:8200`-range) for its core-api and any siblings — never `808x`.
+- Pin it explicitly: set `server.port` per project (env/profile, not the framework
+  default) so neither can fall back onto `8080`. Document the allocation in each
+  repo's README / dev runbook.
+- Optional guard: a dev pre-flight that fails if `:8080` is already bound by a
+  process whose `/actuator/info` `app.name` ≠ `api-gateway` (ties into the identity
+  check above), so `:8080` can never again answer `health: 200` as the wrong app.
+
 ## Links
 - Blocks `docs/Engineering/frontend/VERIF-DEBT.md` → VERIF-DEBT-001.
 - Evidence + tooling readiness: `docs/Engineering/frontend/VERIFICATION-NOTE-001.md`.
