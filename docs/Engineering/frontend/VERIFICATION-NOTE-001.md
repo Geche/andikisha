@@ -109,4 +109,16 @@ mechanical gate already proves the shift at the token level (assertion B4:
 cool `#6b7280`/`#1f2937` = 0 in both portals' compiled CSS). Closure deferred
 pending the backend fix or an alternative valid session.
 
+### 2026-06-06 — Step 2 PROVISIONAL CLOSURE
+
+- **Code:** 2a `b34ea37` (tenant) + 2b `9b66d61` (platform) — both portals now
+  consume the shared `@theme`; no per-app token block remains.
+- **Verified now:** compile (0 warnings) + 5 mechanical assertions PASS per portal;
+  warm-neutral shift proven at token level (cool `#6b7280`/`#1f2937` = 0 both);
+  login surfaces screenshotted (Roboto; platform Sign In = green-700).
+- **Deferred → VERIF-DEBT-001:** dense authenticated surfaces (dashboard + table,
+  both portals), blocked by the gateway 401 (backend P1 defect).
+- **Status: PROVISIONALLY CLOSED.** VERIF-DEBT-001 **blocks merge to master**
+  until the dense-surface visual check is completed.
+
 _(entries appended per step as the migration executes)_
