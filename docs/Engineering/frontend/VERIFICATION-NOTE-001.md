@@ -48,4 +48,27 @@ method used (or fallback + reason), checklist result.
 
 ## Audit trail
 
+### 2026-06-06 — Step 2a: tenant-portal adopts shared `@theme`
+
+- **Change:** `tenant-portal/src/app/globals.css` — replaced the inline `@theme`
+  block with `@import "@andikisha/ui/theme.css"`; kept `@source` + `@layer base`.
+- **A. Build:** `@tailwindcss/postcss` compile of the app's CSS with real
+  `@source` over `tenant-portal/src` + `packages/ui/src` → `COMPILE_OK`, 44550
+  bytes. Live `next dev` compiled `/login` → **HTTP 200**.
+- **B. Five assertions:**
+  1. Compile OK, **0 warnings**. ✅
+  2. Legacy aliases resolve (used classes): `brand-900 #0b3d2e`, `amber #e8a020`,
+     `near-black #02110c`, `surface #ffffff`, `brand-50 #e8f5f0`. ✅
+  3. No competing defs in `globals.css`: 0 `@theme`, 0 `--color-`, import present. ✅
+  4. Warm-neutral shift: `neutral-500 #737373`, `-800 #262626`, `-100 #f0f0f0`;
+     **old cool `#6b7280`/`#1f2937` count = 0**. ✅
+  5. No Tailwind diagnostics. ✅
+- **C. Screenshot:** Chrome `--headless=new` (Playwright JS pkg not installed;
+  browser binaries cached) → `verification/2026-06-06-step2a-tenant-login.png`.
+- **D. Checklist:** headings Roboto ✅; forest-green brand background ✅ (primary
+  "Continue" button disabled on empty workspace → exact green confirmed via B2,
+  not pixel) ✅; white card + subtle shadow ✅; no layout regression ✅; subtle
+  expected delta only ✅.
+- **Result: PASS.**
+
 _(entries appended per step as the migration executes)_
