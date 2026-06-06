@@ -71,4 +71,32 @@ method used (or fallback + reason), checklist result.
   expected delta only ✅.
 - **Result: PASS.**
 
+### 2026-06-06 — Step 2b: platform-portal adopts shared `@theme`
+
+- **Change:** `platform-portal/src/app/globals.css` — same swap as 2a.
+- **A. Build:** CSS compile `COMPILE_OK` 30366 bytes; live `next dev` (port 3003)
+  compiled `/login` → **HTTP 200**.
+- **B. Five assertions:** (1) compile, **0 warnings** ✅; (2) aliases resolve —
+  `brand-900 #0b3d2e`, `amber #e8a020`, `near-black #02110c`, `surface #ffffff` ✅;
+  (3) 0 `@theme` / 0 `--color-` in globals.css, import present ✅; (4) warm shift —
+  `neutral-500 #737373`, cool `#6b7280`/`#1f2937` = 0 (neutral-800 unused→tree-shaken) ✅;
+  (5) no diagnostics ✅.
+- **C. Screenshot:** `verification/2026-06-06-step2b-platform-login.png`. The
+  **enabled** "Sign In" button renders **green-700** — direct visual confirmation
+  of the primary colour (tenant's was disabled).
+- **D. Checklist:** Roboto heading ✅; primary green-700 ✅; white card + shadow ✅;
+  no regression ✅.
+- **Result: login surface PASS.**
+
+### ⚠️ Step 2 NOT CLOSED — authenticated surfaces pending
+
+Login pages alone don't exercise the warm-neutral shift (they're mostly green +
+white card). Per directive, Step 2 closure requires **dashboard + one table screen
+per portal** verified. Automated headless capture is blocked in this environment:
+gateway 401s direct `resolve` calls, the tenant `workspace` slug lookup (DB query)
+was denied as out-of-scope, and Playwright's JS package isn't installed. **Handoff:**
+human eyeball on the dev servers (creds + URLs in the step report), or provide the
+workspace slug + approval to install Playwright for automated capture. Closure
+entry to be appended once those surfaces are confirmed.
+
 _(entries appended per step as the migration executes)_
