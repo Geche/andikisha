@@ -136,4 +136,26 @@ pending the backend fix or an alternative valid session.
 - **Step 2 remains PROVISIONALLY CLOSED** until the tenant-portal dense surface is
   captured.
 
+### 2026-06-07 — Step 2 FULL CLOSURE ✅
+
+- **Tenant portal dense surfaces — PASS** (Playwright + cached chromium, demo admin
+  session). Credentials re-established safely via the super-admin reset path
+  (forced-change completed; fresh `TENANT_ADMIN_PASSWORD` stored in gitignored
+  `config/env/tenant-verify.env`, never printed/committed).
+  - `/andikisha-demo/admin/dashboard` (200): vertical sidenav (intentional layout,
+    not converted to horizontal), Dashboard active in green, green-700 primary
+    buttons, warm-neutral chrome. Onboarding state (empty demo tenant).
+  - `/andikisha-demo/admin/employees` (200): full table chrome — amber `+ Add
+    Employee` accent CTA, segmented filter, **warm-neutral table headers
+    (NAME/EMPLOYEE #/…/ACTIONS) + sort carets + dividers**, no regression.
+  - Evidence: `verification/2026-06-07-step2-tenant-{dashboard,employees}.png`.
+- **Caveat (not a regression):** tenant data rows did not populate — tenant-scoped
+  requests return `503 LICENCE_CHECK_UNAVAILABLE` (Redis-connectivity infra issue,
+  same root as the readiness 503; filed as a backlog item against the deployment
+  path). The token migration's chrome renders correctly; populated-row evidence of
+  the warm-neutral shift is the platform tenants table (2026-06-06 entry).
+- **VERIF-DEBT-001: CLEARED.** Both portals' dense surfaces verified.
+- **STATUS: Step 2 FULLY CLOSED.** Both portals consume the shared `@theme`;
+  no longer blocks merge to master.
+
 _(entries appended per step as the migration executes)_

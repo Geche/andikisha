@@ -33,9 +33,17 @@ condition to clear it.
     verified: warm neutrals correct on dense tables, `Provision Tenant` primary =
     green-700, status badges + pagination intact, no regression.
     `verification/2026-06-06-step2-platform-{dashboard,tenants}.png`.
-  - **Tenant portal — still open.** The demo admin password (`Admin@123!`, from
-    21-day-old memory) returns `INVALID_CREDENTIALS` — changed since. Needs the
-    current admin password (or a reset) to capture `/admin/dashboard` + an admin
-    table. Slug confirmed: `andikisha-demo`.
-- **Blocks:** merge of `chore/frontend-design-system-tokens` → `master`
-  (tenant-portal dense surface still unverified).
+  - **Tenant portal — CLEARED (2026-06-07).** Credentials re-established via the
+    super-admin reset path (`/super-admin/tenants/{id}/admin-password-reset` →
+    forced-change completed via `/auth/change-password`); fresh password stored in
+    the gitignored `config/env/tenant-verify.env` (`TENANT_ADMIN_PASSWORD`), never
+    printed. Captured `/admin/dashboard` + the employees table: vertical sidenav
+    (intentional layout — not converted), green-700 primaries, amber accent CTA,
+    warm-neutral table headers/dividers/chrome, no regression.
+    `verification/2026-06-07-step2-tenant-{dashboard,employees}.png`.
+    **Caveat:** tenant data rows did not populate — tenant-scoped requests return
+    `503 LICENCE_CHECK_UNAVAILABLE` (Redis-connectivity infra issue; see
+    `docs/Engineering/backend/2026-06-07-redis-readiness-503-backlog.md`). Not a
+    token-migration regression (the chrome renders correctly); populated-row
+    evidence of the warm-neutral shift comes from the platform tenants table.
+- **Status: CLEARED 2026-06-07** — no longer blocks merge to master.
