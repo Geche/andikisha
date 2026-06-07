@@ -63,8 +63,23 @@ These come from the design system's *visual* DNA, unchanged across both exports,
   status dots.
 - `FE-BACKLOG-004` — type-scale tokens (replace hardcoded `text-[Npx]`), table
   header/divider alignment, sidebar-width standardisation (260px), `KES`→`KSh`.
+- `FE-BACKLOG-005` — **tenant-portal + both login surfaces adopt the shared
+  `@andikisha/ui` primitives.** Replace tenant-portal's *local* `Button`/`Input`
+  (23 `<Button>`, only 3 files currently import the shared ones) and the two portal
+  **login** pages' custom inputs/buttons (they import only `LogoFull` today) with
+  the shared `@andikisha/ui` Button/Input. The green focus halo + Button hover
+  consistency then ride along automatically (Step 4 already shipped them in the
+  shared primitives). Surfaced by the Step-4 verification: the halo/hover only
+  reach surfaces built from the shared primitives.
+  - **Sequencing constraint (explicit):** must land **before or together with the
+    component-DNA work `FE-BACKLOG-002` (Card primitive + accent bar) and
+    `FE-BACKLOG-003` (StatCard icon chip + status dots).** Those build on the
+    shared primitives; if 005 lags, the component-DNA reaches **platform-portal
+    only** and tenant-portal keeps diverging on its local components.
+    *(N.B. the constraint binds to `-002`/`-003`; `FE-BACKLOG-001` is retired.)*
 
-(IDs kept stable so existing references don't break; 001 is intentionally retired.)
+(IDs are stable so existing references don't break; `001` is intentionally retired.
+Requested as "FE-BACKLOG-004" but that ID was already taken — filed as `-005`.)
 
 ## Bundle cleanup (actioned)
 

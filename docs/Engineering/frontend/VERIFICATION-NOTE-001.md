@@ -278,3 +278,20 @@ Filling the gaps from the first Step-4 record now the full stack is running.
   centralised**, not 109.
 - **(5) Named utility, no arbitrary:** `shadow-focus` used **17×**; arbitrary
   `focus*:shadow-[…]` = **0**.
+
+### 2026-06-07 — Step 4 FULL CLOSURE ✅ (accepted)
+
+- **Code:** `c50f6dd` (impl) + `23158fc` (driven-capture evidence).
+- **Gate A–E satisfied:** build 0 warnings (3 globals + landing `next build`);
+  B1–B5 pass (amber=0, named `shadow-focus`, hover darkens, reduced-motion ×3, no
+  diagnostics); driven `:focus-visible` halo captured for landing + platform;
+  Button hover **before/after pair** (lighter→darker); reduced-motion both portals.
+- **Scope recorded as a follow-up (not a gap):** tenant-portal had **0 amber focus
+  sites** and uses a **local** Button/Input; the halo/hover reach it via the shared
+  primitives where imported. Bringing tenant + both login surfaces onto the shared
+  `@andikisha/ui` primitives is tracked as **`FE-BACKLOG-005`** (must land before/with
+  the component-DNA `FE-BACKLOG-002`/`-003`).
+- **STATUS: Step 4 FULLY CLOSED.** Focus halo, Button hover fix, shadow tokens,
+  and reduced-motion are live in the shared primitives + landing + platform.
+
+_(entries appended per step as the migration executes)_
