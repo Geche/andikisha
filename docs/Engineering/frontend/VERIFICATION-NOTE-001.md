@@ -88,7 +88,18 @@ method used (or fallback + reason), checklist result.
   no regression ✅.
 - **Result: login surface PASS.**
 
-### ⚠️ Step 2 NOT CLOSED — authenticated surfaces blocked by a backend issue
+### ⚠️ Step 2 NOT CLOSED — authenticated surfaces blocked by a backend issue *(SUPERSEDED — diagnosis below was wrong)*
+
+> **CORRECTION (2026-06-07):** the 401 was **not** gateway Spring Security. The
+> response carried `Set-Cookie: JSESSIONID` + `WWW-Authenticate: Basic realm="Realm"`
+> — impossible for the reactive (Netty) gateway; that is a *servlet* app on Spring
+> Boot's default security auto-config. `:8080` was squatted by an unrelated local
+> project (`arusifiti/apps/core-api`); the real gateway wasn't running. In source,
+> both hops were always open (`anyExchange().permitAll()` at the gateway;
+> `/api/v1/public/**` whitelisted in tenant-service). No backend change was needed.
+> Full root cause + prevention:
+> `docs/Engineering/backend/2026-06-06-P1-gateway-public-resolve-401.md`.
+> Resolution and closure: see the entries from "Step 2 PROVISIONAL CLOSURE" onward.
 
 Login pages don't exercise the warm-neutral shift (mostly green + white card).
 Closure requires **dashboard + one table screen per portal**, which need an
