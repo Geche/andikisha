@@ -195,4 +195,40 @@ pending the backend fix or an alternative valid session.
   plumbing step.
 - **STATUS: Step 3 complete.** Landing on Tailwind v4 consuming the shared `@theme`.
 
+### 2026-06-07 — Step 4: focus halo + Button hover + shadows + motion ✅
+
+- **Change:**
+  - **Focus ring** amber outline → **named `shadow-focus` halo** (from `--shadow-focus`;
+    no arbitrary `shadow-[]`). ui primitives (button, Input, Textarea, Select,
+    Checkbox, Switch, Dialog, ProfileMenu, Sheet) → `focus-visible:outline-none
+    focus-visible:shadow-focus`. Landing `@apply` classes (`.btn-*`, `.form-*`,
+    `.focus-ring`) → halo; the **inline component focus sites centralised through the
+    `.focus-ring` class** (one mechanical pass; `partners` opacity-modifier straggler
+    spot-fixed). Platform `tenants/page.tsx` 1 site.
+  - **Button primary hover fix:** `hover:bg-brand-800` (lighter) → `hover:bg-green-800`
+    (`#082e23`) — now darkens.
+  - **Motion:** `prefers-reduced-motion` block added to both portals (landing already had it).
+- **Mechanical:** 0 `outline-amber` remaining (all apps + ui); 17 `shadow-focus`
+  uses, **0 arbitrary focus `shadow-[]`**; Button primary hover = `green-800`;
+  reduced-motion ×3; all three globals compile **0 warnings**.
+- **Rendered (Playwright computed style, authed):**
+  - PLATFORM ui **Input focus** `box-shadow` = `rgba(11,61,46,0.16) 0 0 0 4px` — the green halo ✓.
+  - PLATFORM ui **Button** (Provision Tenant): base `rgb(11,61,46)` → **hover `rgb(8,46,35)`**
+    = green-700 → green-800 darken ✓.
+- **Screenshots:** landing focus halo on a form input (clear green glow,
+  `step4-landing-focus-halo.png`); platform focus halo + hover-darken
+  (`step4-platform-{focus-halo,hover-darken}.png`); tenant admin surface
+  (`step4-tenant-surface.png`); reduced-motion home (`step4-reduced-motion.png`).
+- **Breakage note (halo vs `overflow-hidden`):** halos render un-clipped on the
+  verified elements.
+- **Honest caveats:** (a) `:focus-visible` on **buttons** can't be driven by
+  programmatic Playwright focus (Chromium only flags focus-visible on keyboard nav);
+  the button halo is proven via source + the `shadow-focus` token rendering (shown on
+  the input). (b) Portal **login** pages use custom inputs/buttons (only `LogoFull`
+  from ui) — the halo/hover apply to ui components on app surfaces (verified on
+  platform) + landing's own classes; tenant uses the same shared ui Button/Input. (c)
+  On dark-green hero backgrounds the translucent green halo is low-contrast
+  (`btn-outline-white`) — flagged as a design-system follow-up.
+- **STATUS: Step 4 complete.**
+
 _(entries appended per step as the migration executes)_

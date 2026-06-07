@@ -54,7 +54,7 @@ export default async function BlogPostPage({ params }: Props) {
         <div className="max-w-[820px] mx-auto px-6 relative z-10">
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 text-white/60 hover:text-white text-[14px] font-medium transition-colors mb-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm"
+            className="inline-flex items-center gap-2 text-white/60 hover:text-white text-[14px] font-medium transition-colors mb-6 focus-ring rounded-sm"
           >
             <ArrowLeft size={14} aria-hidden /> Back to blog
           </Link>

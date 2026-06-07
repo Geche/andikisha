@@ -92,7 +92,7 @@ export default function PartnersPage() {
             </p>
             <Link
               href="/contact?subject=partner"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] transition-colors duration-200 focus-ring"
             >
               Enquire about partnering <ArrowRight size={15} aria-hidden="true" />
             </Link>
@@ -205,13 +205,13 @@ export default function PartnersPage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/contact?subject=partner"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[14px] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[14px] transition-colors duration-200 focus-ring"
               >
                 Enquire via contact form <ArrowRight size={14} aria-hidden="true" />
               </Link>
               <a
                 href="mailto:partners@andikishahr.com"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 font-medium text-[14px] transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/50 focus-visible:outline-offset-2"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/20 text-white/80 hover:bg-white/10 font-medium text-[14px] transition-colors duration-200 focus-ring"
               >
                 partners@andikishahr.com
               </a>

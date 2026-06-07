@@ -12,11 +12,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const BASE =
   "inline-flex items-center justify-center gap-1.5 font-semibold rounded-lg transition-colors " +
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 " +
+  "focus-visible:outline-none focus-visible:shadow-focus " +
   "disabled:opacity-50 disabled:pointer-events-none";
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary:   "bg-brand-900 text-white hover:bg-brand-800",
+  primary:   "bg-brand-900 text-white hover:bg-green-800",
   cta:       "bg-amber text-near-black hover:bg-amber-dark",
   secondary: "bg-surface border border-neutral-200 text-neutral-700 hover:bg-neutral-100",
   ghost:     "text-neutral-700 hover:bg-neutral-100",

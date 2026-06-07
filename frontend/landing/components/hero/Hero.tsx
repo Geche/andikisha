@@ -11,7 +11,7 @@ export default function Hero() {
         {/* Pill — links to calculator */}
         <a
           href="#calculator"
-          className="inline-flex items-center gap-2 border border-ink-200 rounded-full px-3.5 py-2 mb-8 hover:border-ink-300 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+          className="inline-flex items-center gap-2 border border-ink-200 rounded-full px-3.5 py-2 mb-8 hover:border-ink-300 transition-colors focus-ring"
         >
           <span className="bg-brand-50 text-brand-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full">
             New
@@ -39,7 +39,7 @@ export default function Hero() {
         {/* Single CTA */}
         <Link
           href="/demo"
-          className="inline-flex items-center gap-2 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] px-7 py-3.5 rounded-lg transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+          className="inline-flex items-center gap-2 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] px-7 py-3.5 rounded-lg transition-colors duration-200 focus-ring"
         >
           Schedule a demo
           <ChevronRight size={15} aria-hidden />

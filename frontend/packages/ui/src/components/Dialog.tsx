@@ -46,7 +46,7 @@ export function DialogContent({
               </RadixDialog.Description>
             )}
           </div>
-          <RadixDialog.Close className="rounded-md p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber">
+          <RadixDialog.Close className="rounded-md p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors focus-visible:outline-none focus-visible:shadow-focus">
             <X size={16} />
           </RadixDialog.Close>
         </div>

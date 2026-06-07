@@ -169,7 +169,7 @@ export default function PricingTable() {
             aria-checked={annual}
             aria-label="Toggle annual billing"
             onClick={() => setAnnual((v) => !v)}
-            className="relative w-11 h-6 rounded-full bg-brand-900 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 shrink-0"
+            className="relative w-11 h-6 rounded-full bg-brand-900 transition-colors duration-200 focus-ring shrink-0"
           >
             <span
               className={cn(
@@ -247,7 +247,7 @@ export default function PricingTable() {
                 <Link
                   href={plan.href}
                   className={cn(
-                    "block text-center py-3 rounded-lg text-[14px] font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2",
+                    "block text-center py-3 rounded-lg text-[14px] font-semibold transition-colors duration-200 focus-ring",
                     plan.featured
                       ? "bg-amber hover:bg-amber-dark text-ink-900"
                       : plan.cta === "Talk to sales"
@@ -362,7 +362,7 @@ export default function PricingTable() {
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-4 flex items-center gap-1.5 text-[14px] font-medium text-brand-700 hover:text-brand-900 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm"
+          className="mt-4 flex items-center gap-1.5 text-[14px] font-medium text-brand-700 hover:text-brand-900 transition-colors duration-200 focus-ring rounded-sm"
           aria-expanded={expanded}
         >
           {expanded ? "Show less" : "Compare all features"}
