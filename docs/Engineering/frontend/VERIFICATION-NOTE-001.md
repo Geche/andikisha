@@ -242,4 +242,39 @@ pending the backend fix or an alternative valid session.
   (`btn-outline-white`) — flagged as a design-system follow-up.
 - **STATUS: Step 4 complete.**
 
-_(entries appended per step as the migration executes)_
+### 2026-06-07 — Step 4 verification SUPPLEMENT (driven captures, gateway up)
+
+Filling the gaps from the first Step-4 record now the full stack is running.
+
+- **(1) Driven `:focus-visible` halo, all 3 apps** (real keyboard `Tab`, which
+  triggers `:focus-visible` on buttons *and* inputs — programmatic `.focus()` does
+  not for buttons):
+  - LANDING — Tab #7 `<a>` "Schedule a demo" shows the halo (`.focus-ring`) →
+    `step4-focus-landing.png`.
+  - PLATFORM — Tab #11 `<button>` shows the halo (ui Button) → `step4-focus-platform.png`;
+    ui Input computed `box-shadow` = `rgba(11,61,46,0.16) 0 0 0 4px`.
+  - TENANT — **scope finding:** tenant-portal had **0 amber focus sites to begin
+    with** (Step-4 commit touched only its `globals.css` for reduced-motion). It uses
+    a **local** Button (23 `<Button>`, only 3 files import `@andikisha/ui`) with a
+    custom non-amber ring, so "replace amber" had nothing to change there; the halo
+    reaches tenant via the shared ui primitives (verified on platform). Adopting the
+    halo on tenant's *local* components is a consistency follow-up, not part of Step 4.
+  - **grep:** `outline-amber` = **0**, `ring-amber` = **0** across all frontend src
+    (no documented exceptions needed).
+- **(2) Button primary hover — before/after pair** (temporary revert of the one
+  line, captured, restored to `c50f6dd`):
+  - BEFORE (`hover:bg-brand-800`): base `rgb(11,61,46)` → hover **`rgb(15,80,64)`**
+    = `#0f5040`, **lighter** (the bug) → `step4-hover-before.png`.
+  - AFTER (`hover:bg-green-800`): base `rgb(11,61,46)` → hover **`rgb(8,46,35)`**
+    = `#082e23`, **darker** (fixed) → `step4-hover-after.png`.
+- **(3) Reduced-motion, both portals:** `matchMedia('(prefers-reduced-motion: reduce)')`
+  = `true` on tenant (3000) and platform (3003); `step4-reduced-motion-{tenant,platform}.png`.
+  (Static stills can't show absence-of-motion; the `@media` block in each portal's
+  `globals.css` is the operative proof.)
+- **(4) Landing centralisation:** the plan's "109" was an **over-count**. Actual
+  inline amber focus sites = **19**, across **10** landing component files, routed
+  to the **`.focus-ring`** class in one mechanical pass (+ the `@apply` classes in
+  `globals.css`); ui = 9 sites, platform = 1. So **10 files edited / 19 sites
+  centralised**, not 109.
+- **(5) Named utility, no arbitrary:** `shadow-focus` used **17×**; arbitrary
+  `focus*:shadow-[…]` = **0**.
