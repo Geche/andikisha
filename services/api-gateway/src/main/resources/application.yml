@@ -278,7 +278,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD:changeme}
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
@@ -377,6 +377,9 @@ management:
       show-details: when-authorized
       probes:
         enabled: true
+      group:
+        readiness:
+          include: readinessState
     gateway:
       enabled: true
   tracing:
