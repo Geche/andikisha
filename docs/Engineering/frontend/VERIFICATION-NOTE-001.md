@@ -158,4 +158,41 @@ pending the backend fix or an alternative valid session.
 - **STATUS: Step 2 FULLY CLOSED.** Both portals consume the shared `@theme`;
   no longer blocks merge to master.
 
+### 2026-06-07 — Step 3: landing Tailwind v3 → v4 + shared `@theme` ✅
+
+- **Change:** `app/globals.css` `@tailwind` → `@import "tailwindcss"; @import
+  "@andikisha/ui/theme.css"; @plugin "@tailwindcss/typography";` + four `@source`
+  globs (app/components/content/MDX + packages/ui). `tailwind.config.ts` deleted
+  (colours now from the shared theme; `content`→`@source`; dead `h1/h2-display`
+  clamps dropped — confirmed unused). `postcss.config.mjs` → `@tailwindcss/postcss`
+  (autoprefixer removed). `package.json` → Tailwind v4. `@layer components`
+  rewritten: **R1 fix** (`form-textarea` no longer `@apply`s the `.form-input`
+  component class), prose colours mapped to shared tokens.
+- **Amendments honoured:** **zero Tailwind arbitrary values** in `globals.css`
+  (`text-[15px]`→`text-ui` token, `text-[14px]`→`text-sm`, `text-[13px]`→`text-ui-sm`,
+  `py-[14px]`→`py-3.5`, `-translate-y-[2px]`→`-translate-y-0.5`, the arbitrary
+  card `shadow-[…rgba]`→ token `shadow-lg`; 1.5px hairline kept as plain CSS, not
+  an arbitrary utility). Focus-ring restyle deferred to Step 4 (left working).
+- **A. Build:** `@tailwindcss/postcss` compile `COMPILE_OK` (0 warnings; typography
+  plugin loaded — 20 `.prose` rules). **`next build` → Compiled successfully, 28/28
+  static pages** (incl. MDX).
+- **B. Mechanical:** tokens resolve (`brand-900 #0b3d2e`, `amber #e8a020`,
+  `ink-900 #02110c`); `text-ui`→`0.9375rem` via `@apply` (no unknown-utility error);
+  `form-textarea` generated (R1 ok); card hover now green-tinted token shadow
+  (`rgba(2,17,12…)`, old `rgba(7,30,19)` removed from globals.css); **0 arbitrary
+  utilities** in `globals.css`; no `@tailwind`/`tailwind.config` leftovers.
+- **C. Screenshots (Playwright + cached chromium):**
+  - **home** before/after — **pixel-identical** (`…step3-home-{before,after}.png`).
+  - **pricing** before/after — **identical** (`…step3-pricing-{before,after}.png`).
+  - **blog/MDX** (`…step3-blog-after.png`) — prose styled (bold near-black headings,
+    readable body) → typography `@plugin` + MDX `@source` verified (R2).
+  - **form** (`…step3-contact-after.png`) — `.form-input`/`.form-label` render (R1 ok).
+- **R1 (@apply under v4):** resolved. **R2 (content→@source + MDX/typography):** verified.
+- **Out of scope (flagged):** landing *components* still contain pre-existing
+  arbitrary values / hardcoded hex (e.g. one `rgba(7,30,19)` card shadow in a
+  component) and `info` shifts `#60a5fa`→`#1b84ff` (shared semantic token) on the
+  product page — both belong to the Step 5 stray-hex/arbitrary cleanup, not this
+  plumbing step.
+- **STATUS: Step 3 complete.** Landing on Tailwind v4 consuming the shared `@theme`.
+
 _(entries appended per step as the migration executes)_
