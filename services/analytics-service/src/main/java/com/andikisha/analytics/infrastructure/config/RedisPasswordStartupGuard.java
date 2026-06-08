@@ -2,6 +2,7 @@ package com.andikisha.analytics.infrastructure.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 /**
  * Fail-fast guard for the Redis password (2026-06-07 readiness incident).
@@ -16,6 +17,9 @@ import org.springframework.context.annotation.Configuration;
  * still DEGRADE (per the readiness contract), not block startup.
  */
 @Configuration
+// Production safety net only — never enforce under the test profile, which uses
+// embedded/mock Redis with no password. Tests run with @ActiveProfiles("test").
+@Profile("!test")
 public class RedisPasswordStartupGuard {
 
     public RedisPasswordStartupGuard(

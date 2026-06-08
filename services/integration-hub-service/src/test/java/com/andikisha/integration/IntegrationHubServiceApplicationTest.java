@@ -26,6 +26,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         "spring.rabbitmq.password=guest",
         "spring.data.redis.host=localhost",
         "spring.data.redis.port=6379",
+        // Non-blank so RedisPasswordStartupGuard passes — this test runs in the
+        // default profile (no @ActiveProfiles("test")), so the guard is active here.
+        "spring.data.redis.password=test",
         "app.mpesa.consumer-key=test-key",
         "app.mpesa.consumer-secret=test-secret",
         "mpesa.callback.ip-validation-disabled=true"
