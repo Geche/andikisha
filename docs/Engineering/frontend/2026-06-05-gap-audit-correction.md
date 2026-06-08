@@ -84,6 +84,15 @@ These come from the design system's *visual* DNA, unchanged across both exports,
     only** and tenant-portal keeps diverging on its local components.
     *(N.B. the constraint binds to `-002`/`-003`; `FE-BACKLOG-001` is retired.)*
 
+- `FE-BACKLOG-006` — **delete the dead `@andikisha/api-client` package.** Its
+  `createApiClient` (bearer-token, `baseURL` from env) is imported **nowhere** —
+  both tenant-portal and platform-portal use their own local
+  `src/lib/api-client.ts` (BFF proxy, cookie auth, with the real response-error
+  policy added in W0). The package is a trap: a future dev could wire it up
+  believing it is the real client and bypass the cookie/proxy auth + the licence
+  retry / 401 interceptor. Confirmed dead in both apps (UX-flow-remediation-01,
+  W0). Do not delete mid-remediation-run; remove in a dedicated cleanup.
+
 (IDs are stable so existing references don't break; `001` is intentionally retired.
 Requested as "FE-BACKLOG-004" but that ID was already taken — filed as `-005`.)
 

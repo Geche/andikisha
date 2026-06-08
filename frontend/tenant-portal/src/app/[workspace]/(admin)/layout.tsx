@@ -2,6 +2,7 @@ import { TenantAdminShell, IdleWarningBanner } from "@andikisha/ui";
 import { AdminNav, AdminNavFooter } from "@/components/layout/AdminNav";
 import { TenantCommandPalette } from "@/components/layout/TenantCommandPalette";
 import { AdminRoleGuard } from "@/components/layout/AdminRoleGuard";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 
 const DEV_TIMEOUT = process.env.NEXT_PUBLIC_IDLE_TIMEOUT_MS
   ? parseInt(process.env.NEXT_PUBLIC_IDLE_TIMEOUT_MS, 10)
@@ -10,6 +11,7 @@ const DEV_TIMEOUT = process.env.NEXT_PUBLIC_IDLE_TIMEOUT_MS
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminRoleGuard>
+      <ConnectionBanner />
       <TenantAdminShell nav={<AdminNav />} navFooter={<AdminNavFooter />}>
         <TenantCommandPalette />
         {children}

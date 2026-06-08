@@ -35,9 +35,10 @@ import java.util.UUID;
  * {@link InvalidLicenceTransitionException}.
  *
  * Cache contract: every successful transition writes the new status to
- * Redis under {@code licence:status:{tenantId}} with a 60-second TTL so
+ * Redis under {@code licence:status:{tenantId}} with a 30-minute TTL so
  * that other services (gateway, write-protection aspects) see a coherent
- * view without hammering this service via gRPC.
+ * view without hammering this service via gRPC. On a cache miss the gateway
+ * reads through via {@code ValidateTenantLicence}, which repopulates the key.
  */
 @Service
 @Transactional(readOnly = true)

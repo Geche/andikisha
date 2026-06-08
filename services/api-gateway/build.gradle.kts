@@ -14,6 +14,7 @@ java {
 }
 
 val springCloudVersion: String by rootProject.extra
+val grpcStarterVersion: String by rootProject.extra
 
 dependencyManagement {
     imports {
@@ -48,6 +49,11 @@ dependencies {
 
     // Shared events (PayrollProcessedEvent for lock release)
     implementation(project(":shared:andikisha-events"))
+
+    // Shared proto + gRPC client — licence read-through to tenant-service
+    // (TenantLicenceFilter falls back to ValidateTenantLicence on a cache miss)
+    implementation(project(":shared:andikisha-proto"))
+    implementation("net.devh:grpc-client-spring-boot-starter:$grpcStarterVersion")
 
     // RabbitMQ (async lock release on payroll disbursement completion)
     implementation("org.springframework.boot:spring-boot-starter-amqp")
