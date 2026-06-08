@@ -99,7 +99,7 @@ export default function ContactPage() {
                         ? "noopener noreferrer"
                         : undefined
                     }
-                    className="flex items-start gap-4 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-lg"
+                    className="flex items-start gap-4 group focus-ring rounded-lg"
                   >
                     <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center text-brand-900 shrink-0 group-hover:bg-brand-100 transition-colors duration-200">
                       {item.icon}
@@ -121,9 +121,9 @@ export default function ContactPage() {
                 href={COMPANY.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-4 bg-[#25d366]/10 border border-[#25d366]/20 rounded-2xl p-5 hover:bg-[#25d366]/15 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+                className="flex items-center gap-4 bg-whatsapp/10 border border-whatsapp/20 rounded-2xl p-5 hover:bg-whatsapp/15 transition-colors duration-200 focus-ring"
               >
-                <div className="w-12 h-12 bg-[#25d366] rounded-full flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 bg-whatsapp rounded-full flex items-center justify-center shrink-0">
                   <svg
                     width="22"
                     height="22"

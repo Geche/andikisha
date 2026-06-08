@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="../assets/icons/tabler/tabler-icons.min.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg1);padding:20px 24px}
+  .set{margin-bottom:16px}
+  .set:last-child{margin-bottom:0}
+  .hd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+  .hd b{font-size:13px;font-weight:600;color:var(--fg1)}
+  .hd span{font-size:11px;color:var(--fg3);font-family:var(--font-mono)}
+  .tag{font-size:10px;font-weight:600;color:var(--green-700);background:var(--green-50);padding:1px 7px;border-radius:999px}
+  .icons{display:flex;gap:18px;flex-wrap:wrap;color:var(--fg1)}
+  .icons .ti{font-size:24px}
+  .icons .lucide{width:24px;height:24px}
+</style></head>
+<body>
+  <div class="set">
+    <div class="hd"><b>Lucide</b><span class="tag">default</span><span>inline SVG · 2px stroke</span></div>
+    <div class="icons">
+      <i data-lucide="layout-dashboard"></i><i data-lucide="users"></i><i data-lucide="calendar-clock"></i>
+      <i data-lucide="banknote"></i><i data-lucide="receipt"></i><i data-lucide="target"></i>
+      <i data-lucide="bell"></i><i data-lucide="search"></i><i data-lucide="settings"></i>
+      <i data-lucide="circle-check"></i><i data-lucide="chevron-down"></i><i data-lucide="plus"></i>
+    </div>
+  </div>
+  <div class="set">
+    <div class="hd"><b>Tabler</b><span class="tag" style="color:var(--amber-700);background:var(--amber-50)">alternate</span><span>self-hosted webfont · 5,900+ glyphs</span></div>
+    <div class="icons">
+      <i class="ti ti-layout-dashboard"></i><i class="ti ti-users-group"></i><i class="ti ti-calendar-clock"></i>
+      <i class="ti ti-report-money"></i><i class="ti ti-receipt"></i><i class="ti ti-target-arrow"></i>
+      <i class="ti ti-bell"></i><i class="ti ti-search"></i><i class="ti ti-settings"></i>
+      <i class="ti ti-circle-check"></i><i class="ti ti-chevron-down"></i><i class="ti ti-plus"></i>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body></html>

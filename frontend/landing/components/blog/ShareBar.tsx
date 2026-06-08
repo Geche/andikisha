@@ -44,7 +44,7 @@ export default function ShareBar({ title }: { title: string }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}
-          className="w-9 h-9 rounded-lg bg-surface-alt border border-ink-200 flex items-center justify-center text-ink-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+          className="w-9 h-9 rounded-lg bg-surface-alt border border-ink-200 flex items-center justify-center text-ink-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors duration-200 focus-ring"
         >
           {icon}
         </a>

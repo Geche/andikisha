@@ -209,7 +209,7 @@ export default function TenantsPage() {
                 placeholder="Search by name, email, or plan…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 pr-3 py-2 text-[13px] border border-neutral-200 rounded-lg bg-surface focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber w-[280px]"
+                className="pl-8 pr-3 py-2 text-[13px] border border-neutral-200 rounded-lg bg-surface focus:outline-none focus-visible:outline-none focus-visible:shadow-focus w-[280px]"
               />
             </div>
           </div>

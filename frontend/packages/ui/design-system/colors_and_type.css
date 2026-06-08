@@ -1,0 +1,196 @@
+/* ============================================================
+   Andikisha — Colors & Type foundations
+   Forest green + amber. Type: Roboto (UI/marketing), Roboto Mono (code).
+   Icons: Lucide (SVG). Import this once at the root; everything references these vars.
+   ============================================================ */
+
+/* Roboto — brand UI/body typeface (CDN; no local files uploaded for the proportional family) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Roboto Mono — self-hosted brand monospace (code, IDs, figures) */
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 100; font-display: swap; src: url('fonts/RobotoMono-Thin.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 100; font-display: swap; src: url('fonts/RobotoMono-ThinItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 200; font-display: swap; src: url('fonts/RobotoMono-ExtraLight.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 200; font-display: swap; src: url('fonts/RobotoMono-ExtraLightItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 300; font-display: swap; src: url('fonts/RobotoMono-Light.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 300; font-display: swap; src: url('fonts/RobotoMono-LightItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('fonts/RobotoMono-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 400; font-display: swap; src: url('fonts/RobotoMono-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('fonts/RobotoMono-Medium.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 500; font-display: swap; src: url('fonts/RobotoMono-MediumItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url('fonts/RobotoMono-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 600; font-display: swap; src: url('fonts/RobotoMono-SemiBoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: normal; font-weight: 700; font-display: swap; src: url('fonts/RobotoMono-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Roboto Mono'; font-style: italic; font-weight: 700; font-display: swap; src: url('fonts/RobotoMono-BoldItalic.ttf') format('truetype'); }
+
+:root {
+  /* ---------- Brand: Forest Green (primary) ---------- */
+  --green-25:  #f3f8f5;
+  --green-50:  #e6f1ec;
+  --green-100: #c4ddd2;
+  --green-200: #9cc6b3;
+  --green-300: #6fa791;
+  --green-400: #4a8a72;
+  --green-500: #2c6e57;
+  --green-600: #155742;
+  --green-700: #0b3d2e;   /* core brand green (logomark) */
+  --green-800: #082e23;
+  --green-900: #02110c;   /* near-black brand ink */
+
+  /* ---------- Brand: Amber (accent) ---------- */
+  --amber-25:  #fdf9ef;
+  --amber-50:  #fbf1da;
+  --amber-100: #f6e0ad;
+  --amber-200: #f2cd7c;
+  --amber-300: #eeba4b;
+  --amber-400: #eaad32;
+  --amber-500: #e8a020;   /* core brand amber (logomark) */
+  --amber-600: #c9851a;
+  --amber-700: #a16413;
+  --amber-800: #79490f;
+  --amber-900: #4f300a;
+
+  /* ---------- Neutrals (warm-leaning gray) ---------- */
+  --white:     #ffffff;
+  --neutral-25:  #fafafa;
+  --neutral-50:  #f5f5f5;
+  --neutral-100: #f0f0f0;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-900: #171717;
+  --black:     #0a0a0a;
+
+  /* ---------- Semantic colors ---------- */
+  --success:        #16a34a;
+  --success-bg:     #e8f6ee;
+  --warning:        #f59e0b;
+  --warning-bg:     #fef4e2;
+  --danger:         #dc2626;
+  --danger-bg:      #fbeaea;
+  --info:           #1b84ff;
+  --info-bg:        #e8f2ff;
+
+  /* ---------- Semantic role tokens ---------- */
+  --primary:        var(--green-700);
+  --primary-hover:  var(--green-800);
+  --primary-pressed:var(--green-900);
+  --primary-soft:   var(--green-50);
+  --accent:         var(--amber-500);
+  --accent-hover:   var(--amber-600);
+  --accent-soft:    var(--amber-50);
+
+  /* Foreground / text */
+  --fg1: var(--green-900);     /* primary ink — headings, key text */
+  --fg2: var(--neutral-700);   /* body text */
+  --fg3: var(--neutral-500);   /* secondary / supporting */
+  --fg4: var(--neutral-400);   /* placeholder / disabled */
+  --fg-on-primary: #ffffff;
+  --fg-on-accent:  var(--green-900);
+
+  /* Backgrounds / surfaces */
+  --bg1: #ffffff;              /* base surface / cards */
+  --bg2: var(--neutral-50);    /* app canvas */
+  --bg3: var(--neutral-100);   /* subtle fills, hover rows */
+  --bg-ink: var(--green-900);  /* dark sections, footers */
+
+  /* Borders */
+  --border:        var(--neutral-200);
+  --border-strong: var(--neutral-300);
+  --border-ink:    rgba(255,255,255,0.12);
+
+  /* ---------- Typography ---------- */
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Display scale (marketing headlines) */
+  --display-2xl: 4.5rem;   /* 72 */
+  --display-xl:  3.75rem;  /* 60 */
+  --display-lg:  3rem;     /* 48 */
+  --display-md:  2.25rem;  /* 36 */
+  --display-sm:  1.875rem; /* 30 */
+  --display-xs:  1.5rem;   /* 24 */
+
+  /* Text scale (UI / body) */
+  --text-xl: 1.25rem;   /* 20 */
+  --text-lg: 1.125rem;  /* 18 */
+  --text-md: 1rem;      /* 16 */
+  --text-sm: 0.875rem;  /* 14 — app base */
+  --text-xs: 0.75rem;   /* 12 */
+
+  /* Weights */
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-semibold: 600;
+  --w-bold: 700;
+  --w-extrabold: 800;
+
+  /* Line heights */
+  --lh-tight: 1.1;
+  --lh-snug: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.6;
+
+  /* ---------- Radii ---------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-pill: 999px;
+
+  /* ---------- Spacing (4px base) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ---------- Shadows (soft, neutral) ---------- */
+  --shadow-xs: 0 1px 2px rgba(2,17,12,0.05);
+  --shadow-sm: 0 1px 3px rgba(2,17,12,0.08), 0 1px 2px rgba(2,17,12,0.04);
+  --shadow-md: 0 4px 8px -2px rgba(2,17,12,0.08), 0 2px 4px -2px rgba(2,17,12,0.04);
+  --shadow-lg: 0 12px 16px -4px rgba(2,17,12,0.08), 0 4px 6px -2px rgba(2,17,12,0.03);
+  --shadow-xl: 0 20px 24px -4px rgba(2,17,12,0.08), 0 8px 8px -4px rgba(2,17,12,0.03);
+  --shadow-card: 0 4px 24px rgba(2,17,12,0.06);
+  --shadow-focus: 0 0 0 4px rgba(11,61,46,0.16);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+}
+
+/* ============================================================
+   Semantic element defaults — opt in by importing this file
+   and using the .ds-prose / utility classes, or as a reference.
+   ============================================================ */
+
+.ds-h1 { font: var(--w-semibold) var(--display-md)/var(--lh-tight) var(--font-display); letter-spacing: -0.02em; color: var(--fg1); }
+.ds-h2 { font: var(--w-semibold) var(--display-sm)/var(--lh-snug) var(--font-display); letter-spacing: -0.02em; color: var(--fg1); }
+.ds-h3 { font: var(--w-semibold) var(--display-xs)/var(--lh-snug) var(--font-display); letter-spacing: -0.01em; color: var(--fg1); }
+.ds-h4 { font: var(--w-semibold) var(--text-xl)/var(--lh-snug) var(--font-sans); color: var(--fg1); }
+.ds-lead { font: var(--w-regular) var(--text-xl)/var(--lh-relaxed) var(--font-sans); color: var(--fg3); }
+.ds-body { font: var(--w-regular) var(--text-md)/var(--lh-normal) var(--font-sans); color: var(--fg2); }
+.ds-small { font: var(--w-regular) var(--text-sm)/var(--lh-normal) var(--font-sans); color: var(--fg3); }
+.ds-eyebrow { font: var(--w-semibold) var(--text-sm)/1 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--green-600); }
+.ds-mono { font: var(--w-regular) var(--text-sm)/var(--lh-normal) var(--font-mono); color: var(--fg2); }
+
+/* ---------- Lucide icons (SVG) ---------- */
+/* Sizes with the parent font-size; inherits color via stroke=currentColor. */
+.lucide { width: 1em; height: 1em; display: inline-block; vertical-align: -0.15em; flex: none; }

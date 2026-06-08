@@ -62,7 +62,8 @@ export default function PlatformLoginPage() {
     <div
       className="min-h-screen flex flex-col items-center justify-between px-4 py-8"
       style={{
-        background: "linear-gradient(135deg, #071E13 0%, #0B3D2E 50%, #166A50 100%)",
+        background:
+          "linear-gradient(135deg, var(--color-brand-950) 0%, var(--color-brand-900) 50%, var(--color-brand-700) 100%)",
       }}
     >
       {/* Logo — top centre */}

@@ -39,7 +39,7 @@ function PostCard({ post, featured = false }: { post: PostMeta; featured?: boole
 
         <Link
           href={`/blog/${post.slug}`}
-          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand-700 hover:gap-2.5 transition-all duration-200 mt-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+          className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand-700 hover:gap-2.5 transition-all duration-200 mt-auto focus-ring"
         >
           Read article <ArrowRight size={13} aria-hidden />
         </Link>
@@ -65,7 +65,7 @@ export default function BlogClient({ posts }: { posts: PostMeta[] }) {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 aria-pressed={activeCategory === cat}
-                className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 ${
+                className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors duration-200 focus-ring ${
                   activeCategory === cat
                     ? "bg-amber text-ink-900"
                     : "bg-white border border-ink-200 text-ink-600 hover:border-brand-700 hover:text-brand-900"

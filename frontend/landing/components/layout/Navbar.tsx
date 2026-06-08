@@ -102,7 +102,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/demo"
-                  className="text-[14px] font-semibold px-5 py-2.5 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+                  className="text-[14px] font-semibold px-5 py-2.5 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 transition-colors duration-200 focus-ring"
                 >
                   Schedule a demo
                 </Link>
@@ -166,7 +166,7 @@ export default function Navbar() {
               <Link
                 href="/demo"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center h-12 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-semibold text-[15px] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+                className="flex items-center justify-center h-12 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 font-semibold text-[15px] transition-colors focus-ring"
               >
                 Schedule a demo
               </Link>

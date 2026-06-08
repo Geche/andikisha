@@ -67,7 +67,7 @@ export default function FaqList({ columns = 2 }: { columns?: 1 | 2 }) {
                   columns === 2 ? (isOdd ? "border-r border-ink-200 pr-8" : "pl-8") : "",
                 ].filter(Boolean).join(" ")}
               >
-                <summary className="flex items-center justify-between gap-4 py-5 cursor-pointer list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2 rounded-sm">
+                <summary className="flex items-center justify-between gap-4 py-5 cursor-pointer list-none focus-ring rounded-sm">
                   <span className="text-[14px] font-bold text-ink-900 leading-snug">{q}</span>
                   <svg
                     width="16" height="16" viewBox="0 0 16 16" fill="none"

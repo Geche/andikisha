@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, DM_Mono } from "next/font/google";
+import { Roboto, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -12,9 +12,9 @@ const roboto = Roboto({
   display: "swap",
 });
 
-const dmMono = DM_Mono({
+const robotoMono = Roboto_Mono({
   subsets: ["latin"],
-  variable: "--font-dm-mono",
+  variable: "--font-roboto-mono",
   weight: ["400", "500"],
   display: "swap",
 });
@@ -82,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${roboto.variable} ${dmMono.variable}`}
+      className={`${roboto.variable} ${robotoMono.variable}`}
     >
       <body className="font-body text-ink-900 bg-surface antialiased overflow-x-hidden">
         <script

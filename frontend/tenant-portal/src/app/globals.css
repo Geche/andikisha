@@ -1,52 +1,6 @@
 @import "tailwindcss";
+@import "@andikisha/ui/theme.css";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
-
-@theme {
-  /* ── Brand — Forest Green ── */
-  --color-brand-950: #071e13;
-  --color-brand-900: #0b3d2e;
-  --color-brand-800: #0f5040;
-  --color-brand-700: #166a50;
-  --color-brand-500: #27a870;
-  --color-brand-100: #d1f5e6;
-  --color-brand-50: #e8f5f0;
-
-  /* ── Accent — Warm Amber ── */
-  --color-amber: #e8a020;
-  --color-amber-dark: #c98510;
-  --color-amber-light: #fef3dc;
-  --color-amber-text: #92600a;  /* amber-brown text on amber-light bg */
-
-  /* ── Surfaces ── */
-  --color-surface: #ffffff;
-  --color-surface-alt: #f8f7f4;
-  --color-surface-tint: #f2faf6;  /* light brand-green tint for success states */
-
-  /* ── Semantic borders ── */
-  --color-border-success: #c8ecda;
-
-  /* ── Neutral scale ── */
-  --color-neutral-900: #111111;
-  --color-neutral-800: #1f2937;
-  --color-neutral-700: #374151;
-  --color-neutral-600: #4b5563;
-  --color-neutral-500: #6b7280;
-  --color-neutral-400: #9ca3af;
-  --color-neutral-300: #d1d5db;
-  --color-neutral-200: #e5e7eb;
-  --color-neutral-100: #f3f4f6;
-  --color-neutral-50:  #fafafa;
-
-  /* ── Functional ── */
-  --color-near-black: #02110c;
-  --color-whatsapp: #25d366;
-  --color-error: #ef4444;
-
-  /* ── Fonts ── */
-  --font-display: var(--font-roboto), sans-serif;
-  --font-body: var(--font-roboto), sans-serif;
-  --font-mono: var(--font-dm-mono), monospace;
-}
 
 @layer base {
   html { scroll-behavior: smooth; }
@@ -60,5 +14,15 @@
     font-family: var(--font-roboto, system-ui, sans-serif);
     letter-spacing: -0.02em;
     line-height: 1.15;
+  }
+}
+
+/* ─── Reduced motion ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

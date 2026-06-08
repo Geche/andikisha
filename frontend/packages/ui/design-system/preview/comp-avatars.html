@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg2);padding:20px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+  .stack{display:flex;align-items:center}
+  .stack .av{margin-left:-10px}
+  .av{width:48px;height:48px;border-radius:50%;border:2px solid #fff;object-fit:cover;box-shadow:var(--shadow-xs)}
+  .av.sm{width:32px;height:32px}
+  .initials{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:#fff;background:var(--green-700)}
+  .initials.amber{background:var(--amber-500);color:var(--green-900)}
+  .badged{position:relative}
+  .badged .ind{position:absolute;right:1px;bottom:1px;width:11px;height:11px;border-radius:50%;background:var(--success);border:2px solid #fff}
+  .col{display:flex;flex-direction:column;gap:5px}
+  .lab{font-size:10.5px;color:var(--fg3);font-family:var(--font-mono)}
+</style></head>
+<body>
+  <div class="col"><div class="badged"><img class="av" src="../assets/avatars/avatar-01.jpg"><span class="ind"></span></div><span class="lab">online</span></div>
+  <div class="col"><img class="av" src="../assets/avatars/avatar-03.jpg"><span class="lab">photo</span></div>
+  <div class="col"><div class="initials">AO</div><span class="lab">initials</span></div>
+  <div class="col"><div class="initials amber">KM</div><span class="lab">accent</span></div>
+  <div class="col"><div class="stack"><img class="av" src="../assets/avatars/avatar-02.jpg"><img class="av" src="../assets/avatars/avatar-04.jpg"><img class="av" src="../assets/avatars/avatar-05.jpg"><div class="initials" style="margin-left:-10px;font-size:13px">+6</div></div><span class="lab">stacked group</span></div>
+</body></html>

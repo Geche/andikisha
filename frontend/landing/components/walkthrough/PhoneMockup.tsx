@@ -10,7 +10,9 @@ export default function PhoneMockup({ children }: PhoneMockupProps) {
       role="img"
       aria-label="Mobile phone showing AndikishaHR employee portal"
     >
-      {/* Outer bezel */}
+      {/* Outer bezel.
+          token-exempt: device-frame greys (#1a1a1a / #111 / #2a2a2a) are
+          illustrative hardware chrome, not brand colours — no token applies. */}
       <div
         className="absolute inset-0 rounded-[38px] bg-[#1a1a1a] shadow-[0_24px_60px_rgba(7,30,19,0.3)]"
       />

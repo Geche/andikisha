@@ -1,0 +1,29 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg2);padding:20px 24px}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;max-width:420px}
+  .hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--neutral-100)}
+  .hd h4{margin:0;font-size:15px;font-weight:600;color:var(--fg1);display:flex;align-items:center;gap:8px}
+  .hd h4::before{content:"";width:4px;height:18px;border-radius:2px;background:var(--green-700)}
+  .menu{color:var(--fg3);font-size:18px}
+  .bd{padding:6px 16px}
+  .li{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--neutral-100)}
+  .li:last-child{border:0}
+  .li img{width:38px;height:38px;border-radius:50%;object-fit:cover}
+  .nm{font-size:13.5px;font-weight:600;color:var(--fg1)}
+  .ro{font-size:12px;color:var(--fg3)}
+  .badge{margin-left:auto;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--success-bg);color:var(--success)}
+</style></head>
+<body>
+  <div class="card">
+    <div class="hd"><h4>Who's in today</h4><i data-lucide="ellipsis" class="menu"></i></div>
+    <div class="bd">
+      <div class="li"><img src="../assets/avatars/avatar-02.jpg"><div><div class="nm">Amani Okello</div><div class="ro">Engineering</div></div><span class="badge">Clocked in</span></div>
+      <div class="li"><img src="../assets/avatars/avatar-06.jpg"><div><div class="nm">Kesi Mwangi</div><div class="ro">People Ops</div></div><span class="badge">Clocked in</span></div>
+      <div class="li"><img src="../assets/avatars/avatar-08.jpg"><div><div class="nm">Dalia Hassan</div><div class="ro">Finance</div></div><span class="badge" style="background:var(--warning-bg);color:#b45309">Remote</span></div>
+    </div>
+  </div>
+  <script>lucide.createIcons();</script>
+</body></html>

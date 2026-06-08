@@ -82,6 +82,10 @@ export default function FeatureComplianceGrid() {
               <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-[0.05em] mb-3">
                 Monthly payroll — KES (millions)
               </p>
+              {/* token-exempt: illustrative inline chart. SVG presentation
+                  attributes (stroke/fill) take literal colour values, not class
+                  tokens; the line colours mirror brand-900 (#0b3d2e) and amber
+                  (#e8a020) with neutral gridlines (#e5e7eb). */}
               <svg viewBox="0 0 300 90" className="w-full" style={{ height: 90 }} aria-hidden>
                 <line x1="0" y1="22" x2="300" y2="22" stroke="#e5e7eb" strokeWidth="1" />
                 <line x1="0" y1="44" x2="300" y2="44" stroke="#e5e7eb" strokeWidth="1" />

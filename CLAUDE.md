@@ -175,6 +175,8 @@ Never commit .env files, application-prod.yml secrets, or build/ directories.
 
 The customer-facing frontend is a single Next.js 15 app at `frontend/tenant-portal/` (port 3000). Internal Andikisha staff use `frontend/platform-portal/` (port 3003, scaffolded in Prompt A.5). The marketing site is `frontend/landing/` (port 3002). There are no other portal directories.
 
+**`frontend/CLAUDE.md` governs all frontend work** — design system, brand tokens, typography, icons, component patterns, layout, and copy. The design system bundle lives at `frontend/packages/ui/design-system/`. **Read `frontend/CLAUDE.md` before writing any UI code.** The subsections below cover only conventions not duplicated there.
+
 ### Route Groups
 
 Routes are organised under two App Router route groups with URL segments nested inside:
@@ -214,32 +216,9 @@ Components in `frontend/packages/ui/` follow a strict three-tier rule. Never put
 
 **Tier 3 — Domain-coupled (app only, never in @andikisha/ui):** Knows API shapes, business rules, or specific tenant data. PayslipRow, LeaveRequestCard, EmployeeStatusChip — these live in the app, not in the shared library.
 
-### @andikisha/ui — Token Rules
+### Design tokens
 
-**Raw hex in `className` strings is forbidden.** Use named token utilities. Raw hex is allowed only in `style={{ }}` props (e.g., Recharts `fill` / `stroke` props that don't accept class names).
-
-**Token inventory** (defined in `tailwind-preset.ts` and `globals.css @theme`):
-
-| Token | Values | Use |
-|---|---|---|
-| `brand-50` … `brand-950` | Forest green scale | Brand backgrounds, text, borders |
-| `near-black` | `#02110c` | Darkest text, headings |
-| `amber` | `#e8a020` | Amber accent, warning borders |
-| `amber-dark` | `#c98510` | Amber hover states |
-| `amber-light` | `#fef3dc` | Amber/pending badge backgrounds |
-| `amber-text` | `#92600a` | Text on amber-light backgrounds |
-| `surface` | `#ffffff` | White card backgrounds |
-| `surface-alt` | `#f8f7f4` | Alternate surface (page bg, hover) |
-| `surface-tint` | `#f2faf6` | Light brand-green success card bg |
-| `border-success` | `#c8ecda` | Brand-green success state borders |
-| `neutral-50` … `neutral-900` | Grey scale | All grey text, borders, backgrounds |
-| `error` | `#ef4444` | Error states |
-
-**Enforcement rules:**
-- Never use `gray-*` — always use `neutral-*` (same step values for 100–800, intentionally different at 50 and 900).
-- Never use `text-[#hex]`, `bg-[#hex]`, `border-[#hex]` — always use a named token.
-- If a colour value appears more than once and has no token, add it to `tailwind-preset.ts` and both `globals.css` files before using it.
-- Hover darkening of brand buttons: use `hover:bg-brand-950` (not custom dark hex variants).
+Brand colour, typography, spacing, and component tokens are defined by the design system at `frontend/packages/ui/design-system/` and governed by `frontend/CLAUDE.md` (single source of truth). No token table is duplicated here. The rules on forbidden raw hex, `gray-*`, and Tailwind arbitrary values live in `frontend/CLAUDE.md`.
 
 ### Template Reference
 

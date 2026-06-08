@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto } from "next/font/google";
+import { Roboto, Roboto_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { QueryProvider, ToastProvider, CurrentUserProvider } from "@andikisha/ui";
 import type { CurrentUser, UserRole } from "@andikisha/ui";
@@ -9,6 +9,13 @@ const roboto = Roboto({
   subsets: ["latin"],
   variable: "--font-roboto",
   weight: ["300", "400", "500", "700"],
+  display: "swap",
+});
+
+const robotoMono = Roboto_Mono({
+  subsets: ["latin"],
+  variable: "--font-roboto-mono",
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -35,7 +42,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     : null;
 
   return (
-    <html lang="en" suppressHydrationWarning className={roboto.variable}>
+    <html lang="en" suppressHydrationWarning className={`${roboto.variable} ${robotoMono.variable}`}>
       <body className="font-body antialiased bg-surface text-near-black" suppressHydrationWarning>
         {/*
           QueryProvider must wrap CurrentUserProvider because CurrentUserProvider

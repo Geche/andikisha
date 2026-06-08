@@ -1,10 +1,27 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@andikisha/ui/theme.css";
+@plugin "@tailwindcss/typography";
+
+@source "../app/**/*.{ts,tsx,mdx}";
+@source "../components/**/*.{ts,tsx}";
+@source "../content/**/*.{md,mdx}";
+@source "../../packages/ui/src/**/*.{ts,tsx}";
+
+/* Marketing-only typography tokens (non-colour, landing-local). The shared
+   @theme remains the single source of truth for all colour tokens.
+
+   DEPRECATED — transitional tokens. text-ui (15px) and text-ui-sm (13px) are
+   landing-local off-scale sizes left over from the v3 design. Do not adopt them
+   in new markup; migrate existing uses to the standard Tailwind type scale
+   (text-sm / text-base) and delete these once usage reaches zero. */
+@theme {
+  --text-ui: 0.9375rem;     /* 15px — marketing button / input text */
+  --text-ui-sm: 0.8125rem;  /* 13px — form error text */
+}
 
 :root {
   --font-roboto: "Roboto", sans-serif;
-  --font-dm-mono: "DM Mono", monospace;
+  --font-roboto-mono: "Roboto Mono", monospace;
 }
 
 @layer base {
@@ -27,65 +44,86 @@
 @layer components {
   /* ─── Buttons ─────────────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-[15px]
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-ui
            bg-amber text-ink-900 transition-colors duration-200
            hover:bg-amber-dark
-           focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2;
+           focus-visible:outline-none focus-visible:shadow-focus;
   }
   .btn-outline-dark {
-    @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-[15px]
-           bg-transparent border-[1.5px] border-brand-900 text-brand-900 transition-colors duration-200
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-ui
+           bg-transparent border border-brand-900 text-brand-900 transition-colors duration-200
            hover:bg-brand-50
-           focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-900 focus-visible:outline-offset-2;
+           focus-visible:outline-none focus-visible:shadow-focus;
   }
   .btn-outline-white {
-    @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-[15px]
-           bg-transparent border-[1.5px] border-white/50 text-white transition-colors duration-200
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-ui
+           bg-transparent border border-white/50 text-white transition-colors duration-200
            hover:border-white hover:bg-white/10
-           focus-visible:outline focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2;
+           focus-visible:outline-none focus-visible:shadow-focus;
   }
+  /* 1.5px hairline border — v4 has no 1.5px width utility; set as plain CSS to
+     preserve the exact look without a Tailwind arbitrary value. */
+  .btn-outline-dark, .btn-outline-white { border-width: 1.5px; }
   .btn-lg {
-    @apply px-7 py-[14px] text-base;
+    @apply px-7 py-3.5 text-base;
   }
 
   /* ─── Form inputs ─────────────────────────────────────────────────── */
   .form-input {
-    @apply w-full h-11 px-4 rounded-lg border border-ink-200 bg-white text-ink-900 text-[15px]
+    @apply w-full h-11 px-4 rounded-lg border border-ink-200 bg-white text-ink-900 text-ui
            placeholder:text-ink-400 transition-all duration-200
-           focus:outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-700/20;
+           focus:outline-none focus:border-brand-700 focus:shadow-focus;
   }
+  /* form-textarea repeats the input utilities directly — v4 cannot @apply a
+     component class (.form-input), only utilities. */
   .form-textarea {
-    @apply form-input h-auto py-3 resize-none;
+    @apply w-full h-auto px-4 py-3 rounded-lg border border-ink-200 bg-white text-ink-900 text-ui resize-none
+           placeholder:text-ink-400 transition-all duration-200
+           focus:outline-none focus:border-brand-700 focus:shadow-focus;
   }
   .form-label {
-    @apply block text-[14px] font-semibold text-ink-700 mb-2;
+    @apply block text-sm font-semibold text-ink-700 mb-2;
   }
   .form-error {
-    @apply text-[13px] text-error mt-1;
+    @apply text-ui-sm text-error mt-1;
   }
 
   /* ─── Card ───────────────────────────────────────────────────────── */
   .card {
     @apply bg-white border border-ink-200 rounded-xl p-6 transition-all duration-200
-           hover:-translate-y-[2px] hover:shadow-[0_8px_32px_rgba(7,30,19,0.08)];
+           hover:-translate-y-0.5 hover:shadow-lg;
   }
 
-  /* ─── Focus ring ─────────────────────────────────────────────────── */
+  /* ─── Focus ring (restyled to the green halo in Step 4) ──────────── */
   .focus-ring {
-    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2;
+    @apply focus-visible:outline-none focus-visible:shadow-focus;
   }
 }
+
+/* ─── Prose (typography plugin) — colours mapped to shared tokens ──────── */
+.prose {
+  --tw-prose-body: var(--color-ink-600);
+  --tw-prose-headings: var(--color-near-black);
+  --tw-prose-links: var(--color-brand-900);
+  --tw-prose-bold: var(--color-near-black);
+  --tw-prose-bullets: var(--color-brand-500);
+  --tw-prose-counters: var(--color-brand-500);
+  max-width: none;
+  line-height: 1.85;
+}
+.prose :is(h2, h3) { font-family: var(--font-roboto); }
+.prose a { text-decoration: underline; }
 
 /* ─── Scrollbar ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #0b3d2e; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #0f5040; }
+::-webkit-scrollbar-thumb { background: var(--color-brand-900); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-brand-800); }
 
 /* ─── Selection ───────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(232, 160, 32, 0.25);
-  color: #0b3d2e;
+  background: color-mix(in srgb, var(--color-amber) 25%, transparent);
+  color: var(--color-brand-900);
 }
 
 /* ─── Reduced motion ───────────────────────────────────────────────────── */

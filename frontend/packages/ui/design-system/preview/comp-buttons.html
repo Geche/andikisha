@@ -1,0 +1,38 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+  html,body{margin:0}
+  body{font-family:var(--font-sans);background:var(--bg1);padding:22px 24px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-sans);font-size:14px;font-weight:600;border-radius:8px;padding:9px 16px;border:1px solid transparent;cursor:pointer;line-height:1;white-space:nowrap}
+  .btn .lucide{width:16px;height:16px}
+  .primary{background:var(--green-700);color:#fff}
+  .primary:hover{background:var(--green-800)}
+  .accent{background:var(--amber-500);color:var(--green-900)}
+  .accent:hover{background:var(--amber-600)}
+  .secondary{background:#fff;color:var(--fg1);border-color:var(--border-strong)}
+  .secondary:hover{background:var(--bg2)}
+  .ghost{background:transparent;color:var(--green-700)}
+  .ghost:hover{background:var(--green-50)}
+  .danger{background:var(--danger);color:#fff}
+  .sm{padding:6px 12px;font-size:13px}
+  .lg{padding:12px 20px;font-size:15px}
+  .disabled{background:var(--neutral-100);color:var(--fg4);cursor:not-allowed}
+  .lab{font-size:10.5px;color:var(--fg3);font-family:var(--font-mono);width:64px;flex:none}
+</style></head>
+<body>
+  <div class="row"><span class="lab">hierarchy</span>
+    <button class="btn primary"><i data-lucide="plus"></i>New employee</button>
+    <button class="btn accent">Run payroll</button>
+    <button class="btn secondary"><i data-lucide="download"></i>Export</button>
+    <button class="btn ghost">Cancel</button>
+    <button class="btn danger"><i data-lucide="trash-2"></i>Delete</button>
+  </div>
+  <div class="row"><span class="lab">sizes</span>
+    <button class="btn primary sm">Small</button>
+    <button class="btn primary">Medium</button>
+    <button class="btn primary lg">Large</button>
+    <button class="btn disabled">Disabled</button>
+  </div>
+  <script>lucide.createIcons();</script>
+</body></html>

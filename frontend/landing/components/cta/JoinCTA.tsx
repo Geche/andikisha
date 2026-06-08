@@ -33,7 +33,7 @@ export default function JoinCTA() {
             </p>
             <Link
               href="/demo"
-              className="inline-flex items-center gap-2 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] px-7 py-3.5 rounded-lg transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber focus-visible:outline-offset-2"
+              className="inline-flex items-center gap-2 bg-amber hover:bg-amber-dark text-ink-900 font-bold text-[15px] px-7 py-3.5 rounded-lg transition-colors duration-200 focus-ring"
             >
               Schedule a demo <ChevronRight size={15} aria-hidden />
             </Link>

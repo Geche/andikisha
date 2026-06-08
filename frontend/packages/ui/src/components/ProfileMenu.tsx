@@ -19,7 +19,7 @@ export function ProfileMenu({ email, name, role, onLogout, onProfile, onSettings
     <DropdownRoot>
       <DropdownTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
+          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-neutral-100 transition-colors focus-visible:outline-none focus-visible:shadow-focus"
           aria-label="Open profile menu"
         >
           <Avatar name={name ?? email} size="sm" />
