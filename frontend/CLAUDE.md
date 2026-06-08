@@ -162,16 +162,19 @@ all three apps consume it (`landing` is now Tailwind v4), the `green/amber
 is wired via `next/font` (`font-mono`), and the green focus halo + Button
 primary-hover direction are implemented.
 
-The remaining gaps are **component patterns only**, tracked in
-`docs/Engineering/frontend/2026-06-05-gap-audit-correction.md` (authoritative):
+The remaining gaps are **component-DNA and token-hygiene**, tracked in
+`docs/Engineering/frontend/2026-06-05-gap-audit-correction.md` (authoritative —
+that doc holds the single reconciled backlog; `-001` is retired):
 
-- **4px green accent bar** on named card/section headers — not yet applied
-  (FE-BACKLOG-002).
-- **`Card` primitive** — does not exist; cards are still ad-hoc utility
-  combinations (FE-BACKLOG-002).
-- **StatCard icon chip / delta arrow** and **Badge/Avatar status dots** — not
-  yet implemented (FE-BACKLOG-003).
-- **Shared-primitive adoption** in tenant + login surfaces (FE-BACKLOG-005).
+- **4px green accent bar** on named card/section headers, and a **`Card`
+  primitive** (cards are still ad-hoc utility combinations) (FE-BACKLOG-002).
+- **StatCard icon chip / delta arrow**, **Badge/Avatar status dots**, and
+  **Badge semantic-tone adoption** (e.g. leave REJECTED badge `red-*` →
+  `danger`/`danger-bg`) (FE-BACKLOG-003).
+- **Type-scale tokens** (replace hardcoded `text-[Npx]`), table header/divider
+  alignment, sidebar-width 260px, `KES`→`KSh` (FE-BACKLOG-004).
+- **Shared-primitive adoption** in tenant + login surfaces — must land before/
+  with FE-BACKLOG-002/-003 (FE-BACKLOG-005).
 
 Legacy colour aliases (`brand-*`, `ink-*`, `amber-*`, `surface-alt/-tint`,
 `near-black`, `error`, …) remain in the shared `@theme`, pinned to their current

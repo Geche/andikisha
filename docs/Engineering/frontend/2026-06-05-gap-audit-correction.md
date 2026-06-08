@@ -60,7 +60,13 @@ These come from the design system's *visual* DNA, unchanged across both exports,
 - ~~`FE-BACKLOG-001` — Tabler migration~~ — **deleted.**
 - `FE-BACKLOG-002` — `Card` primitive + 4px green accent-bar header pattern.
 - `FE-BACKLOG-003` — StatCard icon chip + directional delta arrow; Badge/Avatar
-  status dots.
+  status dots; **Badge semantic-tone adoption.** Repoint status-badge tones to the
+  semantic tokens defined in Step 1 (`success/warning/danger/info` + `-bg`).
+  Known site: tenant `leave/_types.ts` `statusBadgeClass` REJECTED is still
+  `bg-red-100 text-red-700` (raw Tailwind reds) → should be `bg-danger-bg
+  text-danger`; CANCELLED already neutral, PENDING/APPROVED moved to `amber-light`/
+  `brand-100` aliases in Step 5. (Lands naturally when leave adopts the shared
+  Badge primitive — see `-005` sequencing.)
 - `FE-BACKLOG-004` — type-scale tokens (replace hardcoded `text-[Npx]`), table
   header/divider alignment, sidebar-width standardisation (260px), `KES`→`KSh`.
 - `FE-BACKLOG-005` — **tenant-portal + both login surfaces adopt the shared
