@@ -121,9 +121,9 @@ export default function ContactPage() {
                 href={COMPANY.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-4 bg-[#25d366]/10 border border-[#25d366]/20 rounded-2xl p-5 hover:bg-[#25d366]/15 transition-colors duration-200 focus-ring"
+                className="flex items-center gap-4 bg-whatsapp/10 border border-whatsapp/20 rounded-2xl p-5 hover:bg-whatsapp/15 transition-colors duration-200 focus-ring"
               >
-                <div className="w-12 h-12 bg-[#25d366] rounded-full flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 bg-whatsapp rounded-full flex items-center justify-center shrink-0">
                   <svg
                     width="22"
                     height="22"

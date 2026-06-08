@@ -62,9 +62,9 @@ export function leaveTypeLabel(type: LeaveType): string {
 export function statusBadgeClass(status: LeaveStatus): string {
   switch (status) {
     case "PENDING":
-      return "bg-[#FEF3DC] text-[#92600A]";
+      return "bg-amber-light text-amber-text";
     case "APPROVED":
-      return "bg-[#D1F5E6] text-[#0F5040]";
+      return "bg-brand-100 text-brand-800";
     case "REJECTED":
       return "bg-red-100 text-red-700";
     case "CANCELLED":

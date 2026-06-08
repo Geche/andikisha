@@ -294,4 +294,57 @@ Filling the gaps from the first Step-4 record now the full stack is running.
 - **STATUS: Step 4 FULLY CLOSED.** Focus halo, Button hover fix, shadow tokens,
   and reduced-motion are live in the shared primitives + landing + platform.
 
+### 2026-06-08 — Step 5 verification (Roboto Mono + stray hex + aliases + docs)
+
+Final step before definition-of-done review.
+
+- **(1) Roboto Mono wired via `next/font`.** All three `layout.tsx` now import
+  `Roboto_Mono` and declare a `robotoMono` const (`variable: "--font-roboto-mono"`,
+  weight `["400","500"]`, `display:"swap"`) applied to `<html>` alongside
+  `roboto.variable`. The shared `theme.css` `--font-mono` dropped the
+  `var(--font-dm-mono)` fallback → `var(--font-roboto-mono), ui-monospace, …`.
+  Landing `globals.css` `:root` var renamed `--font-dm-mono` → `--font-roboto-mono`.
+  Stale `--font-dm-mono` also corrected in the orphaned `tailwind-preset.ts` and two
+  READMEs. **grep `dm[_ -]?mono` across app + ui source = 0** (only the CLAUDE.md
+  "stale — remove on sight" flag remains, intentionally).
+  - **Driven proof (Playwright):** on the populated payroll money table the
+    `.font-mono` computed `font-family` = `"Roboto Mono", "Roboto Mono Fallback",
+    ui-monospace, "SF Mono", Menlo, monospace` (sample cell `EMP-0029`).
+- **(2) Stray hex → tokens (real UI).**
+  - landing `contact/page.tsx` WhatsApp button `#25d366` → `bg-whatsapp` (+ `/10
+    /20 /15` opacity) — adopts the previously-unused `--color-whatsapp` token.
+  - tenant `leave/_types.ts` badge classes: `#FEF3DC/#92600A` → `amber-light/
+    amber-text`; `#D1F5E6/#0F5040` → `brand-100/brand-800`.
+  - 4 auth-page gradient `style={{}}` props (tenant `[workspace]/login`,
+    `[workspace]/set-password`, root `login`; platform `login`): literal brand hex
+    → `var(--color-brand-950/900/700)` so the brand panel tracks the ramp.
+  - **grep:** no `#rrggbb` in any app `className`/`style` **outside the exempt
+    files**.
+- **(3) Mockup chrome exempted with comments (kept as hex, by rule).** 6 landing
+  files marked `token-exempt`: `opengraph-image.tsx` (Satori build-time image —
+  literal styles only), `FeatureComplianceGrid.tsx` (inline SVG chart strokes),
+  `PhoneMockup.tsx` (device-frame greys), `HeroBrowserMockup.tsx` (macOS window +
+  traffic-light dots), `HeroPayslipCard.tsx` (bespoke `#0d4a38`), `ComplianceTimeline.tsx`
+  (`#e5e7eb` ring inside an arbitrary shadow).
+- **(4) Alias retirement — census (zsh array, boundary-aware grep over 5 src dirs).**
+  All 23 legacy aliases still have consumers, so **none retired**:
+  `brand-50..950` 32–164, `amber/-dark/-light/-text` 24–96, `surface-alt` 44,
+  `surface-tint`/`border-success` 2 real uses each, `near-black` 133, `error` 50,
+  `ink-100..900` 16–106. `whatsapp` was definition-only (0 consumers) but is now
+  **adopted** by the contact fix → kept, not retired.
+- **(5) `text-ui` / `text-ui-sm` marked DEPRECATED** transitional tokens in landing
+  `globals.css` (off-scale v3 leftovers; migrate to `text-sm`/`text-base`, delete at 0).
+- **(6) `frontend/CLAUDE.md` "Current state vs target" updated** (2026-06-08):
+  deleted the now-true bullets (shared `@theme`, token values, Roboto Mono, focus
+  halo + Button hover); remaining gaps reduced to component patterns
+  (FE-BACKLOG-002/-003/-005); recorded the alias-still-pinned policy.
+- **(7) Builds:** `next build` **green for all three apps** (landing, tenant-portal,
+  platform-portal). Tenant dev `.next` had a stale recharts vendor-chunk cache
+  (pre-existing, unrelated) → cleared + restarted for the capture.
+- **Capture:** `2026-06-08-step5-tenant-payroll-money-table.png` — "Payroll — May
+  2026", 31 employees, COMPLETED; stat cards (KES 2,537,500 gross / 1,856,197 net /
+  502,399 PAYE), payment summary, statutory strip, and the full Payslips table with
+  per-employee GROSS/PAYE/NSSF/SHIF/NET — all figures + EMP-IDs in Roboto Mono.
+- **STATUS: Step 5 complete — ready for definition-of-done review.**
+
 _(entries appended per step as the migration executes)_

@@ -152,27 +152,28 @@ Roboto Mono in tabular contexts. Errors say what happened and what to do.
 
 ---
 
-## Current state vs target (status as of 2026-06-05)
+## Current state vs target (status as of 2026-06-08)
 
-The sections above describe the **target** governing standard. Parts of it are
-not yet built. Until the migration lands, do not assume these are true:
+The token-consolidation migration
+(`docs/Engineering/frontend/2026-06-05-token-consolidation-plan.md`, Steps 1–5)
+has landed: the shared `@theme` in `packages/ui` is the single source of truth,
+all three apps consume it (`landing` is now Tailwind v4), the `green/amber
+25–900` ramps, warm neutrals, and semantic/role tokens are in place, Roboto Mono
+is wired via `next/font` (`font-mono`), and the green focus halo + Button
+primary-hover direction are implemented.
 
-- **Shared `@theme` single source — NOT built yet.** Today `tenant-portal` and
-  `platform-portal` each define their own (duplicated) `@theme` in their
-  `globals.css`, and `landing` is still **Tailwind v3** (`tailwind.config.ts`).
-  The shared `@theme` in `packages/ui` does not exist; `tailwind-preset.ts` is
-  the only shared token file and the v4 apps do not consume it.
-- **Token values not migrated yet.** Current tokens are `brand-50…950` (7
-  stops), a single `amber`, and cool Tailwind neutrals — not the `green/amber
-  25–900` ramps, warm neutrals, or semantic/role tokens described above.
-- **Component patterns not aligned yet.** The 4px green accent bar, green focus
-  halo, StatCard icon chip / delta arrow, Badge/Avatar status dots, and the
-  Button primary-hover direction are not yet implemented; there is no `Card`
-  primitive.
-- **Roboto Mono not wired yet** — `landing`/`tenant-portal` still load DM Mono,
-  `platform-portal` uses `ui-monospace`.
+The remaining gaps are **component patterns only**, tracked in
+`docs/Engineering/frontend/2026-06-05-gap-audit-correction.md` (authoritative):
 
-The remediation is tracked in
-`docs/Engineering/frontend/2026-06-05-gap-audit-correction.md` (authoritative)
-and the backlog items it carries forward. When a bullet here becomes true,
-delete it from this section.
+- **4px green accent bar** on named card/section headers — not yet applied
+  (FE-BACKLOG-002).
+- **`Card` primitive** — does not exist; cards are still ad-hoc utility
+  combinations (FE-BACKLOG-002).
+- **StatCard icon chip / delta arrow** and **Badge/Avatar status dots** — not
+  yet implemented (FE-BACKLOG-003).
+- **Shared-primitive adoption** in tenant + login surfaces (FE-BACKLOG-005).
+
+Legacy colour aliases (`brand-*`, `ink-*`, `amber-*`, `surface-alt/-tint`,
+`near-black`, `error`, …) remain in the shared `@theme`, pinned to their current
+values; retire each only once `grep` shows zero usage. When a bullet here
+becomes true, delete it from this section.

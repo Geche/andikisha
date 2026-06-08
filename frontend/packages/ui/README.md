@@ -41,7 +41,7 @@ Neutral scale: `neutral-50` → `neutral-900`
 
 Font: Roboto (`--font-roboto`). Loaded by each app's `layout.tsx` via `next/font/google`.  
 Utilities: `font-display`, `font-body` → both resolve to `var(--font-roboto)`.  
-Mono: `font-mono` → `var(--font-dm-mono)` (for numeric displays).
+Mono: `font-mono` → `var(--font-roboto-mono)` (Roboto Mono, for numeric displays).
 
 ### Tailwind preset
 

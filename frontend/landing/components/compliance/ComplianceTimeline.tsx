@@ -58,7 +58,9 @@ export default function ComplianceTimeline() {
         <div className="relative border-t-2 border-ink-200 pt-6 grid grid-cols-5 gap-4">
           {EVENTS.map(({ date, title, desc }) => (
             <div key={date} className="relative">
-              {/* Dot on the border line */}
+              {/* Dot on the border line.
+                  token-exempt: #e5e7eb is an illustrative neutral ring inside an
+                  arbitrary shadow value, which cannot take a named token. */}
               <div
                 className="absolute -top-[26px] left-0 w-[10px] h-[10px] rounded-full bg-brand-900 border-2 border-white shadow-[0_0_0_2px_#e5e7eb]"
                 aria-hidden

@@ -42,6 +42,8 @@ export default function HeroPayslipCard({
   ];
 
   return (
+    // token-exempt: #0d4a38 is a bespoke mid-green for this illustrative payslip
+    // card, sitting between brand-800 and brand-900 — no exact token match.
     <div className="bg-[#0d4a38] border border-brand-700 rounded-2xl p-5 w-full shadow-[0_8px_32px_rgba(0,0,0,0.35)]">
       {/* Header */}
       <div className="mb-4 pb-3 border-b border-white/10">

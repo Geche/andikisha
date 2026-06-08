@@ -26,8 +26,8 @@ Production-ready Next.js 15 landing page for AndikishaHR, the HR and Payroll pla
 
 - **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS 3.4
-- **Fonts:** Roboto (display + body) + DM Mono (numbers)
+- **Styling:** Tailwind CSS 4
+- **Fonts:** Roboto (display + body) + Roboto Mono (numbers)
 - **Icons:** Lucide React
 - **Deployment:** Vercel
 

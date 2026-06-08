@@ -8,7 +8,12 @@
 @source "../../packages/ui/src/**/*.{ts,tsx}";
 
 /* Marketing-only typography tokens (non-colour, landing-local). The shared
-   @theme remains the single source of truth for all colour tokens. */
+   @theme remains the single source of truth for all colour tokens.
+
+   DEPRECATED — transitional tokens. text-ui (15px) and text-ui-sm (13px) are
+   landing-local off-scale sizes left over from the v3 design. Do not adopt them
+   in new markup; migrate existing uses to the standard Tailwind type scale
+   (text-sm / text-base) and delete these once usage reaches zero. */
 @theme {
   --text-ui: 0.9375rem;     /* 15px — marketing button / input text */
   --text-ui-sm: 0.8125rem;  /* 13px — form error text */
@@ -16,7 +21,7 @@
 
 :root {
   --font-roboto: "Roboto", sans-serif;
-  --font-dm-mono: "DM Mono", monospace;
+  --font-roboto-mono: "Roboto Mono", monospace;
 }
 
 @layer base {

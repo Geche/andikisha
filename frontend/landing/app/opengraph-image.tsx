@@ -7,6 +7,10 @@ export const contentType = "image/png";
 
 const CHIPS = ["500+ Companies", "KRA Compliant", "M-Pesa Integrated", "Data in East Africa"];
 
+// token-exempt: this is a build-time OG image rendered by Satori (next/og),
+// which resolves only literal inline styles — CSS custom properties / Tailwind
+// tokens are unavailable. Hex values mirror the brand ramp (brand-950/900/800,
+// amber #e8a020) and must stay literal.
 export default function Image() {
   return new ImageResponse(
     (

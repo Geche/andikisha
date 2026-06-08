@@ -45,7 +45,7 @@ const preset = {
       fontFamily: {
         display: ["var(--font-roboto)", "Roboto", "sans-serif"],
         body: ["var(--font-roboto)", "Roboto", "sans-serif"],
-        mono: ["var(--font-dm-mono)", "monospace"],
+        mono: ["var(--font-roboto-mono)", "monospace"],
       },
       animation: {
         float: "float 4s ease-in-out infinite",

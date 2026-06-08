@@ -41,7 +41,10 @@ export function HeroBrowserMockup() {
       className="rounded-t-[14px] overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_32px_80px_rgba(0,0,0,0.14)]"
       aria-hidden="true"
     >
-      {/* Browser chrome */}
+      {/* Browser chrome.
+          token-exempt: the dark window bar (#2d2d2d/#3a3a3a/#3d3d3d) and the
+          macOS traffic-light dots (#ff5f57/#ffbd2e/#28c840) are illustrative OS
+          chrome, not brand colours — no token applies. */}
       <div className="bg-[#2d2d2d] px-4 py-3 flex items-center gap-3 border-b border-[#3a3a3a]">
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
