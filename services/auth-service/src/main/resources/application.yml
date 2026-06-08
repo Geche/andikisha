@@ -52,7 +52,7 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD}
 
   jackson:
     default-property-inclusion: non_null
@@ -88,6 +88,11 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
   tracing:
     sampling:
       probability: 1.0
