@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -108,6 +109,33 @@ class EmployeeControllerTest {
                         .content(invalidBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void create_missingStatutoryAndIdFields_returns400_eachStillRequired() throws Exception {
+        // Guard for EMP-BACKLOG-002 / V10: the migration made national_id,
+        // phone_number, kra_pin, nhif_number, nssf_number NULLABLE in the DB (for
+        // bulk pending-activation imports). Single-employee creation must STILL
+        // require all five via @NotBlank — the DB change must not loosen the form.
+        String body = """
+                {
+                  "firstName": "Jane",
+                  "lastName": "Doe",
+                  "employmentType": "PERMANENT",
+                  "basicSalary": 50000
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors[*].field", hasItems(
+                        "nationalId", "phoneNumber", "kraPin", "nhifNumber", "nssfNumber")));
     }
 
     @Test
