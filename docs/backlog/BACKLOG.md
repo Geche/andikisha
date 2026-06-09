@@ -100,6 +100,27 @@ This was discovered during Step 2 visual verification: `EmployeeGrpcClient` in l
 
 ---
 
+### EMP-BACKLOG-003 — No update endpoint for positions (asymmetric with departments)
+
+**Raised:** 2026-06-09 (UX-flow-remediation-01, R2-5)
+**Priority:** Low–Medium — UX asymmetry; no data risk.
+
+**Background:**
+`DepartmentController` has `PUT /api/v1/departments/{id}` (update name/description), but
+`PositionController` has **no equivalent** — only list (GET), create (POST), and
+seed-defaults. The R2-5 settings pages reflect this faithfully: departments are
+editable, positions are add-only (no edit affordance is shown, so nothing implies
+editing is coming). But users who edit a department will reasonably expect to edit a
+position too and can't.
+
+**Fix:** Add `PUT /api/v1/positions/{id}` (update title/description/gradeLevel) in
+`PositionController` + `PositionService`, mirroring the department update path
+(`@PreAuthorize("hasAnyRole('ADMIN','HR_MANAGER')")`), then add an edit affordance to
+`/admin/settings/positions` to match the departments page. Not built speculatively in
+R2-5 — tracked here so the asymmetry isn't silently shipped.
+
+---
+
 ### AUTH-BACKLOG-005 — Migrate hardcoded scope mapping in CallerScopeResolver to read from role_permissions
 
 **Raised:** 2026-05-31
