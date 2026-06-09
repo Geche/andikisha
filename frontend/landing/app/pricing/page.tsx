@@ -11,7 +11,7 @@ import JoinCTA from "@/components/cta/JoinCTA";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Transparent KES pricing for Kenyan businesses. Statutory compliance on every plan. No hidden fees.",
+    "Plans for Kenyan businesses at every stage. Full statutory compliance on every plan. No hidden fees.",
 };
 
 export default function PricingPage() {
@@ -27,7 +27,7 @@ export default function PricingPage() {
             Pricing that makes sense at every stage.
           </h1>
           <p className="text-[18px] text-brand-100/70 max-w-[480px] mx-auto mb-7">
-            One flat rate per employee per month. Full Kenya statutory compliance on every plan.
+            Full Kenya statutory compliance on every plan. Choose the plan that fits your team.
           </p>
           <div className="flex justify-center gap-3 flex-wrap">
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white/80 text-[13px] font-medium">

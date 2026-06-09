@@ -9,9 +9,6 @@ import { cn } from "@/lib/utils";
 
 interface Plan {
   name: string;
-  monthlyPrice: number;
-  annualPrice: number;
-  unit: string;
   headcount: string;
   cta: string;
   href: string;
@@ -23,9 +20,6 @@ interface Plan {
 const PLANS: Plan[] = [
   {
     name: "Starter",
-    monthlyPrice: 350,
-    annualPrice: 298,
-    unit: "per employee / month",
     headcount: "Up to 25 employees",
     cta: "Start free trial",
     href: "/early-access",
@@ -39,9 +33,6 @@ const PLANS: Plan[] = [
   },
   {
     name: "Growth",
-    monthlyPrice: 280,
-    annualPrice: 238,
-    unit: "per employee / month",
     headcount: "26 – 200 employees",
     cta: "Start free trial",
     href: "/early-access",
@@ -56,9 +47,6 @@ const PLANS: Plan[] = [
   },
   {
     name: "Scale",
-    monthlyPrice: 220,
-    annualPrice: 187,
-    unit: "per employee / month",
     headcount: "200+ employees",
     cta: "Talk to sales",
     href: "/contact",
@@ -107,7 +95,6 @@ const TRUST_ITEMS = [
   "30-day free trial",
   "No credit card required",
   "Cancel any time",
-  "Annual billing saves 15%",
 ];
 
 function Cell({ value }: { value: boolean | string }) {
@@ -129,7 +116,6 @@ function Cell({ value }: { value: boolean | string }) {
 }
 
 export default function PricingTable() {
-  const [annual, setAnnual] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const visibleRows = expanded ? FEATURE_ROWS : FEATURE_ROWS.slice(0, CORE_ROW_COUNT);
@@ -149,158 +135,99 @@ export default function PricingTable() {
             No surprises.
           </h2>
           <p className="text-[17px] text-ink-600">
-            All prices in KES. VAT applied where applicable.
+            Talk to us for a quote tailored to your team size.
           </p>
-        </div>
-
-        {/* Billing toggle */}
-        <div className="flex items-center gap-3 mb-10">
-          <span
-            className={cn(
-              "text-[14px] font-medium transition-colors duration-200",
-              !annual ? "text-ink-900" : "text-ink-400"
-            )}
-          >
-            Monthly
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={annual}
-            aria-label="Toggle annual billing"
-            onClick={() => setAnnual((v) => !v)}
-            className="relative w-11 h-6 rounded-full bg-brand-900 transition-colors duration-200 focus-ring shrink-0"
-          >
-            <span
-              className={cn(
-                "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200",
-                annual ? "translate-x-[22px]" : "translate-x-0.5"
-              )}
-            />
-          </button>
-          <span
-            className={cn(
-              "text-[14px] font-medium transition-colors duration-200",
-              annual ? "text-ink-900" : "text-ink-400"
-            )}
-          >
-            Annual
-          </span>
-          <span className="bg-amber-light text-amber-dark text-[11px] font-bold px-2.5 py-1 rounded-full border border-amber">
-            Save 15%
-          </span>
         </div>
 
         {/* Plan cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-5">
-          {PLANS.map((plan) => {
-            const price = annual ? plan.annualPrice : plan.monthlyPrice;
-            return (
-              <div
-                key={plan.name}
+          {PLANS.map((plan) => (
+            <div
+              key={plan.name}
+              className={cn(
+                "rounded-2xl p-7",
+                plan.featured
+                  ? "bg-brand-900 border border-brand-900"
+                  : "bg-white border border-ink-200 shadow-[0_4px_20px_rgba(11,61,46,0.04)]"
+              )}
+            >
+              {plan.badge && (
+                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber mb-2">
+                  {plan.badge}
+                </p>
+              )}
+              <p
                 className={cn(
-                  "rounded-2xl p-7",
-                  plan.featured
-                    ? "bg-brand-900 border border-brand-900"
-                    : "bg-white border border-ink-200 shadow-[0_4px_20px_rgba(11,61,46,0.04)]"
+                  "font-display font-bold text-[17px] mb-2",
+                  plan.featured ? "text-white" : "text-ink-900"
                 )}
               >
-                {plan.badge && (
-                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-amber mb-2">
-                    {plan.badge}
-                  </p>
+                {plan.name}
+              </p>
+              <p
+                className={cn(
+                  "text-[13px] mb-6",
+                  plan.featured ? "text-white/50" : "text-ink-600"
                 )}
-                <p
-                  className={cn(
-                    "font-display font-bold text-[17px] mb-2",
-                    plan.featured ? "text-white" : "text-ink-900"
-                  )}
-                >
-                  {plan.name}
-                </p>
-                <p
-                  className={cn(
-                    "font-display font-black leading-none tracking-[-0.03em] mb-1",
-                    plan.featured ? "text-amber" : "text-ink-900"
-                  )}
-                  style={{ fontSize: "clamp(2rem, 3.5vw, 2.75rem)" }}
-                >
-                  <span className="text-[18px] font-semibold">KES </span>
-                  {price}
-                </p>
-                <p
-                  className={cn(
-                    "text-[12px] mb-1",
-                    plan.featured ? "text-white/40" : "text-ink-400"
-                  )}
-                >
-                  {plan.unit}
-                </p>
-                <p
-                  className={cn(
-                    "text-[13px] mb-6",
-                    plan.featured ? "text-white/50" : "text-ink-600"
-                  )}
-                >
-                  {plan.headcount}
-                </p>
-                <Link
-                  href={plan.href}
-                  className={cn(
-                    "block text-center py-3 rounded-lg text-[14px] font-semibold transition-colors duration-200 focus-ring",
-                    plan.featured
-                      ? "bg-amber hover:bg-amber-dark text-ink-900"
-                      : plan.cta === "Talk to sales"
-                        ? "border border-ink-200 text-ink-700 hover:bg-surface-alt"
-                        : "bg-ink-900 hover:bg-ink-700 text-white"
-                  )}
-                >
-                  {plan.cta}
-                </Link>
+              >
+                {plan.headcount}
+              </p>
+              <Link
+                href={plan.href}
+                className={cn(
+                  "block text-center py-3 rounded-lg text-[14px] font-semibold transition-colors duration-200 focus-ring",
+                  plan.featured
+                    ? "bg-amber hover:bg-amber-dark text-ink-900"
+                    : plan.cta === "Talk to sales"
+                      ? "border border-ink-200 text-ink-700 hover:bg-surface-alt"
+                      : "bg-ink-900 hover:bg-ink-700 text-white"
+                )}
+              >
+                {plan.cta}
+              </Link>
 
-                {/* Highlights */}
-                <div
-                  className={cn(
-                    "mt-6 pt-5 border-t flex flex-col gap-2.5",
-                    plan.featured ? "border-white/10" : "border-ink-100"
-                  )}
-                >
-                  {plan.highlights.map((item) =>
-                    item.startsWith("Everything in") ? (
-                      <span
-                        key={item}
+              {/* Highlights */}
+              <div
+                className={cn(
+                  "mt-6 pt-5 border-t flex flex-col gap-2.5",
+                  plan.featured ? "border-white/10" : "border-ink-100"
+                )}
+              >
+                {plan.highlights.map((item) =>
+                  item.startsWith("Everything in") ? (
+                    <span
+                      key={item}
+                      className={cn(
+                        "text-[13px] italic leading-relaxed",
+                        plan.featured ? "text-white/50" : "text-ink-400"
+                      )}
+                    >
+                      {item}
+                    </span>
+                  ) : (
+                    <div key={item} className="flex items-start gap-2">
+                      <Check
+                        size={13}
                         className={cn(
-                          "text-[13px] italic leading-relaxed",
-                          plan.featured ? "text-white/50" : "text-ink-400"
+                          "shrink-0 mt-0.5",
+                          plan.featured ? "text-brand-500" : "text-brand-700"
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span
+                        className={cn(
+                          "text-[13px] leading-relaxed",
+                          plan.featured ? "text-white/75" : "text-ink-600"
                         )}
                       >
                         {item}
                       </span>
-                    ) : (
-                      <div key={item} className="flex items-start gap-2">
-                        <Check
-                          size={13}
-                          className={cn(
-                            "shrink-0 mt-0.5",
-                            plan.featured ? "text-brand-500" : "text-brand-700"
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span
-                          className={cn(
-                            "text-[13px] leading-relaxed",
-                            plan.featured ? "text-white/75" : "text-ink-600"
-                          )}
-                        >
-                          {item}
-                        </span>
-                      </div>
-                    )
-                  )}
-                </div>
+                    </div>
+                  )
+                )}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {/* Trust strip */}
@@ -315,7 +242,7 @@ export default function PricingTable() {
           ))}
         </div>
 
-        {/* Feature grid */}
+        {/* Per-tier feature comparison (what each plan includes) */}
         <div className="bg-white border border-ink-200 rounded-xl overflow-hidden">
           {/* Header */}
           <div className="grid grid-cols-[2fr_1fr_1fr_1fr] lg:grid-cols-[3fr_140px_140px_140px] bg-surface-alt border-b border-ink-200">
