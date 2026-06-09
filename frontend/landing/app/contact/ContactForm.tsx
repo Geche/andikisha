@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, Send } from "lucide-react";
 
 interface FormState {
   name: string;
@@ -90,7 +90,7 @@ export default function ContactForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="contact-name" className="form-label">
-            Name <span className="text-red-500">*</span>
+            Name <span className="text-danger">*</span>
           </label>
           <input
             id="contact-name"
@@ -108,7 +108,7 @@ export default function ContactForm() {
         </div>
         <div>
           <label htmlFor="contact-email" className="form-label">
-            Email <span className="text-red-500">*</span>
+            Email <span className="text-danger">*</span>
           </label>
           <input
             id="contact-email"
@@ -120,15 +120,19 @@ export default function ContactForm() {
             aria-describedby={errors.email ? "contact-email-error" : undefined}
             autoComplete="email"
           />
-          {errors.email && (
+          {errors.email ? (
             <p id="contact-email-error" className="form-error">{errors.email}</p>
+          ) : (
+            <p className="text-sm text-ink-400 mt-1.5">
+              We&apos;ll only use this to reply to your enquiry.
+            </p>
           )}
         </div>
       </div>
 
       <div>
         <label htmlFor="contact-subject" className="form-label">
-          Subject <span className="text-red-500">*</span>
+          Subject <span className="text-danger">*</span>
         </label>
         <select
           id="contact-subject"
@@ -142,14 +146,18 @@ export default function ContactForm() {
             <option key={o} value={o}>{o}</option>
           ))}
         </select>
-        {errors.subject && (
+        {errors.subject ? (
           <p id="contact-subject-error" className="form-error">{errors.subject}</p>
+        ) : (
+          <p className="text-sm text-ink-400 mt-1.5">
+            Pick the closest match — we&apos;ll route it to the right team.
+          </p>
         )}
       </div>
 
       <div>
         <label htmlFor="contact-message" className="form-label">
-          Message <span className="text-red-500">*</span>
+          Message <span className="text-danger">*</span>
         </label>
         <textarea
           id="contact-message"
@@ -160,15 +168,19 @@ export default function ContactForm() {
           onChange={(e) => update("message", e.target.value)}
           aria-describedby={errors.message ? "contact-message-error" : undefined}
         />
-        {errors.message && (
+        {errors.message ? (
           <p id="contact-message-error" className="form-error">{errors.message}</p>
+        ) : (
+          <p className="text-sm text-ink-400 mt-1.5">
+            Share your team size and what you&apos;d like to achieve.
+          </p>
         )}
       </div>
 
       {submitError && (
-        <div className="flex items-start gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
-          <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="text-[14px] text-red-700">{submitError}</p>
+        <div className="flex items-start gap-3 bg-danger-bg border border-danger/20 rounded-lg px-4 py-3">
+          <AlertCircle size={16} className="text-danger shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-[14px] text-danger">{submitError}</p>
         </div>
       )}
 
@@ -177,7 +189,14 @@ export default function ContactForm() {
         disabled={isPending}
         className="btn-primary btn-lg justify-center w-full disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {isPending ? "Sending..." : "Send Message"}
+        {isPending ? (
+          "Sending..."
+        ) : (
+          <>
+            <Send size={16} aria-hidden="true" />
+            Send message
+          </>
+        )}
       </button>
     </form>
   );
