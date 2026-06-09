@@ -280,7 +280,14 @@ export function WorkspaceSetupChecklist({
           onClick={() => router.push(`/${workspace}/admin/employees/new`)}
           className="w-full sm:w-auto"
         >
-          Add employee
+          Add your first employee
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/${workspace}/admin/employees/bulk-upload`)}
+          className="w-full sm:w-auto"
+        >
+          Import employees from a file
         </Button>
       </StepCard>
 

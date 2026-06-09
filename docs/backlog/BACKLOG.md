@@ -11,6 +11,22 @@ Items that were deferred during development with clear rationale. Ordered roughl
 **Raised:** 2026-06-01
 **Priority:** Medium — V1 workaround in place; no functional regression, but semantic inconsistency.
 
+**Status:** ✅ RESOLVED 2026-06-09 (UX-flow-remediation-01, W5). Migration
+`V10__make_employee_optional_ids_nullable.sql` drops NOT NULL on `national_id`,
+`phone_number`, `kra_pin`, `nhif_number`, `nssf_number`; the `Employee` entity
+`@Column` flags were updated to match; and `BulkUploadService` now stores NULL —
+not the colliding `"+254700000000"` / `"PENDING-<empNum>"` / `""` placeholders —
+for absent optional fields. The placeholders had caused HTTP 409 DUPLICATE on the
+second incomplete bulk row (and a NOT NULL violation on empty kra_pin); both were
+masking a real defect once bulk upload was exposed in the UI (W5).
+**Verified:** two fully-incomplete rows now commit (`createdCount: 2`, previously
+409 on row 2), stored with NULL national_id/phone_number; single-employee creation
+still requires all five via `CreateEmployeeRequest` `@NotBlank`.
+**Note:** existing placeholder rows were left untouched (NULLs do not collide with
+them, so no functional need to rewrite live data). An optional one-off cleanup
+(`PENDING-*` / `'+254700000000'` / `''` → NULL) can land as a follow-up migration
+if the semantic tidiness is wanted — tracked here, not blocking.
+
 **Background:**
 The `employees` table has `nhif_number VARCHAR(20) NOT NULL` and `national_id VARCHAR(20) NOT NULL`. These constraints date from the single-employee creation flow where both fields are required at creation time.
 

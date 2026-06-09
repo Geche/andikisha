@@ -381,23 +381,23 @@ public class BulkUploadService {
 
         LocalDate hireDate = LocalDate.parse(row.get("dateOfJoining").trim());
         String empNum = numberGenerator.generate(tenantId);
-        String phone  = row.getOrDefault("phone", "+254700000000").trim();
-        if (phone.isEmpty()) phone = "+254700000000";
 
-        // nhifNumber and nssfNumber are NOT NULL in the DB — default to empty string if absent
-        String nhifNum = row.getOrDefault("shifNumber","").trim();
-        String nssfNum = row.getOrDefault("nssfNumber","").trim();
-
-        String nationalId = row.getOrDefault("nationalId","").trim();
-        if (nationalId.isEmpty()) nationalId = "PENDING-" + empNum;
+        // Optional ID/statutory fields are NULL when absent (collected later at
+        // activation). Storing NULL — not colliding placeholders — keeps the
+        // (tenant_id, phone_number)/(tenant_id, national_id) unique indexes happy
+        // across multiple incomplete rows. See V10 migration / EMP-BACKLOG-002.
+        String phone      = nullIfBlank(row.getOrDefault("phone", "").trim());
+        String nationalId = nullIfBlank(row.getOrDefault("nationalId", "").trim());
+        String nhifNum    = nullIfBlank(row.getOrDefault("shifNumber", "").trim());
+        String nssfNum    = nullIfBlank(row.getOrDefault("nssfNumber", "").trim());
 
         Employee emp = Employee.create(tenantId, empNum,
                 row.get("firstName").trim(), row.get("lastName").trim(),
                 nationalId,
                 phone, row.get("workEmail").trim().toLowerCase(),
                 nullIfBlank(row.getOrDefault("kraPin","").trim().toUpperCase()),
-                nhifNum.isBlank() ? "" : nhifNum,
-                nssfNum.isBlank() ? "" : nssfNum,
+                nhifNum,
+                nssfNum,
                 EmploymentType.PERMANENT, ss, dept, pos, hireDate);
 
         // Mark as pending account activation
