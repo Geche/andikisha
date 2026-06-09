@@ -38,17 +38,20 @@ async function proxyRequest(request: NextRequest): Promise<NextResponse> {
   }
 
   const url = `${GATEWAY}${forwardedPath}${search}`;
-  const body =
-    request.method !== "GET" && request.method !== "HEAD"
-      ? await request.text()
-      : undefined;
+
+  // Forward the request body as raw bytes and preserve its Content-Type, so
+  // multipart file uploads (bulk-upload) keep their boundary and binary payload.
+  // (Reading it as text + forcing application/json corrupted uploads.)
+  const hasBody = request.method !== "GET" && request.method !== "HEAD";
+  const body = hasBody ? Buffer.from(await request.arrayBuffer()) : undefined;
+
+  const forwardHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const reqContentType = request.headers.get("content-type");
+  if (hasBody && reqContentType) forwardHeaders["Content-Type"] = reqContentType;
 
   const upstream = await fetch(url, {
     method: request.method,
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+    headers: forwardHeaders,
     body,
   });
 
@@ -63,11 +66,16 @@ async function proxyRequest(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(json, { status: upstream.status });
   }
 
-  const text = await upstream.text();
-  return new NextResponse(text, {
-    status: upstream.status,
-    headers: { "Content-Type": contentType || "text/plain" },
-  });
+  // Everything else (xlsx/csv/pdf downloads, etc.) is returned as raw bytes so
+  // binary content is never mangled by UTF-8 text decoding. Preserve the
+  // content type and any download filename.
+  const buffer = await upstream.arrayBuffer();
+  const responseHeaders: Record<string, string> = {
+    "Content-Type": contentType || "application/octet-stream",
+  };
+  const disposition = upstream.headers.get("content-disposition");
+  if (disposition) responseHeaders["Content-Disposition"] = disposition;
+  return new NextResponse(buffer, { status: upstream.status, headers: responseHeaders });
 }
 
 export const GET = proxyRequest;
