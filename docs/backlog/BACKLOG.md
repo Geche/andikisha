@@ -371,6 +371,23 @@ from the Approve modal so the UI doesn't collect data it discards.
 
 ---
 
+### AUTH-BACKLOG-006 — No user display-name field (UI shows email everywhere)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 4)
+**Priority:** Low/Medium — affects every surface that identifies a user.
+
+**Problem:** `users` has no display-name (first/last) field; `/api/auth/me` returns
+`fullName: undefined`. So `/admin/users`, the leave "Reviewed by", and similar surfaces
+identify people by **email**, not name. Bug 4 made leave reviewer show the reviewer's
+email (correct, person-identifying) rather than the UUID/position — but a true name is
+not yet possible.
+
+**Fix:** add a display-name to the auth user (or resolve via the linked employee record's
+first/last name when `employeeId` is present), expose it on `/api/auth/me`, `/users`, and
+leave `reviewerName`, falling back to email when absent.
+
+---
+
 ### FE-BACKLOG-007 — BaseModal silent-empty-modal trap
 
 **Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 2)
