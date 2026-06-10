@@ -70,9 +70,11 @@ export default function SetPasswordPage() {
         return;
       }
 
-      // Fresh JWT is set in the cookie by the BFF. Navigate to the correct dashboard.
+      // Fresh JWT is set in the cookie by the BFF. Full-document navigation (not
+      // router.replace): a soft client navigation races the just-set cookie commit,
+      // so middleware can miss it and bounce to /login (same root cause as R2-9).
       const roles = new Set<string>(data.roles ?? []);
-      router.replace(`/${workspace}${findCorrectDashboard(roles)}`);
+      window.location.assign(`/${workspace}${findCorrectDashboard(roles)}`);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
