@@ -324,6 +324,53 @@ from employee provisioning. Surface an "Invite user" action on the User Manageme
 
 ---
 
+### TENANT-BACKLOG-007 — Delete actions on Departments, Positions, and Roles screens
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, browser pass) — **Run 03 candidate**
+**Priority:** Medium — list+add+edit shipped (R2-5, R2-8) without delete; delete is new work, not a bug.
+
+**Problem:** No delete affordance on Departments, Positions, or Roles/Permissions. Deletion
+is not a trivial add — it has data-integrity implications that need a decision:
+- Deleting a **department** with active employees assigned.
+- Deleting a **position** referenced by employees / payroll history.
+- Deleting/disabling a **role** with users currently assigned.
+
+**Decide in Run 03:** soft-delete vs hard-delete vs archive; block-if-referenced vs reassign-on-delete;
+whether roles are deletable at all (they're a fixed enum + SYSTEM-seeded grants). Needs design, not a
+quick add.
+
+---
+
+### TENANT-BACKLOG-008 — Settings IA reorganization
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, browser pass) — **Run 03 candidate**
+**Priority:** Low/Medium — IA polish, not a defect.
+
+**Problem/proposal:** Consider moving Departments, Positions, and Roles & Permissions under
+User management, leaving Settings as "coming soon". **Open tension:** Departments and Positions are
+**org-structure**, not users — filing them under "User management" trades one IA problem for another.
+The right grouping (org structure vs people vs tenant settings) needs more thought than a quick move.
+
+**Decide in Run 03.** Do not reorganize in this run. Resolve the taxonomy first (likely: Settings hub
+with sub-sections for Organisation [depts/positions], People [user management], and Tenant config).
+
+---
+
+### LEAVE-BACKLOG-001 — Approve does not persist reviewer notes
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 1 fix)
+**Priority:** Low — minor; reject reasons ARE persisted, approve notes are not.
+
+**Problem:** `POST /api/v1/leave/requests/{id}/approve` takes **no body** — `leaveService.approve(id,
+userId, userName)` has no notes parameter. The Approve modal still shows an optional "notes" textarea;
+after the Bug 1 method fix (PATCH→POST) approve succeeds, but any text entered is silently dropped.
+
+**Fix (pick one):** either add an optional `notes` field to the approve endpoint + persist on the
+leave request's review record (mirroring how `rejectionReason` is stored), or remove the notes textarea
+from the Approve modal so the UI doesn't collect data it discards.
+
+---
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
