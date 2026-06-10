@@ -5,9 +5,9 @@ import Eyebrow from "@/components/ui/Eyebrow";
 type ComparisonValue = boolean | string;
 
 const ROWS: Array<[string, ComparisonValue, ComparisonValue]> = [
-  ["PAYE brackets auto-updated", false, true],
+  ["PAYE brackets maintained for you", false, true],
   ["NSSF & SHIF calculations", false, true],
-  ["KRA filing (P10A/P9)", false, true],
+  ["Housing Levy calculated automatically", false, true],
   ["M-Pesa salary disbursement", false, true],
   ["Audit trail & version history", false, true],
   ["Employee self-service payslips", false, true],
