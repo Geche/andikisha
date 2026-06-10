@@ -24,8 +24,9 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
   const mutation = useMutation<LeaveRequest, AxiosError<{ message?: string }>, void>({
     mutationFn: () =>
       apiClient
-        .patch<LeaveRequest>(`/api/v1/leave/requests/${request.id}/reject`, {
-          notes: notes.trim(),
+        // Backend is POST (not PATCH) and reads `rejectionReason` (@NotBlank), not `notes`.
+        .post<LeaveRequest>(`/api/v1/leave/requests/${request.id}/reject`, {
+          rejectionReason: notes.trim(),
         })
         .then((r) => r.data),
     onSuccess: () => {
