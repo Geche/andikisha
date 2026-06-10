@@ -445,6 +445,110 @@ function WorkspaceEditModal({
   );
 }
 
+// ─── Statutory edit modal ─────────────────────────────────────────────────────
+
+const KRA_PIN_RE = /^[A-Z]\d{9}[A-Z]$/;
+
+function StatutoryEditModal({
+  current, onSuccess, onClose, loading, error,
+}: {
+  current: { kraPin: string | null; nssfNumber: string | null; shifNumber: string | null };
+  onSuccess: (v: { kraPin: string; nssfNumber: string; shifNumber: string }) => void;
+  onClose: () => void;
+  loading: boolean;
+  error: string | null;
+}) {
+  const [kraPin, setKraPin] = useState(current.kraPin ?? "");
+  const [nssfNumber, setNssfNumber] = useState(current.nssfNumber ?? "");
+  const [shifNumber, setShifNumber] = useState(current.shifNumber ?? "");
+
+  // KRA PIN is optional, but if present must match A123456789X (consistent with
+  // the Add Employee form). Backend format validation is a tracked gap.
+  const kraInvalid = kraPin.length > 0 && !KRA_PIN_RE.test(kraPin);
+  const canSubmit = !kraInvalid && !loading;
+
+  return (
+    <ConfirmModal title="Edit statutory information" onClose={onClose}>
+      {error && <InlineAlert variant="error">{error}</InlineAlert>}
+      <FormField
+        label="KRA PIN"
+        htmlFor="stat-kra"
+        hint={kraInvalid ? "Format: A123456789X (letter, 9 digits, letter)" : undefined}
+      >
+        <Input id="stat-kra" value={kraPin} onChange={(e) => setKraPin(e.target.value.toUpperCase())}
+          placeholder="A123456789X" maxLength={11} error={kraInvalid} />
+      </FormField>
+      <FormField label="NSSF number" htmlFor="stat-nssf">
+        <Input id="stat-nssf" value={nssfNumber} onChange={(e) => setNssfNumber(e.target.value)}
+          placeholder="Optional" maxLength={20} />
+      </FormField>
+      <FormField label="SHIF number" htmlFor="stat-shif">
+        <Input id="stat-shif" value={shifNumber} onChange={(e) => setShifNumber(e.target.value)}
+          placeholder="Optional" maxLength={20} />
+      </FormField>
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button disabled={!canSubmit} onClick={() => onSuccess({ kraPin, nssfNumber, shifNumber })}>
+          {loading ? (<><Spinner size="sm" className="mr-1.5" />Saving…</>) : "Save"}
+        </Button>
+      </div>
+    </ConfirmModal>
+  );
+}
+
+// ─── Plan change modal (RECORD-ONLY) ──────────────────────────────────────────
+
+function PlanChangeModal({
+  current, plans, onSuccess, onClose, loading, error,
+}: {
+  current: { planId: string; seatCount: number; agreedPriceKes: number };
+  plans: { id: string; name: string }[];
+  onSuccess: (v: { newPlanId: string; seatCount: number; agreedPriceKes: number }) => void;
+  onClose: () => void;
+  loading: boolean;
+  error: string | null;
+}) {
+  const [planId, setPlanId] = useState(current.planId);
+  const [seatCount, setSeatCount] = useState(String(current.seatCount));
+  const [price, setPrice] = useState(String(current.agreedPriceKes));
+
+  const seats = parseInt(seatCount, 10);
+  const priceNum = parseFloat(price);
+  const canSubmit =
+    !!planId && Number.isFinite(seats) && seats >= 1 &&
+    Number.isFinite(priceNum) && priceNum >= 0 && !loading;
+
+  return (
+    <ConfirmModal title="Change plan" onClose={onClose}>
+      <div className="flex items-start gap-2.5 rounded-xl bg-surface-alt border border-neutral-200 px-4 py-3">
+        <AlertTriangle size={15} className="text-neutral-400 flex-shrink-0 mt-0.5" />
+        <p className="text-[12.5px] text-neutral-600 leading-relaxed">
+          Records the agreed plan and price. It does not change entitlements, the
+          licence status, or the trial state.
+        </p>
+      </div>
+      {error && <InlineAlert variant="error">{error}</InlineAlert>}
+      <FormField label="Plan" htmlFor="plan-select" required>
+        <Select id="plan-select" value={planId} onChange={(e) => setPlanId(e.target.value)}>
+          {plans.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+        </Select>
+      </FormField>
+      <FormField label="Seats" htmlFor="plan-seats" required>
+        <Input id="plan-seats" type="number" min={1} value={seatCount} onChange={(e) => setSeatCount(e.target.value)} />
+      </FormField>
+      <FormField label="Agreed price (KES)" htmlFor="plan-price" required>
+        <Input id="plan-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
+      </FormField>
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
+        <Button disabled={!canSubmit} onClick={() => onSuccess({ newPlanId: planId, seatCount: seats, agreedPriceKes: priceNum })}>
+          {loading ? (<><Spinner size="sm" className="mr-1.5" />Saving…</>) : "Record change"}
+        </Button>
+      </div>
+    </ConfirmModal>
+  );
+}
+
 // ─── Feature flag inline confirm ──────────────────────────────────────────────
 
 function FlagToggleRow({
@@ -505,7 +609,7 @@ function FlagToggleRow({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type ModalType = "suspend" | "reactivate" | "extend-trial" | "reset-password" | "cancel" | "edit-workspace" | null;
+type ModalType = "suspend" | "reactivate" | "extend-trial" | "reset-password" | "cancel" | "edit-workspace" | "edit-statutory" | "change-plan" | null;
 
 export default function TenantDetailPage({
   params,
@@ -615,6 +719,35 @@ export default function TenantDetailPage({
       toast(`Cancelled ${data?.organisationName}`);
     },
     onError: () => setActionError("Cancellation failed. The account may already be cancelled."),
+  });
+
+  const { data: plansData } = useQuery({
+    queryKey: ["plans"],
+    queryFn: () => apiClient.get<{ id: string; name: string }[]>("/api/v1/plans").then((r) => r.data),
+  });
+
+  const statutoryMut = useMutation({
+    mutationFn: (v: { kraPin: string; nssfNumber: string; shifNumber: string }) =>
+      apiClient.patch(`/api/v1/super-admin/tenants/${tenantId}/statutory`, v),
+    onSuccess: () => {
+      invalidate();
+      setActiveModal(null);
+      toast("Statutory information updated");
+    },
+    onError: () => setActionError("Failed to update statutory information. Try again."),
+  });
+
+  // Record-only: stores plan + price (and seats); does NOT transition licence
+  // status or clear the trial state. Reuses the status-preserving upgrade endpoint.
+  const planChangeMut = useMutation({
+    mutationFn: (v: { newPlanId: string; seatCount: number; agreedPriceKes: number }) =>
+      apiClient.post(`/api/v1/super-admin/tenants/${tenantId}/licences/upgrade`, v),
+    onSuccess: () => {
+      invalidate();
+      setActiveModal(null);
+      toast("Plan and price recorded");
+    },
+    onError: () => setActionError("Failed to record plan change. Try again."),
   });
 
   const updateWorkspaceMut = useMutation({
@@ -1011,12 +1144,13 @@ export default function TenantDetailPage({
             <div className="lg:col-span-5 bg-surface border border-neutral-200 rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Current Licence</p>
-                <span
-                  className="flex items-center gap-1 text-[12px] font-semibold text-neutral-300 cursor-not-allowed opacity-60"
-                  title="Coming soon"
+                <button
+                  onClick={() => openModal("change-plan")}
+                  disabled={!data.currentLicence}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-brand-700 hover:text-brand-800 disabled:text-neutral-300 disabled:cursor-not-allowed"
                 >
-                  Manage licence <ChevronRight size={12} />
-                </span>
+                  <Pencil size={12} /> Change plan
+                </button>
               </div>
               {data.currentLicence ? (
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
@@ -1048,7 +1182,15 @@ export default function TenantDetailPage({
 
             {/* Statutory info */}
             <div className="lg:col-span-3 bg-surface border border-neutral-200 rounded-xl p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 mb-4">Statutory Information</p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-400">Statutory Information</p>
+                <button
+                  onClick={() => openModal("edit-statutory")}
+                  className="flex items-center gap-1 text-[12px] font-semibold text-brand-700 hover:text-brand-800"
+                >
+                  <Pencil size={12} /> Edit
+                </button>
+              </div>
               <dl className="flex flex-col gap-3 text-[13px]">
                 {[
                   ["KRA PIN", data.kraPin],
@@ -1229,6 +1371,29 @@ export default function TenantDetailPage({
           onSuccess={(newWorkspace) => updateWorkspaceMut.mutate(newWorkspace)}
           onClose={() => setActiveModal(null)}
           loading={updateWorkspaceMut.isPending}
+          error={actionError}
+        />
+      )}
+      {activeModal === "edit-statutory" && data && (
+        <StatutoryEditModal
+          current={{ kraPin: data.kraPin, nssfNumber: data.nssfNumber, shifNumber: data.shifNumber }}
+          onSuccess={(v) => statutoryMut.mutate(v)}
+          onClose={() => setActiveModal(null)}
+          loading={statutoryMut.isPending}
+          error={actionError}
+        />
+      )}
+      {activeModal === "change-plan" && data && data.currentLicence && (
+        <PlanChangeModal
+          current={{
+            planId: data.currentLicence.planId,
+            seatCount: data.currentLicence.seatCount,
+            agreedPriceKes: data.currentLicence.agreedPriceKes,
+          }}
+          plans={plansData ?? []}
+          onSuccess={(v) => planChangeMut.mutate(v)}
+          onClose={() => setActiveModal(null)}
+          loading={planChangeMut.isPending}
           error={actionError}
         />
       )}

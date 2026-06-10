@@ -315,6 +315,16 @@ public class SuperAdminTenantService {
         log.info("Workspace updated for tenantId={} to '{}' by {}", tenantId, newWorkspace, requestedBy);
     }
 
+    /** Update the tenant's organisation-level statutory registrations (KRA PIN, NSSF, SHIF). */
+    @Transactional
+    public void updateStatutory(UUID tenantId, String kraPin, String nssfNumber,
+                                String shifNumber, String requestedBy) {
+        Tenant tenant = tenantRepository.findByIdAndTenantId(tenantId, tenantId.toString())
+                .orElseThrow(() -> new TenantNotFoundException(tenantId));
+        tenant.updateStatutoryRegistrations(kraPin, nssfNumber, shifNumber);
+        log.info("Statutory registrations updated for tenantId={} by {}", tenantId, requestedBy);
+    }
+
     public Page<TenantSummaryResponse> filterTenants(List<TenantStatus> statuses, Pageable pageable) {
         if (statuses == null || statuses.isEmpty()) {
             return listTenants(pageable);

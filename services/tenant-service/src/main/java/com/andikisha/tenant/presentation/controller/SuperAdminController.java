@@ -14,6 +14,7 @@ import com.andikisha.tenant.application.dto.response.TenantDetailResponse;
 import com.andikisha.tenant.application.dto.response.TenantSummaryResponse;
 import com.andikisha.tenant.application.dto.response.WorkspaceAvailabilityResponse;
 import com.andikisha.tenant.application.dto.request.ExtendTrialRequest;
+import com.andikisha.tenant.application.dto.request.UpdateStatutoryRequest;
 import com.andikisha.tenant.application.dto.request.UpdateWorkspaceRequest;
 import com.andikisha.tenant.application.dto.response.FeatureFlagResponse;
 import com.andikisha.tenant.application.service.FeatureFlagService;
@@ -206,6 +207,16 @@ public class SuperAdminController {
             @PathVariable UUID tenantId,
             @RequestBody @Valid UpdateWorkspaceRequest request) {
         superAdminTenantService.updateWorkspace(tenantId, request.workspace(), currentUserId());
+    }
+
+    @PatchMapping("/tenants/{tenantId}/statutory")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Update a tenant's statutory registrations (KRA PIN, NSSF, SHIF)")
+    public void updateStatutory(
+            @PathVariable UUID tenantId,
+            @RequestBody @Valid UpdateStatutoryRequest request) {
+        superAdminTenantService.updateStatutory(
+                tenantId, request.kraPin(), request.nssfNumber(), request.shifNumber(), currentUserId());
     }
 
     @GetMapping("/workspaces/{workspace}/available")

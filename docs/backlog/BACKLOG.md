@@ -250,6 +250,43 @@ On submit:
 
 **Fix:** In `extendTrial()`, also call `licencePlanService.extendLicenceEndDate(tenantId, additionalDays)` or equivalent to update `TenantLicence.endDate` in the same transaction.
 
+**Update (2026-06-10, UX-flow-remediation-01 R2-7) — full diagnosis attached; deferred deliberately.**
+This is the **enforcement-side licence-state divergence** flagged during R2-7. It is broader than the
+list-page cosmetic note above and has two coupled symptoms:
+
+1. **Date divergence.** For the demo tenant: `tenant_licence.end_date = 2026-06-13` (future) while
+   `tenants.trial_ends_at = 2026-05-28` (past). The platform tenant view shows status **TRIAL** (from
+   the licence), **"trial expired"** (computed from `trial_ends_at` being past), and **end date 13 Jun**
+   (from `tenant_licence.end_date`) — all at once, which reads as contradictory.
+2. **No status transition.** The trial lapsed (28 May) but the licence status was never transitioned
+   TRIAL → EXPIRED (no expiry job ran / the two date sources aren't reconciled).
+
+**Confirmed NOT an access blocker.** `AuthService.login` performs no licence/trial check, and an
+EMPLOYEE in the same expired-trial tenant authenticates normally — so this is a display/state-consistency
+issue, not a login gate. (This is why R2-7's plan change was scoped **record-only**: it deliberately does
+**not** transition status or clear the trial state. Fixing this divergence is the deferred enforcement work.)
+
+**Fix (when picked up):** single source of truth for trial/licence end (reconcile `trial_ends_at` and
+`tenant_licence.end_date`), and a status-transition path (expiry job) that moves a lapsed TRIAL to EXPIRED.
+Priority is **Medium** (correctness of the licence-state shown to operators), not the original "Low/cosmetic".
+
+---
+
+### TENANT-BACKLOG-004 — No backend format validation for tenant statutory fields (KRA PIN/NSSF/SHIF)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, R2-7)
+**Priority:** Low–Medium — client-validated today; backend accepts any string.
+
+**Problem:**
+Tenant statutory fields (`kra_pin`, `nssf_number`, `shif_number`) have no backend format validation.
+The R2-7 statutory-edit form validates KRA PIN against `^[A-Z]\d{9}[A-Z]$` (A123456789X) client-side,
+and the new `PATCH /api/v1/super-admin/tenants/{id}/statutory` endpoint only enforces `@Size(max=20)` —
+a non-form client could store a malformed KRA PIN. (Per the R2-7 directive, the backend gap was filed
+rather than fixed in-run, to avoid diverging from the rest of tenant statutory handling unilaterally.)
+
+**Fix:** Add `@Pattern(regexp = "^[A-Z]\\d{9}[A-Z]$")` to `UpdateStatutoryRequest.kraPin` (and the
+tenant create request's KRA PIN), mirroring `CreateEmployeeRequest.kraPin`.
+
 ---
 
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
