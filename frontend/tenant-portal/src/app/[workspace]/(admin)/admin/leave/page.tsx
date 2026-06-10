@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { ApproveModal } from "./_components/ApproveModal";
 import { RejectModal } from "./_components/RejectModal";
 import {
@@ -60,6 +61,7 @@ function TableSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function LeavePage() {
+  const workspace = useWorkspace();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -231,7 +233,7 @@ export default function LeavePage() {
                           </div>
                         ) : (
                           <Link
-                            href={`/leave/${req.id}`}
+                            href={`/${workspace}/admin/leave/${req.id}`}
                             className="text-[12.5px] font-semibold text-brand-700 hover:underline"
                           >
                             View
