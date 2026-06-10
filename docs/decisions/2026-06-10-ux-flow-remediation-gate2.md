@@ -34,6 +34,7 @@
 | R2-10 | Discoverable RBAC-gated User management | `05b2c06` | ✅ browser-confirmed (visibility ADMIN/HR_MANAGER vs EMPLOYEE) |
 | Bug 1 | Leave approve/reject POST-not-PATCH + reject field | `864cd82` | ✅ browser-confirmed (approve + reject succeed) |
 | Bug 2 | User-management modals white-card wrapper | `082dd02` | ✅ browser-confirmed (centered, backdrop, no bleed) |
+| Bug 3 | Leave "View" link missing `/{workspace}/admin` prefix → 404 | `1250348` | ✅ verified (old→404, new→200); browser confirm approved+rejected |
 | — | Backlog filings (delete actions, Settings IA, leave notes, BaseModal trap) | `62a1937` + this report's commit | ✅ |
 
 ---
