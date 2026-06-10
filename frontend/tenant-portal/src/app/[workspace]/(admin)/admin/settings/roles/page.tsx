@@ -100,6 +100,29 @@ export default function RolesSettingsPage() {
           Settings
         </Link>
 
+        {/* Roles overview — every operational role with a clear descriptor, so a
+            grant-based role and a role-based one (ADMIN) are never confused with
+            "no permissions". */}
+        <section>
+          <h2 className="text-[15px] font-semibold text-near-black mb-3">Roles</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(rolesData ?? []).map((r) => {
+              const descriptor =
+                r.role === "ADMIN"
+                  ? "Full access (role-based)"
+                  : r.permissions.length > 0
+                  ? `${r.permissions.length} permission${r.permissions.length === 1 ? "" : "s"}`
+                  : "No granular permissions";
+              return (
+                <div key={r.role} className="rounded-lg border border-neutral-200 bg-white px-4 py-3">
+                  <p className="text-[13.5px] font-semibold text-near-black">{roleLabel(r.role)}</p>
+                  <p className="text-[12.5px] text-neutral-500 mt-0.5">{descriptor}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Permission matrix */}
         <section>
           <div className="flex items-center gap-2 mb-3">
