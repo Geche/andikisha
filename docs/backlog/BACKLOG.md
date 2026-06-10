@@ -289,6 +289,41 @@ tenant create request's KRA PIN), mirroring `CreateEmployeeRequest.kraPin`.
 
 ---
 
+### TENANT-BACKLOG-005 — User deactivation (no endpoint)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, R2-10)
+**Priority:** Medium — needed for offboarding / revoking access without deleting history.
+
+**Problem:**
+The `User` entity has an `active` flag, but auth-service exposes **no endpoint** to
+deactivate/reactivate a tenant user. The R2-10 User Management screen therefore cannot
+offer deactivation (correctly excluded rather than faked). Today the only way to cut
+access is a password reset, which doesn't disable the account.
+
+**Fix:** Add `PATCH /api/v1/auth/users/{id}/status` (or `/deactivate` + `/reactivate`),
+`@PreAuthorize("hasAnyRole('ADMIN','HR_MANAGER')")`, toggling `User.active`; ensure the
+JWT/auth path rejects inactive users at login and token refresh. Then surface a
+deactivate action on the User Management screen.
+
+---
+
+### TENANT-BACKLOG-006 — Standalone user invite (separate from employee-tied provisioning)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, R2-10)
+**Priority:** Medium — onboarding admins/officers who are not employee records.
+
+**Problem:**
+The only way to create a tenant user today is `POST /employees/provision`, which is
+**tied to an employee record**. There is no way to invite a standalone user (e.g. an
+external HR/payroll admin) with a role but no employee profile. R2-10 excluded an invite
+action for this reason.
+
+**Fix:** Add an invite flow — `POST /api/v1/auth/users/invite` (email + role,
+`hasAnyRole('ADMIN','HR_MANAGER')`) issuing a set-password/activation link, decoupled
+from employee provisioning. Surface an "Invite user" action on the User Management screen.
+
+---
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  

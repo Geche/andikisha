@@ -8,5 +8,6 @@ public record TenantUserResponse(
         String id,
         String email,
         String role,
-        String employeeId
+        String employeeId,
+        String lastLogin
 ) {}

@@ -63,7 +63,8 @@ public class RolePermissionQueryService {
                         u.getId().toString(),
                         u.getEmail(),
                         u.getRole().name(),
-                        u.getEmployeeId() != null ? u.getEmployeeId().toString() : null))
+                        u.getEmployeeId() != null ? u.getEmployeeId().toString() : null,
+                        u.getLastLogin() != null ? u.getLastLogin().toString() : null))
                 .toList();
     }
 }
