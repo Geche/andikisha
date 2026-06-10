@@ -371,6 +371,23 @@ from the Approve modal so the UI doesn't collect data it discards.
 
 ---
 
+### FE-BACKLOG-007 — BaseModal silent-empty-modal trap
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 2)
+**Priority:** Low/Medium — ergonomics; prevents a recurring "broken-but-plausible" render.
+
+**Problem:** `BaseModal` renders only the backdrop + centering wrapper; the caller must supply the
+white-card surface (`bg-white rounded-xl shadow-xl border …`). If a caller forgets it, the modal still
+"works" (opens, traps focus, closes) but renders as bare content floating over the dim backdrop with the
+page bleeding through — a wrong-looking render that passes code review and only fails on a screenshot
+(exactly Bug 2). The R2-8/R2-10 modals hit this; the leave modals happen to include the surface.
+
+**Fix (pick one):** have `BaseModal` **default-provide** the surface wrapper (a `surface` prop, default
+true, that wraps children in the standard card), or make the surface a required structural part so
+omitting it is a type/visual error rather than a silently-degraded render. Then audit existing callers.
+
+---
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
