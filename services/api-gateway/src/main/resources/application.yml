@@ -52,6 +52,13 @@ spring:
                 name: authCircuitBreaker
                 fallbackUri: forward:/fallback/auth-service
 
+        # More specific public route first — public statutory rates → compliance.
+        - id: public-compliance
+          uri: ${COMPLIANCE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/public/compliance/**
+          # No auth filter — intentionally public (global rate data)
+
         - id: public-tenant-resolve
           uri: ${TENANT_SERVICE_URL:http://localhost:8083}
           predicates:

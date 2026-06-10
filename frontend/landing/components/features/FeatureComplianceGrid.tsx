@@ -12,7 +12,7 @@ const LEFT_CARDS = [
   {
     icon: Smartphone,
     title: "Mobile-first for every employee",
-    body: "Payslips on entry-level Android. PIN login, no password rules. Works on 3G — USSD fallback where bandwidth is poor.",
+    body: "Payslips on entry-level Android. PIN login, no password rules. The self-service portal is built to load on 3G and low bandwidth.",
   },
 ];
 

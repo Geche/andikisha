@@ -32,7 +32,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/actuator/health/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                // Public, unauthenticated statutory rates (marketing calculator,
+                                // future quote tools). Rates are global, non-tenant data.
+                                "/api/v1/public/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
