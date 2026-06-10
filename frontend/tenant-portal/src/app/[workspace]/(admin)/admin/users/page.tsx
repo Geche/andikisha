@@ -238,7 +238,7 @@ export default function UsersPage() {
       {/* Change role modal (ADMIN only) */}
       {assigning && (
         <BaseModal labelId="assign-role-title" onClose={() => setAssigning(null)}>
-          <div className="p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
             <h2 id="assign-role-title" className="text-[16px] font-bold text-near-black mb-1">Change role</h2>
             <p className="text-[13px] text-neutral-500 mb-4">{assigning.email}</p>
             <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">New role</label>
@@ -269,7 +269,7 @@ export default function UsersPage() {
       {/* Reset password confirm */}
       {resetting && (
         <BaseModal labelId="reset-title" onClose={() => setResetting(null)}>
-          <div className="p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
             <h2 id="reset-title" className="text-[16px] font-bold text-near-black mb-1">Reset password</h2>
             <p className="text-[13px] text-neutral-500 mb-5">
               Generate a temporary password for <span className="font-medium text-near-black">{resetting.email}</span>.
@@ -288,7 +288,7 @@ export default function UsersPage() {
       {/* Reset result — show the temporary password once */}
       {resetResult && (
         <BaseModal labelId="reset-result-title" onClose={() => setResetResult(null)}>
-          <div className="p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
             <h2 id="reset-result-title" className="text-[16px] font-bold text-near-black mb-1">Temporary password</h2>
             <p className="text-[13px] text-neutral-500 mb-4">
               Share this securely with <span className="font-medium text-near-black">{resetResult.email}</span>. It won&apos;t be shown again.
