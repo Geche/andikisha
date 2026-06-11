@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Container from "@/components/ui/Container";
 import Eyebrow from "@/components/ui/Eyebrow";
-import { calculatePayroll } from "@/lib/payroll-calculations";
-import { RATES_EFFECTIVE_DATE } from "@/lib/kenya-tax-rates-2025";
+import { computePayslip, loadRates, type StatutoryRates } from "@/lib/compute-payslip";
 
 function fmt(n: number) {
   return n.toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -36,9 +35,21 @@ export default function PayrollCalculator() {
   const [pensionPct, setPensionPct] = useState(0);
   const [helb, setHelb] = useState(0);
 
+  // Statutory rates come from the Compliance Service (single source of truth).
+  const [rates, setRates] = useState<StatutoryRates | null>(null);
+  const [ratesError, setRatesError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    loadRates()
+      .then((r) => { if (active) setRates(r); })
+      .catch(() => { if (active) setRatesError(true); });
+    return () => { active = false; };
+  }, []);
+
   const result = useMemo(
-    () => calculatePayroll({ grossMonthly: gross, pensionPercent: pensionPct, helbDeduction: helb }),
-    [gross, pensionPct, helb]
+    () => (rates ? computePayslip({ grossMonthly: gross, pensionPercent: pensionPct, helbDeduction: helb }, rates) : null),
+    [gross, pensionPct, helb, rates]
   );
 
   return (
@@ -144,19 +155,29 @@ export default function PayrollCalculator() {
           <div className="bg-white rounded-2xl border border-ink-200 p-6 lg:p-8">
             <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-400 mb-6">Payslip breakdown</p>
 
-            <OutputRow label="Gross pay" value={result.gross} />
-            <OutputRow label="PAYE" value={result.paye} deduction />
-            <OutputRow label="NSSF Tier I (6%)" value={result.nssfTier1} deduction />
-            <OutputRow label="NSSF Tier II (6%)" value={result.nssfTier2} deduction />
-            <OutputRow label="SHIF (2.75%)" value={result.shif} deduction />
-            <OutputRow label="Housing Levy (1.5%)" value={result.housingLevy} deduction />
-            {result.pension > 0 && <OutputRow label={`Pension (${pensionPct}%)`} value={result.pension} deduction />}
-            {result.helb > 0 && <OutputRow label="HELB" value={result.helb} deduction />}
-            <OutputRow label="Net pay" value={result.netPay} bold />
+            {ratesError ? (
+              <p className="text-[14px] text-ink-600 py-8 text-center">
+                Couldn&apos;t load the latest statutory rates. Please refresh to try again.
+              </p>
+            ) : !result || !rates ? (
+              <p className="text-[14px] text-ink-400 py-8 text-center">Loading current KRA rates…</p>
+            ) : (
+              <>
+                <OutputRow label="Gross pay" value={result.gross} />
+                <OutputRow label="PAYE" value={result.paye} deduction />
+                <OutputRow label="NSSF Tier I" value={result.nssfTier1} deduction />
+                <OutputRow label="NSSF Tier II" value={result.nssfTier2} deduction />
+                <OutputRow label="SHIF" value={result.shif} deduction />
+                <OutputRow label="Housing Levy" value={result.housingLevy} deduction />
+                {result.pension > 0 && <OutputRow label={`Pension (${pensionPct}%)`} value={result.pension} deduction />}
+                {result.helb > 0 && <OutputRow label="HELB" value={result.helb} deduction />}
+                <OutputRow label="Net pay" value={result.netPay} bold />
 
-            <p className="text-[12px] text-ink-400 mt-5 leading-relaxed">
-              Rates current as of {RATES_EFFECTIVE_DATE}. We update calculations the same day a Finance Bill takes effect.
-            </p>
+                <p className="text-[12px] text-ink-400 mt-5 leading-relaxed">
+                  Live KRA rates from our Compliance engine (effective {rates.effectiveDate}) — the same rates that run payroll.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </Container>

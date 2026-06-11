@@ -8,6 +8,12 @@ spring:
     web-application-type: reactive
   cloud:
     gateway:
+      # We use the net.devh gRPC client (licence read-through), not Spring Cloud
+      # Gateway's experimental JSON↔gRPC bridge — which would otherwise activate on
+      # the grpc classpath and demand the unshaded io.grpc:grpc-netty transport.
+      filter:
+        json-to-grpc:
+          enabled: false
       default-filters:
         - RemoveRequestHeader=X-Internal-Request
         - name: CircuitBreaker
@@ -45,6 +51,13 @@ spring:
               args:
                 name: authCircuitBreaker
                 fallbackUri: forward:/fallback/auth-service
+
+        # More specific public route first — public statutory rates → compliance.
+        - id: public-compliance
+          uri: ${COMPLIANCE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/public/compliance/**
+          # No auth filter — intentionally public (global rate data)
 
         - id: public-tenant-resolve
           uri: ${TENANT_SERVICE_URL:http://localhost:8083}
@@ -294,6 +307,13 @@ spring:
       use-big-decimal-for-floats: true
     generator:
       write-bigdecimal-as-plain: true
+
+# gRPC client — licence read-through to tenant-service on cache miss
+grpc:
+  client:
+    tenant-service:
+      address: 'static://${TENANT_GRPC_HOST:localhost}:${TENANT_GRPC_PORT:9083}'
+      negotiation-type: plaintext
 
 app:
   jwt:

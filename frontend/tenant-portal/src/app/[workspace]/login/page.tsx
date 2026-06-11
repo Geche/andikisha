@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Eye, EyeOff, ExternalLink, Mail } from "lucide-react";
 import { LogoFull } from "@andikisha/ui";
 import { findCorrectDashboard } from "@andikisha/ui/auth";
@@ -12,7 +12,6 @@ type LoginError =
   | { kind: "wrong_portal"; platformPortalUrl?: string };
 
 export default function WorkspaceLoginPage() {
-  const router = useRouter();
   const params = useParams();
   const workspace = typeof params.workspace === "string" ? params.workspace : "";
 
@@ -64,7 +63,11 @@ export default function WorkspaceLoginPage() {
 
       const roles = new Set<string>(data.user?.roles ?? (data.user?.role ? [data.user.role] : []));
       const dashboard = `/${workspace}${findCorrectDashboard(roles)}`;
-      router.replace(dashboard);
+      // Full-document navigation (not router.replace): the login response just set
+      // the tenant_token cookie; a soft client navigation races the cookie commit,
+      // so middleware on the dashboard RSC request can miss it and bounce back to
+      // /login (R2-9). A hard navigation guarantees the cookie rides the request.
+      window.location.assign(dashboard);
     } catch {
       setError({ kind: "general", message: "Something went wrong. Please try again." });
     } finally {

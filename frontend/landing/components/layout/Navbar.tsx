@@ -17,6 +17,10 @@ const NAV_LINKS = [
 
 const DARK_HERO_PAGES: string[] = [];
 
+// Login entry is hidden pre-launch. Flip NEXT_PUBLIC_SHOW_LOGIN=true to reveal
+// the "Log in" links (desktop + mobile). Default: off.
+const SHOW_LOGIN = process.env.NEXT_PUBLIC_SHOW_LOGIN === "true";
+
 export default function Navbar() {
   const pathname = usePathname();
   const hasDarkHero = DARK_HERO_PAGES.includes(pathname);
@@ -91,15 +95,17 @@ export default function Navbar() {
               </nav>
 
               <div className="hidden lg:flex items-center gap-2">
-                <Link
-                  href={process.env.NEXT_PUBLIC_APP_URL ?? "https://app.andikishahr.com"}
-                  className={cn(
-                    "text-[14px] font-medium px-3 py-2 transition-colors duration-200",
-                    transparent ? "text-white/75 hover:text-white" : "text-ink-600 hover:text-ink-900"
-                  )}
-                >
-                  Log in
-                </Link>
+                {SHOW_LOGIN && (
+                  <Link
+                    href={process.env.NEXT_PUBLIC_APP_URL ?? "https://app.andikishahr.com"}
+                    className={cn(
+                      "text-[14px] font-medium px-3 py-2 transition-colors duration-200",
+                      transparent ? "text-white/75 hover:text-white" : "text-ink-600 hover:text-ink-900"
+                    )}
+                  >
+                    Log in
+                  </Link>
+                )}
                 <Link
                   href="/demo"
                   className="text-[14px] font-semibold px-5 py-2.5 rounded-lg bg-amber hover:bg-amber-dark text-ink-900 transition-colors duration-200 focus-ring"
@@ -170,13 +176,15 @@ export default function Navbar() {
               >
                 Schedule a demo
               </Link>
-              <Link
-                href={process.env.NEXT_PUBLIC_APP_URL ?? "https://app.andikishahr.com"}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center h-12 rounded-lg border border-white/20 text-white font-medium text-[15px] hover:bg-white/10 transition-colors"
-              >
-                Log in
-              </Link>
+              {SHOW_LOGIN && (
+                <Link
+                  href={process.env.NEXT_PUBLIC_APP_URL ?? "https://app.andikishahr.com"}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center h-12 rounded-lg border border-white/20 text-white font-medium text-[15px] hover:bg-white/10 transition-colors"
+                >
+                  Log in
+                </Link>
+              )}
             </div>
           </div>
         </div>

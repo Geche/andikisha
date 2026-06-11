@@ -199,7 +199,7 @@ export default function LeaveRequestDetailPage({
                   Reviewed By
                 </p>
                 <p className={isApproved ? "text-near-black" : "text-red-900"}>
-                  {request.reviewedBy ?? "—"}
+                  {request.reviewerName ?? "—"}
                 </p>
               </div>
               <div>

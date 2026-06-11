@@ -32,7 +32,9 @@ import java.util.UUID;
 public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
 
     private static final Logger log = LoggerFactory.getLogger(TenantGrpcService.class);
-    private static final Duration LICENCE_CACHE_TTL = Duration.ofSeconds(60);
+    // Single source of truth for licence cache TTL, matched to
+    // LicenceStateMachineService.CACHE_TTL (decision 2026-06-08-licence-read-through).
+    private static final Duration LICENCE_CACHE_TTL = Duration.ofMinutes(30);
     private static final List<LicenceStatus> ACTIVE_LIKE_STATUSES = List.of(
             LicenceStatus.TRIAL, LicenceStatus.ACTIVE,
             LicenceStatus.GRACE_PERIOD, LicenceStatus.SUSPENDED);

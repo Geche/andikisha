@@ -1,9 +1,9 @@
 "use client";
 
-import { NavRailItem, NavRailGroup, cn } from "@andikisha/ui";
+import { NavRailItem, NavRailGroup, cn, useCurrentUser } from "@andikisha/ui";
 import {
   Home, Users, CreditCard, Calendar,
-  Clock, FileCheck, BarChart2, UserCircle, Settings, LogOut,
+  Clock, FileCheck, BarChart2, UserCircle, Settings, LogOut, UserCog,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -24,6 +24,11 @@ export function AdminNav() {
   const pathname = usePathname();
   const workspace = useWorkspace();
   const base = `/${workspace}`;
+
+  // User management is gated to roles the backend also authorises for /api/v1/auth/users
+  // (hasAnyRole ADMIN, HR_MANAGER). Default-deny: hidden until roles confirm the grant.
+  const currentUser = useCurrentUser();
+  const canManageUsers = (currentUser?.roles ?? []).some((r) => r === "ADMIN" || r === "HR_MANAGER");
 
   const GROUPS: NavGroup[] = [
     {
@@ -50,6 +55,15 @@ export function AdminNav() {
         { label: "Analytics",         href: `${base}/admin/analytics`,  icon: BarChart2, locked: true },
       ],
     },
+    ...(canManageUsers
+      ? [{
+          label: "Administration",
+          spacer: true,
+          items: [
+            { label: "User management", href: `${base}/admin/users`, icon: UserCog },
+          ],
+        }]
+      : []),
   ];
 
   return (

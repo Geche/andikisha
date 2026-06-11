@@ -59,10 +59,12 @@ public class LeaveController {
     public LeaveRequestResponse approve(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @RequestHeader("X-User-ID") String userId,
-            @RequestHeader(value = "X-User-Name", required = false) String userName,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmail,
             @PathVariable UUID id) {
+        // Gateway injects X-User-Email (not X-User-Name); capture it as the human-
+        // readable reviewer identifier. Auth has no name field yet — email is the name.
         return leaveService.approve(id, UUID.fromString(userId),
-                userName != null ? userName : "Manager");
+                userEmail != null && !userEmail.isBlank() ? userEmail : "System");
     }
 
     @PostMapping("/requests/{id}/reject")
@@ -71,11 +73,11 @@ public class LeaveController {
     public LeaveRequestResponse reject(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @RequestHeader("X-User-ID") String userId,
-            @RequestHeader(value = "X-User-Name", required = false) String userName,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmail,
             @PathVariable UUID id,
             @Valid @RequestBody ReviewLeaveRequest request) {
         return leaveService.reject(id, UUID.fromString(userId),
-                userName != null ? userName : "Manager",
+                userEmail != null && !userEmail.isBlank() ? userEmail : "System",
                 request.rejectionReason());
     }
 

@@ -536,7 +536,7 @@ function TerminateModal({
 
   const mutation = useMutation<void, AxiosError<{ message?: string }>, { reason: string }>({
     mutationFn: (body) =>
-      apiClient.patch(`/api/v1/employees/${employeeId}/terminate`, body).then(() => undefined),
+      apiClient.post(`/api/v1/employees/${employeeId}/terminate`, body).then(() => undefined),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["employees"] });
       void queryClient.invalidateQueries({ queryKey: ["employee", employeeId] });

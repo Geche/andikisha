@@ -38,22 +38,25 @@ public class Employee extends BaseEntity {
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
-    @Column(name = "national_id", nullable = false, length = 20)
+    // Optional at bulk-import time (pending-activation rosters): NULL until
+    // collected. Single-employee creation still requires them (DTO @NotBlank).
+    // See V10 migration / EMP-BACKLOG-002.
+    @Column(name = "national_id", length = 20)
     private String nationalId;
 
-    @Column(name = "phone_number", nullable = false, length = 20)
+    @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
     @Column(length = 255)
     private String email;
 
-    @Column(name = "kra_pin", nullable = false, length = 20)
+    @Column(name = "kra_pin", length = 20)
     private String kraPin;
 
-    @Column(name = "nhif_number", nullable = false, length = 20)
+    @Column(name = "nhif_number", length = 20)
     private String nhifNumber;
 
-    @Column(name = "nssf_number", nullable = false, length = 20)
+    @Column(name = "nssf_number", length = 20)
     private String nssfNumber;
 
     @Column(name = "date_of_birth")

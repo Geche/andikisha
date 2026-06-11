@@ -11,6 +11,22 @@ Items that were deferred during development with clear rationale. Ordered roughl
 **Raised:** 2026-06-01
 **Priority:** Medium — V1 workaround in place; no functional regression, but semantic inconsistency.
 
+**Status:** ✅ RESOLVED 2026-06-09 (UX-flow-remediation-01, W5). Migration
+`V10__make_employee_optional_ids_nullable.sql` drops NOT NULL on `national_id`,
+`phone_number`, `kra_pin`, `nhif_number`, `nssf_number`; the `Employee` entity
+`@Column` flags were updated to match; and `BulkUploadService` now stores NULL —
+not the colliding `"+254700000000"` / `"PENDING-<empNum>"` / `""` placeholders —
+for absent optional fields. The placeholders had caused HTTP 409 DUPLICATE on the
+second incomplete bulk row (and a NOT NULL violation on empty kra_pin); both were
+masking a real defect once bulk upload was exposed in the UI (W5).
+**Verified:** two fully-incomplete rows now commit (`createdCount: 2`, previously
+409 on row 2), stored with NULL national_id/phone_number; single-employee creation
+still requires all five via `CreateEmployeeRequest` `@NotBlank`.
+**Note:** existing placeholder rows were left untouched (NULLs do not collide with
+them, so no functional need to rewrite live data). An optional one-off cleanup
+(`PENDING-*` / `'+254700000000'` / `''` → NULL) can land as a follow-up migration
+if the semantic tidiness is wanted — tracked here, not blocking.
+
 **Background:**
 The `employees` table has `nhif_number VARCHAR(20) NOT NULL` and `national_id VARCHAR(20) NOT NULL`. These constraints date from the single-employee creation flow where both fields are required at creation time.
 
@@ -81,6 +97,27 @@ This was discovered during Step 2 visual verification: `EmployeeGrpcClient` in l
 **Workaround in place:** Leave-service's `EmployeeGrpcClient.getEmployeesByDepartment()` now calls `listActiveByTenant` and filters by `departmentId` client-side. This is acceptable at SME scale (< 1000 employees) but is inefficient at larger dataset sizes.
 
 **Fix:** Implement `listEmployees()` in `EmployeeGrpcService` with the optional `department_id` and `status` filter parameters, and proper pagination support. Then update leave-service's `EmployeeGrpcClient.getEmployeesByDepartment()` to call it directly.
+
+---
+
+### EMP-BACKLOG-003 — No update endpoint for positions (asymmetric with departments)
+
+**Raised:** 2026-06-09 (UX-flow-remediation-01, R2-5)
+**Priority:** Low–Medium — UX asymmetry; no data risk.
+
+**Background:**
+`DepartmentController` has `PUT /api/v1/departments/{id}` (update name/description), but
+`PositionController` has **no equivalent** — only list (GET), create (POST), and
+seed-defaults. The R2-5 settings pages reflect this faithfully: departments are
+editable, positions are add-only (no edit affordance is shown, so nothing implies
+editing is coming). But users who edit a department will reasonably expect to edit a
+position too and can't.
+
+**Fix:** Add `PUT /api/v1/positions/{id}` (update title/description/gradeLevel) in
+`PositionController` + `PositionService`, mirroring the department update path
+(`@PreAuthorize("hasAnyRole('ADMIN','HR_MANAGER')")`), then add an edit affordance to
+`/admin/settings/positions` to match the departments page. Not built speculatively in
+R2-5 — tracked here so the asymmetry isn't silently shipped.
 
 ---
 
@@ -212,6 +249,159 @@ On submit:
 `SuperAdminTenantService.extendTrial()` calls `tenant.extendTrial(additionalDays)` which extends `Tenant.trialEndsAt`. It does NOT update `TenantLicence.endDate`. The dashboard metrics use `tenantRepository.countByStatusAndTrialEndsAtBetween(...)` which reads `Tenant.trialEndsAt` — so expiry alerts are correct. But the `/tenants` list table shows `licence.endDate` (from `TenantSummaryResponse`) which stays stale after an extension.
 
 **Fix:** In `extendTrial()`, also call `licencePlanService.extendLicenceEndDate(tenantId, additionalDays)` or equivalent to update `TenantLicence.endDate` in the same transaction.
+
+**Update (2026-06-10, UX-flow-remediation-01 R2-7) — full diagnosis attached; deferred deliberately.**
+This is the **enforcement-side licence-state divergence** flagged during R2-7. It is broader than the
+list-page cosmetic note above and has two coupled symptoms:
+
+1. **Date divergence.** For the demo tenant: `tenant_licence.end_date = 2026-06-13` (future) while
+   `tenants.trial_ends_at = 2026-05-28` (past). The platform tenant view shows status **TRIAL** (from
+   the licence), **"trial expired"** (computed from `trial_ends_at` being past), and **end date 13 Jun**
+   (from `tenant_licence.end_date`) — all at once, which reads as contradictory.
+2. **No status transition.** The trial lapsed (28 May) but the licence status was never transitioned
+   TRIAL → EXPIRED (no expiry job ran / the two date sources aren't reconciled).
+
+**Confirmed NOT an access blocker.** `AuthService.login` performs no licence/trial check, and an
+EMPLOYEE in the same expired-trial tenant authenticates normally — so this is a display/state-consistency
+issue, not a login gate. (This is why R2-7's plan change was scoped **record-only**: it deliberately does
+**not** transition status or clear the trial state. Fixing this divergence is the deferred enforcement work.)
+
+**Fix (when picked up):** single source of truth for trial/licence end (reconcile `trial_ends_at` and
+`tenant_licence.end_date`), and a status-transition path (expiry job) that moves a lapsed TRIAL to EXPIRED.
+Priority is **Medium** (correctness of the licence-state shown to operators), not the original "Low/cosmetic".
+
+---
+
+### TENANT-BACKLOG-004 — No backend format validation for tenant statutory fields (KRA PIN/NSSF/SHIF)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, R2-7)
+**Priority:** Low–Medium — client-validated today; backend accepts any string.
+
+**Problem:**
+Tenant statutory fields (`kra_pin`, `nssf_number`, `shif_number`) have no backend format validation.
+The R2-7 statutory-edit form validates KRA PIN against `^[A-Z]\d{9}[A-Z]$` (A123456789X) client-side,
+and the new `PATCH /api/v1/super-admin/tenants/{id}/statutory` endpoint only enforces `@Size(max=20)` —
+a non-form client could store a malformed KRA PIN. (Per the R2-7 directive, the backend gap was filed
+rather than fixed in-run, to avoid diverging from the rest of tenant statutory handling unilaterally.)
+
+**Fix:** Add `@Pattern(regexp = "^[A-Z]\\d{9}[A-Z]$")` to `UpdateStatutoryRequest.kraPin` (and the
+tenant create request's KRA PIN), mirroring `CreateEmployeeRequest.kraPin`.
+
+---
+
+### TENANT-BACKLOG-005 — User deactivation (no endpoint)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, R2-10)
+**Priority:** Medium — needed for offboarding / revoking access without deleting history.
+
+**Problem:**
+The `User` entity has an `active` flag, but auth-service exposes **no endpoint** to
+deactivate/reactivate a tenant user. The R2-10 User Management screen therefore cannot
+offer deactivation (correctly excluded rather than faked). Today the only way to cut
+access is a password reset, which doesn't disable the account.
+
+**Fix:** Add `PATCH /api/v1/auth/users/{id}/status` (or `/deactivate` + `/reactivate`),
+`@PreAuthorize("hasAnyRole('ADMIN','HR_MANAGER')")`, toggling `User.active`; ensure the
+JWT/auth path rejects inactive users at login and token refresh. Then surface a
+deactivate action on the User Management screen.
+
+---
+
+### TENANT-BACKLOG-006 — Standalone user invite (separate from employee-tied provisioning)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, R2-10)
+**Priority:** Medium — onboarding admins/officers who are not employee records.
+
+**Problem:**
+The only way to create a tenant user today is `POST /employees/provision`, which is
+**tied to an employee record**. There is no way to invite a standalone user (e.g. an
+external HR/payroll admin) with a role but no employee profile. R2-10 excluded an invite
+action for this reason.
+
+**Fix:** Add an invite flow — `POST /api/v1/auth/users/invite` (email + role,
+`hasAnyRole('ADMIN','HR_MANAGER')`) issuing a set-password/activation link, decoupled
+from employee provisioning. Surface an "Invite user" action on the User Management screen.
+
+---
+
+### TENANT-BACKLOG-007 — Delete actions on Departments, Positions, and Roles screens
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, browser pass) — **Run 03 candidate**
+**Priority:** Medium — list+add+edit shipped (R2-5, R2-8) without delete; delete is new work, not a bug.
+
+**Problem:** No delete affordance on Departments, Positions, or Roles/Permissions. Deletion
+is not a trivial add — it has data-integrity implications that need a decision:
+- Deleting a **department** with active employees assigned.
+- Deleting a **position** referenced by employees / payroll history.
+- Deleting/disabling a **role** with users currently assigned.
+
+**Decide in Run 03:** soft-delete vs hard-delete vs archive; block-if-referenced vs reassign-on-delete;
+whether roles are deletable at all (they're a fixed enum + SYSTEM-seeded grants). Needs design, not a
+quick add.
+
+---
+
+### TENANT-BACKLOG-008 — Settings IA reorganization
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, browser pass) — **Run 03 candidate**
+**Priority:** Low/Medium — IA polish, not a defect.
+
+**Problem/proposal:** Consider moving Departments, Positions, and Roles & Permissions under
+User management, leaving Settings as "coming soon". **Open tension:** Departments and Positions are
+**org-structure**, not users — filing them under "User management" trades one IA problem for another.
+The right grouping (org structure vs people vs tenant settings) needs more thought than a quick move.
+
+**Decide in Run 03.** Do not reorganize in this run. Resolve the taxonomy first (likely: Settings hub
+with sub-sections for Organisation [depts/positions], People [user management], and Tenant config).
+
+---
+
+### LEAVE-BACKLOG-001 — Approve does not persist reviewer notes
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 1 fix)
+**Priority:** Low — minor; reject reasons ARE persisted, approve notes are not.
+
+**Problem:** `POST /api/v1/leave/requests/{id}/approve` takes **no body** — `leaveService.approve(id,
+userId, userName)` has no notes parameter. The Approve modal still shows an optional "notes" textarea;
+after the Bug 1 method fix (PATCH→POST) approve succeeds, but any text entered is silently dropped.
+
+**Fix (pick one):** either add an optional `notes` field to the approve endpoint + persist on the
+leave request's review record (mirroring how `rejectionReason` is stored), or remove the notes textarea
+from the Approve modal so the UI doesn't collect data it discards.
+
+---
+
+### AUTH-BACKLOG-006 — No user display-name field (UI shows email everywhere)
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 4)
+**Priority:** Low/Medium — affects every surface that identifies a user.
+
+**Problem:** `users` has no display-name (first/last) field; `/api/auth/me` returns
+`fullName: undefined`. So `/admin/users`, the leave "Reviewed by", and similar surfaces
+identify people by **email**, not name. Bug 4 made leave reviewer show the reviewer's
+email (correct, person-identifying) rather than the UUID/position — but a true name is
+not yet possible.
+
+**Fix:** add a display-name to the auth user (or resolve via the linked employee record's
+first/last name when `employeeId` is present), expose it on `/api/auth/me`, `/users`, and
+leave `reviewerName`, falling back to email when absent.
+
+---
+
+### FE-BACKLOG-007 — BaseModal silent-empty-modal trap
+
+**Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 2)
+**Priority:** Low/Medium — ergonomics; prevents a recurring "broken-but-plausible" render.
+
+**Problem:** `BaseModal` renders only the backdrop + centering wrapper; the caller must supply the
+white-card surface (`bg-white rounded-xl shadow-xl border …`). If a caller forgets it, the modal still
+"works" (opens, traps focus, closes) but renders as bare content floating over the dim backdrop with the
+page bleeding through — a wrong-looking render that passes code review and only fails on a screenshot
+(exactly Bug 2). The R2-8/R2-10 modals hit this; the leave modals happen to include the surface.
+
+**Fix (pick one):** have `BaseModal` **default-provide** the surface wrapper (a `surface` prop, default
+true, that wraps children in the standard card), or make the surface a required structural part so
+omitting it is a type/visual error rather than a silently-degraded render. Then audit existing callers.
 
 ---
 

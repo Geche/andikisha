@@ -24,6 +24,7 @@ export interface LeaveRequest {
   totalDays: number;
   reason: string | null;
   reviewedBy: string | null;
+  reviewerName: string | null;
   reviewedAt: string | null;
   reviewNotes: string | null;
   createdAt: string;

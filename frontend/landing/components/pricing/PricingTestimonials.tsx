@@ -10,7 +10,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "The pricing is the most honest I've seen. One number per employee, nothing hidden. After 18 months we've had zero KRA penalty letters — that alone justifies the cost.",
+      "Onboarding took an afternoon, not a fortnight. After 18 months we've had zero KRA penalty letters — the compliance side just takes care of itself.",
     name: "Grace N.",
     role: "CEO · Nairobi Tech SME",
   },

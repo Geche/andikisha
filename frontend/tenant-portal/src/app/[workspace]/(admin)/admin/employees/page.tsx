@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { AlertTriangle, Search, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { AlertTriangle, Search, ChevronUp, ChevronDown, ChevronsUpDown, Upload } from "lucide-react";
 import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -211,12 +211,21 @@ export default function EmployeesPage() {
             : `${totalElements.toLocaleString()} employee${totalElements !== 1 ? "s" : ""}`
         }
         actions={
-          <Link
-            href={`/${workspace}/admin/employees/new`}
-            className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
-          >
-            + Add Employee
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/${workspace}/admin/employees/bulk-upload`}
+              className="flex items-center gap-1.5 border border-neutral-200 text-near-black font-semibold text-[13.5px] h-9 px-3.5 rounded-lg hover:bg-neutral-50 transition-colors"
+            >
+              <Upload size={15} aria-hidden="true" />
+              Import employees
+            </Link>
+            <Link
+              href={`/${workspace}/admin/employees/new`}
+              className="flex items-center gap-1.5 bg-amber hover:bg-amber-dark text-near-black font-bold text-[13.5px] h-9 px-3.5 rounded-lg transition-colors"
+            >
+              + Add Employee
+            </Link>
+          </div>
         }
       />
 

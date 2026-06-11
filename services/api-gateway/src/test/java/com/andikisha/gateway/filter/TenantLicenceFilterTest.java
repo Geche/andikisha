@@ -1,6 +1,7 @@
 package com.andikisha.gateway.filter;
 
 import com.andikisha.common.infrastructure.cache.RedisKeys;
+import com.andikisha.gateway.grpc.TenantLicenceClient;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -38,6 +39,7 @@ class TenantLicenceFilterTest {
     private SecretKey key;
     private ReactiveStringRedisTemplate redisTemplate;
     private ReactiveValueOperations<String, String> valueOps;
+    private TenantLicenceClient licenceClient;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -45,8 +47,9 @@ class TenantLicenceFilterTest {
         redisTemplate = mock(ReactiveStringRedisTemplate.class);
         valueOps = mock(ReactiveValueOperations.class);
         when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        licenceClient = mock(TenantLicenceClient.class);
 
-        filter = new TenantLicenceFilter(TEST_SECRET, redisTemplate);
+        filter = new TenantLicenceFilter(TEST_SECRET, redisTemplate, licenceClient);
         key = Keys.hmacShaKeyFor(decodeSecret(TEST_SECRET));
     }
 
@@ -85,14 +88,72 @@ class TenantLicenceFilterTest {
         verify(chain).filter(exchange);
     }
 
-    // ── Cache miss — fail closed ──────────────────────────────────────────────
+    // ── Cache miss — read-through to tenant-service ───────────────────────────
 
     @Test
-    void cacheMiss_failsClosed_returns503() {
+    void cacheMiss_readThroughActive_passesThrough() {
         String token = buildToken("ADMIN", TENANT_ID, null);
-        stubRedisStatus(TENANT_ID, null); // Redis returns empty (cache miss)
+        stubRedisStatus(TENANT_ID, null);                  // cache miss
+        when(licenceClient.fetchStatus(TENANT_ID)).thenReturn("ACTIVE");
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .build());
+        GatewayFilterChain chain = mock(GatewayFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
+
+        verify(chain).filter(exchange);
+        verify(licenceClient).fetchStatus(TENANT_ID);
+    }
+
+    @Test
+    void cacheMiss_readThroughNoLicence_returnsForbidden() {
+        String token = buildToken("ADMIN", TENANT_ID, null);
+        stubRedisStatus(TENANT_ID, null);
+        when(licenceClient.fetchStatus(TENANT_ID)).thenReturn("NONE");
         var exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .build());
+        GatewayFilterChain chain = mock(GatewayFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        verify(chain, never()).filter(any());
+    }
+
+    // ── Cache miss + tenant-service unreachable — asymmetric policy ────────────
+
+    @Test
+    void cacheMiss_grpcUnreachable_readFailsOpen() {
+        String token = buildToken("ADMIN", TENANT_ID, null);
+        stubRedisStatus(TENANT_ID, null);
+        when(licenceClient.fetchStatus(TENANT_ID))
+                .thenThrow(new RuntimeException("tenant-service unreachable"));
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/employees")   // READ
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .build());
+        GatewayFilterChain chain = mock(GatewayFilterChain.class);
+        when(chain.filter(any())).thenReturn(Mono.empty());
+
+        StepVerifier.create(gatewayFilter().filter(exchange, chain)).verifyComplete();
+
+        verify(chain).filter(exchange);   // fail open — read served
+    }
+
+    @Test
+    void cacheMiss_grpcUnreachable_writeFailsClosed() {
+        String token = buildToken("ADMIN", TENANT_ID, null);
+        stubRedisStatus(TENANT_ID, null);
+        when(licenceClient.fetchStatus(TENANT_ID))
+                .thenThrow(new RuntimeException("tenant-service unreachable"));
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/v1/employees")  // WRITE
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .build());
         GatewayFilterChain chain = mock(GatewayFilterChain.class);

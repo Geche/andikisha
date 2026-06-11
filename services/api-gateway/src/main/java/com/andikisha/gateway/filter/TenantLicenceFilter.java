@@ -1,6 +1,7 @@
 package com.andikisha.gateway.filter;
 
 import com.andikisha.common.infrastructure.cache.RedisKeys;
+import com.andikisha.gateway.grpc.TenantLicenceClient;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -21,6 +22,7 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -39,13 +41,16 @@ public class TenantLicenceFilter
 
     private final SecretKey key;
     private final ReactiveStringRedisTemplate redisTemplate;
+    private final TenantLicenceClient licenceClient;
 
     public TenantLicenceFilter(@Value("${app.jwt.secret}") String secret,
-                               ReactiveStringRedisTemplate redisTemplate) {
+                               ReactiveStringRedisTemplate redisTemplate,
+                               TenantLicenceClient licenceClient) {
         super(Config.class);
         byte[] keyBytes = decodeSecret(secret);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.redisTemplate = redisTemplate;
+        this.licenceClient = licenceClient;
     }
 
     @Override
@@ -87,17 +92,56 @@ public class TenantLicenceFilter
             }
 
             String redisKey = RedisKeys.licenceStatus(tenantId);
+            // Optional-wrap so a genuinely empty cache (miss) is distinguishable
+            // from enforceLicence completing empty (chain.filter returns Mono<Void>).
+            // A naive .flatMap(...).switchIfEmpty(...) would re-run the miss path on
+            // every successful pass-through.
             return redisTemplate.opsForValue().get(redisKey)
-                    .switchIfEmpty(Mono.defer(() -> {
-                        log.warn("Licence status cache miss for tenant {}; failing closed", tenantId);
-                        return Mono.<String>error(new CacheMissException());
-                    }))
-                    .flatMap(status -> enforceLicence(exchange, chain, tenantId, status))
-                    .onErrorResume(CacheMissException.class, e ->
-                            reject(exchange, HttpStatus.SERVICE_UNAVAILABLE,
-                                    "LICENCE_CHECK_UNAVAILABLE",
-                                    "Licence status unavailable. Please retry shortly."));
+                    .map(java.util.Optional::of)
+                    .defaultIfEmpty(java.util.Optional.empty())
+                    .flatMap(maybeStatus -> maybeStatus
+                            .map(status -> enforceLicence(exchange, chain, tenantId, status))
+                            .orElseGet(() -> readThroughOnMiss(exchange, chain, tenantId)));
         };
+    }
+
+    /**
+     * Cache-miss read-through. Calls tenant-service's licence RPC (which also
+     * repopulates the Redis key), then enforces the returned status.
+     *
+     * <p>If tenant-service is unreachable the policy is asymmetric (decision
+     * 2026-06-08-licence-read-through): READS fail OPEN with an audit log so a
+     * transient outage never blocks data the user is allowed to see; WRITES fail
+     * CLOSED with {@code LICENCE_CHECK_UNAVAILABLE} since an unverified licence
+     * must not gate a mutation.
+     */
+    private Mono<Void> readThroughOnMiss(ServerWebExchange exchange,
+                                         org.springframework.cloud.gateway.filter.GatewayFilterChain chain,
+                                         String tenantId) {
+        return Mono.fromCallable(() -> {
+                    try {
+                        return licenceClient.fetchStatus(tenantId);
+                    } catch (RuntimeException ex) {
+                        // Wrap so onErrorResume below catches ONLY the gRPC failure,
+                        // never an error bubbling up from the proxied downstream call.
+                        throw new ReadThroughFailure(ex);
+                    }
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(status -> enforceLicence(exchange, chain, tenantId, status))
+                .onErrorResume(ReadThroughFailure.class, e -> {
+                    if (isWriteMethod(exchange)) {
+                        log.warn("Licence read-through failed for tenant {}; failing CLOSED (write): {}",
+                                tenantId, e.getCause().toString());
+                        return reject(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                                "LICENCE_CHECK_UNAVAILABLE",
+                                "Licence status unavailable. Please retry shortly.");
+                    }
+                    log.warn("AUDIT licence-fail-open: tenant {} READ served without licence "
+                                    + "validation (tenant-service unreachable): {}",
+                            tenantId, e.getCause().toString());
+                    return chain.filter(exchange);
+                });
     }
 
     private Mono<Void> enforceLicence(ServerWebExchange exchange,
@@ -105,6 +149,10 @@ public class TenantLicenceFilter
                                       String tenantId,
                                       String status) {
         return switch (status) {
+            case "NONE" ->
+                    reject(exchange, HttpStatus.FORBIDDEN,
+                            "LICENCE_NONE",
+                            "No active licence found for this organisation. Please contact support.");
             case "SUSPENDED", "EXPIRED", "CANCELLED" ->
                     reject(exchange, HttpStatus.FORBIDDEN,
                             "LICENCE_SUSPENDED",
@@ -151,7 +199,10 @@ public class TenantLicenceFilter
 
     public static class Config {}
 
-    private static final class CacheMissException extends RuntimeException {
-        CacheMissException() { super(null, null, true, false); }
+    /** Marks a tenant-service read-through (gRPC) failure so the asymmetric
+     *  read-open / write-closed policy applies only to that failure — not to
+     *  errors propagating from the proxied downstream service. */
+    private static final class ReadThroughFailure extends RuntimeException {
+        ReadThroughFailure(Throwable cause) { super(cause); }
     }
 }

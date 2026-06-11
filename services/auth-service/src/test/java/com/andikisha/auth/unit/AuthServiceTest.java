@@ -23,6 +23,8 @@ import io.jsonwebtoken.Claims;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.common.tenant.TenantContext;
+import com.andikisha.auth.application.dto.request.ChangeRoleRequest;
+import com.andikisha.common.exception.BusinessRuleException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -425,6 +427,24 @@ class AuthServiceTest {
 
             assertThatThrownBy(() -> authService.getUserByEmployeeId(TENANT_ID, EMPLOYEE_ID))
                     .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    class ChangeRole {
+
+        @Test
+        void legacyHrRole_isRejectedAtTheApiWithInvalidRole() {
+            // "HR" was removed from the Role enum (deprecated). The API must reject
+            // it with INVALID_ROLE — not merely hide it in the UI dropdown. Pins the
+            // protection so re-adding an HR enum value later can't silently re-enable
+            // assignment. Role parse happens before any repo lookup, so no stubs needed.
+            var request = new ChangeRoleRequest("HR");
+
+            assertThatThrownBy(() -> authService.changeUserRole(USER_ID, USER_ID, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("INVALID_ROLE");
         }
     }
 }

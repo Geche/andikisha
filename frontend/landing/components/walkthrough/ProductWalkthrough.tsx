@@ -45,7 +45,7 @@ const STEPS = [
   {
     id: "employee-payslip",
     headline: "Plain language. Tap any line for an explanation.",
-    body: "The employee receives a notification — on SMS if they are on a basic plan, on WhatsApp if they are connected. They open the link on their phone. No app to install. No login with a remembered password. A six-digit PIN. The payslip loads instantly, even on 3G. Every deduction line is tappable. Tap PAYE and a plain-English card explains what it is, why it was deducted, and what the rate means.",
+    body: "The employee opens the self-service portal on their phone. No app to install. No login with a remembered password — a six-digit PIN. The payslip loads instantly, even on 3G. Every deduction line is tappable. Tap PAYE and a plain-English card explains what it is, why it was deducted, and what the rate means.",
     screen: (
       <div className="h-full bg-white flex flex-col p-4">
         <div className="bg-brand-900 -mx-4 -mt-4 px-4 pt-5 pb-4 mb-4">

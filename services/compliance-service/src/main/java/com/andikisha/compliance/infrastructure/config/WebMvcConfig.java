@@ -17,6 +17,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(tenantInterceptor())
-                .addPathPatterns("/api/**");
+                .addPathPatterns("/api/**")
+                // Public statutory-rate endpoints are global (no tenant) and
+                // anonymous — they carry no X-Tenant-ID, so skip the interceptor.
+                .excludePathPatterns("/api/v1/public/**");
     }
 }
