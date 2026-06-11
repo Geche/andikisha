@@ -1,5 +1,11 @@
 # BACKLOG — `HttpRequestMethodNotSupportedException` (and other framework 4xx) masked as 500
 
+**STATUS: RESOLVED 2026-06-11** (commit `341423e`). Added a 405 handler to the shared
+`GlobalExceptionHandler` (covers all services on their next rebuild) and to the
+service-local `LeaveExceptionHandler` that shadows it. Verified live on leave-service
+(`PATCH /approve` 500 → 405) + unit tests on both handlers. The broader "other framework
+4xx" hardening (415/406 etc.) is NOT done — reopen separately if wanted.
+
 **Severity:** Medium — incorrect HTTP semantics across all services; misleads clients and obscures root cause.
 **Date:** 2026-06-09 · **Surfaced by:** UX-flow-remediation-01, W3 (terminate fix) follow-up.
 **Component:** `shared/andikisha-common` — `GlobalExceptionHandler` (`@RestControllerAdvice`). Affects **every service** that imports it (all 13).
