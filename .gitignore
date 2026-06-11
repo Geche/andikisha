@@ -70,3 +70,6 @@ infrastructure/docker/.env
 # Local dev service runtime artifacts
 logs/*.log
 logs/*.pid
+
+# TypeScript incremental build cache
+*.tsbuildinfo
