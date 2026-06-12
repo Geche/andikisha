@@ -502,6 +502,14 @@ omitting it is a type/visual error rather than a silently-degraded render. Then 
 
 ### FE-BACKLOG-008 — Departments/Positions Add/Edit forms render without backdrop surface
 
+**STATUS: RESOLVED 2026-06-12.** Added the white-card wrapper to both modals' content div
+(`bg-white rounded-xl shadow-xl border border-neutral-200`), the exact Bug-2 fix (082dd02).
+Full BaseModal-caller audit confirmed these were the **only** two trapped instances — every
+other caller (users ×3, leave ×2, employees ×2) already had the surface. The systemic
+prevention (BaseModal default/required surface) stays as **FE-BACKLOG-007**: the safe version
+must touch all ~7 callers to de-duplicate surfaces, which would expand this mechanical PR, so
+it's kept separate per the one-item cadence.
+
 **Raised:** 2026-06-12 (browser review).
 **Priority:** Medium — visible to tenant admin/HR; forms look broken (table bleeds through).
 

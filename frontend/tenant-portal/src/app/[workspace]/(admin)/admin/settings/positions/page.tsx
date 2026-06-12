@@ -138,7 +138,7 @@ export default function PositionsSettingsPage() {
 
       {modalOpen && (
         <BaseModal labelId="pos-modal-title" onClose={() => setModalOpen(false)}>
-          <div className="p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
             <h2 id="pos-modal-title" className="text-[16px] font-bold text-near-black mb-4">Add position</h2>
             <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Title</label>
             <input
