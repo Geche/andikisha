@@ -154,7 +154,7 @@ export default function DepartmentsSettingsPage() {
 
       {modalOpen && (
         <BaseModal labelId="dept-modal-title" onClose={() => setModalOpen(false)}>
-          <div className="p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
             <h2 id="dept-modal-title" className="text-[16px] font-bold text-near-black mb-4">
               {editing ? "Edit department" : "Add department"}
             </h2>
