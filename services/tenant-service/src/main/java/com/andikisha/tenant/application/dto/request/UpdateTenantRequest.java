@@ -9,6 +9,8 @@ public record UpdateTenantRequest(
         @Size(max = 200)
         String companyName,
 
+        // KRA PIN: one letter + 9 digits + one letter (e.g. A123456789X); optional (TENANT-BACKLOG-004).
+        @Pattern(regexp = "^([A-Z]\\d{9}[A-Z])?$", message = "Invalid KRA PIN format (e.g. A123456789X)")
         String kraPin,
 
         String nssfNumber,

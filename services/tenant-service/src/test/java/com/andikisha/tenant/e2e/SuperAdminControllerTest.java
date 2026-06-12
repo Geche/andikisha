@@ -51,6 +51,36 @@ class SuperAdminControllerTest {
     private static final UUID TENANT_ID = UUID.randomUUID();
     private static final String SA = "SUPER_ADMIN";
 
+    // ── statutory KRA PIN validation (TENANT-BACKLOG-004) ───────────────────────
+
+    @Test
+    void updateStatutory_malformedKraPin_returns400() throws Exception {
+        mockMvc.perform(patch("/api/v1/super-admin/tenants/{id}/statutory", TENANT_ID)
+                        .header("X-User-ID", "system").header("X-User-Role", SA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kraPin\":\"NOTAPIN\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateStatutory_validKraPin_returns204() throws Exception {
+        mockMvc.perform(patch("/api/v1/super-admin/tenants/{id}/statutory", TENANT_ID)
+                        .header("X-User-ID", "system").header("X-User-Role", SA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kraPin\":\"A123456789X\"}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void updateStatutory_emptyKraPin_isAllowed_returns204() throws Exception {
+        // Optional field: empty clears it, so it must not be rejected.
+        mockMvc.perform(patch("/api/v1/super-admin/tenants/{id}/statutory", TENANT_ID)
+                        .header("X-User-ID", "system").header("X-User-Role", SA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kraPin\":\"\"}"))
+                .andExpect(status().isNoContent());
+    }
+
     // ── extend-trial ──────────────────────────────────────────────────────────
 
     @Test
