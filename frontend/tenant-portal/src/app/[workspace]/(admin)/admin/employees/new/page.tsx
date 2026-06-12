@@ -9,6 +9,7 @@ import { PageHeader, InlineAlert, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { PHONE_RE, NATIONAL_RE, KRA_RE, KRA_PIN_MESSAGE } from "@/lib/employee-validation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -42,11 +43,7 @@ interface CreateEmployeeRequest {
 
 interface CreatedEmployee { id: string }
 
-// ─── Validation patterns (mirrors backend @Pattern annotations) ───────────────
-
-const PHONE_RE   = /^(\+254|0)7\d{8}$/;
-const NATIONAL_RE = /^\d{6,10}$/;
-const KRA_RE      = /^[A-Z]\d{9}[A-Z]$/;
+// ─── Validation (patterns shared with the edit form via @/lib/employee-validation) ──
 
 function validateFields(f: ReturnType<typeof buildFieldMap>): Record<string, string> {
   const errs: Record<string, string> = {};
@@ -57,7 +54,7 @@ function validateFields(f: ReturnType<typeof buildFieldMap>): Record<string, str
   if (!NATIONAL_RE.test(f.nationalId.trim()))
     errs.nationalId  = "Must be 6 – 10 digits";
   if (!KRA_RE.test(f.kraPin.trim().toUpperCase()))
-    errs.kraPin      = "Format: one uppercase letter, 9 digits, one uppercase letter (e.g. A123456789X)";
+    errs.kraPin      = KRA_PIN_MESSAGE;
   if (!f.nhifNumber.trim())  errs.nhifNumber  = "NHIF/SHIF number is required";
   if (!f.nssfNumber.trim())  errs.nssfNumber  = "NSSF number is required";
   if (!f.basicSalary || parseFloat(f.basicSalary) <= 0)

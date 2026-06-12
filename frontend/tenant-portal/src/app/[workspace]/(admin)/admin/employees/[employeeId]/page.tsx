@@ -8,6 +8,7 @@ import { PageHeader, BaseModal, useToast, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { KRA_RE, KRA_PIN_MESSAGE } from "@/lib/employee-validation";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -236,9 +237,25 @@ function EditEmployeeModal({ employee, hasPayslips, onClose }: EditEmployeeModal
     },
   });
 
+  const [kraError, setKraError] = useState<string | null>(null);
+
   const set = (field: keyof typeof form) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  ) => {
+    if (field === "kraPin") setKraError(null);
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+  };
+
+  // Inline KRA PIN validation, mirroring the create form (shared KRA_RE). Only when the
+  // field is editable (not locked after first payroll) and non-empty.
+  function handleSave() {
+    const pin = form.kraPin.trim().toUpperCase();
+    if (!hasPayslips && pin && !KRA_RE.test(pin)) {
+      setKraError(KRA_PIN_MESSAGE);
+      return;
+    }
+    mutation.mutate(form);
+  }
 
   return (
     <BaseModal labelId="edit-employee-modal-title" onClose={onClose}>
@@ -354,6 +371,7 @@ function EditEmployeeModal({ employee, hasPayslips, onClose }: EditEmployeeModal
                 <div>
                   <FieldLabel>KRA PIN</FieldLabel>
                   <input type="text" value={form.kraPin} onChange={set("kraPin")} disabled={mutation.isPending} className={inputCls} placeholder="A123456789X" />
+                  {kraError && <p className="text-[12px] text-danger mt-1">{kraError}</p>}
                 </div>
                 <div>
                   <FieldLabel>NHIF / SHIF Number</FieldLabel>
@@ -381,7 +399,7 @@ function EditEmployeeModal({ employee, hasPayslips, onClose }: EditEmployeeModal
           <button
             type="button"
             disabled={!form.firstName.trim() || !form.lastName.trim() || mutation.isPending}
-            onClick={() => mutation.mutate(form)}
+            onClick={handleSave}
             className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
           >
             {mutation.isPending ? "Saving…" : "Save Changes"}
