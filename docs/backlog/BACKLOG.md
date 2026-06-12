@@ -532,6 +532,10 @@ fix. Trivial; own PR per the one-item cadence (or fold into the FE-BACKLOG-007 B
 
 ### FE-BACKLOG-009 — Employee edit form does not client-validate KRA PIN
 
+**STATUS: RESOLVED 2026-06-12** (PR #9). Added inline KRA validation to the edit form mirroring
+the create form, and extracted the shared patterns to `@/lib/employee-validation`
+(`KRA_RE`/`PHONE_RE`/`NATIONAL_RE`/`KRA_PIN_MESSAGE`) so the two forms can't drift.
+
 **Raised:** 2026-06-12 (EMP-BACKLOG-004 fix).
 **Priority:** Low — backend now rejects malformed KRA PIN on update (EMP-004); this is the UX nicety.
 
@@ -542,6 +546,21 @@ only finds out on submit instead of inline.
 
 **Fix:** mirror the Add Employee form's `KRA_RE` inline validation on the edit form. Small; kept separate
 from EMP-004 (backend) per the one-item-one-PR cadence.
+
+---
+
+### FE-BACKLOG-010 — Employee edit form does not client-validate phone number
+
+**Raised:** 2026-06-12 (FE-BACKLOG-009 asymmetry audit).
+**Priority:** Low — same class as FE-009; the create form validates, the edit form doesn't.
+
+**Problem:** The Add Employee form validates phone with `PHONE_RE = /^(\+254|0)7\d{8}$/`, but the employee
+*edit* page has no client-side phone validation. (NSSF/SHIF have no format regex even on create —
+required-only — and national ID isn't editable on the edit form, so phone is the only remaining
+format asymmetry.)
+
+**Fix:** mirror the create form's `PHONE_RE` inline validation on the edit form, reusing the shared
+`PHONE_RE` from `@/lib/employee-validation` (already extracted in PR #9). Small frontend-only change.
 
 ---
 
