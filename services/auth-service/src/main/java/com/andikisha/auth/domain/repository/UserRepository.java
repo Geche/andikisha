@@ -33,4 +33,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     java.util.List<User> findByTenantIdAndEmployeeIdIsNullAndRoleNot(
             String tenantId, com.andikisha.auth.domain.model.Role role);
+
+    // AUTH-006 backfill: users linked to an employee but with no display name yet
+    // (cross-tenant; the startup backfill resolves their names from employee-service).
+    java.util.List<User> findByDisplayNameIsNullAndEmployeeIdIsNotNull();
 }

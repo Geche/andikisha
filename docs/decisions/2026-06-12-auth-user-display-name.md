@@ -4,6 +4,10 @@
 **Surfaced by:** Bug 4 (leave reviewer showed a UUID) — the system identifies people by email everywhere
 because auth users have no name.
 
+**Working mode (cadence):** the team is in **backlog-cleaning mode** — one backlog item per PR off
+`master`, each with its own small audit → scope → verify → merge cycle (not a full gated run). This holds
+until a coherent Run 03 scope is decided. This item follows that cadence.
+
 ## Context
 `users` (auth-service) has `email`, `phone_number`, `employee_id`, but **no name**. `/api/auth/me` returns
 `fullName: undefined`; `/admin/users` and the leave reviewer show email. Employee records
@@ -27,9 +31,25 @@ the email into the column — this keeps "no name set" (NULL) distinct from "nam
 ### Population / write path (today)
 1. **Provisioning** (`AuthService.provisionForActivation`): resolve the employee's name via the existing
    `EmployeeGrpcClient.getEmployee` (cold path) and store `"firstName lastName"`.
-2. **One-time backfill** for existing users. auth and employee are **separate databases**, so this is
-   **not** a Flyway SQL join — it is an app/gRPC (or, in dev, a cross-DB data script) that maps
-   `employee_id → employee name` and sets `display_name`. Production: run an equivalent one-time job.
+2. **Automated startup backfill** for existing users (`DisplayNameBackfillRunner`, `ApplicationRunner`).
+   auth and employee are **separate databases**, so this is **not** a Flyway SQL join — the runner finds
+   users with an `employee_id` and no `display_name`, resolves each via `EmployeeGrpcClient` (cold path,
+   startup), and saves. It is **idempotent and guarded**: a no-op once populated (logs "no backfill
+   needed"); unresolvable users (employee-service down, or a dangling `employee_id`) keep `display_name`
+   null and are retried next start. This removes the "remember to run a script per tenant" onboarding
+   cost. (Dev data was also backfilled manually via a one-off cross-DB script while building this.)
+
+### Backfill test plan
+- **No-op:** when no users have `employee_id`-without-`display_name`, the runner makes no DB writes and
+  logs "no backfill needed". (unit: `noBackfill_whenNoneNeeding`)
+- **Resolves + saves:** a linked user whose employee resolves gets `display_name = "First Last"` and is
+  saved. (unit: `backfills_resolvedNames`)
+- **Skips unresolvable:** when the employee can't be resolved (gRPC empty / service down), the user is
+  left null and **not** saved — no error thrown. (unit: `skips_whenEmployeeUnresolvable`)
+- **Idempotent second run:** after a successful backfill, the candidate query returns empty → no-op.
+  (covered by the guard query `findByDisplayNameIsNullAndEmployeeIdIsNotNull`)
+- **Integration (manual):** restart auth-service against the demo tenant → log shows
+  "backfilled N of M"; `GET /api/v1/auth/users` shows names; the 5 employee-less users stay email.
 
 There is **no name-override UI**. The **employee record is the source of truth** for a person's name.
 If a future design lets users set/override their displayed name independently, that is a **separate
