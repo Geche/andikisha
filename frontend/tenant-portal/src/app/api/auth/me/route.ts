@@ -35,6 +35,7 @@ export async function GET() {
     id: string;
     tenantId: string;
     email: string;
+    displayName?: string | null;
     role: string;
     roles?: string[];
     employeeId?: string;
@@ -50,7 +51,7 @@ export async function GET() {
     userId: data.id,
     tenantId: data.tenantId,
     email: data.email,
-    fullName: undefined, // auth-service has no name field yet — see user profile prompt
+    fullName: data.displayName ?? undefined, // AUTH-006: from the linked employee; UI falls back to email
     roles: data.roles ?? [data.role],
     employeeId: data.employeeId ?? undefined,
     mustChangePassword: data.mustChangePassword ?? false,

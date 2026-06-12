@@ -7,6 +7,7 @@ public record UserResponse(
         UUID id,
         String tenantId,
         String email,
+        String displayName,
         String phoneNumber,
         String role,
         UUID employeeId,

@@ -253,7 +253,7 @@ class AuthControllerTest {
     @WithMockUser(username = "00000000-0000-0000-0000-000000000001")
     void me_whenAuthenticated_returns200() throws Exception {
         UserResponse userResponse = new UserResponse(
-                USER_ID, TENANT_ID, "jane@example.com",
+                USER_ID, TENANT_ID, "jane@example.com", "Jane Example",
                 "+254700000001", "EMPLOYEE", null, true, false, null, LocalDateTime.now());
         when(authService.getUser(USER_ID)).thenReturn(userResponse);
 
@@ -292,7 +292,7 @@ class AuthControllerTest {
 
     private TokenResponse tokenResponse() {
         UserResponse userResponse = new UserResponse(
-                USER_ID, TENANT_ID, "jane@example.com",
+                USER_ID, TENANT_ID, "jane@example.com", "Jane Example",
                 "+254700000001", "EMPLOYEE", null, true, false, null, LocalDateTime.now());
         return new TokenResponse("access-token", "refresh-token", 3600L, userResponse);
     }

@@ -7,6 +7,7 @@ package com.andikisha.auth.application.dto.response;
 public record TenantUserResponse(
         String id,
         String email,
+        String displayName,
         String role,
         String employeeId,
         String lastLogin

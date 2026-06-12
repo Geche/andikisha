@@ -14,6 +14,7 @@ interface RolePermissions {
 interface TenantUser {
   id: string;
   email: string;
+  displayName: string | null;
   role: string;
   employeeId: string | null;
   lastLogin: string | null;
@@ -120,13 +121,16 @@ export default function UsersPage() {
           ) : (
             <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
               <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 bg-neutral-50 border-b border-neutral-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                <span>Email</span><span>Role</span><span>Last sign-in</span><span className="text-right">Actions</span>
+                <span>User</span><span>Role</span><span>Last sign-in</span><span className="text-right">Actions</span>
               </div>
               {(usersData ?? []).map((u, i) => {
                 const isPrivileged = u.role === "ADMIN" || u.role === "SUPER_ADMIN";
                 return (
                   <div key={u.id} className={`grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-center px-5 py-3 ${i > 0 ? "border-t border-neutral-100" : ""}`}>
-                    <p className="text-[13.5px] text-near-black truncate">{u.email}</p>
+                    <div className="min-w-0">
+                      <p className="text-[13.5px] text-near-black truncate">{u.displayName ?? u.email}</p>
+                      {u.displayName && <p className="text-[12px] text-neutral-500 truncate">{u.email}</p>}
+                    </div>
                     <span>
                       <span className="text-[12.5px] font-medium text-ink-700 bg-neutral-100 px-2.5 py-0.5 rounded-full">
                         {roleLabel(u.role)}

@@ -89,7 +89,7 @@ class AuthServiceTest {
     }
 
     private UserResponse buildUserResponse(String role) {
-        return new UserResponse(USER_ID, TENANT_ID, "jane@test.com",
+        return new UserResponse(USER_ID, TENANT_ID, "jane@test.com", "Jane Test",
                 "+254722123456", role, null, true, false, null, LocalDateTime.now());
     }
 
