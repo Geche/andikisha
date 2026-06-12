@@ -6,11 +6,13 @@ import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -115,6 +117,20 @@ public class GlobalExceptionHandler {
         log.warn("Illegal state: {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("BAD_REQUEST", "Request cannot be processed in the current state"));
+    }
+
+    // Without this, a wrong HTTP method falls through to the catch-all below and is
+    // masked as 500 — which hid two real bugs (W3 terminate, Bug 1 leave approve/reject)
+    // behind a generic error. Surface it honestly as 405 with an Allow header.
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        log.warn("Method not allowed: {}", ex.getMessage());
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        if (ex.getSupportedHttpMethods() != null) {
+            builder.allow(ex.getSupportedHttpMethods().toArray(new HttpMethod[0]));
+        }
+        return builder.body(new ErrorResponse("METHOD_NOT_ALLOWED",
+                "HTTP method " + ex.getMethod() + " is not supported for this endpoint"));
     }
 
     @ExceptionHandler(Exception.class)
