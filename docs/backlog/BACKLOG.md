@@ -274,6 +274,16 @@ Priority is **Medium** (correctness of the licence-state shown to operators), no
 
 ### TENANT-BACKLOG-004 — No backend format validation for tenant statutory fields (KRA PIN/NSSF/SHIF)
 
+**STATUS: RESOLVED 2026-06-12.** Three-source audit (frontend forms, backend authority
+`CreateEmployeeRequest`/`BulkUploadService`, KRA spec) agreed on `^[A-Z]\d{9}[A-Z]$`.
+Added `@Pattern(regexp = "^([A-Z]\\d{9}[A-Z])?$")` (optional: null/empty clears) to
+`UpdateStatutoryRequest.kraPin` and `UpdateTenantRequest.kraPin` + MockMvc tests
+(malformed→400, valid→204, empty→204). Note: tenant *creation* has no KRA PIN field, so
+those were the actual targets, not a "create payload".
+**Adjacent gap (not fixed here, same class):** employee-service `UpdateEmployeeRequest.kraPin`
+has no `@Pattern` (create validates, update doesn't), and the employee *edit* page doesn't
+regex-validate — candidate for a follow-up.
+
 **Raised:** 2026-06-10 (UX-flow-remediation-01, R2-7)
 **Priority:** Low–Medium — client-validated today; backend accepts any string.
 
