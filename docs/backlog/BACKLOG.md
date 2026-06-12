@@ -123,6 +123,12 @@ R2-5 — tracked here so the asymmetry isn't silently shipped.
 
 ### EMP-BACKLOG-004 — UpdateEmployeeRequest.kraPin missing @Pattern (asymmetric with create)
 
+**STATUS: RESOLVED 2026-06-12.** Added `@Pattern("^([A-Z]\\d{9}[A-Z])?$")` to
+`UpdateEmployeeRequest.kraPin` (optional on update), mirroring PR #5 / `CreateEmployeeRequest`.
+MockMvc tests: malformed→400, valid `A123456789X`→200, empty→200. **Frontend gap found &
+filed separately:** the employee *edit* page does not client-validate KRA PIN — FE-BACKLOG-009
+(not folded in, per the one-item cadence).
+
 **Raised:** 2026-06-12 (TENANT-BACKLOG-004 audit) — **separate PR.**
 **Priority:** Medium — asymmetric validation lets bad data in through the update path.
 
@@ -513,6 +519,21 @@ content div of `p-6 w-full max-w-md` and **no white-card surface** (`bg-white ro
 
 **Fix:** add the white-card wrapper to both modals' content div, matching the leave modals / the R2-10
 fix. Trivial; own PR per the one-item cadence (or fold into the FE-BACKLOG-007 BaseModal surface fix).
+
+---
+
+### FE-BACKLOG-009 — Employee edit form does not client-validate KRA PIN
+
+**Raised:** 2026-06-12 (EMP-BACKLOG-004 fix).
+**Priority:** Low — backend now rejects malformed KRA PIN on update (EMP-004); this is the UX nicety.
+
+**Problem:** The employee *edit* page (`employees/[employeeId]`) has a KRA PIN input (placeholder
+`A123456789X`) but **no client-side regex validation** — unlike the Add Employee form (`employees/new`,
+`KRA_RE = /^[A-Z]\d{9}[A-Z]$/`). After EMP-004 a bad PIN is rejected by the backend (400), but the user
+only finds out on submit instead of inline.
+
+**Fix:** mirror the Add Employee form's `KRA_RE` inline validation on the edit form. Small; kept separate
+from EMP-004 (backend) per the one-item-one-PR cadence.
 
 ---
 

@@ -26,6 +26,9 @@ public record UpdateEmployeeRequest(
         // Statutory IDs — only accepted if employee has no processed payslips.
         // The gateway enforces this at the UI layer; the service applies them unconditionally
         // since the caller has already verified eligibility.
+        // KRA PIN format validated to match CreateEmployeeRequest (EMP-BACKLOG-004);
+        // optional on update — null/empty allowed, non-empty must match.
+        @Pattern(regexp = "^([A-Z]\\d{9}[A-Z])?$", message = "Invalid KRA PIN format (e.g. A123456789X)")
         String kraPin,
         String nhifNumber,
         String nssfNumber
