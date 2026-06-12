@@ -386,6 +386,37 @@ not yet possible.
 first/last name when `employeeId` is present), expose it on `/api/auth/me`, `/users`, and
 leave `reviewerName`, falling back to email when absent.
 
+**Update (2026-06-12):** being addressed via a stored `display_name` column — see
+`docs/decisions/2026-06-12-auth-user-display-name.md`.
+
+---
+
+### AUTH-BACKLOG-007 — EmployeeUpdated → display_name rename sync
+
+**Raised:** 2026-06-12 (deferred from AUTH-006).
+**Priority:** Low — rare event; cosmetic staleness only.
+
+**Problem:** AUTH-006 stores `users.display_name` (populated at provision + backfill from employee
+records). If an employee is later renamed, the stored `display_name` goes stale until re-synced.
+
+**Fix:** add an `EmployeeUpdated` event listener in auth-service that refreshes `display_name` for the
+linked user. A listener is the right pattern (don't poll, don't resolve on the hot path). Build when it
+actually matters, or as part of the user-lifecycle/identity workstream.
+
+---
+
+### UI-BACKLOG-003 — Audit "who-performed-this-action" UUID display surfaces
+
+**Raised:** 2026-06-12 (deferred from AUTH-006 / Bug 4).
+**Priority:** Medium — correctness/clarity of audit trails.
+
+**Problem:** Bug 4 fixed the leave reviewer showing a raw UUID, but the same class of issue likely exists
+on other actor surfaces (audit-log "performed by", document "uploaded by", licence-history "changed by",
+etc.). No systematic pass has been done.
+
+**Fix:** audit every surface that displays an actor identity; ensure each resolves to a name/email (or a
+clear fallback) rather than a raw UUID, reusing the same identifier source (AUTH-006 display_name → email).
+
 ---
 
 ### FE-BACKLOG-007 — BaseModal silent-empty-modal trap

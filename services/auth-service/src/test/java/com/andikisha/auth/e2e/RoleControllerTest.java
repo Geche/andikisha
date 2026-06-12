@@ -55,7 +55,7 @@ class RoleControllerTest {
     @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "ADMIN")
     void listUsers_asAdmin_returnsUsersWithRoles() throws Exception {
         when(queryService.listTenantUsers()).thenReturn(List.of(
-                new TenantUserResponse("u1", "jane@demo.co.ke", "HR_OFFICER", "emp1", "2026-06-10T09:00:00")));
+                new TenantUserResponse("u1", "jane@demo.co.ke", "Jane Wanjiku", "HR_OFFICER", "emp1", "2026-06-10T09:00:00")));
 
         mockMvc.perform(get("/api/v1/auth/users").header("X-Tenant-ID", TENANT_ID))
                 .andExpect(status().isOk())

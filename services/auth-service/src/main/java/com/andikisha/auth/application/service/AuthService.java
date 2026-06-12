@@ -161,6 +161,7 @@ public class AuthService {
                         // employee record), link it now.
                         if (existing.getEmployeeId() == null && existing.getRole() != Role.SUPER_ADMIN) {
                             existing.linkEmployee(UUID.fromString(employeeId));
+                            resolveDisplayName(tenantId, employeeId).ifPresent(existing::setDisplayName);
                             userRepository.save(existing);
                             org.slf4j.LoggerFactory.getLogger(AuthService.class).info(
                                     "Linked employeeId={} to existing user id={} tenantId={}",
@@ -174,6 +175,7 @@ public class AuthService {
         String passwordHash = passwordEncoder.encode(initialPassword);
         User employee = User.create(tenantId, email, phone, passwordHash, Role.EMPLOYEE);
         employee.linkEmployee(UUID.fromString(employeeId));
+        resolveDisplayName(tenantId, employeeId).ifPresent(employee::setDisplayName);
         User saved = userRepository.save(employee);
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -186,6 +188,18 @@ public class AuthService {
             eventPublisher.publishUserRegistered(saved);
         }
         return saved.getId().toString();
+    }
+
+    /**
+     * Resolve a user's display name from the linked employee record. Cold path only
+     * (provisioning + backfill) — never call this on a read hot path like /me.
+     * Empty when the employee can't be resolved, so the caller leaves display_name null
+     * and the read path falls back to email.
+     */
+    private java.util.Optional<String> resolveDisplayName(String tenantId, String employeeId) {
+        return employeeGrpcClient.getEmployee(tenantId, employeeId)
+                .map(emp -> (emp.getFirstName() + " " + emp.getLastName()).trim())
+                .filter(name -> !name.isBlank());
     }
 
     @Transactional

@@ -62,6 +62,7 @@ public class RolePermissionQueryService {
                 .map(u -> new TenantUserResponse(
                         u.getId().toString(),
                         u.getEmail(),
+                        u.getDisplayName(),
                         u.getRole().name(),
                         u.getEmployeeId() != null ? u.getEmployeeId().toString() : null,
                         u.getLastLogin() != null ? u.getLastLogin().toString() : null))

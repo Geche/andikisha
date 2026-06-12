@@ -33,6 +33,11 @@ public class User extends BaseEntity {
     @Column(name = "employee_id")
     private UUID employeeId;
 
+    // AUTH-006: optional human name. NULL = no name set (callers fall back to email);
+    // never store the email here. Source of truth is the employee record.
+    @Column(name = "display_name", length = 200)
+    private String displayName;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
@@ -115,6 +120,11 @@ public class User extends BaseEntity {
                     "SUPER_ADMIN users must not be linked to an employee record.");
         }
         this.employeeId = employeeId;
+    }
+
+    public void setDisplayName(String displayName) {
+        // Normalise blank to null so "no name" stays distinct from email at read time.
+        this.displayName = (displayName == null || displayName.isBlank()) ? null : displayName.trim();
     }
 
     public void clearMustChangePassword() {
