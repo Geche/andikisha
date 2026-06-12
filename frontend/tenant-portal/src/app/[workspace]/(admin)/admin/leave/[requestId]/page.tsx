@@ -78,6 +78,28 @@ export default function LeaveRequestDetailPage({
   const isApproved = request?.status === "APPROVED";
   const isRejected = request?.status === "REJECTED";
 
+  // Resolve the reviewer's UUID to a display name via the users list (AUTH-006).
+  // Admin/HR can read /users; other viewers (e.g. line managers) get a 403 and we
+  // fall back to the email captured on the request. retry:false avoids hammering a 403.
+  const { data: tenantUsers } = useQuery<{ id: string; displayName: string | null; email: string }[]>({
+    queryKey: ["tenant-users-lite"],
+    queryFn: () =>
+      apiClient
+        .get<{ id: string; displayName: string | null; email: string }[]>("/api/v1/auth/users")
+        .then((r) => r.data),
+    enabled: Boolean(request?.reviewedBy),
+    retry: false,
+  });
+
+  const reviewerLabel = (() => {
+    if (!request) return "—";
+    if (request.reviewedBy && tenantUsers) {
+      const u = tenantUsers.find((x) => x.id === request.reviewedBy);
+      if (u) return u.displayName ?? u.email;
+    }
+    return request.reviewerName ?? "—";
+  })();
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader
@@ -199,7 +221,7 @@ export default function LeaveRequestDetailPage({
                   Reviewed By
                 </p>
                 <p className={isApproved ? "text-near-black" : "text-red-900"}>
-                  {request.reviewerName ?? "—"}
+                  {reviewerLabel}
                 </p>
               </div>
               <div>
