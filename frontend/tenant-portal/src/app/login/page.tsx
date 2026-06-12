@@ -45,10 +45,15 @@ function WorkspaceEntryForm() {
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
       <div>
-        <label className="block text-[13.5px] font-medium text-neutral-700 mb-1.5">
+        <label
+          htmlFor="workspace"
+          className="block text-[13.5px] font-medium text-neutral-700 mb-1.5"
+        >
           Workspace
         </label>
         <input
+          id="workspace"
+          name="workspace"
           type="text"
           value={workspace}
           onChange={(e) =>
