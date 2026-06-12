@@ -73,3 +73,6 @@ logs/*.pid
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Local IDE/editor launch config (environment-specific)
+.claude/launch.json
