@@ -256,6 +256,22 @@ On submit:
 
 ---
 
+### PLATFORM-BACKLOG-002 — Licence-history "changed by" shows a truncated UUID
+
+**Raised:** 2026-06-12 (UI-BACKLOG-003 audit — platform-facing, scoped out of that tenant-facing item).
+**Priority:** Low — platform-portal (SUPER_ADMIN) only; not tenant-facing.
+
+**Problem:** In the platform tenant detail page, licence-history entries render the actor via
+`formatChangedBy()` = `changedBy.slice(0, 8) + "…"` (a **truncated UUID**) in two places. Same class as
+Bug 4's leave reviewer, but on a super-admin surface — which is why it's tracked separately from the
+tenant-facing UI-BACKLOG-003.
+
+**Fix:** resolve `changedBy` (a super-admin / system actor id) to an email/name, or at minimum stop
+showing a raw truncated UUID (e.g. "Platform admin" + full id on hover, "System" for SYSTEM). Consider a
+super-admin display-name source analogous to AUTH-006's `display_name`.
+
+---
+
 ### TENANT-BACKLOG-003 — extendTrial() updates Tenant.trialEndsAt but not TenantLicence.endDate
 
 **Raised:** 2026-05-19  
@@ -354,6 +370,11 @@ from employee provisioning. Surface an "Invite user" action on the User Manageme
 
 **Raised:** 2026-06-10 (UX-flow-remediation-01, browser pass) — **Run 03 candidate**
 **Priority:** Medium — list+add+edit shipped (R2-5, R2-8) without delete; delete is new work, not a bug.
+
+**Update (2026-06-12, browser review):** Create and Edit are confirmed working for Departments and
+Positions on screen — **only Delete is missing**. The data-integrity decision below is the real work:
+deleting a department/position with assigned employees (block vs reassign vs soft-delete), and whether
+roles are deletable at all (fixed enum + SYSTEM-seeded grants). Decide before building.
 
 **Problem:** No delete affordance on Departments, Positions, or Roles/Permissions. Deletion
 is not a trivial add — it has data-integrity implications that need a decision:
@@ -476,6 +497,22 @@ page bleeding through — a wrong-looking render that passes code review and onl
 **Fix (pick one):** have `BaseModal` **default-provide** the surface wrapper (a `surface` prop, default
 true, that wraps children in the standard card), or make the surface a required structural part so
 omitting it is a type/visual error rather than a silently-degraded render. Then audit existing callers.
+
+---
+
+### FE-BACKLOG-008 — Departments/Positions Add/Edit forms render without backdrop surface
+
+**Raised:** 2026-06-12 (browser review).
+**Priority:** Medium — visible to tenant admin/HR; forms look broken (table bleeds through).
+
+**Problem:** The Add position, Add department, and Edit department forms render inline next to the table
+with the table at full opacity outside the form area. **Confirmed same root cause as Bug 2 (commit
+082dd02):** both `settings/departments/page.tsx` and `settings/positions/page.tsx` use `BaseModal` with a
+content div of `p-6 w-full max-w-md` and **no white-card surface** (`bg-white rounded-xl shadow-xl border`)
+— so content floats over the backdrop. (This is exactly the FE-BACKLOG-007 BaseModal trap, instantiated.)
+
+**Fix:** add the white-card wrapper to both modals' content div, matching the leave modals / the R2-10
+fix. Trivial; own PR per the one-item cadence (or fold into the FE-BACKLOG-007 BaseModal surface fix).
 
 ---
 
