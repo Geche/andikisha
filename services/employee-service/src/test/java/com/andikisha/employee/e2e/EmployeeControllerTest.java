@@ -138,6 +138,46 @@ class EmployeeControllerTest {
                         "nationalId", "phoneNumber", "kraPin", "nhifNumber", "nssfNumber")));
     }
 
+    // ── update KRA PIN validation (EMP-BACKLOG-004) ─────────────────────────────
+
+    @Test
+    void update_malformedKraPin_returns400() throws Exception {
+        mockMvc.perform(put("/api/v1/employees/{id}", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kraPin\":\"NOTAPIN\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void update_validKraPin_returns200() throws Exception {
+        when(employeeService.update(any(), any(), any())).thenReturn(minimalResponse());
+
+        mockMvc.perform(put("/api/v1/employees/{id}", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kraPin\":\"A123456789X\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void update_emptyKraPin_isAllowed_returns200() throws Exception {
+        when(employeeService.update(any(), any(), any())).thenReturn(minimalResponse());
+
+        mockMvc.perform(put("/api/v1/employees/{id}", EMPLOYEE_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_MANAGER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kraPin\":\"\"}"))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void create_withDuplicateNationalId_returns409() throws Exception {
         when(employeeService.create(any(), any()))
