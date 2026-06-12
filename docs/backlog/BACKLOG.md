@@ -121,6 +121,22 @@ R2-5 — tracked here so the asymmetry isn't silently shipped.
 
 ---
 
+### EMP-BACKLOG-004 — UpdateEmployeeRequest.kraPin missing @Pattern (asymmetric with create)
+
+**Raised:** 2026-06-12 (TENANT-BACKLOG-004 audit) — **separate PR.**
+**Priority:** Medium — asymmetric validation lets bad data in through the update path.
+
+**Problem:** `CreateEmployeeRequest.kraPin` (and `BulkUploadService`) validate KRA PIN with
+`^[A-Z]\d{9}[A-Z]$`, but `UpdateEmployeeRequest.kraPin` has **no `@Pattern`** — a malformed
+KRA PIN can be written via the employee *update* path even though create rejects it. The
+employee *edit* frontend page likewise doesn't regex-validate. Same class as TENANT-004.
+
+**Fix:** add `@Pattern(regexp = "^([A-Z]\\d{9}[A-Z])?$")` to `UpdateEmployeeRequest.kraPin`
+(optional on update) + the edit-form validation, mirroring TENANT-004. Quick once picked up;
+kept as its own PR per the one-item-one-PR cadence.
+
+---
+
 ### AUTH-BACKLOG-005 — Migrate hardcoded scope mapping in CallerScopeResolver to read from role_permissions
 
 **Raised:** 2026-05-31
@@ -363,6 +379,23 @@ The right grouping (org structure vs people vs tenant settings) needs more thoug
 
 **Decide in Run 03.** Do not reorganize in this run. Resolve the taxonomy first (likely: Settings hub
 with sub-sections for Organisation [depts/positions], People [user management], and Tenant config).
+
+---
+
+### TENANT-BACKLOG-009 — Tighten KRA PIN leading letter to [AP]
+
+**Raised:** 2026-06-12 (TENANT-BACKLOG-004 audit).
+**Priority:** Low — current validation is structurally correct; this is stricter conformance.
+
+**Problem:** The codebase standardizes on `^[A-Z]\d{9}[A-Z]$` (permissive leading letter). The KRA spec
+restricts the leading letter to **A (individual) or P (company/non-individual)** — so the strict pattern
+is `^[AP]\d{9}[A-Z]$`. Today a PIN like `Z123456789X` passes validation but is not a real KRA format.
+
+**Why deferred / what it needs:** tightening must be **coordinated** across all patterns at once —
+`CreateEmployeeRequest`, `BulkUploadService`, `UpdateStatutoryRequest`, `UpdateTenantRequest`,
+`UpdateEmployeeRequest` (EMP-BACKLOG-004), and both frontend forms — plus a **decision on existing
+records** whose stored KRA PIN has a non-A/P leading letter (reject on next edit? data-fix migration?
+grandfather?). That data question is the real work, not the regex. File and decide deliberately.
 
 ---
 
