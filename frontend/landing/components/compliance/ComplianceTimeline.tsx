@@ -34,10 +34,7 @@ export default function ComplianceTimeline() {
     <section className="bg-white py-[88px]">
       <Container>
         {/* Top — 2-col heading */}
-        <div
-          className="grid gap-12 mb-14"
-          style={{ gridTemplateColumns: "5fr 6fr" }}
-        >
+        <div className="grid grid-cols-1 gap-6 mb-14 lg:grid-cols-[5fr_6fr] lg:gap-12">
           <div>
             <Eyebrow className="mb-4">Compliance is our operating model</Eyebrow>
             <h2
@@ -55,14 +52,14 @@ export default function ComplianceTimeline() {
         </div>
 
         {/* Timeline */}
-        <div className="relative border-t-2 border-ink-200 pt-6 grid grid-cols-5 gap-4">
+        <div className="relative border-t-2 border-ink-200 pt-6 grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-5 md:gap-4">
           {EVENTS.map(({ date, title, desc }) => (
             <div key={date} className="relative">
               {/* Dot on the border line.
                   token-exempt: #e5e7eb is an illustrative neutral ring inside an
                   arbitrary shadow value, which cannot take a named token. */}
               <div
-                className="absolute -top-[26px] left-0 w-[10px] h-[10px] rounded-full bg-brand-900 border-2 border-white shadow-[0_0_0_2px_#e5e7eb]"
+                className="hidden md:block absolute -top-[26px] left-0 w-[10px] h-[10px] rounded-full bg-brand-900 border-2 border-white shadow-[0_0_0_2px_#e5e7eb]"
                 aria-hidden
               />
               <p className="text-[10px] font-bold text-brand-700 uppercase tracking-[0.1em] mb-2">

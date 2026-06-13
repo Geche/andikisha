@@ -22,12 +22,9 @@ export default function FeatureDisbursement() {
   return (
     <section className="bg-surface-alt py-[88px]">
       <Container>
-        <div
-          className="grid items-center"
-          style={{ gridTemplateColumns: "6fr 5fr", gap: "72px" }}
-        >
-          {/* Dark card (left) */}
-          <div className="bg-brand-900 border border-brand-800 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
+        <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-[6fr_5fr] lg:gap-[72px]">
+          {/* Dark card (left on desktop, below heading on mobile) */}
+          <div className="order-2 lg:order-1 bg-brand-900 border border-brand-800 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
             <div className="flex items-center justify-between px-5 py-4 bg-white/[0.04] border-b border-white/[0.08]">
               <span className="text-[13px] font-bold text-white">November batch disbursement</span>
               <span className="text-[11px] font-bold bg-brand-500/20 text-brand-500 px-2.5 py-1 rounded-full">
@@ -57,8 +54,8 @@ export default function FeatureDisbursement() {
             </div>
           </div>
 
-          {/* Text (right) */}
-          <div>
+          {/* Text (right on desktop, above card on mobile) */}
+          <div className="order-1 lg:order-2">
             <Eyebrow className="mb-4">Disbursement</Eyebrow>
             <h2
               className="font-display font-black text-ink-900 leading-[1.06] tracking-[-0.02em] mb-4"

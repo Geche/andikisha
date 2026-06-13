@@ -28,10 +28,7 @@ export default function FeaturePayrollRun() {
   return (
     <section className="bg-white py-[88px]">
       <Container>
-        <div
-          className="grid items-center"
-          style={{ gridTemplateColumns: "5fr 6fr", gap: "72px" }}
-        >
+        <div className="grid items-center grid-cols-1 gap-12 lg:grid-cols-[5fr_6fr] lg:gap-[72px]">
           {/* Text */}
           <div>
             <Eyebrow className="mb-4">Payroll automation</Eyebrow>

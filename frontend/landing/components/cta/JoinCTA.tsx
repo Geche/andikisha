@@ -15,10 +15,7 @@ export default function JoinCTA() {
   return (
     <section className="bg-white py-[88px]">
       <Container>
-        <div
-          className="grid items-center"
-          style={{ gridTemplateColumns: "1fr 1fr", gap: "56px" }}
-        >
+        <div className="grid items-center grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-[56px]">
           {/* Left */}
           <div>
             <h2

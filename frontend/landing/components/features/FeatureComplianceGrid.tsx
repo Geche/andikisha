@@ -66,14 +66,14 @@ export default function FeatureComplianceGrid() {
         </div>
 
         {/* 3-col grid */}
-        <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 1.6fr 1fr" }}>
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-[1fr_1.6fr_1fr]">
           {/* Left column */}
           <div className="flex flex-col gap-4">
             {LEFT_CARDS.map((c) => <Card key={c.title} {...c} />)}
           </div>
 
           {/* Centre — spans 2 rows */}
-          <div className="bg-white border border-ink-200 rounded-2xl p-6 flex flex-col gap-4 row-span-2">
+          <div className="bg-white border border-ink-200 rounded-2xl p-6 flex flex-col gap-4 lg:row-span-2">
             <p className="text-[14px] font-bold text-ink-900">Payroll cost over time</p>
             <p className="text-[13px] text-ink-600 leading-[1.65]">
               Track gross payroll, deductions, and net cost month over month across your organisation.

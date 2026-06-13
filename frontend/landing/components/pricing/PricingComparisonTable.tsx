@@ -45,7 +45,7 @@ export default function PricingComparisonTable() {
                       spreadsheet ? (
                         <Check size={16} className="text-brand-500 mx-auto" aria-label="Yes" />
                       ) : (
-                        <X size={16} className="text-error mx-auto" aria-label="No" />
+                        <X size={16} className="text-danger mx-auto" aria-label="No" />
                       )
                     ) : (
                       <span className="text-ink-400">{spreadsheet}</span>
@@ -56,7 +56,7 @@ export default function PricingComparisonTable() {
                       andikisha ? (
                         <Check size={16} className="text-brand-500 mx-auto" aria-label="Yes" />
                       ) : (
-                        <X size={16} className="text-error mx-auto" aria-label="No" />
+                        <X size={16} className="text-danger mx-auto" aria-label="No" />
                       )
                     ) : (
                       <span className="text-brand-700 font-semibold">{andikisha}</span>

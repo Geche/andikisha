@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
+import { isValidEmail, HONEYPOT_FIELD } from "@/lib/validation";
 
 interface FormState {
   name: string;
@@ -26,7 +27,7 @@ const EMPLOYEE_OPTIONS = ["1 – 10", "11 – 30", "31 – 100", "101 – 300", 
 const SUBMIT_DELAY_MS = 300;
 
 async function submitDemoRequest(
-  data: FormState
+  data: FormState & { [HONEYPOT_FIELD]: string }
 ): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch("/api/demo", {
     method: "POST",
@@ -40,6 +41,7 @@ async function submitDemoRequest(
 
 export default function DemoForm() {
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [hp, setHp] = useState(""); // honeypot — must stay empty
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -53,7 +55,7 @@ export default function DemoForm() {
   const validate = (): boolean => {
     const e: Partial<FormState> = {};
     if (!form.name.trim()) e.name = "Name is required";
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (!form.email.trim() || !isValidEmail(form.email))
       e.email = "Valid email is required";
     if (!form.company.trim()) e.company = "Company name is required";
     if (!form.employees) e.employees = "Please select team size";
@@ -66,7 +68,7 @@ export default function DemoForm() {
     if (!validate()) return;
     setSubmitError(null);
     startTransition(async () => {
-      const result = await submitDemoRequest(form);
+      const result = await submitDemoRequest({ ...form, [HONEYPOT_FIELD]: hp });
       if (result.ok) {
         setSubmitted(true);
       } else {
@@ -97,9 +99,23 @@ export default function DemoForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      {/* Honeypot — hidden from users, a filled value flags a bot */}
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor="demo-website">Do not fill this field</label>
+        <input
+          id="demo-website"
+          type="text"
+          name={HONEYPOT_FIELD}
+          value={hp}
+          onChange={(e) => setHp(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       <div>
         <label htmlFor="demo-name" className="form-label">
-          Full name <span className="text-red-500">*</span>
+          Full name <span className="text-danger">*</span>
         </label>
         <input
           id="demo-name"
@@ -118,7 +134,7 @@ export default function DemoForm() {
 
       <div>
         <label htmlFor="demo-email" className="form-label">
-          Work email <span className="text-red-500">*</span>
+          Work email <span className="text-danger">*</span>
         </label>
         <input
           id="demo-email"
@@ -138,7 +154,7 @@ export default function DemoForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="demo-company" className="form-label">
-            Company name <span className="text-red-500">*</span>
+            Company name <span className="text-danger">*</span>
           </label>
           <input
             id="demo-company"
@@ -173,7 +189,7 @@ export default function DemoForm() {
 
       <div>
         <label htmlFor="demo-employees" className="form-label">
-          Team size <span className="text-red-500">*</span>
+          Team size <span className="text-danger">*</span>
         </label>
         <select
           id="demo-employees"
@@ -207,9 +223,9 @@ export default function DemoForm() {
       </div>
 
       {submitError && (
-        <div className="flex items-start gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
-          <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="text-[14px] text-red-700">{submitError}</p>
+        <div className="flex items-start gap-3 bg-danger-bg border border-danger/20 rounded-lg px-4 py-3">
+          <AlertCircle size={16} className="text-danger shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-[14px] text-danger">{submitError}</p>
         </div>
       )}
 

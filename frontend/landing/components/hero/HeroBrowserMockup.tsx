@@ -57,10 +57,10 @@ export function HeroBrowserMockup() {
       </div>
 
       {/* App layout */}
-      <div className="bg-surface-alt grid" style={{ gridTemplateColumns: "210px 1fr", minHeight: "420px" }}>
+      <div className="bg-surface-alt grid grid-cols-1 lg:grid-cols-[210px_1fr]" style={{ minHeight: "420px" }}>
 
-        {/* Sidebar */}
-        <div className="bg-white border-r border-ink-200">
+        {/* Sidebar — hidden on mobile, where it would consume over half the frame */}
+        <div className="hidden lg:block bg-white border-r border-ink-200">
           <div className="px-4 py-4 border-b border-ink-100">
             <LogoFull variant="default" className="h-[18px] w-auto" />
           </div>
@@ -97,7 +97,7 @@ export function HeroBrowserMockup() {
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             {METRICS.map(({ label, value, delta, deltaClass, valueClass }) => (
               <div key={label} className="bg-white border border-ink-200 rounded-xl p-3.5">
                 <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-[0.05em] mb-1.5">{label}</p>
@@ -108,7 +108,7 @@ export function HeroBrowserMockup() {
           </div>
 
           {/* Tables */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Employee table */}
             <div className="bg-white border border-ink-200 rounded-xl overflow-hidden">
               <div className="flex justify-between px-4 py-2.5 bg-surface-alt border-b border-ink-100">

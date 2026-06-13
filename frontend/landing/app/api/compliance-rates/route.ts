@@ -9,9 +9,14 @@ const GATEWAY = process.env.API_GATEWAY_URL ?? "http://localhost:8080";
 export const revalidate = 86400;
 
 export async function GET() {
+  // Bound the upstream call so a hung Compliance Service can't pin a route
+  // worker indefinitely.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(`${GATEWAY}/api/v1/public/compliance/KE/rates`, {
       next: { revalidate: 86400 },
+      signal: controller.signal,
     });
     if (!res.ok) {
       return NextResponse.json({ error: "RATES_UNAVAILABLE" }, { status: 502 });
@@ -22,5 +27,7 @@ export async function GET() {
     });
   } catch {
     return NextResponse.json({ error: "RATES_UNAVAILABLE" }, { status: 502 });
+  } finally {
+    clearTimeout(timeout);
   }
 }

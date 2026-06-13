@@ -19,14 +19,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return { title: "Post not found" };
+  const author = post.author ?? "AndikishaHR";
   return {
     title: post.title,
     description: post.excerpt,
+    authors: [{ name: author }],
+    alternates: { canonical: `/blog/${slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt,
       type: "article",
+      url: `/blog/${slug}`,
       publishedTime: post.date,
+      modifiedTime: post.lastModified ?? post.date,
+      authors: [author],
+      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: post.title }],
     },
   };
 }
@@ -44,8 +51,30 @@ export default async function BlogPostPage({ params }: Props) {
     : [];
   const related = [...sameCategory, ...otherPosts];
 
+  const author = post.author ?? "AndikishaHR";
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.date,
+    dateModified: post.lastModified ?? post.date,
+    author: { "@type": "Organization", name: author },
+    publisher: {
+      "@type": "Organization",
+      name: "AndikishaHR",
+      logo: { "@type": "ImageObject", url: "https://andikishahr.com/logomark.svg" },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://andikishahr.com/blog/${slug}` },
+    image: "https://andikishahr.com/opengraph-image",
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <ReadingProgress />
 
       {/* Hero */}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { CheckCircle, AlertCircle, Send } from "lucide-react";
+import { isValidEmail, HONEYPOT_FIELD } from "@/lib/validation";
 
 interface FormState {
   name: string;
@@ -22,7 +23,7 @@ const SUBJECT_OPTIONS = [
 ];
 
 async function submitContact(
-  data: FormState
+  data: FormState & { [HONEYPOT_FIELD]: string }
 ): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch("/api/contact", {
     method: "POST",
@@ -34,6 +35,7 @@ async function submitContact(
 
 export default function ContactForm() {
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [hp, setHp] = useState(""); // honeypot — must stay empty
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -47,7 +49,7 @@ export default function ContactForm() {
   const validate = () => {
     const e: Partial<FormState> = {};
     if (!form.name.trim()) e.name = "Name is required";
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+    if (!form.email.trim() || !isValidEmail(form.email))
       e.email = "Valid email required";
     if (!form.subject) e.subject = "Please select a subject";
     if (!form.message.trim()) e.message = "Message is required";
@@ -60,7 +62,7 @@ export default function ContactForm() {
     if (!validate()) return;
     setSubmitError(null);
     startTransition(async () => {
-      const result = await submitContact(form);
+      const result = await submitContact({ ...form, [HONEYPOT_FIELD]: hp });
       if (result.ok) {
         setSubmitted(true);
       } else {
@@ -87,6 +89,20 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      {/* Honeypot — hidden from users, a filled value flags a bot */}
+      <div className="hidden" aria-hidden="true">
+        <label htmlFor="contact-website">Do not fill this field</label>
+        <input
+          id="contact-website"
+          type="text"
+          name={HONEYPOT_FIELD}
+          value={hp}
+          onChange={(e) => setHp(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label htmlFor="contact-name" className="form-label">
