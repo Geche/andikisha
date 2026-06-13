@@ -278,35 +278,29 @@ super-admin display-name source analogous to AUTH-006's `display_name`.
 
 ---
 
-### TENANT-BACKLOG-003 — extendTrial() updates Tenant.trialEndsAt but not TenantLicence.endDate
+### TENANT-BACKLOG-003 — Licence-state enforcement divergence (date reconciliation + status transition + entitlement)
 
-**Raised:** 2026-05-19  
-**Priority:** Low — cosmetic inconsistency in the list page `End date` column after a trial extension.
+**Raised:** 2026-05-19 · **Rescoped:** 2026-06-13
+**Priority:** Medium — correctness of the licence state shown to operators and (eventually) enforced.
 
-**Problem:**  
-`SuperAdminTenantService.extendTrial()` calls `tenant.extendTrial(additionalDays)` which extends `Tenant.trialEndsAt`. It does NOT update `TenantLicence.endDate`. The dashboard metrics use `tenantRepository.countByStatusAndTrialEndsAtBetween(...)` which reads `Tenant.trialEndsAt` — so expiry alerts are correct. But the `/tenants` list table shows `licence.endDate` (from `TenantSummaryResponse`) which stays stale after an extension.
+**Original symptom — FIXED.** This entry began as "`extendTrial()` updates `Tenant.trialEndsAt` but not
+`TenantLicence.endDate`" (a stale `End date` on the tenant list). That was fixed in commit **`8382877`**
+("extendTrial updates both Tenant.trialEndsAt and TenantLicence.endDate atomically"). The header now
+reflects the **deferred enforcement work** that remains, surfaced during R2-7.
 
-**Fix:** In `extendTrial()`, also call `licencePlanService.extendLicenceEndDate(tenantId, additionalDays)` or equivalent to update `TenantLicence.endDate` in the same transaction.
+**Deferred scope (the open work):**
+1. **Licence-date reconciliation** — a single source of truth for trial/licence end so
+   `tenants.trial_ends_at` and `tenant_licence.end_date` cannot diverge. (Demo tenant showed `end_date`
+   in the future while `trial_ends_at` was past → reads as TRIAL + "expired" + future end date at once.)
+2. **Status transition** — an expiry path/job that moves a lapsed TRIAL → EXPIRED. Today nothing
+   transitions a lapsed trial, so the status stays wrong and the two date sources stay unreconciled.
+3. **Entitlement enforcement / plan-upgrade wiring** — R2-7's platform plan change is deliberately
+   **record-only** (stores plan + price; does NOT transition status, clear the trial, or grant
+   entitlements). Wiring entitlement enforcement to plan/licence state is part of this item.
 
-**Update (2026-06-10, UX-flow-remediation-01 R2-7) — full diagnosis attached; deferred deliberately.**
-This is the **enforcement-side licence-state divergence** flagged during R2-7. It is broader than the
-list-page cosmetic note above and has two coupled symptoms:
-
-1. **Date divergence.** For the demo tenant: `tenant_licence.end_date = 2026-06-13` (future) while
-   `tenants.trial_ends_at = 2026-05-28` (past). The platform tenant view shows status **TRIAL** (from
-   the licence), **"trial expired"** (computed from `trial_ends_at` being past), and **end date 13 Jun**
-   (from `tenant_licence.end_date`) — all at once, which reads as contradictory.
-2. **No status transition.** The trial lapsed (28 May) but the licence status was never transitioned
-   TRIAL → EXPIRED (no expiry job ran / the two date sources aren't reconciled).
-
-**Confirmed NOT an access blocker.** `AuthService.login` performs no licence/trial check, and an
-EMPLOYEE in the same expired-trial tenant authenticates normally — so this is a display/state-consistency
-issue, not a login gate. (This is why R2-7's plan change was scoped **record-only**: it deliberately does
-**not** transition status or clear the trial state. Fixing this divergence is the deferred enforcement work.)
-
-**Fix (when picked up):** single source of truth for trial/licence end (reconcile `trial_ends_at` and
-`tenant_licence.end_date`), and a status-transition path (expiry job) that moves a lapsed TRIAL to EXPIRED.
-Priority is **Medium** (correctness of the licence-state shown to operators), not the original "Low/cosmetic".
+**Confirmed NOT an access blocker** (R2-7): `AuthService.login` performs no licence/trial check, and an
+EMPLOYEE in the same expired-trial tenant authenticates normally — a state-consistency/enforcement gap,
+not a login gate. That is why R2-7 shipped the plan change as record-only.
 
 ---
 
@@ -443,6 +437,12 @@ from the Approve modal so the UI doesn't collect data it discards.
 
 ### AUTH-BACKLOG-006 — No user display-name field (UI shows email everywhere)
 
+**STATUS: RESOLVED 2026-06-12** (PR #4). Added a stored `users.display_name`, resolved from the linked
+employee record at provisioning + an idempotent startup backfill; exposed on `/api/auth/me` (→ `fullName`)
+and `/admin/users`, falling back to email when absent. Chosen over read-time gRPC because `/me` is a hot
+path. See `docs/decisions/2026-06-12-auth-user-display-name.md`. (Leave-reviewer name resolution shipped
+separately in PR #6 / UI-BACKLOG-003.)
+
 **Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 4)
 **Priority:** Low/Medium — affects every surface that identifies a user.
 
@@ -454,10 +454,7 @@ not yet possible.
 
 **Fix:** add a display-name to the auth user (or resolve via the linked employee record's
 first/last name when `employeeId` is present), expose it on `/api/auth/me`, `/users`, and
-leave `reviewerName`, falling back to email when absent.
-
-**Update (2026-06-12):** being addressed via a stored `display_name` column — see
-`docs/decisions/2026-06-12-auth-user-display-name.md`.
+leave `reviewerName`, falling back to email when absent. *(See STATUS above — shipped.)*
 
 ---
 
@@ -477,15 +474,20 @@ actually matters, or as part of the user-lifecycle/identity workstream.
 
 ### UI-BACKLOG-003 — Audit "who-performed-this-action" UUID display surfaces
 
+**STATUS: SCOPED-DOWN-RESOLVED 2026-06-12.** The audit was run; the original premise (a systematic
+UUID-display problem across many tenant surfaces) **did not hold** — most candidate surfaces don't exist
+(no tenant audit-log UI, no documents UI, no actor IDs rendered in payroll runs; the leave reviewer
+already showed email after Bug 4). The one genuine in-scope improvement — **leave reviewer email→name** —
+shipped via **PR #6** (resolves the reviewer UUID via `/api/v1/auth/users` → AUTH-006 `display_name`,
+falling back to email). The remaining real actor-UUID offender is **platform-facing** (licence-history
+"changed by") and is tracked separately as **PLATFORM-BACKLOG-002**. Nothing further to do under this
+(tenant-facing) item.
+
 **Raised:** 2026-06-12 (deferred from AUTH-006 / Bug 4).
 **Priority:** Medium — correctness/clarity of audit trails.
 
-**Problem:** Bug 4 fixed the leave reviewer showing a raw UUID, but the same class of issue likely exists
-on other actor surfaces (audit-log "performed by", document "uploaded by", licence-history "changed by",
-etc.). No systematic pass has been done.
-
-**Fix:** audit every surface that displays an actor identity; ensure each resolves to a name/email (or a
-clear fallback) rather than a raw UUID, reusing the same identifier source (AUTH-006 display_name → email).
+**Original problem (for history):** Bug 4 fixed the leave reviewer showing a raw UUID; this item proposed
+a systematic pass over other actor surfaces — which the audit found largely don't exist as tenant UIs.
 
 ---
 
@@ -564,6 +566,23 @@ format asymmetry.)
 
 ---
 
+### FE-BACKLOG-011 — Consolidate FE-BACKLOG-001…006 into BACKLOG.md (single source for ID scans)
+
+**Raised:** 2026-06-13 (pre-Run-03 hygiene).
+**Priority:** Low — bookkeeping; the items are tracked, just not here.
+
+**Problem:** FE-BACKLOG-001…006 (design-system gap items — accent bar / Card primitive, StatCard chip +
+delta + Badge/Avatar dots + Badge semantic tones, type-scale tokens + table/sidebar alignment +
+`KES`→`KSh`, shared-primitive adoption) are tracked **only** in `docs/Engineering/frontend/`
+(`2026-06-05-gap-audit-correction.md` is the authoritative reconciled list; also referenced in
+`design-system-gap-audit.md`, `token-consolidation-plan.md`). They don't appear in BACKLOG.md, so an
+ID-based scan of BACKLOG.md misses them.
+
+**Fix:** copy FE-001…006 in as stub entries (one-line summary + status + cross-ref to the frontend Eng
+doc), preserving the detailed write-ups in that doc. Verify each item's current status against the
+landed token-consolidation work (Steps 1–5) before marking — some may already be resolved. Kept out of
+the 2026-06-13 hygiene PR to avoid expanding it; do as its own small docs PR.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
@@ -586,13 +605,22 @@ format asymmetry.)
 
 ## Notifications
 
-### NOTIFICATION-BACKLOG-001 — notification-service ignores all lifecycle events except TenantCreated
+### NOTIFICATION-BACKLOG-001 — Tenant/licence lifecycle events produce no notification (suspend/reactivate/cancel/renew/upgrade)
 
-**Raised:** 2026-05-19  
+**Raised:** 2026-05-19 · **Rescoped:** 2026-06-13
 **Priority:** High — required before the platform serves real paying customers.
 
-**Problem:**  
-`TenantEventListener` in `notification-service` handles exactly one event: `TenantCreatedEvent` (welcome email). The following events are published to RabbitMQ but produce no email notification:
+**Status note (2026-06-13, verified):** the original blanket title — "ignores **all** lifecycle events
+except TenantCreated" — is now **stale**. notification-service has since gained four working listeners:
+`AuthEventListener` (EmployeeUserProvisioned, PasswordResetRequested), `EmployeeEventListener`
+(EmployeeCreated, EmployeeTerminated), `LeaveEventListener` (LeaveApproved, LeaveRejected), and
+`PayrollEventListener` (PayrollApproved, PayrollProcessed). **However, the original concern remains OPEN
+and unchanged:** `TenantEventListener` still handles **only** `TenantCreatedEvent` (verified — its
+`handle()` is a single `instanceof TenantCreatedEvent`), so the five tenant/licence-lifecycle
+notifications below are still not produced.
+
+**Problem (still open):**
+`TenantEventListener` handles exactly one event: `TenantCreatedEvent` (welcome email). The following events are published to RabbitMQ but produce no email notification:
 
 | Event | Published by | Missing notification |
 |---|---|---|
@@ -1052,3 +1080,58 @@ Source code cleaned up in commit `dcd6905` (2026-05-17): the single tracked file
 **Then:** `rm -rf frontend/employee-portal frontend/admin-portal`
 
 **Why deferred:** Gitignored artifacts don't affect builds or test runs. Risk of breaking something if references remain. Low urgency.
+
+---
+
+## Backend engineering backlog (detailed write-ups in `docs/Engineering/backend/`)
+
+Formalized 2026-06-13 from standalone backend backlog docs that had no IDs. One-line summaries here;
+full diagnoses + fixes live in the linked docs (single source of truth for the detail).
+
+### INFRA-BACKLOG-003 — Redis connectivity 503s: readiness restart-loop + tenant-data outage
+
+**Raised:** 2026-06-07 · **Priority:** High — deployment-blocking.
+On Redis unavailability the service readiness flaps and tenant-data requests 503. Full write-up:
+`docs/Engineering/backend/2026-06-07-redis-readiness-503-backlog.md`.
+
+---
+
+### INFRA-BACKLOG-004 — Audit `@DataJpaTest` slices for the JPA-auditing gap
+
+**Raised:** 2026-06-08 · **Priority:** Medium — latent broken tests, not a production defect.
+`@DataJpaTest` slices don't load `@EnableJpaAuditing`, so auditing-dependent persistence can fail in those
+slices. Full write-up: `docs/Engineering/backend/2026-06-08-datajpatest-auditing-gap-backlog.md`.
+(Related: PAYROLL-BACKLOG-002, audit `@EnableJpaAuditing` across services.)
+
+---
+
+### AUTH-BACKLOG-008 — Super-admin tenant impersonation returns 500 INTERNAL_ERROR
+
+**Raised:** 2026-06-08 · **Priority:** High / support-critical.
+SUPER_ADMIN cannot impersonate a tenant (impersonation endpoint 500s). Full write-up:
+`docs/Engineering/backend/2026-06-08-superadmin-impersonation-500-backlog.md`.
+
+---
+
+### AUTH-BACKLOG-009 — `POST /api/v1/auth/refresh` returns 409 on token rotation
+
+**Raised:** 2026-06-08 · **Priority:** Low–Medium — endpoint currently unused by the tenant-portal BFF.
+Concurrent/rotated refresh returns 409 (seen transiently after change-password re-auth). Full write-up:
+`docs/Engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md`.
+
+---
+
+### API-BACKLOG-003 — Framework 4xx (405/415/406) masked as 500 by the shared exception handler
+
+**STATUS: RESOLVED 2026-06-11** (PR #3, commit `341423e`). Added a 405 handler to the shared
+`GlobalExceptionHandler` (+ leave-service's local advice that shadowed it); a wrong HTTP method now
+surfaces as 405, not a generic 500. Broader 4xx (415/406) hardening left as a reopen-if-needed note.
+**Raised:** 2026-06-09. Full write-up: `docs/Engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md`.
+
+---
+
+### PAYROLL-BACKLOG-005 — Pending-activation employees are payroll/filing-eligible despite incomplete statutory IDs
+
+**Raised:** 2026-06-09 · **Priority:** Medium — compliance/payment correctness (pre-existing; not introduced by W5).
+Placeholder/pending-activation rows (NULL statutory IDs after V10) must be excluded from payroll runs and
+statutory filings. Full write-up: `docs/Engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`.
