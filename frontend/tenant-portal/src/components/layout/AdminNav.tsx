@@ -4,7 +4,7 @@ import { NavRailItem, NavRailGroup, Avatar, cn, useCurrentUser } from "@andikish
 import {
   Home, Users, CreditCard, Calendar,
   Clock, FileCheck, BarChart2, Building2, Briefcase,
-  UserCircle, Settings, LogOut, UserCog,
+  Settings, LogOut, UserCog,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -121,9 +121,18 @@ export function AdminNavFooter() {
         active={pathname.startsWith(`${base}/admin/settings`)}
       />
 
-      {/* User chip — identity + My profile + Sign out (replaces the old footer items). */}
-      <div className="mt-1 pt-2 border-t border-neutral-200">
-        <div className="flex items-center gap-2.5 px-2.5 py-1.5">
+      {/* User chip — the chip itself is the link to My profile; Sign out below. */}
+      <div className="mt-1 pt-2 border-t border-neutral-200 space-y-0.5">
+        <Link
+          href={`${base}/my/profile`}
+          aria-label="My profile"
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-colors",
+            pathname.startsWith(`${base}/my/profile`)
+              ? "bg-neutral-100"
+              : "hover:bg-neutral-100"
+          )}
+        >
           <Avatar name={name} size="sm" />
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-near-black truncate">{name}</p>
@@ -131,18 +140,6 @@ export function AdminNavFooter() {
               <p className="text-[11.5px] text-neutral-500 truncate">{email}</p>
             )}
           </div>
-        </div>
-        <Link
-          href={`${base}/my/profile`}
-          className={cn(
-            "flex items-center gap-2.5 w-full h-9 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors",
-            pathname.startsWith(`${base}/my/profile`)
-              ? "bg-neutral-100 text-near-black"
-              : "text-neutral-700 hover:bg-neutral-100"
-          )}
-        >
-          <UserCircle size={16} strokeWidth={2} className="text-neutral-500" />
-          My profile
         </Link>
         <button
           onClick={() => void logout()}

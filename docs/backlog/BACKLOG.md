@@ -612,6 +612,33 @@ what *should* a standalone admin see on an employee self-service dashboard? Hide
 `/admin`, or show a "no employee record" empty state per page. Decide deliberately, then apply the same
 `hasEmployee` guard pattern used in `/my/profile`.
 
+**2026-06-14 post-merge review note (Image 3):** Lawrence's review confirmed `/my/dashboard` renders
+employee-specific sections for a standalone admin — exactly this gap (not a new finding). It raises the
+**design question to settle when this item is taken up:** should `/my/*` be reachable at all for
+non-employee users, or should the entire `/my` section be hidden/redirected for them (vs per-page
+graceful empty states)? Decide during the future audit; do not decide now.
+
+### TENANT-BACKLOG-011 — Change-role UX for roles with an unmet prerequisite
+
+**Raised:** 2026-06-14 (post-merge review, Image 8). **Priority:** Low–Medium — UX, not correctness.
+
+Assigning a role that requires department scope (e.g. **LINE_MANAGER**) to an employee with no
+department fails server-side with `DepartmentScopeException` ("the employee must be assigned to a
+department first"). The message is accurate but only appears **after** the user submits the change-role
+modal — poor flow. Improve to either (a) disable the ineligible role in the dropdown with a hover
+tooltip explaining the prerequisite, or (b) surface the prerequisite inline before submission. Backend
+guard stays as the authority; this is presentation only.
+
+### FE-BACKLOG-013 — Department/Position edit modal form quality
+
+**Raised:** 2026-06-14 (post-merge review, Image 7). **Priority:** Low — polish.
+
+The department and position edit modals render correctly (post the FE-008 BaseModal fix and the R3-1
+position-edit work), but the forms are minimal: plain inputs, no helper text, no validation-state
+styling (error/focus affordances beyond the default ring), no visual field hierarchy. Polish item for a
+future frontend refinement run — align with the design-system form-field patterns
+(`frontend/packages/ui` inputs, helper/error text, labels).
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
