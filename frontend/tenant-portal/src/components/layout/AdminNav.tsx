@@ -1,15 +1,14 @@
 "use client";
 
-import { NavRailItem, NavRailGroup, Avatar, cn, useCurrentUser } from "@andikisha/ui";
+import { NavRailItem, NavRailGroup, useCurrentUser } from "@andikisha/ui";
 import {
   Home, Users, CreditCard, Calendar,
   Clock, FileCheck, BarChart2, Building2, Briefcase,
-  Settings, LogOut, UserCog,
+  Settings, UserCog,
 } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { logout } from "@/lib/auth";
+import { SidebarUserChip } from "./SidebarUserChip";
 
 interface NavGroup {
   label?: string;
@@ -105,11 +104,6 @@ export function AdminNavFooter() {
   const pathname = usePathname();
   const workspace = useWorkspace();
   const base = `/${workspace}`;
-  const currentUser = useCurrentUser();
-
-  // display_name (AUTH-006) with email fallback.
-  const name = currentUser?.fullName?.trim() || currentUser?.email || "Account";
-  const email = currentUser?.email ?? "";
 
   return (
     <>
@@ -121,36 +115,9 @@ export function AdminNavFooter() {
         active={pathname.startsWith(`${base}/admin/settings`)}
       />
 
-      {/* User chip — the chip itself is the link to My profile; Sign out below. */}
-      <div className="mt-1 pt-2 border-t border-neutral-200 space-y-0.5">
-        <Link
-          href={`${base}/admin/profile`}
-          aria-label="My profile"
-          className={cn(
-            "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-colors",
-            pathname.startsWith(`${base}/admin/profile`)
-              ? "bg-neutral-100"
-              : "hover:bg-neutral-100"
-          )}
-        >
-          <Avatar name={name} size="sm" />
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-near-black truncate">{name}</p>
-            {email && name !== email && (
-              <p className="text-[11.5px] text-neutral-500 truncate">{email}</p>
-            )}
-          </div>
-        </Link>
-        <button
-          onClick={() => void logout()}
-          className={cn(
-            "flex items-center gap-2.5 w-full h-9 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors",
-            "text-neutral-700 hover:bg-neutral-100 cursor-pointer group"
-          )}
-        >
-          <LogOut size={16} strokeWidth={2} className="text-neutral-500 group-hover:text-error" />
-          <span className="group-hover:text-error">Sign out</span>
-        </button>
+      {/* Shared chip: avatar + "Profile" → /admin/profile, Sign out below. */}
+      <div className="mt-1 pt-2 border-t border-neutral-200">
+        <SidebarUserChip profileHref={`${base}/admin/profile`} />
       </div>
     </>
   );

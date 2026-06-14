@@ -59,8 +59,13 @@ function ApplyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: ()
   const [error, setError] = useState("");
 
   const mutation = useMutation({
-    mutationFn: (data: typeof form) =>
-      apiClient.post("/api/v1/leave/requests", data).then((r) => r.data),
+    mutationFn: (data: typeof form) => {
+      // Backend SubmitLeaveRequest requires `days` (number of days, inclusive of both ends).
+      const start = new Date(data.startDate);
+      const end = new Date(data.endDate);
+      const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+      return apiClient.post("/api/v1/leave/requests", { ...data, days }).then((r) => r.data);
+    },
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (err: unknown) => {
       setError(err instanceof ApiError ? err.message : "Failed to submit leave request");

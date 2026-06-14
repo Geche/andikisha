@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { EmployeeShell, ProfileMenu } from "@andikisha/ui";
 import { useBottomNavItems, EmployeeDesktopNav } from "./EmployeeNav";
+import { SidebarUserChip } from "./SidebarUserChip";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -30,12 +31,19 @@ export function EmployeeClientShell({ userEmail, children }: EmployeeClientShell
     <EmployeeShell
       bottomNav={bottomNav}
       desktopNav={<EmployeeDesktopNav />}
+      // Desktop: chip-at-bottom (avatar + "Profile" + Sign out), mirroring the admin shell.
+      desktopNavFooter={<SidebarUserChip profileHref={`/${workspace}/my/profile`} />}
+      // Mobile only: the desktop chip lives in the left rail (hidden on mobile), so keep the
+      // profile menu in the top bar for phones.
       topRight={
-        <ProfileMenu
-          email={userEmail}
-          role="EMPLOYEE"
-          onLogout={() => void handleLogout()}
-        />
+        <div className="lg:hidden">
+          <ProfileMenu
+            email={userEmail}
+            role="EMPLOYEE"
+            onLogout={() => void handleLogout()}
+            onProfile={() => router.push(workspace ? `/${workspace}/my/profile` : "/my/profile")}
+          />
+        </div>
       }
     >
       {children}
