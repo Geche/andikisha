@@ -24,7 +24,7 @@ public class PositionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
     @Operation(summary = "List all active positions")
     public List<PositionResponse> list() {
         return positionService.findAll();

@@ -5,8 +5,8 @@ const LABEL: Record<NonNullable<UserRole>, string> = {
   SUPER_ADMIN:     "Super Admin",
   ADMIN:           "Admin",
   HR_MANAGER:      "HR Manager",
+  HR_OFFICER:      "HR Officer",
   PAYROLL_OFFICER: "Payroll Officer",
-  HR:              "HR",
   LINE_MANAGER:    "Line Manager",
   EMPLOYEE:        "Employee",
 };
@@ -15,8 +15,8 @@ const COLOR: Record<NonNullable<UserRole>, string> = {
   SUPER_ADMIN:     "bg-brand-900 text-white",
   ADMIN:           "bg-brand-100 text-brand-800",
   HR_MANAGER:      "bg-amber-light text-[#92600A]",
+  HR_OFFICER:      "bg-brand-50 text-brand-700",
   PAYROLL_OFFICER: "bg-[#E0F2FE] text-[#0369A1]",
-  HR:              "bg-brand-50 text-brand-700",
   LINE_MANAGER:    "bg-[#F3E8FF] text-[#6B21A8]",
   EMPLOYEE:        "bg-neutral-100 text-neutral-700",
 };

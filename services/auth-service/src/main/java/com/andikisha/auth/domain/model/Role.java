@@ -24,5 +24,16 @@ public enum Role {
     AUDITOR,         // Reserved for future use
 
     // Self-service
-    EMPLOYEE
+    EMPLOYEE;
+
+    /**
+     * Tenant-assignable operational roles, in display order. The single source of
+     * truth for which roles are enforced and may be assigned to a tenant user.
+     * Excludes SUPER_ADMIN (platform-only) and the reserved/future roles, which
+     * have no enforcement and must not be offered or assigned (R3-0).
+     * Callers: {@code RolePermissionQueryService} (matrix display) and
+     * {@code AuthService.changeUserRole} (assignment guard).
+     */
+    public static final java.util.List<Role> OPERATIONAL = java.util.List.of(
+            ADMIN, HR_MANAGER, HR_OFFICER, PAYROLL_OFFICER, LINE_MANAGER, EMPLOYEE);
 }

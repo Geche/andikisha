@@ -50,7 +50,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
     @Operation(summary = "Get attendance history for an employee")
     public Page<AttendanceResponse> getEmployeeAttendance(
             @PathVariable UUID employeeId,
@@ -60,7 +60,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/daily")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get all attendance for a specific date")
     public Page<AttendanceResponse> getDailyAttendance(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -69,7 +69,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}/monthly-summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
     @Operation(summary = "Get monthly attendance summary for payroll")
     public MonthlySummaryResponse getMonthlySummary(
             @PathVariable UUID employeeId,

@@ -429,6 +429,13 @@ public class AuthService {
             throw new BusinessRuleException("FORBIDDEN_ROLE",
                     "SUPER_ADMIN cannot be assigned through this endpoint.");
         }
+        // R3-0: only enforced operational roles are assignable. Reserved/future enum
+        // values (PAYROLL_MANAGER, FINANCE_OFFICER, CHIEF_*, AUDITOR) have no grants
+        // and must not be assigned, or a user would hold a role nothing recognises.
+        if (!Role.OPERATIONAL.contains(newRole)) {
+            throw new BusinessRuleException("FORBIDDEN_ROLE",
+                    newRole.name() + " is a reserved role and cannot be assigned.");
+        }
 
         User target = userRepository.findByIdAndTenantId(targetUserId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));

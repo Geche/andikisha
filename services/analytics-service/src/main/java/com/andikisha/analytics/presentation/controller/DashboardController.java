@@ -22,7 +22,7 @@ public class DashboardController {
     }
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get HR dashboard summary")
     public DashboardResponse dashboard(
             @RequestHeader("X-Tenant-ID") String tenantId) {

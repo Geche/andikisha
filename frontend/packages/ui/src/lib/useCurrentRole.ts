@@ -6,8 +6,8 @@ export type UserRole =
   | "SUPER_ADMIN"
   | "ADMIN"
   | "HR_MANAGER"
+  | "HR_OFFICER"
   | "PAYROLL_OFFICER"
-  | "HR"
   | "LINE_MANAGER"
   | "EMPLOYEE"
   | null;

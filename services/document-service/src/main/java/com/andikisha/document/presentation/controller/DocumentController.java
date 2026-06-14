@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
 @RestController
 @RequestMapping("/api/v1/documents")
 @Tag(name = "Documents", description = "Document generation and retrieval")

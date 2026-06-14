@@ -21,7 +21,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/v1/audit")
 @Tag(name = "Audit", description = "Compliance audit trail")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
 public class AuditController {
 
     private final AuditService auditService;

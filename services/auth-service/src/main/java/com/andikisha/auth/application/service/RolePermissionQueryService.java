@@ -21,13 +21,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class RolePermissionQueryService {
 
-    // Operational tenant roles shown in the matrix (in display order). Excludes
-    // SUPER_ADMIN (not a tenant role) and the reserved/future roles.
-    private static final List<Role> MATRIX_ROLES = List.of(
-            Role.ADMIN, Role.HR_MANAGER, Role.HR_OFFICER,
-            Role.PAYROLL_MANAGER, Role.PAYROLL_OFFICER,
-            Role.LINE_MANAGER, Role.EMPLOYEE);
-
     // RBAC grants are seeded globally under the SYSTEM tenant (same template for
     // every tenant) and enforcement reads them from there — so the matrix must
     // read SYSTEM too, not the caller's tenant, or it would show an empty grid.
@@ -45,7 +38,7 @@ public class RolePermissionQueryService {
     /** Role -> granted permission strings ({@code resource:action:scope}), read-only.
      *  Sourced from the SYSTEM-tenant RBAC template (what enforcement reads). */
     public List<RolePermissionsResponse> listRolePermissions() {
-        return MATRIX_ROLES.stream()
+        return Role.OPERATIONAL.stream()
                 .map(role -> new RolePermissionsResponse(
                         role.name(),
                         rolePermissionRepository

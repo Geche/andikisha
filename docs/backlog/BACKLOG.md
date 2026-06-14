@@ -659,6 +659,20 @@ Also wire `audit-service` `TenantAuditListener` to handle `TenantCancelledEvent`
 
 ## Security
 
+### AUTHZ-BACKLOG-001 — Audit @PreAuthorize role-grant *intent* across all 9 services
+
+**Raised:** 2026-06-14 during Run 03 R3-0 (role-vocabulary canonicalization). **Priority:** Medium–High — privilege-boundary correctness.
+
+R3-0 reconciled the role *vocabulary* (`HR` → `HR_OFFICER`, single `Role.OPERATIONAL` source, reserved roles dropped from the assignable surface — see `docs/decisions/2026-06-14-run-03-role-canonicalization.md`). It was explicitly scoped as a **rename, not a privilege-policy decision** (Gate 1 option (a)). The strict rewrite restored the originally-intended grants but left three *intent* ambiguities unresolved, which this item must settle:
+
+1. **Should `HR_OFFICER` approve/run payroll?** The `HR` → `HR_OFFICER` rewrite gave officer-tier users payroll approve/run access (payroll `ADMIN, HR_MANAGER, HR` → `…, HR_OFFICER`). Officer-vs-manager approval boundary needs a decision. (Live demo user `david.ochieng@demo.co.ke` now has this access.)
+2. **Should `HR_OFFICER` reach integration-hub, tenant config (`FeatureFlagController`), and other sensitive-config surfaces?** These got the blanket `HR` → `HR_OFFICER` rewrite at class level.
+3. **Documented `HR_OFFICER` vs `HR_MANAGER` split per service** — currently implicit; needs to be written down for every service that grants both.
+
+**Deliverable:** a decision doc mapping every `@PreAuthorize` role grant (all 9 services) to its intended privilege, with the three resolutions above. Sibling to [[SEC-BACKLOG-001]] (which audits the *SpEL ownership* pattern; this audits the *role-set* intent). Run in a future remediation run, not R3.
+
+---
+
 ### SEC-BACKLOG-001 — Audit @PreAuthorize SpEL expressions across all services for User-vs-Employee UUID mismatches
 
 **Found:** 2026-05-15 during dashboard data-loading investigation  

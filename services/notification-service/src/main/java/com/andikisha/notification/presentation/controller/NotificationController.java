@@ -19,7 +19,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @Tag(name = "Notifications", description = "Notification history and preferences")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
 public class NotificationController {
 
     private final NotificationService notificationService;
