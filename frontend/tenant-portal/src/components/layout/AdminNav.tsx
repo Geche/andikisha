@@ -115,10 +115,8 @@ export function AdminNavFooter() {
         active={pathname.startsWith(`${base}/admin/settings`)}
       />
 
-      {/* Shared chip: avatar + "Profile" → /admin/profile, Sign out below. */}
-      <div className="mt-1 pt-2 border-t border-neutral-200">
-        <SidebarUserChip profileHref={`${base}/admin/profile`} />
-      </div>
+      {/* Profile → /admin/profile + Sign out, flush with the rest of the footer (no divider). */}
+      <SidebarUserChip profileHref={`${base}/admin/profile`} />
     </>
   );
 }
