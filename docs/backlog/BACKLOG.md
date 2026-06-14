@@ -639,6 +639,18 @@ styling (error/focus affordances beyond the default ring), no visual field hiera
 future frontend refinement run — align with the design-system form-field patterns
 (`frontend/packages/ui` inputs, helper/error text, labels).
 
+### FE-BACKLOG-014 — "Change password" links to a non-existent `/my/change-password` page
+
+**Raised:** 2026-06-14 (found during the R3-1 profile-chip routing fix). **Priority:** Medium — broken link on a profile both employees and admins reach.
+
+The profile Security section ("Change password") links to `/${workspace}/my/change-password`, but **no
+`change-password` page exists** under either route group (only `set-password` — the forced-change gate —
+and the `/api/auth/change-password` BFF route). The link 404s for everyone (pre-existing; the R3-2c
+checkpoint changed passwords via the API directly, not this page). **When built:** make it shell-aware
+like the profile (`ProfileView`) — an admin must not be dropped into the employee shell — i.e. either a
+shared component rendered by both `/admin/change-password` and `/my/change-password`, or a
+role-conditional link. The BFF endpoint already exists, so this is a UI page + wiring.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  

@@ -124,11 +124,11 @@ export function AdminNavFooter() {
       {/* User chip — the chip itself is the link to My profile; Sign out below. */}
       <div className="mt-1 pt-2 border-t border-neutral-200 space-y-0.5">
         <Link
-          href={`${base}/my/profile`}
+          href={`${base}/admin/profile`}
           aria-label="My profile"
           className={cn(
             "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg transition-colors",
-            pathname.startsWith(`${base}/my/profile`)
+            pathname.startsWith(`${base}/admin/profile`)
               ? "bg-neutral-100"
               : "hover:bg-neutral-100"
           )}
