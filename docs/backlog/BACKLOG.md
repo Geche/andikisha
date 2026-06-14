@@ -420,6 +420,20 @@ grandfather?). That data question is the real work, not the regex. File and deci
 
 ---
 
+### TENANT-BACKLOG-010 — Admin IA: rename URLs to match the Access/Workspace/Settings model
+
+**Raised:** 2026-06-14 (Run 03 R3-1). **Priority:** Low — purely cosmetic; current URLs work.
+
+R3-1 reorganised the tenant-portal admin sidenav into Access / Workspace / Settings but kept all
+URLs unchanged (cosmetic regroup, no redirect debt — see
+`docs/decisions/2026-06-14-run-03-ia-reorganization.md`). A future pass *could* align the paths with
+the new vocabulary, e.g. `/admin/users` → `/admin/access`, `/admin/settings/{departments,positions}`
+→ `/admin/workspace/*`. That requires redirects from the old paths + breadcrumb/deep-link review.
+Deferred deliberately: the URL semantics add no functional value and the regroup already delivered the
+IA benefit. Decide if/when the URL drift becomes worth the redirect maintenance.
+
+---
+
 ### LEAVE-BACKLOG-001 — Approve does not persist reviewer notes
 
 **Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 1 fix)

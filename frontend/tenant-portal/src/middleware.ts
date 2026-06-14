@@ -119,15 +119,10 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // 4. /{workspace}/my/* without EMPLOYEE role → correct workspace dashboard
-    const myPrefix = workspace ? `/${workspace}/my` : "/my";
-    if (pathname === myPrefix || pathname.startsWith(myPrefix + "/")) {
-      if (!roleSet.has("EMPLOYEE")) {
-        return NextResponse.redirect(
-          new URL(`/${workspace}${findCorrectDashboard(roleSet)}`, request.url)
-        );
-      }
-    }
+    // 4. /{workspace}/my/* — R3-1: open to any authenticated user. The gate was
+    //    relaxed from EMPLOYEE-only so the admin user-menu "My profile" link does not
+    //    bounce standalone (non-employee) admins to /access-denied. The /my/profile page
+    //    degrades gracefully when the user has no linked employee record (R3-2c).
 
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {

@@ -4,12 +4,14 @@ import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.employee.application.dto.response.PositionResponse;
 import com.andikisha.employee.application.mapper.EmployeeMapper;
+import com.andikisha.employee.domain.exception.PositionNotFoundException;
 import com.andikisha.employee.domain.model.Position;
 import com.andikisha.employee.domain.repository.PositionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -65,6 +67,18 @@ public class PositionService {
             throw new DuplicateResourceException("Position", "title", title);
         }
         Position position = Position.create(tenantId, title, description, gradeLevel);
+        position = positionRepository.save(position);
+        return mapper.toResponse(position);
+    }
+
+    // R3-3 (EMP-BACKLOG-003): mirrors DepartmentService.update — positions had no
+    // update path while departments did.
+    @Transactional
+    public PositionResponse update(UUID id, String title, String description, String gradeLevel) {
+        String tenantId = TenantContext.requireTenantId();
+        Position position = positionRepository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new PositionNotFoundException(id));
+        position.update(title, description, gradeLevel);
         position = positionRepository.save(position);
         return mapper.toResponse(position);
     }
