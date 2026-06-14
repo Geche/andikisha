@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { ArrowLeft, Briefcase, Plus } from "lucide-react";
+import { ArrowLeft, Briefcase, Plus, Pencil } from "lucide-react";
 import { PageHeader, Button, BaseModal, useToast } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -16,12 +16,15 @@ interface Position {
   gradeLevel: string | null;
 }
 
+type Editing = { id: string } | null;
+
 export default function PositionsSettingsPage() {
   const workspace = useWorkspace();
   const queryClient = useQueryClient();
   const toast = useToast();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Editing>(null);
   const [title, setTitle] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
   const [description, setDescription] = useState("");
@@ -35,6 +38,7 @@ export default function PositionsSettingsPage() {
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["settings-positions"] });
 
   function openCreate() {
+    setEditing(null);
     setTitle("");
     setGradeLevel("");
     setDescription("");
@@ -42,21 +46,32 @@ export default function PositionsSettingsPage() {
     setModalOpen(true);
   }
 
-  const createMutation = useMutation<Position, AxiosError<{ message?: string }>, void>({
-    mutationFn: () =>
-      apiClient
-        .post<Position>("/api/v1/positions", {
-          title: title.trim(),
-          gradeLevel: gradeLevel.trim() || null,
-          description: description.trim() || null,
-        })
-        .then((r) => r.data),
+  function openEdit(p: Position) {
+    setEditing({ id: p.id });
+    setTitle(p.title);
+    setGradeLevel(p.gradeLevel ?? "");
+    setDescription(p.description ?? "");
+    setTitleError(null);
+    setModalOpen(true);
+  }
+
+  const saveMutation = useMutation<Position, AxiosError<{ message?: string }>, void>({
+    mutationFn: () => {
+      const body = {
+        title: title.trim(),
+        gradeLevel: gradeLevel.trim() || null,
+        description: description.trim() || null,
+      };
+      return editing
+        ? apiClient.put<Position>(`/api/v1/positions/${editing.id}`, body).then((r) => r.data)
+        : apiClient.post<Position>("/api/v1/positions", body).then((r) => r.data);
+    },
     onSuccess: () => {
-      toast("Position created", "success");
+      toast(editing ? "Position updated" : "Position created", "success");
       setModalOpen(false);
       void invalidate();
     },
-    onError: (err) => toast(err.response?.data?.message ?? "Could not create position.", "error"),
+    onError: (err) => toast(err.response?.data?.message ?? "Could not save position.", "error"),
   });
 
   const seedMutation = useMutation<unknown, AxiosError, void>({
@@ -68,12 +83,12 @@ export default function PositionsSettingsPage() {
     onError: () => toast("Could not add defaults.", "error"),
   });
 
-  function handleCreate() {
+  function handleSave() {
     if (!title.trim()) {
       setTitleError("Position title is required");
       return;
     }
-    createMutation.mutate();
+    saveMutation.mutate();
   }
 
   const positions = data ?? [];
@@ -125,11 +140,20 @@ export default function PositionsSettingsPage() {
                   <p className="text-[14px] font-medium text-near-black truncate">{p.title}</p>
                   {p.description && <p className="text-[12.5px] text-neutral-500 truncate">{p.description}</p>}
                 </div>
-                {p.gradeLevel && (
-                  <span className="text-[12px] font-mono text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded flex-shrink-0">
-                    {p.gradeLevel}
-                  </span>
-                )}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  {p.gradeLevel && (
+                    <span className="text-[12px] font-mono text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded">
+                      {p.gradeLevel}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => openEdit(p)}
+                    className="text-neutral-400 hover:text-brand-700 transition-colors"
+                    aria-label={`Edit ${p.title}`}
+                  >
+                    <Pencil size={15} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -139,13 +163,15 @@ export default function PositionsSettingsPage() {
       {modalOpen && (
         <BaseModal labelId="pos-modal-title" onClose={() => setModalOpen(false)}>
           <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
-            <h2 id="pos-modal-title" className="text-[16px] font-bold text-near-black mb-4">Add position</h2>
+            <h2 id="pos-modal-title" className="text-[16px] font-bold text-near-black mb-4">
+              {editing ? "Edit position" : "Add position"}
+            </h2>
             <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => { setTitle(e.target.value); setTitleError(null); }}
-              disabled={createMutation.isPending}
+              disabled={saveMutation.isPending}
               className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 mb-1"
               placeholder="e.g. Software Engineer"
             />
@@ -155,7 +181,7 @@ export default function PositionsSettingsPage() {
               type="text"
               value={gradeLevel}
               onChange={(e) => setGradeLevel(e.target.value)}
-              disabled={createMutation.isPending}
+              disabled={saveMutation.isPending}
               className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
               placeholder="Optional, e.g. L4"
             />
@@ -163,15 +189,15 @@ export default function PositionsSettingsPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              disabled={createMutation.isPending}
+              disabled={saveMutation.isPending}
               rows={2}
               className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 resize-none"
               placeholder="Optional"
             />
             <div className="flex justify-end gap-2 mt-5">
-              <Button variant="outline" onClick={() => setModalOpen(false)} disabled={createMutation.isPending}>Cancel</Button>
-              <Button variant="primary" onClick={handleCreate} disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Saving…" : "Create"}
+              <Button variant="outline" onClick={() => setModalOpen(false)} disabled={saveMutation.isPending}>Cancel</Button>
+              <Button variant="primary" onClick={handleSave} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "Saving…" : editing ? "Save changes" : "Create"}
               </Button>
             </div>
           </div>

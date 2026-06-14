@@ -18,7 +18,9 @@ import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.RefreshTokenRepository;
 import com.andikisha.auth.domain.repository.RolePermissionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
+import com.andikisha.auth.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import com.andikisha.proto.employee.EmployeeResponse;
 import io.jsonwebtoken.Claims;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
@@ -65,6 +67,7 @@ class AuthServiceTest {
     @Mock private AuthEventPublisher eventPublisher;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private ValueOperations<String, String> valueOps;
+    @Mock private EmployeeGrpcClient employeeGrpcClient;
 
     @InjectMocks private AuthService authService;
 
@@ -445,6 +448,204 @@ class AuthServiceTest {
                     .isInstanceOf(BusinessRuleException.class)
                     .extracting(e -> ((BusinessRuleException) e).getCode())
                     .isEqualTo("INVALID_ROLE");
+        }
+    }
+
+    @Nested
+    class SyncDisplayNameFromEmployee {
+
+        private User linkedEmployeeUser() {
+            User u = buildUser(Role.EMPLOYEE);
+            u.linkEmployee(EMPLOYEE_ID);
+            return u;
+        }
+
+        private EmployeeResponse employee(String first, String last) {
+            return EmployeeResponse.newBuilder().setFirstName(first).setLastName(last).build();
+        }
+
+        @Test
+        void updatesDisplayName_whenResolvedNameDiffers() {
+            User user = linkedEmployeeUser(); // display_name null
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.of(user));
+            when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                    .thenReturn(Optional.of(employee("Jane", "Wanjiku")));
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            assertThat(user.getDisplayName()).isEqualTo("Jane Wanjiku");
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        void noOp_whenNoLinkedUser() {
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.empty());
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            verify(userRepository, never()).save(any());
+            verify(employeeGrpcClient, never()).getEmployee(anyString(), anyString());
+        }
+
+        @Test
+        void noOp_whenResolvedNameUnchanged() {
+            User user = linkedEmployeeUser();
+            user.setDisplayName("Jane Wanjiku");
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.of(user));
+            when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                    .thenReturn(Optional.of(employee("Jane", "Wanjiku")));
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void noOp_whenEmployeeUnresolvable() {
+            User user = linkedEmployeeUser();
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.of(user));
+            when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                    .thenReturn(Optional.empty());
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            verify(userRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class SetUserActive {
+
+        private static final UUID TARGET_ID = UUID.randomUUID();
+
+        @Test
+        void deactivateNonAdmin_succeeds_andRevokesRefreshTokens() {
+            User target = buildUser(Role.EMPLOYEE); // active by default
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(target));
+
+            authService.setUserActive(USER_ID, TARGET_ID, false);
+
+            assertThat(target.isActive()).isFalse();
+            verify(refreshTokenRepository).revokeAllByUserIdAndTenantId(TARGET_ID, TENANT_ID);
+            verify(userRepository).save(target);
+        }
+
+        @Test
+        void deactivateSelf_isRejected() {
+            when(userRepository.findByIdAndTenantId(USER_ID, TENANT_ID))
+                    .thenReturn(Optional.of(buildUser(Role.ADMIN)));
+
+            assertThatThrownBy(() -> authService.setUserActive(USER_ID, USER_ID, false))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("SELF_DEACTIVATION");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void deactivateLastActiveAdmin_isRejected() {
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(buildUser(Role.ADMIN)));
+            when(userRepository.existsByTenantIdAndRoleAndActiveTrueAndIdNot(TENANT_ID, Role.ADMIN, TARGET_ID))
+                    .thenReturn(false); // no other active admin
+
+            assertThatThrownBy(() -> authService.setUserActive(USER_ID, TARGET_ID, false))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("LAST_ACTIVE_ADMIN");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void deactivateAdmin_succeeds_whenAnotherActiveAdminExists() {
+            User target = buildUser(Role.ADMIN);
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(target));
+            when(userRepository.existsByTenantIdAndRoleAndActiveTrueAndIdNot(TENANT_ID, Role.ADMIN, TARGET_ID))
+                    .thenReturn(true);
+
+            authService.setUserActive(USER_ID, TARGET_ID, false);
+
+            assertThat(target.isActive()).isFalse();
+            verify(userRepository).save(target);
+        }
+
+        @Test
+        void reactivate_succeeds_withNoGuards() {
+            User target = buildUser(Role.EMPLOYEE);
+            target.deactivate();
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(target));
+
+            authService.setUserActive(USER_ID, TARGET_ID, true);
+
+            assertThat(target.isActive()).isTrue();
+            verify(userRepository).save(target);
+            verify(refreshTokenRepository, never()).revokeAllByUserIdAndTenantId(any(), anyString());
+        }
+    }
+
+    @Nested
+    class InviteUser {
+
+        @Test
+        void invitesAdminTierRole_succeeds_withTempPassword() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "newhr@demo.co.ke", "+254712345678", "HR_MANAGER");
+            when(userRepository.existsByEmailAndTenantId("newhr@demo.co.ke", TENANT_ID)).thenReturn(false);
+            when(userRepository.existsByPhoneNumberAndTenantId("+254712345678", TENANT_ID)).thenReturn(false);
+            when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+            User saved = mock(User.class);
+            when(saved.getId()).thenReturn(UUID.randomUUID());
+            when(saved.getEmail()).thenReturn("newhr@demo.co.ke");
+            when(userRepository.save(any())).thenReturn(saved);
+
+            var response = authService.inviteUser(USER_ID, request);
+
+            assertThat(response.role()).isEqualTo("HR_MANAGER");
+            assertThat(response.temporaryPassword()).isNotBlank();
+            verify(userRepository).save(any());
+            verify(eventPublisher).publishUserRegistered(saved);
+        }
+
+        @Test
+        void invitingSelfServiceRole_isRejected() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "x@demo.co.ke", "+254712345678", "EMPLOYEE");
+
+            assertThatThrownBy(() -> authService.inviteUser(USER_ID, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("INVALID_INVITE_ROLE");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void invitingUnknownRole_isRejected() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "x@demo.co.ke", "+254712345678", "WIZARD");
+
+            assertThatThrownBy(() -> authService.inviteUser(USER_ID, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("INVALID_ROLE");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void invitingDuplicateEmail_isRejected() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "dupe@demo.co.ke", "+254712345678", "HR_MANAGER");
+            when(userRepository.existsByEmailAndTenantId("dupe@demo.co.ke", TENANT_ID)).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.inviteUser(USER_ID, request))
+                    .isInstanceOf(DuplicateResourceException.class);
+            verify(userRepository, never()).save(any());
         }
     }
 }

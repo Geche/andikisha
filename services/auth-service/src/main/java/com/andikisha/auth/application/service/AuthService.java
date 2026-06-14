@@ -6,8 +6,10 @@ import com.andikisha.auth.application.dto.request.ForgotPasswordRequest;
 import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
+import com.andikisha.auth.application.dto.request.InviteUserRequest;
 import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
 import com.andikisha.auth.application.dto.response.AdminPasswordResetResponse;
+import com.andikisha.auth.application.dto.response.InviteUserResponse;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.mapper.UserMapper;
@@ -191,6 +193,57 @@ public class AuthService {
     }
 
     /**
+     * R3-2c (TENANT-006): invite a standalone admin-tier user (no employee record). Reuses
+     * the temp-password + mustChangePassword pattern (AUTH-006); the password is returned
+     * once for the admin to share (no email infrastructure yet). ADMIN-only at the controller.
+     * Role must be in {@link Role#ADMIN_TIER} — self-service roles (EMPLOYEE, LINE_MANAGER)
+     * come through hire/provisioning and require an employee record (V17 constraint).
+     */
+    @Transactional
+    public InviteUserResponse inviteUser(UUID performerId, InviteUserRequest request) {
+        String tenantId = TenantContext.requireTenantId();
+
+        Role role;
+        try {
+            role = Role.valueOf(request.role().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException("INVALID_ROLE", "Unknown role: " + request.role());
+        }
+        if (!Role.ADMIN_TIER.contains(role)) {
+            throw new BusinessRuleException("INVALID_INVITE_ROLE",
+                    role.name() + " cannot be invited. Invitable roles: " + Role.ADMIN_TIER
+                    + ". Employees are added through the employee directory.");
+        }
+
+        String email = request.email().toLowerCase().trim();
+        if (userRepository.existsByEmailAndTenantId(email, tenantId)) {
+            throw new DuplicateResourceException("User", "email", email);
+        }
+        if (userRepository.existsByPhoneNumberAndTenantId(request.phoneNumber(), tenantId)) {
+            throw new DuplicateResourceException("User", "phoneNumber", request.phoneNumber());
+        }
+
+        String tempPassword = com.andikisha.common.util.PasswordGenerator.generate();
+        User user = User.create(tenantId, email, request.phoneNumber(),
+                passwordEncoder.encode(tempPassword), role); // mustChangePassword=true by default
+        User saved = userRepository.save(user);
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishUserRegistered(saved);
+                }
+            });
+        } else {
+            eventPublisher.publishUserRegistered(saved);
+        }
+
+        return new InviteUserResponse(saved.getId().toString(), saved.getEmail(),
+                role.name(), tempPassword);
+    }
+
+    /**
      * Resolve a user's display name from the linked employee record. Cold path only
      * (provisioning + backfill) — never call this on a read hot path like /me.
      * Empty when the employee can't be resolved, so the caller leaves display_name null
@@ -316,6 +369,30 @@ public class AuthService {
         return userMapper.toResponse(user);
     }
 
+    /**
+     * AUTH-007: re-resolve and update a user's {@code display_name} from the linked
+     * employee record after an {@code employee.updated} event. Option A — re-resolves via
+     * gRPC (cold path; the event carries no name fields, so no event-contract change).
+     * Idempotent and quiet: a missing linked user, an unresolvable name (employee-service
+     * down), or an unchanged name is a no-op. If the event is missed the name stays stale
+     * until the next update — acceptable because the read path falls back to email and
+     * never depends on freshness.
+     */
+    @Transactional
+    public void syncDisplayNameFromEmployee(String tenantId, String employeeId) {
+        User user = userRepository.findByEmployeeIdAndTenantId(UUID.fromString(employeeId), tenantId)
+                .orElse(null);
+        if (user == null) {
+            return; // employee has no linked auth user (yet) — nothing to sync
+        }
+        java.util.Optional<String> resolved = resolveDisplayName(tenantId, employeeId);
+        if (resolved.isEmpty() || resolved.get().equals(user.getDisplayName())) {
+            return; // unresolvable (keep current) or unchanged
+        }
+        user.setDisplayName(resolved.get());
+        userRepository.save(user);
+    }
+
     @Transactional(readOnly = true)
     public void forgotPassword(ForgotPasswordRequest request) {
         String tenantId = TenantContext.requireTenantId();
@@ -429,6 +506,13 @@ public class AuthService {
             throw new BusinessRuleException("FORBIDDEN_ROLE",
                     "SUPER_ADMIN cannot be assigned through this endpoint.");
         }
+        // R3-0: only enforced operational roles are assignable. Reserved/future enum
+        // values (PAYROLL_MANAGER, FINANCE_OFFICER, CHIEF_*, AUDITOR) have no grants
+        // and must not be assigned, or a user would hold a role nothing recognises.
+        if (!Role.OPERATIONAL.contains(newRole)) {
+            throw new BusinessRuleException("FORBIDDEN_ROLE",
+                    newRole.name() + " is a reserved role and cannot be assigned.");
+        }
 
         User target = userRepository.findByIdAndTenantId(targetUserId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
@@ -488,6 +572,49 @@ public class AuthService {
         }
 
         return userMapper.toResponse(saved);
+    }
+
+    /**
+     * R3-2b (TENANT-005): activate/deactivate a tenant user (soft-delete via is_active).
+     * One method serves both directions. Deactivation blocks login + refresh immediately
+     * (both check is_active) and revokes existing refresh tokens; an already-issued access
+     * token stays valid until its TTL (graceful expiry — no gateway denylist in v1, see
+     * docs/decisions/2026-06-14-run-03-user-deactivation.md). Guards enforced server-side
+     * (UI guards are bypassable): cannot deactivate the last active ADMIN, cannot deactivate
+     * yourself. ADMIN-only (enforced at the controller).
+     */
+    @Transactional
+    public UserResponse setUserActive(UUID changerId, UUID targetUserId, boolean active) {
+        String tenantId = TenantContext.requireTenantId();
+
+        User target = userRepository.findByIdAndTenantId(targetUserId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
+
+        if (target.getRole() == Role.SUPER_ADMIN) {
+            throw new BusinessRuleException("FORBIDDEN_TARGET",
+                    "A SUPER_ADMIN account cannot be deactivated here.");
+        }
+
+        if (!active) {
+            if (targetUserId.equals(changerId)) {
+                throw new BusinessRuleException("SELF_DEACTIVATION",
+                        "You cannot deactivate your own account.");
+            }
+            boolean isLastActiveAdmin = target.getRole() == Role.ADMIN
+                    && !userRepository.existsByTenantIdAndRoleAndActiveTrueAndIdNot(
+                            tenantId, Role.ADMIN, targetUserId);
+            if (isLastActiveAdmin) {
+                throw new BusinessRuleException("LAST_ACTIVE_ADMIN",
+                        "Cannot deactivate the last active administrator. Assign another admin first.");
+            }
+            target.deactivate();
+            // Block refresh immediately; access tokens lapse within their TTL (graceful expiry).
+            refreshTokenRepository.revokeAllByUserIdAndTenantId(targetUserId, tenantId);
+        } else {
+            target.activate();
+        }
+
+        return userMapper.toResponse(userRepository.save(target));
     }
 
     /**

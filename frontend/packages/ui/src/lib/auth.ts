@@ -7,7 +7,7 @@
  * './auth' subpath export to avoid bundling the barrel (which includes React).
  */
 
-export const ADMIN_ROLES: ReadonlySet<string> = new Set(["ADMIN", "HR_MANAGER", "PAYROLL_OFFICER", "HR"]);
+export const ADMIN_ROLES: ReadonlySet<string> = new Set(["ADMIN", "HR_MANAGER", "HR_OFFICER", "PAYROLL_OFFICER"]);
 export const EMPLOYEE_ROLES: ReadonlySet<string> = new Set(["EMPLOYEE"]);
 
 /**

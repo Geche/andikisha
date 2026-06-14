@@ -28,8 +28,8 @@ describe("findCorrectDashboard", () => {
     expect(findCorrectDashboard(new Set(["PAYROLL_OFFICER"]))).toBe("/admin/dashboard");
   });
 
-  it("returns /admin/dashboard for HR", () => {
-    expect(findCorrectDashboard(new Set(["HR"]))).toBe("/admin/dashboard");
+  it("returns /admin/dashboard for HR_OFFICER", () => {
+    expect(findCorrectDashboard(new Set(["HR_OFFICER"]))).toBe("/admin/dashboard");
   });
 
   it("returns /my/dashboard for EMPLOYEE", () => {
@@ -49,7 +49,7 @@ describe("findCorrectDashboard", () => {
   });
 
   it("ADMIN_ROLES contains exactly the four admin roles", () => {
-    expect([...ADMIN_ROLES].sort()).toEqual(["ADMIN", "HR", "HR_MANAGER", "PAYROLL_OFFICER"].sort());
+    expect([...ADMIN_ROLES].sort()).toEqual(["ADMIN", "HR_MANAGER", "HR_OFFICER", "PAYROLL_OFFICER"].sort());
   });
 
   it("EMPLOYEE_ROLES contains only EMPLOYEE", () => {

@@ -223,13 +223,13 @@ public class AttendanceService {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static final SimpleGrantedAuthority ROLE_ADMIN      = new SimpleGrantedAuthority("ROLE_ADMIN");
-    private static final SimpleGrantedAuthority ROLE_HR_MANAGER = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
-    private static final SimpleGrantedAuthority ROLE_HR         = new SimpleGrantedAuthority("ROLE_HR");
+    private static final SimpleGrantedAuthority ROLE_ADMIN       = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority ROLE_HR_MANAGER  = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
+    private static final SimpleGrantedAuthority ROLE_HR_OFFICER  = new SimpleGrantedAuthority("ROLE_HR_OFFICER");
 
     /**
      * Employees may only read their own attendance records.
-     * ADMIN, HR_MANAGER, and HR roles may read any employee's records within the tenant.
+     * ADMIN, HR_MANAGER, and HR_OFFICER roles may read any employee's records within the tenant.
      * A null authentication indicates a trusted internal/gRPC caller — access is allowed.
      */
     private void enforceAttendanceOwnership(UUID targetEmployeeId, Authentication authentication) {
@@ -240,12 +240,15 @@ public class AttendanceService {
         }
         boolean isPrivileged = authentication.getAuthorities().contains(ROLE_ADMIN)
                 || authentication.getAuthorities().contains(ROLE_HR_MANAGER)
-                || authentication.getAuthorities().contains(ROLE_HR);
+                || authentication.getAuthorities().contains(ROLE_HR_OFFICER);
         if (isPrivileged) {
             return;
         }
-        // EMPLOYEE role: authentication.getName() carries the employee UUID set by TrustedHeaderAuthFilter
-        if (!targetEmployeeId.toString().equals(authentication.getName())) {
+        // EMPLOYEE role: credentials carries the X-Employee-ID forwarded by the gateway
+        // (SEC-BACKLOG-001 — authentication.getName() is the user UUID, not the employee UUID).
+        // Fall back to the name for backwards compatibility.
+        String callerEmployeeId = authentication.getCredentials() instanceof String s ? s : authentication.getName();
+        if (!targetEmployeeId.toString().equals(callerEmployeeId)) {
             throw new AccessDeniedException("Access denied: you may only view your own attendance records");
         }
     }

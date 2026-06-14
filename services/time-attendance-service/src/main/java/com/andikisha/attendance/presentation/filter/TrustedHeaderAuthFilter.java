@@ -23,9 +23,10 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String rawUserId   = request.getHeader("X-User-ID");
-        String rawRole     = request.getHeader("X-User-Role");
-        String rawTenantId = request.getHeader("X-Tenant-ID");
+        String rawUserId     = request.getHeader("X-User-ID");
+        String rawRole       = request.getHeader("X-User-Role");
+        String rawTenantId   = request.getHeader("X-Tenant-ID");
+        String rawEmployeeId = request.getHeader("X-Employee-ID");
         String requestId   = UUID.randomUUID().toString().substring(0, 8);
 
         try {
@@ -33,9 +34,12 @@ public class TrustedHeaderAuthFilter extends OncePerRequestFilter {
                 String userId   = rawUserId.replaceAll("[\r\n\t]", "_");
                 String role     = rawRole.replaceAll("[\r\n\t]", "_");
                 String tenantId = rawTenantId != null ? rawTenantId.replaceAll("[\r\n\t]", "_") : null;
+                // Carry the employee UUID as credentials so self-access ownership checks compare
+                // against the employee identity, not the user UUID (SEC-BACKLOG-001). Mirrors payroll.
+                String employeeId = rawEmployeeId != null ? rawEmployeeId.replaceAll("[\r\n\t]", "_") : null;
 
                 var auth = new UsernamePasswordAuthenticationToken(
-                        userId, null,
+                        userId, employeeId,
                         List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);

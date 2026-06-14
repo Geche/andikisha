@@ -20,9 +20,8 @@ interface LeaveRequest {
 
 interface LeaveBalance {
   leaveType: string;
-  balance: number;
+  available: number;
   used: number;
-  total: number;
 }
 
 const LEAVE_TYPES = [
@@ -60,8 +59,13 @@ function ApplyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: ()
   const [error, setError] = useState("");
 
   const mutation = useMutation({
-    mutationFn: (data: typeof form) =>
-      apiClient.post("/api/v1/leave/requests", data).then((r) => r.data),
+    mutationFn: (data: typeof form) => {
+      // Backend SubmitLeaveRequest requires `days` (number of days, inclusive of both ends).
+      const start = new Date(data.startDate);
+      const end = new Date(data.endDate);
+      const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+      return apiClient.post("/api/v1/leave/requests", { ...data, days }).then((r) => r.data);
+    },
     onSuccess: () => { onSuccess(); onClose(); },
     onError: (err: unknown) => {
       setError(err instanceof ApiError ? err.message : "Failed to submit leave request");
@@ -170,7 +174,7 @@ export default function LeavePage() {
 
   const { data: balances = [] } = useQuery<LeaveBalance[]>({
     queryKey: ["leave-balances"],
-    queryFn: () => apiClient.get("/api/v1/leave/balances").then((r) => r.data),
+    queryFn: () => apiClient.get("/api/v1/leave/me/balances").then((r) => r.data),
   });
 
   return (
@@ -204,8 +208,8 @@ export default function LeavePage() {
                 <p className="text-[12px] font-semibold text-neutral-500 uppercase tracking-wide mb-2">
                   {b.leaveType.charAt(0) + b.leaveType.slice(1).toLowerCase()}
                 </p>
-                <p className="text-[26px] font-bold text-neutral-900 leading-none">{b.balance}</p>
-                <p className="text-[12px] text-neutral-400 mt-1.5">{b.used} used · {b.total} total</p>
+                <p className="text-[26px] font-bold text-neutral-900 leading-none">{b.available}</p>
+                <p className="text-[12px] text-neutral-400 mt-1.5">{b.used} used · {b.available + b.used} total</p>
               </div>
             ))}
           </div>

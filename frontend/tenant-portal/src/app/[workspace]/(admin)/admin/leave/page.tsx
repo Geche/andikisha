@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
@@ -19,6 +19,15 @@ import {
   formatDate,
   formatDateRange,
 } from "./_types";
+
+// Raw leave row as the API returns it (uses `days`; UI maps to `totalDays`).
+type ApiLeaveRequest = Omit<LeaveRequest, "totalDays"> & { days: number };
+// Minimal /auth/users projection for resolving employeeId → display name.
+interface TenantUserLite {
+  employeeId: string | null;
+  displayName: string | null;
+  email: string;
+}
 
 // ─── Status tab config ────────────────────────────────────────────────────────
 
@@ -81,7 +90,23 @@ export default function LeavePage() {
 
   const pendingCount = pendingData?.totalElements ?? null;
 
-  const { data, isLoading, isError, refetch } = useQuery<PagedResponse<LeaveRequest>>({
+  // The leave API returns `days` (not `totalDays`) and stores the requester name as a generic
+  // "Employee" (the gateway never forwards a name on submit). Resolve employeeId → display_name
+  // via /api/v1/auth/users (admin-readable), the same identity source as AUTH-006.
+  const { data: usersData } = useQuery<TenantUserLite[]>({
+    queryKey: ["leave-user-names"],
+    queryFn: () => apiClient.get<TenantUserLite[]>("/api/v1/auth/users").then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  const nameByEmployeeId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const u of usersData ?? []) {
+      if (u.employeeId) m.set(u.employeeId, u.displayName || u.email);
+    }
+    return m;
+  }, [usersData]);
+
+  const { data, isLoading, isError, refetch } = useQuery<PagedResponse<ApiLeaveRequest>>({
     queryKey: ["leave-requests", page, pageSize, statusFilter],
     queryFn: () => {
       const params: Record<string, string | number> = {
@@ -91,12 +116,20 @@ export default function LeavePage() {
       };
       if (statusFilter !== "ALL") params.status = statusFilter;
       return apiClient
-        .get<PagedResponse<LeaveRequest>>("/api/v1/leave/requests", { params })
+        .get<PagedResponse<ApiLeaveRequest>>("/api/v1/leave/requests", { params })
         .then((r) => r.data);
     },
   });
 
-  const requests = data?.content ?? [];
+  const requests: LeaveRequest[] = useMemo(
+    () =>
+      (data?.content ?? []).map((r) => ({
+        ...r,
+        totalDays: Number(r.days),
+        employeeName: nameByEmployeeId.get(r.employeeId) || r.employeeName,
+      })),
+    [data, nameByEmployeeId],
+  );
   const totalElements = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
 

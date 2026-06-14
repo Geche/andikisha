@@ -29,7 +29,7 @@ public class FeatureFlagController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "List all feature flags for current tenant")
     public List<FeatureFlagResponse> list() {
         return featureFlagService.getAllForTenant();

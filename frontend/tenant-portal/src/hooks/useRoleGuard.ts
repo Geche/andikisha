@@ -8,8 +8,12 @@ import { ADMIN_ROLES, findCorrectDashboard } from "@andikisha/ui/auth";
 type AuthStatus = "authorized" | "redirecting" | "loading";
 
 function checkAuthorized(roles: Set<string>, area: "employee" | "admin"): boolean {
+  // R3-1: /my/* (area "employee") is open to any authenticated user — the gate was
+  // relaxed from EMPLOYEE-only so the admin "My profile" link works for standalone
+  // admins. The /my/profile page degrades gracefully for users with no employee
+  // record (R3-2c). Admin area remains role-gated.
   return area === "employee"
-    ? roles.has("EMPLOYEE")
+    ? true
     : [...ADMIN_ROLES].some((r) => roles.has(r));
 }
 

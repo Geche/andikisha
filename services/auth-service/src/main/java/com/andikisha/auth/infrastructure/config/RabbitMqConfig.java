@@ -17,6 +17,7 @@ public class RabbitMqConfig {
     public static final String AUTH_EXCHANGE = "auth.events";
     public static final String EMPLOYEE_EXCHANGE = "employee.events";
     public static final String EMPLOYEE_CREATED_QUEUE = "auth.employee.created";
+    public static final String EMPLOYEE_UPDATED_QUEUE = "auth.employee.updated";
 
     @Bean
     TopicExchange employeeExchange() {
@@ -33,6 +34,19 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(employeeCreatedQueue)
                 .to(employeeExchange)
                 .with("employee.created");
+    }
+
+    // AUTH-007: keep users.display_name in sync when an employee is renamed.
+    @Bean
+    Queue employeeUpdatedQueue() {
+        return new Queue(EMPLOYEE_UPDATED_QUEUE, true);
+    }
+
+    @Bean
+    Binding employeeUpdatedBinding(Queue employeeUpdatedQueue, TopicExchange employeeExchange) {
+        return BindingBuilder.bind(employeeUpdatedQueue)
+                .to(employeeExchange)
+                .with("employee.updated");
     }
 
     @Bean

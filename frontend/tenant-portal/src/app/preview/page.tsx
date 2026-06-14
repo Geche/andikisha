@@ -96,8 +96,8 @@ export default function PreviewPage() {
         <RoleBadge role="SUPER_ADMIN" />
         <RoleBadge role="ADMIN" />
         <RoleBadge role="HR_MANAGER" />
+        <RoleBadge role="HR_OFFICER" />
         <RoleBadge role="PAYROLL_OFFICER" />
-        <RoleBadge role="HR" />
         <RoleBadge role="LINE_MANAGER" />
         <RoleBadge role="EMPLOYEE" />
       </Section>

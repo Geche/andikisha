@@ -27,7 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/filings")
 @Tag(name = "Statutory Filings", description = "KRA, NSSF, SHIF statutory submissions")
-@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
 public class FilingController {
 
     private final FilingService filingService;

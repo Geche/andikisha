@@ -420,6 +420,20 @@ grandfather?). That data question is the real work, not the regex. File and deci
 
 ---
 
+### TENANT-BACKLOG-010 — Admin IA: rename URLs to match the Access/Workspace/Settings model
+
+**Raised:** 2026-06-14 (Run 03 R3-1). **Priority:** Low — purely cosmetic; current URLs work.
+
+R3-1 reorganised the tenant-portal admin sidenav into Access / Workspace / Settings but kept all
+URLs unchanged (cosmetic regroup, no redirect debt — see
+`docs/decisions/2026-06-14-run-03-ia-reorganization.md`). A future pass *could* align the paths with
+the new vocabulary, e.g. `/admin/users` → `/admin/access`, `/admin/settings/{departments,positions}`
+→ `/admin/workspace/*`. That requires redirects from the old paths + breadcrumb/deep-link review.
+Deferred deliberately: the URL semantics add no functional value and the regroup already delivered the
+IA benefit. Decide if/when the URL drift becomes worth the redirect maintenance.
+
+---
+
 ### LEAVE-BACKLOG-001 — Approve does not persist reviewer notes
 
 **Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 1 fix)
@@ -583,6 +597,78 @@ doc), preserving the detailed write-ups in that doc. Verify each item's current 
 landed token-consolidation work (Steps 1–5) before marking — some may already be resolved. Kept out of
 the 2026-06-13 hygiene PR to avoid expanding it; do as its own small docs PR.
 
+### FE-BACKLOG-012 — `/my/*` pages (dashboard, leave, payslips, attendance) don't gracefully handle no-employee users
+
+**Raised:** 2026-06-14 (Run 03 R3-2c downstream-assumption audit). **Priority:** Low–Medium.
+
+R3-1 relaxed the `/my/*` gate to any authenticated user (so the admin "My profile" link works for
+standalone admins), and R3-2c made **`/my/profile`** degrade gracefully for users with no linked
+employee record. The other `/my/*` pages — **dashboard, leave, payslips, attendance** — still assume an
+employee context (they query `/employees/me` or employee-scoped `/me/*` endpoints) and will show
+error/empty states for a standalone admin-tier user who reaches them by direct URL. They are **not
+linked** from the admin user-menu chip (only `/my/profile` is), so this is not a broken-link defect —
+but the surface isn't clean. **Why deferred (not folded into R3-2c):** it needs a design decision —
+what *should* a standalone admin see on an employee self-service dashboard? Hide each page, redirect to
+`/admin`, or show a "no employee record" empty state per page. Decide deliberately, then apply the same
+`hasEmployee` guard pattern used in `/my/profile`.
+
+**2026-06-14 post-merge review note (Image 3):** Lawrence's review confirmed `/my/dashboard` renders
+employee-specific sections for a standalone admin — exactly this gap (not a new finding). It raises the
+**design question to settle when this item is taken up:** should `/my/*` be reachable at all for
+non-employee users, or should the entire `/my` section be hidden/redirected for them (vs per-page
+graceful empty states)? Decide during the future audit; do not decide now.
+
+### TENANT-BACKLOG-011 — Change-role UX for roles with an unmet prerequisite
+
+**Raised:** 2026-06-14 (post-merge review, Image 8). **Priority:** Low–Medium — UX, not correctness.
+
+Assigning a role that requires department scope (e.g. **LINE_MANAGER**) to an employee with no
+department fails server-side with `DepartmentScopeException` ("the employee must be assigned to a
+department first"). The message is accurate but only appears **after** the user submits the change-role
+modal — poor flow. Improve to either (a) disable the ineligible role in the dropdown with a hover
+tooltip explaining the prerequisite, or (b) surface the prerequisite inline before submission. Backend
+guard stays as the authority; this is presentation only.
+
+### FE-BACKLOG-013 — Department/Position edit modal form quality
+
+**Raised:** 2026-06-14 (post-merge review, Image 7). **Priority:** Low — polish.
+
+The department and position edit modals render correctly (post the FE-008 BaseModal fix and the R3-1
+position-edit work), but the forms are minimal: plain inputs, no helper text, no validation-state
+styling (error/focus affordances beyond the default ring), no visual field hierarchy. Polish item for a
+future frontend refinement run — align with the design-system form-field patterns
+(`frontend/packages/ui` inputs, helper/error text, labels).
+
+### FE-BACKLOG-014 — "Change password" links to a non-existent `/my/change-password` page
+
+**Raised:** 2026-06-14 (found during the R3-1 profile-chip routing fix). **Priority:** Medium — broken link on a profile both employees and admins reach.
+
+The profile Security section ("Change password") links to `/${workspace}/my/change-password`, but **no
+`change-password` page exists** under either route group (only `set-password` — the forced-change gate —
+and the `/api/auth/change-password` BFF route). The link 404s for everyone (pre-existing; the R3-2c
+checkpoint changed passwords via the API directly, not this page). **When built:** make it shell-aware
+like the profile (`ProfileView`) — an admin must not be dropped into the employee shell — i.e. either a
+shared component rendered by both `/admin/change-password` and `/my/change-password`, or a
+role-conditional link. The BFF endpoint already exists, so this is a UI page + wiring.
+
+### DEV-BACKLOG-001 — jane.w@demo.co.ke password reverts between sessions
+
+**Raised:** 2026-06-14 (recurring during Run-03 verification). **Priority:** Low — dev/test only, not a product defect.
+
+**Symptom:** the demo employee `jane.w@demo.co.ke` repeatedly stops authenticating with the documented
+password `Employee@123!` (login → 401 `INVALID_CREDENTIALS`). Her row's `updated_at` shows the password
+hash being changed out-of-band; `is_active=true`, not locked. Each time it's restored (admin
+password-reset → set-password back to `Employee@123!`) login works, then later reverts.
+
+**Hypothesised causes (unconfirmed):** a seed/reset job or test fixture that re-seeds demo users; leftover
+state from an integration/e2e suite that resets credentials; or a scheduled demo-refresh. **Also note**
+(separate, AUTH-BACKLOG-009): rapid repeated logins for the same user return a transient refresh-rotation
+409 with no token — that's a different symptom (empty token, not 401) but compounds the confusion.
+
+**What it needs:** find what writes `users.password_hash` for jane outside an explicit admin action
+(grep seed scripts, CI fixtures, scheduled jobs), then either stop it touching the demo account or make
+the documented password the seeded one. Not blocking; affects only local verification.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
@@ -658,6 +744,20 @@ Also wire `audit-service` `TenantAuditListener` to handle `TenantCancelledEvent`
 ---
 
 ## Security
+
+### AUTHZ-BACKLOG-001 — Audit @PreAuthorize role-grant *intent* across all 9 services
+
+**Raised:** 2026-06-14 during Run 03 R3-0 (role-vocabulary canonicalization). **Priority:** Medium–High — privilege-boundary correctness.
+
+R3-0 reconciled the role *vocabulary* (`HR` → `HR_OFFICER`, single `Role.OPERATIONAL` source, reserved roles dropped from the assignable surface — see `docs/decisions/2026-06-14-run-03-role-canonicalization.md`). It was explicitly scoped as a **rename, not a privilege-policy decision** (Gate 1 option (a)). The strict rewrite restored the originally-intended grants but left three *intent* ambiguities unresolved, which this item must settle:
+
+1. **Should `HR_OFFICER` approve/run payroll?** The `HR` → `HR_OFFICER` rewrite gave officer-tier users payroll approve/run access (payroll `ADMIN, HR_MANAGER, HR` → `…, HR_OFFICER`). Officer-vs-manager approval boundary needs a decision. (Live demo user `david.ochieng@demo.co.ke` now has this access.)
+2. **Should `HR_OFFICER` reach integration-hub, tenant config (`FeatureFlagController`), and other sensitive-config surfaces?** These got the blanket `HR` → `HR_OFFICER` rewrite at class level.
+3. **Documented `HR_OFFICER` vs `HR_MANAGER` split per service** — currently implicit; needs to be written down for every service that grants both.
+
+**Deliverable:** a decision doc mapping every `@PreAuthorize` role grant (all 9 services) to its intended privilege, with the three resolutions above. Sibling to [[SEC-BACKLOG-001]] (which audits the *SpEL ownership* pattern; this audits the *role-set* intent). Run in a future remediation run, not R3.
+
+---
 
 ### SEC-BACKLOG-001 — Audit @PreAuthorize SpEL expressions across all services for User-vs-Employee UUID mismatches
 

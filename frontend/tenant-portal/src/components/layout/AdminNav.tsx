@@ -1,13 +1,14 @@
 "use client";
 
-import { NavRailItem, NavRailGroup, cn, useCurrentUser } from "@andikisha/ui";
+import { NavRailItem, NavRailGroup, useCurrentUser } from "@andikisha/ui";
 import {
   Home, Users, CreditCard, Calendar,
-  Clock, FileCheck, BarChart2, UserCircle, Settings, LogOut, UserCog,
+  Clock, FileCheck, BarChart2, Building2, Briefcase,
+  Settings, UserCog,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { logout } from "@/lib/auth";
+import { SidebarUserChip } from "./SidebarUserChip";
 
 interface NavGroup {
   label?: string;
@@ -25,8 +26,10 @@ export function AdminNav() {
   const workspace = useWorkspace();
   const base = `/${workspace}`;
 
-  // User management is gated to roles the backend also authorises for /api/v1/auth/users
-  // (hasAnyRole ADMIN, HR_MANAGER). Default-deny: hidden until roles confirm the grant.
+  // "Access" (user/role management) is gated to the roles the backend also authorises
+  // for /api/v1/auth/users (hasAnyRole ADMIN, HR_MANAGER). Default-deny: hidden until
+  // roles confirm the grant. Per-item gating for the other groups stays coarse
+  // (backend enforces) — tracked as AUTHZ-BACKLOG-001.
   const currentUser = useCurrentUser();
   const canManageUsers = (currentUser?.roles ?? []).some((r) => r === "ADMIN" || r === "HR_MANAGER");
 
@@ -50,17 +53,25 @@ export function AdminNav() {
       label: "Operations",
       spacer: true,
       items: [
-        { label: "Time & Attendance", href: `${base}/admin/attendance`, icon: Clock,     locked: true },
-        { label: "Statutory Filings", href: `${base}/admin/compliance`, icon: FileCheck, locked: true },
+        { label: "Time & attendance", href: `${base}/admin/attendance`, icon: Clock,     locked: true },
+        { label: "Statutory filings", href: `${base}/admin/compliance`, icon: FileCheck, locked: true },
         { label: "Analytics",         href: `${base}/admin/analytics`,  icon: BarChart2, locked: true },
+      ],
+    },
+    {
+      label: "Workspace",
+      spacer: true,
+      items: [
+        { label: "Departments", href: `${base}/admin/settings/departments`, icon: Building2 },
+        { label: "Positions",   href: `${base}/admin/settings/positions`,   icon: Briefcase },
       ],
     },
     ...(canManageUsers
       ? [{
-          label: "Administration",
+          label: "Access",
           spacer: true,
           items: [
-            { label: "User management", href: `${base}/admin/users`, icon: UserCog },
+            { label: "Users & roles", href: `${base}/admin/users`, icon: UserCog },
           ],
         }]
       : []),
@@ -96,18 +107,16 @@ export function AdminNavFooter() {
 
   return (
     <>
-      <NavRailItem label="My profile" href={`${base}/my/profile`}     icon={UserCircle} theme="light" active={pathname.startsWith(`${base}/my/profile`)} />
-      <NavRailItem label="Settings"   href={`${base}/admin/settings`} icon={Settings}   theme="light" active={pathname.startsWith(`${base}/admin/settings`)} />
-      <button
-        onClick={() => void logout()}
-        className={cn(
-          "flex items-center gap-2.5 w-full h-9 px-2.5 rounded-lg text-[13.5px] font-medium transition-colors",
-          "text-neutral-700 hover:bg-neutral-100 cursor-pointer group"
-        )}
-      >
-        <LogOut size={16} strokeWidth={2} className="text-neutral-500 group-hover:text-error" />
-        <span className="group-hover:text-error">Sign out</span>
-      </button>
+      <NavRailItem
+        label="Settings"
+        href={`${base}/admin/settings`}
+        icon={Settings}
+        theme="light"
+        active={pathname.startsWith(`${base}/admin/settings`)}
+      />
+
+      {/* Profile → /admin/profile + Sign out, flush with the rest of the footer (no divider). */}
+      <SidebarUserChip profileHref={`${base}/admin/profile`} />
     </>
   );
 }

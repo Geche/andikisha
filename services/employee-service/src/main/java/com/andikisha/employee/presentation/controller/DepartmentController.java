@@ -26,7 +26,7 @@ public class DepartmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
     @Operation(summary = "List all departments")
     public List<DepartmentResponse> list() {
         return departmentService.findAll();

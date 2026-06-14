@@ -67,7 +67,7 @@ public class PayrollController {
         return payrollService.approvePayroll(id, userId);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @GetMapping("/runs")
     @Operation(summary = "List payroll runs")
     public Page<PayrollRunResponse> listRuns(
@@ -76,7 +76,7 @@ public class PayrollController {
         return payrollService.listPayrollRuns(pageable);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @GetMapping("/runs/{id}")
     @Operation(summary = "Get payroll run details")
     public PayrollRunResponse getRun(
@@ -85,7 +85,7 @@ public class PayrollController {
         return payrollService.getPayrollRun(id);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @GetMapping("/runs/{id}/payslips")
     @Operation(summary = "Get all payslips for a payroll run")
     public List<PaySlipResponse> getPaySlips(
@@ -94,7 +94,7 @@ public class PayrollController {
         return payrollService.getPaySlipsForRun(id);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'PAYROLL_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'EMPLOYEE')")
     @GetMapping("/payslips/{id}")
     @Operation(summary = "Get a single payslip")
     public PaySlipResponse getPaySlip(
@@ -104,7 +104,7 @@ public class PayrollController {
         return payrollService.getPaySlip(id, authentication);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR', 'PAYROLL_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'EMPLOYEE')")
     @GetMapping("/employees/{employeeId}/payslips")
     @Operation(summary = "Get payslip history for an employee")
     public Page<PaySlipResponse> getEmployeePaySlips(

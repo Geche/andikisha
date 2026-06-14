@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
@@ -17,6 +17,16 @@ import {
   formatDate,
   formatDateRange,
 } from "../_types";
+
+// Raw leave row as the API returns it (uses `days`; UI maps to `totalDays`).
+type ApiLeaveRequest = Omit<LeaveRequest, "totalDays"> & { days: number };
+// /auth/users projection: `id` resolves the reviewer, `employeeId` resolves the requester.
+interface TenantUserLite {
+  id: string;
+  employeeId: string | null;
+  displayName: string | null;
+  email: string;
+}
 
 // ─── Detail row ───────────────────────────────────────────────────────────────
 
@@ -61,35 +71,50 @@ export default function LeaveRequestDetailPage({
   const [rejectOpen, setRejectOpen] = useState(false);
 
   const {
-    data: request,
+    data: rawRequest,
     isLoading,
     isError,
     refetch,
-  } = useQuery<LeaveRequest>({
+  } = useQuery<ApiLeaveRequest>({
     queryKey: ["leave-request", requestId],
     queryFn: () =>
       apiClient
-        .get<LeaveRequest>(`/api/v1/leave/requests/${requestId}`)
+        .get<ApiLeaveRequest>(`/api/v1/leave/requests/${requestId}`)
         .then((r) => r.data),
     enabled: Boolean(requestId),
   });
 
+  // Resolve identities via the users list (AUTH-006): reviewer by user id, and the requester
+  // by employeeId (the leave API stores a generic "Employee" name). Admin/HR can read /users;
+  // other viewers get a 403 and we fall back to what's on the request. retry:false avoids a 403 loop.
+  const { data: tenantUsers } = useQuery<TenantUserLite[]>({
+    queryKey: ["tenant-users-lite"],
+    queryFn: () =>
+      apiClient.get<TenantUserLite[]>("/api/v1/auth/users").then((r) => r.data),
+    enabled: Boolean(rawRequest),
+    retry: false,
+  });
+
+  const nameByEmployeeId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const u of tenantUsers ?? []) {
+      if (u.employeeId) m.set(u.employeeId, u.displayName || u.email);
+    }
+    return m;
+  }, [tenantUsers]);
+
+  // Resolved request: map `days` → totalDays and the requester's employeeId → display name.
+  const request: LeaveRequest | undefined = rawRequest
+    ? {
+        ...rawRequest,
+        totalDays: Number(rawRequest.days),
+        employeeName: nameByEmployeeId.get(rawRequest.employeeId) || rawRequest.employeeName,
+      }
+    : undefined;
+
   const isPending = request?.status === "PENDING";
   const isApproved = request?.status === "APPROVED";
   const isRejected = request?.status === "REJECTED";
-
-  // Resolve the reviewer's UUID to a display name via the users list (AUTH-006).
-  // Admin/HR can read /users; other viewers (e.g. line managers) get a 403 and we
-  // fall back to the email captured on the request. retry:false avoids hammering a 403.
-  const { data: tenantUsers } = useQuery<{ id: string; displayName: string | null; email: string }[]>({
-    queryKey: ["tenant-users-lite"],
-    queryFn: () =>
-      apiClient
-        .get<{ id: string; displayName: string | null; email: string }[]>("/api/v1/auth/users")
-        .then((r) => r.data),
-    enabled: Boolean(request?.reviewedBy),
-    retry: false,
-  });
 
   const reviewerLabel = (() => {
     if (!request) return "—";

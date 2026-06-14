@@ -28,12 +28,13 @@ export function EmployeeDesktopNav() {
   const workspace = useWorkspace();
   const base = `/${workspace}`;
 
+  // Profile is reached via the chip at the bottom of the rail (desktopNavFooter), so it is
+  // intentionally not repeated here. The mobile bottom nav keeps its Profile tab.
   const items = [
     { label: "Home",       href: `${base}/my/dashboard`,  icon: Home },
     { label: "Payslips",   href: `${base}/my/payslips`,   icon: FileText },
     { label: "Leave",      href: `${base}/my/leave`,      icon: Calendar },
     { label: "Attendance", href: `${base}/my/attendance`, icon: Clock },
-    { label: "Profile",    href: `${base}/my/profile`,    icon: User },
   ];
 
   return (
