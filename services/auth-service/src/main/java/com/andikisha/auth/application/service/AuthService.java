@@ -316,6 +316,30 @@ public class AuthService {
         return userMapper.toResponse(user);
     }
 
+    /**
+     * AUTH-007: re-resolve and update a user's {@code display_name} from the linked
+     * employee record after an {@code employee.updated} event. Option A — re-resolves via
+     * gRPC (cold path; the event carries no name fields, so no event-contract change).
+     * Idempotent and quiet: a missing linked user, an unresolvable name (employee-service
+     * down), or an unchanged name is a no-op. If the event is missed the name stays stale
+     * until the next update — acceptable because the read path falls back to email and
+     * never depends on freshness.
+     */
+    @Transactional
+    public void syncDisplayNameFromEmployee(String tenantId, String employeeId) {
+        User user = userRepository.findByEmployeeIdAndTenantId(UUID.fromString(employeeId), tenantId)
+                .orElse(null);
+        if (user == null) {
+            return; // employee has no linked auth user (yet) — nothing to sync
+        }
+        java.util.Optional<String> resolved = resolveDisplayName(tenantId, employeeId);
+        if (resolved.isEmpty() || resolved.get().equals(user.getDisplayName())) {
+            return; // unresolvable (keep current) or unchanged
+        }
+        user.setDisplayName(resolved.get());
+        userRepository.save(user);
+    }
+
     @Transactional(readOnly = true)
     public void forgotPassword(ForgotPasswordRequest request) {
         String tenantId = TenantContext.requireTenantId();

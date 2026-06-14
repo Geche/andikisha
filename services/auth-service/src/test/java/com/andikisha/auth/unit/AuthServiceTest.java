@@ -18,7 +18,9 @@ import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.RefreshTokenRepository;
 import com.andikisha.auth.domain.repository.RolePermissionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
+import com.andikisha.auth.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
+import com.andikisha.proto.employee.EmployeeResponse;
 import io.jsonwebtoken.Claims;
 import com.andikisha.common.exception.DuplicateResourceException;
 import com.andikisha.common.exception.ResourceNotFoundException;
@@ -65,6 +67,7 @@ class AuthServiceTest {
     @Mock private AuthEventPublisher eventPublisher;
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private ValueOperations<String, String> valueOps;
+    @Mock private EmployeeGrpcClient employeeGrpcClient;
 
     @InjectMocks private AuthService authService;
 
@@ -445,6 +448,72 @@ class AuthServiceTest {
                     .isInstanceOf(BusinessRuleException.class)
                     .extracting(e -> ((BusinessRuleException) e).getCode())
                     .isEqualTo("INVALID_ROLE");
+        }
+    }
+
+    @Nested
+    class SyncDisplayNameFromEmployee {
+
+        private User linkedEmployeeUser() {
+            User u = buildUser(Role.EMPLOYEE);
+            u.linkEmployee(EMPLOYEE_ID);
+            return u;
+        }
+
+        private EmployeeResponse employee(String first, String last) {
+            return EmployeeResponse.newBuilder().setFirstName(first).setLastName(last).build();
+        }
+
+        @Test
+        void updatesDisplayName_whenResolvedNameDiffers() {
+            User user = linkedEmployeeUser(); // display_name null
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.of(user));
+            when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                    .thenReturn(Optional.of(employee("Jane", "Wanjiku")));
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            assertThat(user.getDisplayName()).isEqualTo("Jane Wanjiku");
+            verify(userRepository).save(user);
+        }
+
+        @Test
+        void noOp_whenNoLinkedUser() {
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.empty());
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            verify(userRepository, never()).save(any());
+            verify(employeeGrpcClient, never()).getEmployee(anyString(), anyString());
+        }
+
+        @Test
+        void noOp_whenResolvedNameUnchanged() {
+            User user = linkedEmployeeUser();
+            user.setDisplayName("Jane Wanjiku");
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.of(user));
+            when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                    .thenReturn(Optional.of(employee("Jane", "Wanjiku")));
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void noOp_whenEmployeeUnresolvable() {
+            User user = linkedEmployeeUser();
+            when(userRepository.findByEmployeeIdAndTenantId(EMPLOYEE_ID, TENANT_ID))
+                    .thenReturn(Optional.of(user));
+            when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                    .thenReturn(Optional.empty());
+
+            authService.syncDisplayNameFromEmployee(TENANT_ID, EMPLOYEE_ID.toString());
+
+            verify(userRepository, never()).save(any());
         }
     }
 }
