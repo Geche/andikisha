@@ -31,6 +31,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmployeeIdAndTenantId(UUID employeeId, String tenantId);
 
+    // R3-2b last-active-admin guard: is there another active user with this role in the
+    // tenant, excluding the given user? Used to block deactivating the last active ADMIN.
+    boolean existsByTenantIdAndRoleAndActiveTrueAndIdNot(
+            String tenantId, com.andikisha.auth.domain.model.Role role, UUID id);
+
     java.util.List<User> findByTenantIdAndEmployeeIdIsNullAndRoleNot(
             String tenantId, com.andikisha.auth.domain.model.Role role);
 

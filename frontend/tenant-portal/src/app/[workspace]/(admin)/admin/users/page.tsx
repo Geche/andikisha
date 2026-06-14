@@ -18,6 +18,7 @@ interface TenantUser {
   role: string;
   employeeId: string | null;
   lastLogin: string | null;
+  active: boolean;
 }
 interface ResetResult {
   email: string;
@@ -56,6 +57,7 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState("");
   const [resetting, setResetting] = useState<TenantUser | null>(null);
   const [resetResult, setResetResult] = useState<ResetResult | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
 
   const { data: rolesData, isLoading: rolesLoading } = useQuery<RolePermissions[]>({
     queryKey: ["users-roles"],
@@ -95,6 +97,16 @@ export default function UsersPage() {
     onError: (err) => toast(err.response?.data?.message ?? "Could not reset password.", "error"),
   });
 
+  const setActive = useMutation<unknown, AxiosError<{ message?: string }>, { userId: string; active: boolean }>({
+    mutationFn: ({ userId, active }) => apiClient.patch(`/api/v1/auth/users/${userId}/active`, { active }),
+    onSuccess: (_data, vars) => {
+      toast(vars.active ? "User reactivated" : "User deactivated", "success");
+      void queryClient.invalidateQueries({ queryKey: ["users-list"] });
+    },
+    // Surfaces the backend guard messages (last active admin / self-deactivation).
+    onError: (err) => toast(err.response?.data?.message ?? "Could not update user.", "error"),
+  });
+
   if (!canManage) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -115,7 +127,18 @@ export default function UsersPage() {
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 space-y-8">
         {/* People — primary view */}
         <section>
-          <h2 className="text-[15px] font-semibold text-near-black mb-3">People</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[15px] font-semibold text-near-black">People</h2>
+            <label className="flex items-center gap-2 text-[12.5px] text-neutral-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="rounded border-neutral-300 text-brand-700 focus:ring-brand-900/20"
+              />
+              Show inactive users
+            </label>
+          </div>
           {usersLoading ? (
             <p className="text-[13px] text-neutral-400">Loading…</p>
           ) : (
@@ -123,39 +146,70 @@ export default function UsersPage() {
               <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 bg-neutral-50 border-b border-neutral-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
                 <span>User</span><span>Role</span><span>Last sign-in</span><span className="text-right">Actions</span>
               </div>
-              {(usersData ?? []).map((u, i) => {
+              {(usersData ?? []).filter((u) => showInactive || u.active).map((u, i) => {
                 const isPrivileged = u.role === "ADMIN" || u.role === "SUPER_ADMIN";
+                const isSelf = currentUser?.userId === u.id;
                 return (
-                  <div key={u.id} className={`grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-center px-5 py-3 ${i > 0 ? "border-t border-neutral-100" : ""}`}>
+                  <div key={u.id} className={`grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-center px-5 py-3 ${i > 0 ? "border-t border-neutral-100" : ""} ${!u.active ? "opacity-60" : ""}`}>
                     <div className="min-w-0">
                       <p className="text-[13.5px] text-near-black truncate">{u.displayName ?? u.email}</p>
                       {u.displayName && <p className="text-[12px] text-neutral-500 truncate">{u.email}</p>}
                     </div>
-                    <span>
+                    <span className="flex items-center gap-2">
                       <span className="text-[12.5px] font-medium text-ink-700 bg-neutral-100 px-2.5 py-0.5 rounded-full">
                         {roleLabel(u.role)}
                       </span>
+                      {!u.active && (
+                        <span className="text-[11px] font-semibold text-neutral-500 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-full">
+                          Inactive
+                        </span>
+                      )}
                     </span>
                     <span className="text-[13px] text-neutral-500">{fmtLastLogin(u.lastLogin)}</span>
                     <div className="flex items-center justify-end gap-4">
-                      <button
-                        onClick={() => setResetting(u)}
-                        className="text-[13px] font-semibold text-brand-700 hover:underline inline-flex items-center gap-1"
-                      >
-                        <KeyRound size={13} aria-hidden="true" /> Reset password
-                      </button>
-                      {!isPrivileged && (
-                        // Change role: ADMIN only (backend PATCH /role is ADMIN-only).
-                        // Visible-but-disabled for HR_MANAGER with an explanatory tooltip.
-                        <span title={isAdmin ? undefined : "Only an admin can change roles."}>
+                      {u.active ? (
+                        <>
                           <button
-                            onClick={() => { if (isAdmin) { setAssigning(u); setSelectedRole(u.role); } }}
-                            disabled={!isAdmin}
-                            className="text-[13px] font-semibold text-brand-700 hover:underline disabled:text-neutral-300 disabled:cursor-not-allowed disabled:no-underline"
+                            onClick={() => setResetting(u)}
+                            className="text-[13px] font-semibold text-brand-700 hover:underline inline-flex items-center gap-1"
                           >
-                            Change role
+                            <KeyRound size={13} aria-hidden="true" /> Reset password
                           </button>
-                        </span>
+                          {!isPrivileged && (
+                            // Change role: ADMIN only (backend PATCH /role is ADMIN-only).
+                            // Visible-but-disabled for HR_MANAGER with an explanatory tooltip.
+                            <span title={isAdmin ? undefined : "Only an admin can change roles."}>
+                              <button
+                                onClick={() => { if (isAdmin) { setAssigning(u); setSelectedRole(u.role); } }}
+                                disabled={!isAdmin}
+                                className="text-[13px] font-semibold text-brand-700 hover:underline disabled:text-neutral-300 disabled:cursor-not-allowed disabled:no-underline"
+                              >
+                                Change role
+                              </button>
+                            </span>
+                          )}
+                          {/* Deactivate: ADMIN only (backend), never on your own account. */}
+                          {isAdmin && !isSelf && (
+                            <button
+                              onClick={() => setActive.mutate({ userId: u.id, active: false })}
+                              disabled={setActive.isPending}
+                              className="text-[13px] font-semibold text-danger hover:underline disabled:opacity-50"
+                            >
+                              Deactivate
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        // Reactivate: ADMIN only. No self case — a deactivated user can't sign in.
+                        isAdmin && (
+                          <button
+                            onClick={() => setActive.mutate({ userId: u.id, active: true })}
+                            disabled={setActive.isPending}
+                            className="text-[13px] font-semibold text-brand-700 hover:underline disabled:opacity-50"
+                          >
+                            Reactivate
+                          </button>
+                        )
                       )}
                     </div>
                   </div>

@@ -516,4 +516,77 @@ class AuthServiceTest {
             verify(userRepository, never()).save(any());
         }
     }
+
+    @Nested
+    class SetUserActive {
+
+        private static final UUID TARGET_ID = UUID.randomUUID();
+
+        @Test
+        void deactivateNonAdmin_succeeds_andRevokesRefreshTokens() {
+            User target = buildUser(Role.EMPLOYEE); // active by default
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(target));
+
+            authService.setUserActive(USER_ID, TARGET_ID, false);
+
+            assertThat(target.isActive()).isFalse();
+            verify(refreshTokenRepository).revokeAllByUserIdAndTenantId(TARGET_ID, TENANT_ID);
+            verify(userRepository).save(target);
+        }
+
+        @Test
+        void deactivateSelf_isRejected() {
+            when(userRepository.findByIdAndTenantId(USER_ID, TENANT_ID))
+                    .thenReturn(Optional.of(buildUser(Role.ADMIN)));
+
+            assertThatThrownBy(() -> authService.setUserActive(USER_ID, USER_ID, false))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("SELF_DEACTIVATION");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void deactivateLastActiveAdmin_isRejected() {
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(buildUser(Role.ADMIN)));
+            when(userRepository.existsByTenantIdAndRoleAndActiveTrueAndIdNot(TENANT_ID, Role.ADMIN, TARGET_ID))
+                    .thenReturn(false); // no other active admin
+
+            assertThatThrownBy(() -> authService.setUserActive(USER_ID, TARGET_ID, false))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("LAST_ACTIVE_ADMIN");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void deactivateAdmin_succeeds_whenAnotherActiveAdminExists() {
+            User target = buildUser(Role.ADMIN);
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(target));
+            when(userRepository.existsByTenantIdAndRoleAndActiveTrueAndIdNot(TENANT_ID, Role.ADMIN, TARGET_ID))
+                    .thenReturn(true);
+
+            authService.setUserActive(USER_ID, TARGET_ID, false);
+
+            assertThat(target.isActive()).isFalse();
+            verify(userRepository).save(target);
+        }
+
+        @Test
+        void reactivate_succeeds_withNoGuards() {
+            User target = buildUser(Role.EMPLOYEE);
+            target.deactivate();
+            when(userRepository.findByIdAndTenantId(TARGET_ID, TENANT_ID))
+                    .thenReturn(Optional.of(target));
+
+            authService.setUserActive(USER_ID, TARGET_ID, true);
+
+            assertThat(target.isActive()).isTrue();
+            verify(userRepository).save(target);
+            verify(refreshTokenRepository, never()).revokeAllByUserIdAndTenantId(any(), anyString());
+        }
+    }
 }

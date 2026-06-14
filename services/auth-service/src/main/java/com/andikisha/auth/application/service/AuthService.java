@@ -522,6 +522,49 @@ public class AuthService {
     }
 
     /**
+     * R3-2b (TENANT-005): activate/deactivate a tenant user (soft-delete via is_active).
+     * One method serves both directions. Deactivation blocks login + refresh immediately
+     * (both check is_active) and revokes existing refresh tokens; an already-issued access
+     * token stays valid until its TTL (graceful expiry — no gateway denylist in v1, see
+     * docs/decisions/2026-06-14-run-03-user-deactivation.md). Guards enforced server-side
+     * (UI guards are bypassable): cannot deactivate the last active ADMIN, cannot deactivate
+     * yourself. ADMIN-only (enforced at the controller).
+     */
+    @Transactional
+    public UserResponse setUserActive(UUID changerId, UUID targetUserId, boolean active) {
+        String tenantId = TenantContext.requireTenantId();
+
+        User target = userRepository.findByIdAndTenantId(targetUserId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", targetUserId));
+
+        if (target.getRole() == Role.SUPER_ADMIN) {
+            throw new BusinessRuleException("FORBIDDEN_TARGET",
+                    "A SUPER_ADMIN account cannot be deactivated here.");
+        }
+
+        if (!active) {
+            if (targetUserId.equals(changerId)) {
+                throw new BusinessRuleException("SELF_DEACTIVATION",
+                        "You cannot deactivate your own account.");
+            }
+            boolean isLastActiveAdmin = target.getRole() == Role.ADMIN
+                    && !userRepository.existsByTenantIdAndRoleAndActiveTrueAndIdNot(
+                            tenantId, Role.ADMIN, targetUserId);
+            if (isLastActiveAdmin) {
+                throw new BusinessRuleException("LAST_ACTIVE_ADMIN",
+                        "Cannot deactivate the last active administrator. Assign another admin first.");
+            }
+            target.deactivate();
+            // Block refresh immediately; access tokens lapse within their TTL (graceful expiry).
+            refreshTokenRepository.revokeAllByUserIdAndTenantId(targetUserId, tenantId);
+        } else {
+            target.activate();
+        }
+
+        return userMapper.toResponse(userRepository.save(target));
+    }
+
+    /**
      * Admin-initiated password reset. ADMIN and HR_MANAGER may reset any employee's password.
      * HR_MANAGER may not reset an ADMIN's password.
      * Generates a temp password, sets mustChangePassword, revokes refresh tokens, emits audit event.

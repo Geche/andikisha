@@ -10,5 +10,6 @@ public record TenantUserResponse(
         String displayName,
         String role,
         String employeeId,
-        String lastLogin
+        String lastLogin,
+        boolean active
 ) {}

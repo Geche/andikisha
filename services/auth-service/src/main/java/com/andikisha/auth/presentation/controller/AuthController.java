@@ -7,6 +7,7 @@ import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
 import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
+import com.andikisha.auth.application.dto.request.SetActiveRequest;
 import com.andikisha.auth.application.dto.request.ProvisionEmployeeRequest;
 import com.andikisha.auth.application.dto.response.AdminPasswordResetResponse;
 import com.andikisha.auth.application.dto.response.ProvisionEmployeeResponse;
@@ -106,6 +107,17 @@ public class AuthController {
             @Valid @RequestBody ChangeRoleRequest request) {
         UUID changerId = UUID.fromString(authentication.getName());
         return authService.changeUserRole(changerId, userId, request);
+    }
+
+    @PatchMapping("/users/{userId}/active")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Activate or deactivate a user (ADMIN only; soft-delete via is_active)")
+    public UserResponse setActive(
+            Authentication authentication,
+            @PathVariable UUID userId,
+            @Valid @RequestBody SetActiveRequest request) {
+        UUID changerId = UUID.fromString(authentication.getName());
+        return authService.setUserActive(changerId, userId, request.active());
     }
 
     @PostMapping("/employees/provision")

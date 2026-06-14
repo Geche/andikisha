@@ -58,7 +58,8 @@ public class RolePermissionQueryService {
                         u.getDisplayName(),
                         u.getRole().name(),
                         u.getEmployeeId() != null ? u.getEmployeeId().toString() : null,
-                        u.getLastLogin() != null ? u.getLastLogin().toString() : null))
+                        u.getLastLogin() != null ? u.getLastLogin().toString() : null,
+                        u.isActive()))
                 .toList();
     }
 }
