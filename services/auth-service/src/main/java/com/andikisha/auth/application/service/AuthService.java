@@ -6,8 +6,10 @@ import com.andikisha.auth.application.dto.request.ForgotPasswordRequest;
 import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
+import com.andikisha.auth.application.dto.request.InviteUserRequest;
 import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
 import com.andikisha.auth.application.dto.response.AdminPasswordResetResponse;
+import com.andikisha.auth.application.dto.response.InviteUserResponse;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.mapper.UserMapper;
@@ -188,6 +190,57 @@ public class AuthService {
             eventPublisher.publishUserRegistered(saved);
         }
         return saved.getId().toString();
+    }
+
+    /**
+     * R3-2c (TENANT-006): invite a standalone admin-tier user (no employee record). Reuses
+     * the temp-password + mustChangePassword pattern (AUTH-006); the password is returned
+     * once for the admin to share (no email infrastructure yet). ADMIN-only at the controller.
+     * Role must be in {@link Role#ADMIN_TIER} — self-service roles (EMPLOYEE, LINE_MANAGER)
+     * come through hire/provisioning and require an employee record (V17 constraint).
+     */
+    @Transactional
+    public InviteUserResponse inviteUser(UUID performerId, InviteUserRequest request) {
+        String tenantId = TenantContext.requireTenantId();
+
+        Role role;
+        try {
+            role = Role.valueOf(request.role().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException("INVALID_ROLE", "Unknown role: " + request.role());
+        }
+        if (!Role.ADMIN_TIER.contains(role)) {
+            throw new BusinessRuleException("INVALID_INVITE_ROLE",
+                    role.name() + " cannot be invited. Invitable roles: " + Role.ADMIN_TIER
+                    + ". Employees are added through the employee directory.");
+        }
+
+        String email = request.email().toLowerCase().trim();
+        if (userRepository.existsByEmailAndTenantId(email, tenantId)) {
+            throw new DuplicateResourceException("User", "email", email);
+        }
+        if (userRepository.existsByPhoneNumberAndTenantId(request.phoneNumber(), tenantId)) {
+            throw new DuplicateResourceException("User", "phoneNumber", request.phoneNumber());
+        }
+
+        String tempPassword = com.andikisha.common.util.PasswordGenerator.generate();
+        User user = User.create(tenantId, email, request.phoneNumber(),
+                passwordEncoder.encode(tempPassword), role); // mustChangePassword=true by default
+        User saved = userRepository.save(user);
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    eventPublisher.publishUserRegistered(saved);
+                }
+            });
+        } else {
+            eventPublisher.publishUserRegistered(saved);
+        }
+
+        return new InviteUserResponse(saved.getId().toString(), saved.getEmail(),
+                role.name(), tempPassword);
     }
 
     /**

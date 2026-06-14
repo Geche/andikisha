@@ -589,4 +589,63 @@ class AuthServiceTest {
             verify(refreshTokenRepository, never()).revokeAllByUserIdAndTenantId(any(), anyString());
         }
     }
+
+    @Nested
+    class InviteUser {
+
+        @Test
+        void invitesAdminTierRole_succeeds_withTempPassword() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "newhr@demo.co.ke", "+254712345678", "HR_MANAGER");
+            when(userRepository.existsByEmailAndTenantId("newhr@demo.co.ke", TENANT_ID)).thenReturn(false);
+            when(userRepository.existsByPhoneNumberAndTenantId("+254712345678", TENANT_ID)).thenReturn(false);
+            when(passwordEncoder.encode(anyString())).thenReturn("hashed");
+            User saved = mock(User.class);
+            when(saved.getId()).thenReturn(UUID.randomUUID());
+            when(saved.getEmail()).thenReturn("newhr@demo.co.ke");
+            when(userRepository.save(any())).thenReturn(saved);
+
+            var response = authService.inviteUser(USER_ID, request);
+
+            assertThat(response.role()).isEqualTo("HR_MANAGER");
+            assertThat(response.temporaryPassword()).isNotBlank();
+            verify(userRepository).save(any());
+            verify(eventPublisher).publishUserRegistered(saved);
+        }
+
+        @Test
+        void invitingSelfServiceRole_isRejected() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "x@demo.co.ke", "+254712345678", "EMPLOYEE");
+
+            assertThatThrownBy(() -> authService.inviteUser(USER_ID, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("INVALID_INVITE_ROLE");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void invitingUnknownRole_isRejected() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "x@demo.co.ke", "+254712345678", "WIZARD");
+
+            assertThatThrownBy(() -> authService.inviteUser(USER_ID, request))
+                    .isInstanceOf(BusinessRuleException.class)
+                    .extracting(e -> ((BusinessRuleException) e).getCode())
+                    .isEqualTo("INVALID_ROLE");
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        void invitingDuplicateEmail_isRejected() {
+            var request = new com.andikisha.auth.application.dto.request.InviteUserRequest(
+                    "dupe@demo.co.ke", "+254712345678", "HR_MANAGER");
+            when(userRepository.existsByEmailAndTenantId("dupe@demo.co.ke", TENANT_ID)).thenReturn(true);
+
+            assertThatThrownBy(() -> authService.inviteUser(USER_ID, request))
+                    .isInstanceOf(DuplicateResourceException.class);
+            verify(userRepository, never()).save(any());
+        }
+    }
 }

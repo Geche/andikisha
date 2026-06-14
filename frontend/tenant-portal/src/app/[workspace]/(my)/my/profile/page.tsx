@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Pencil, Check, X, Upload, KeyRound } from "lucide-react";
-import { PageHeader, useToast } from "@andikisha/ui";
+import { PageHeader, useToast, useCurrentUser, RoleBadge } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import Link from "next/link";
@@ -256,9 +256,15 @@ export default function ProfilePage() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
+  // R3-2c: standalone admin-tier users have no linked employee record. Skip the
+  // employee fetch and render a user-only view rather than an error state.
+  const currentUser = useCurrentUser();
+  const hasEmployee = !!currentUser?.employeeId;
+
   const { data: profile, isLoading, isError } = useQuery<EmployeeProfile>({
     queryKey: ["my-profile"],
     queryFn: () => apiClient.get<EmployeeProfile>("/api/v1/employees/me").then((r) => r.data),
+    enabled: hasEmployee,
   });
 
   const updateMutation = useMutation<
@@ -287,6 +293,59 @@ export default function ProfilePage() {
   const initials = profile
     ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()
     : "—";
+
+  // R3-2c: standalone admin-tier users have no employee record. Show a user-only profile
+  // (identity + password) and skip every employee-specific section — no error state.
+  if (!hasEmployee) {
+    const acctName = currentUser?.fullName?.trim() || currentUser?.email || "Account";
+    const acctInitials = (currentUser?.fullName || currentUser?.email || "?").trim().slice(0, 2).toUpperCase();
+    const acctRole = currentUser?.roles?.[0] ?? null;
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <PageHeader title="My Profile" subtitle="Your account details" />
+        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-5">
+          <div className="bg-white border border-neutral-200 rounded-xl p-6 flex items-center gap-5">
+            <div className="w-16 h-16 rounded-xl bg-brand-900 text-white flex items-center justify-center text-[22px] font-bold">
+              {acctInitials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[18px] font-bold text-near-black truncate">{acctName}</p>
+              {currentUser?.email && <p className="text-[13px] text-neutral-500 mt-0.5 truncate">{currentUser.email}</p>}
+              {acctRole && <div className="mt-2"><RoleBadge role={acctRole} /></div>}
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2.5 bg-neutral-50 border border-neutral-200 rounded-xl px-5 py-3.5 text-[13px] text-neutral-600 max-w-2xl">
+            <AlertTriangle size={15} className="flex-shrink-0 mt-0.5 text-neutral-400" />
+            <span>
+              This account isn’t linked to an employee record, so there’s no leave, attendance, or
+              payroll information to show here. Contact your administrator if that seems wrong.
+            </span>
+          </div>
+
+          {/* Password change is available to every account */}
+          <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden max-w-2xl">
+            <div className="px-6 py-4 border-b border-neutral-100">
+              <h2 className="text-[13.5px] font-semibold text-neutral-900">Security</h2>
+            </div>
+            <div className="px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-[13.5px] font-medium text-near-black">Password</p>
+                <p className="text-[12px] text-neutral-400 mt-0.5">Change your login password</p>
+              </div>
+              <Link
+                href={`/${workspace}/my/change-password`}
+                className="flex items-center gap-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-semibold text-[12.5px] h-9 px-3.5 rounded-lg transition-colors"
+              >
+                <KeyRound size={12} />
+                Change password
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

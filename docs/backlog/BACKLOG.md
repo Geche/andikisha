@@ -597,6 +597,21 @@ doc), preserving the detailed write-ups in that doc. Verify each item's current 
 landed token-consolidation work (Steps 1–5) before marking — some may already be resolved. Kept out of
 the 2026-06-13 hygiene PR to avoid expanding it; do as its own small docs PR.
 
+### FE-BACKLOG-012 — `/my/*` pages (dashboard, leave, payslips, attendance) don't gracefully handle no-employee users
+
+**Raised:** 2026-06-14 (Run 03 R3-2c downstream-assumption audit). **Priority:** Low–Medium.
+
+R3-1 relaxed the `/my/*` gate to any authenticated user (so the admin "My profile" link works for
+standalone admins), and R3-2c made **`/my/profile`** degrade gracefully for users with no linked
+employee record. The other `/my/*` pages — **dashboard, leave, payslips, attendance** — still assume an
+employee context (they query `/employees/me` or employee-scoped `/me/*` endpoints) and will show
+error/empty states for a standalone admin-tier user who reaches them by direct URL. They are **not
+linked** from the admin user-menu chip (only `/my/profile` is), so this is not a broken-link defect —
+but the surface isn't clean. **Why deferred (not folded into R3-2c):** it needs a design decision —
+what *should* a standalone admin see on an employee self-service dashboard? Hide each page, redirect to
+`/admin`, or show a "no employee record" empty state per page. Decide deliberately, then apply the same
+`hasEmployee` guard pattern used in `/my/profile`.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  

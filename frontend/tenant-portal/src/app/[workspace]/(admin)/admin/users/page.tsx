@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { Check, ShieldCheck, KeyRound } from "lucide-react";
+import { Check, ShieldCheck, KeyRound, UserPlus } from "lucide-react";
 import { PageHeader, Button, BaseModal, useToast, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
@@ -33,8 +33,17 @@ const ASSIGNABLE_ROLES = [
   { value: "HR_MANAGER", label: "HR Manager" },
   { value: "LINE_MANAGER", label: "Line Manager" },
 ];
+// Admin-tier roles invitable as standalone users (no employee record), per R3-0 / V17.
+// Excludes EMPLOYEE and LINE_MANAGER (self-service — added through the employee directory).
+const INVITABLE_ROLES = [
+  { value: "ADMIN", label: "Admin" },
+  { value: "HR_MANAGER", label: "HR Manager" },
+  { value: "HR_OFFICER", label: "HR Officer" },
+  { value: "PAYROLL_OFFICER", label: "Payroll Officer" },
+];
 function roleLabel(role: string): string {
   return ASSIGNABLE_ROLES.find((r) => r.value === role)?.label
+    ?? INVITABLE_ROLES.find((r) => r.value === role)?.label
     ?? role.charAt(0) + role.slice(1).toLowerCase().replace(/_/g, " ");
 }
 function fmtLastLogin(iso: string | null): string {
@@ -58,6 +67,10 @@ export default function UsersPage() {
   const [resetting, setResetting] = useState<TenantUser | null>(null);
   const [resetResult, setResetResult] = useState<ResetResult | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [inviteRole, setInviteRole] = useState("HR_MANAGER");
 
   const { data: rolesData, isLoading: rolesLoading } = useQuery<RolePermissions[]>({
     queryKey: ["users-roles"],
@@ -107,6 +120,35 @@ export default function UsersPage() {
     onError: (err) => toast(err.response?.data?.message ?? "Could not update user.", "error"),
   });
 
+  function openInvite() {
+    setInviteEmail("");
+    setInvitePhone("");
+    setInviteRole("HR_MANAGER");
+    setInviteOpen(true);
+  }
+
+  const invite = useMutation<
+    { email: string; temporaryPassword: string },
+    AxiosError<{ message?: string }>,
+    void
+  >({
+    mutationFn: () =>
+      apiClient
+        .post<{ email: string; temporaryPassword: string }>("/api/v1/auth/users/invite", {
+          email: inviteEmail.trim(),
+          phoneNumber: invitePhone.trim(),
+          role: inviteRole,
+        })
+        .then((r) => r.data),
+    onSuccess: (data) => {
+      setInviteOpen(false);
+      // Reuse the one-time temp-password reveal (AUTH-006 pattern).
+      setResetResult({ email: data.email, temporaryPassword: data.temporaryPassword });
+      void queryClient.invalidateQueries({ queryKey: ["users-list"] });
+    },
+    onError: (err) => toast(err.response?.data?.message ?? "Could not invite user.", "error"),
+  });
+
   if (!canManage) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -122,7 +164,18 @@ export default function UsersPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PageHeader title="User management" subtitle="Who has access, what they can do, and who holds each role." />
+      <PageHeader
+        title="User management"
+        subtitle="Who has access, what they can do, and who holds each role."
+        actions={
+          isAdmin ? (
+            <Button variant="cta" onClick={openInvite}>
+              <UserPlus size={15} aria-hidden="true" />
+              Invite user
+            </Button>
+          ) : undefined
+        }
+      />
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 space-y-8">
         {/* People — primary view */}
@@ -292,6 +345,58 @@ export default function UsersPage() {
           )}
         </section>
       </div>
+
+      {/* Invite user modal (ADMIN only) */}
+      {inviteOpen && (
+        <BaseModal labelId="invite-title" onClose={() => setInviteOpen(false)}>
+          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
+            <h2 id="invite-title" className="text-[16px] font-bold text-near-black mb-1">Invite user</h2>
+            <p className="text-[13px] text-neutral-500 mb-4">
+              Creates an admin-tier account with a one-time password. Employees are added through the
+              employee directory, not here.
+            </p>
+            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Email</label>
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              disabled={invite.isPending}
+              placeholder="name@company.co.ke"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
+            />
+            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5 mt-3">Phone number</label>
+            <input
+              type="tel"
+              value={invitePhone}
+              onChange={(e) => setInvitePhone(e.target.value)}
+              disabled={invite.isPending}
+              placeholder="+254712345678"
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
+            />
+            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5 mt-3">Role</label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+              disabled={invite.isPending}
+              className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13.5px] text-near-black focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900"
+            >
+              {INVITABLE_ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="outline" onClick={() => setInviteOpen(false)} disabled={invite.isPending}>Cancel</Button>
+              <Button
+                variant="primary"
+                onClick={() => invite.mutate()}
+                disabled={invite.isPending || !inviteEmail.trim() || !invitePhone.trim()}
+              >
+                {invite.isPending ? "Inviting…" : "Send invite"}
+              </Button>
+            </div>
+          </div>
+        </BaseModal>
+      )}
 
       {/* Change role modal (ADMIN only) */}
       {assigning && (

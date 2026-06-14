@@ -36,4 +36,13 @@ public enum Role {
      */
     public static final java.util.List<Role> OPERATIONAL = java.util.List.of(
             ADMIN, HR_MANAGER, HR_OFFICER, PAYROLL_OFFICER, LINE_MANAGER, EMPLOYEE);
+
+    /**
+     * Admin-tier office roles: may be invited as standalone users (no employee record) and
+     * may access the admin area (R3-0 ADMIN_ROLES). Excludes the self-service roles
+     * (EMPLOYEE, LINE_MANAGER), which must map to a real employee. Keep in sync with the
+     * V17 standalone-user CHECK constraint (which additionally allows SUPER_ADMIN).
+     */
+    public static final java.util.List<Role> ADMIN_TIER = java.util.List.of(
+            ADMIN, HR_MANAGER, HR_OFFICER, PAYROLL_OFFICER);
 }

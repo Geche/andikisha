@@ -6,10 +6,12 @@ import com.andikisha.auth.application.dto.request.ForgotPasswordRequest;
 import com.andikisha.auth.application.dto.request.LoginRequest;
 import com.andikisha.auth.application.dto.request.RefreshTokenRequest;
 import com.andikisha.auth.application.dto.request.RegisterRequest;
+import com.andikisha.auth.application.dto.request.InviteUserRequest;
 import com.andikisha.auth.application.dto.request.ResetPasswordRequest;
 import com.andikisha.auth.application.dto.request.SetActiveRequest;
 import com.andikisha.auth.application.dto.request.ProvisionEmployeeRequest;
 import com.andikisha.auth.application.dto.response.AdminPasswordResetResponse;
+import com.andikisha.auth.application.dto.response.InviteUserResponse;
 import com.andikisha.auth.application.dto.response.ProvisionEmployeeResponse;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
@@ -118,6 +120,17 @@ public class AuthController {
             @Valid @RequestBody SetActiveRequest request) {
         UUID changerId = UUID.fromString(authentication.getName());
         return authService.setUserActive(changerId, userId, request.active());
+    }
+
+    @PostMapping("/users/invite")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Invite a standalone admin-tier user (ADMIN only; returns a one-time temp password)")
+    public InviteUserResponse inviteUser(
+            Authentication authentication,
+            @Valid @RequestBody InviteUserRequest request) {
+        UUID performerId = UUID.fromString(authentication.getName());
+        return authService.inviteUser(performerId, request);
     }
 
     @PostMapping("/employees/provision")
