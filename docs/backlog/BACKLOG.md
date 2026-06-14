@@ -651,6 +651,24 @@ like the profile (`ProfileView`) — an admin must not be dropped into the emplo
 shared component rendered by both `/admin/change-password` and `/my/change-password`, or a
 role-conditional link. The BFF endpoint already exists, so this is a UI page + wiring.
 
+### DEV-BACKLOG-001 — jane.w@demo.co.ke password reverts between sessions
+
+**Raised:** 2026-06-14 (recurring during Run-03 verification). **Priority:** Low — dev/test only, not a product defect.
+
+**Symptom:** the demo employee `jane.w@demo.co.ke` repeatedly stops authenticating with the documented
+password `Employee@123!` (login → 401 `INVALID_CREDENTIALS`). Her row's `updated_at` shows the password
+hash being changed out-of-band; `is_active=true`, not locked. Each time it's restored (admin
+password-reset → set-password back to `Employee@123!`) login works, then later reverts.
+
+**Hypothesised causes (unconfirmed):** a seed/reset job or test fixture that re-seeds demo users; leftover
+state from an integration/e2e suite that resets credentials; or a scheduled demo-refresh. **Also note**
+(separate, AUTH-BACKLOG-009): rapid repeated logins for the same user return a transient refresh-rotation
+409 with no token — that's a different symptom (empty token, not 401) but compounds the confusion.
+
+**What it needs:** find what writes `users.password_hash` for jane outside an explicit admin action
+(grep seed scripts, CI fixtures, scheduled jobs), then either stop it touching the demo account or make
+the documented password the seeded one. Not blocking; affects only local verification.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
