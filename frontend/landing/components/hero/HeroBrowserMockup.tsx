@@ -22,9 +22,9 @@ const EMPLOYEES = [
 ];
 
 const FILINGS = [
-  { name: "P10A — PAYE return",  amount: "KES 568,000",  status: "Filed",     filed: true },
-  { name: "NSSF contribution",   amount: "KES 204,960",  status: "Filed",     filed: true },
-  { name: "SHIF remittance",     amount: "KES 132,330",  status: "Filed",     filed: true },
+  { name: "P10A — PAYE return",  amount: "KES 568,000",  status: "Ready",     filed: true },
+  { name: "NSSF contribution",   amount: "KES 204,960",  status: "Ready",     filed: true },
+  { name: "SHIF remittance",     amount: "KES 132,330",  status: "Ready",     filed: true },
   { name: "P9 annual — Dec",     amount: "—",            status: "Scheduled", filed: false },
 ];
 

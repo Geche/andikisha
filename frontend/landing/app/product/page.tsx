@@ -37,7 +37,7 @@ const COMPLIANCE_ITEMS = [
     code: "HL",
     name: "Housing Levy",
     detail:
-      "1.5% employee deduction + 1.5% employer contribution. Filed and reconciled every payroll cycle.",
+      "1.5% employee deduction + 1.5% employer contribution. Calculated and reconciled every payroll cycle.",
   },
   {
     code: "NITA",
@@ -54,10 +54,10 @@ const COMPLIANCE_ITEMS = [
 ];
 
 const INTEGRATIONS = [
-  { name: "KRA iTax", description: "Direct PAYE and WHT filing", status: "Live" },
+  { name: "KRA iTax", description: "PAYE return filing", status: "Coming" },
   { name: "M-Pesa", description: "Salary disbursement to any number", status: "Live" },
-  { name: "NSSF Portal", description: "Contribution remittance", status: "Live" },
-  { name: "SHIF Portal", description: "Health fund deductions", status: "Live" },
+  { name: "NSSF Portal", description: "Contribution remittance", status: "Coming" },
+  { name: "SHIF Portal", description: "Health fund deductions", status: "Coming" },
   { name: "QuickBooks", description: "Accounting journal sync", status: "Coming" },
   { name: "Xero", description: "Two-way ledger sync", status: "Coming" },
   { name: "Sage", description: "ERP payroll export", status: "Coming" },
