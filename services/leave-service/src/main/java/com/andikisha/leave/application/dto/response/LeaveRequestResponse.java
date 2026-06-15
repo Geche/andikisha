@@ -19,6 +19,7 @@ public record LeaveRequestResponse(
         String reviewerName,
         LocalDateTime reviewedAt,
         String rejectionReason,
+        String reviewNotes,
         boolean hasMedicalCert,
         LocalDateTime createdAt
 ) {}

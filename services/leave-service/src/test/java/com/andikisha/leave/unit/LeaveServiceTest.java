@@ -249,7 +249,7 @@ class LeaveServiceTest {
         when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
 
-        leaveService.approve(REQUEST_ID, REVIEWER_ID, "Manager");
+        leaveService.approve(REQUEST_ID, REVIEWER_ID, "Manager", null);
 
         assertThat(balance.getUsed()).isEqualByComparingTo("5");
         verify(eventPublisher).publishLeaveApproved(any());
@@ -260,7 +260,7 @@ class LeaveServiceTest {
         when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> leaveService.approve(REQUEST_ID, REVIEWER_ID, "Manager"))
+        assertThatThrownBy(() -> leaveService.approve(REQUEST_ID, REVIEWER_ID, "Manager", null))
                 .isInstanceOf(LeaveRequestNotFoundException.class);
     }
 
@@ -278,7 +278,7 @@ class LeaveServiceTest {
         when(requestRepository.findByIdAndTenantId(eq(leaveRequestId), anyString()))
                 .thenReturn(Optional.of(selfRequest));
 
-        assertThatThrownBy(() -> leaveService.approve(leaveRequestId, employeeId, "Self Manager"))
+        assertThatThrownBy(() -> leaveService.approve(leaveRequestId, employeeId, "Self Manager", null))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("cannot approve");
     }
