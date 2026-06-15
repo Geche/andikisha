@@ -147,7 +147,7 @@ public class LeaveService {
 
     @Transactional
     public LeaveRequestResponse approve(UUID leaveRequestId, UUID reviewerId,
-                                        String reviewerName) {
+                                        String reviewerName, String reviewNotes) {
         try {
             String tenantId = TenantContext.requireTenantId();
 
@@ -162,7 +162,7 @@ public class LeaveService {
 
             // Transition state first — this validates the request is still PENDING
             // (guards against concurrent approvals deducting the balance twice)
-            request.approve(reviewerId, reviewerName);
+            request.approve(reviewerId, reviewerName, reviewNotes);
 
             // Deduct from balance only after the state guard has passed
             if (request.getLeaveType() != LeaveType.UNPAID) {

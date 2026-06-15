@@ -156,7 +156,7 @@ class LeaveControllerTest {
 
     @Test
     void approve_whenRequestNotFound_returns404() throws Exception {
-        when(leaveService.approve(eq(REQUEST_ID), any(), any()))
+        when(leaveService.approve(eq(REQUEST_ID), any(), any(), any()))
                 .thenThrow(new LeaveRequestNotFoundException(REQUEST_ID));
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
@@ -169,7 +169,7 @@ class LeaveControllerTest {
 
     @Test
     void approve_alreadyApproved_returns422() throws Exception {
-        when(leaveService.approve(eq(REQUEST_ID), any(), any()))
+        when(leaveService.approve(eq(REQUEST_ID), any(), any(), any()))
                 .thenThrow(new BusinessRuleException("WRONG_STATUS", "Can only approve a PENDING leave request"));
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
@@ -182,7 +182,7 @@ class LeaveControllerTest {
 
     @Test
     void approve_happyPath_returns200() throws Exception {
-        when(leaveService.approve(eq(REQUEST_ID), any(), any()))
+        when(leaveService.approve(eq(REQUEST_ID), any(), any(), any()))
                 .thenReturn(minimalRequestResponse("APPROVED"));
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
@@ -523,7 +523,7 @@ class LeaveControllerTest {
                 REQUEST_ID, EMPLOYEE_ID, "Jane Doe", "ANNUAL",
                 LocalDate.now().plusDays(7), LocalDate.now().plusDays(11),
                 BigDecimal.valueOf(5), "Family trip", status,
-                null, null, null, null, false, LocalDateTime.now());
+                null, null, null, null, null, false, LocalDateTime.now());
     }
 
     private LeaveBalanceResponse minimalBalanceResponse() {

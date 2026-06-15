@@ -24,9 +24,12 @@ export function ApproveModal({ request, onClose }: ApproveModalProps) {
   const mutation = useMutation<LeaveRequest, AxiosError<{ message?: string }>, void>({
     mutationFn: () =>
       apiClient
-        // Backend is POST (not PATCH) and accepts no body — approve notes are not
-        // persisted server-side (see LEAVE-BACKLOG-001).
-        .post<LeaveRequest>(`/api/v1/leave/requests/${request.id}/approve`)
+        // Send the optional reviewer note; the backend persists it as review_notes
+        // and the request-detail view shows it (LEAVE-BACKLOG-001).
+        .post<LeaveRequest>(
+          `/api/v1/leave/requests/${request.id}/approve`,
+          notes.trim() ? { notes: notes.trim() } : undefined,
+        )
         .then((r) => r.data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["leave-requests"] });

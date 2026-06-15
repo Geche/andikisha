@@ -1,5 +1,6 @@
 package com.andikisha.leave.presentation.controller;
 
+import com.andikisha.leave.application.dto.request.ApproveLeaveRequest;
 import com.andikisha.leave.application.dto.request.ReviewLeaveRequest;
 import com.andikisha.leave.application.dto.request.SubmitLeaveRequest;
 import com.andikisha.leave.application.dto.response.LeaveBalanceResponse;
@@ -60,11 +61,13 @@ public class LeaveController {
             @RequestHeader("X-Tenant-ID") String tenantId,
             @RequestHeader("X-User-ID") String userId,
             @RequestHeader(value = "X-User-Email", required = false) String userEmail,
-            @PathVariable UUID id) {
+            @PathVariable UUID id,
+            @Valid @RequestBody(required = false) ApproveLeaveRequest request) {
         // Gateway injects X-User-Email (not X-User-Name); capture it as the human-
         // readable reviewer identifier. Auth has no name field yet — email is the name.
+        String notes = request != null ? request.notes() : null;
         return leaveService.approve(id, UUID.fromString(userId),
-                userEmail != null && !userEmail.isBlank() ? userEmail : "System");
+                userEmail != null && !userEmail.isBlank() ? userEmail : "System", notes);
     }
 
     @PostMapping("/requests/{id}/reject")

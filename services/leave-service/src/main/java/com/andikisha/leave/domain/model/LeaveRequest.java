@@ -57,6 +57,9 @@ public class LeaveRequest extends BaseEntity {
     @Column(name = "rejection_reason", length = 500)
     private String rejectionReason;
 
+    @Column(name = "review_notes", length = 1000)
+    private String reviewNotes;
+
     @Column(name = "has_medical_cert", nullable = false)
     private boolean hasMedicalCert = false;
 
@@ -90,6 +93,10 @@ public class LeaveRequest extends BaseEntity {
     }
 
     public void approve(UUID reviewedBy, String reviewerName) {
+        approve(reviewedBy, reviewerName, null);
+    }
+
+    public void approve(UUID reviewedBy, String reviewerName, String reviewNotes) {
         if (this.status != LeaveRequestStatus.PENDING) {
             throw new BusinessRuleException("Can only approve a PENDING leave request");
         }
@@ -97,6 +104,7 @@ public class LeaveRequest extends BaseEntity {
         this.reviewedBy = reviewedBy;
         this.reviewerName = reviewerName;
         this.reviewedAt = LocalDateTime.now();
+        this.reviewNotes = reviewNotes;
     }
 
     public void reject(UUID reviewedBy, String reviewerName, String reason) {
@@ -108,6 +116,9 @@ public class LeaveRequest extends BaseEntity {
         this.reviewerName = reviewerName;
         this.reviewedAt = LocalDateTime.now();
         this.rejectionReason = reason;
+        // Surface the reason as the reviewer's note too, so the detail view (which
+        // reads reviewNotes) shows it for rejections as well as approvals.
+        this.reviewNotes = reason;
     }
 
     public void cancel() {

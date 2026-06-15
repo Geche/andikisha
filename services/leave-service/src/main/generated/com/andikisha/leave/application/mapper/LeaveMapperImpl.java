@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-03T01:54:45+0300",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Amazon.com Inc.)"
+    date = "2026-06-15T19:49:47+0300",
+    comments = "version: 1.6.3, compiler: IncrementalProcessingEnvironment from gradle-language-java-8.12.jar, environment: Java 21.0.11 (Amazon.com Inc.)"
 )
 @Component
 public class LeaveMapperImpl implements LeaveMapper {
@@ -38,6 +38,7 @@ public class LeaveMapperImpl implements LeaveMapper {
         String reviewerName = null;
         LocalDateTime reviewedAt = null;
         String rejectionReason = null;
+        String reviewNotes = null;
         boolean hasMedicalCert = false;
         LocalDateTime createdAt = null;
 
@@ -52,13 +53,14 @@ public class LeaveMapperImpl implements LeaveMapper {
         reviewerName = r.getReviewerName();
         reviewedAt = r.getReviewedAt();
         rejectionReason = r.getRejectionReason();
+        reviewNotes = r.getReviewNotes();
         hasMedicalCert = r.isHasMedicalCert();
         createdAt = r.getCreatedAt();
 
         String leaveType = r.getLeaveType().name();
         String status = r.getStatus().name();
 
-        LeaveRequestResponse leaveRequestResponse = new LeaveRequestResponse( id, employeeId, employeeName, leaveType, startDate, endDate, days, reason, status, reviewedBy, reviewerName, reviewedAt, rejectionReason, hasMedicalCert, createdAt );
+        LeaveRequestResponse leaveRequestResponse = new LeaveRequestResponse( id, employeeId, employeeName, leaveType, startDate, endDate, days, reason, status, reviewedBy, reviewerName, reviewedAt, rejectionReason, reviewNotes, hasMedicalCert, createdAt );
 
         return leaveRequestResponse;
     }
