@@ -94,7 +94,7 @@ public class PayrollController {
         return payrollService.getPaySlipsForRun(id);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
     @GetMapping("/payslips/{id}")
     @Operation(summary = "Get a single payslip")
     public PaySlipResponse getPaySlip(
@@ -104,7 +104,7 @@ public class PayrollController {
         return payrollService.getPaySlip(id, authentication);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
     @GetMapping("/employees/{employeeId}/payslips")
     @Operation(summary = "Get payslip history for an employee")
     public Page<PaySlipResponse> getEmployeePaySlips(
