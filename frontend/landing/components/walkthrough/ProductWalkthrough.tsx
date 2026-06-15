@@ -119,7 +119,7 @@ const STEPS = [
   {
     id: "tax-filing",
     headline: "P9, P10A, NSSF return, SHIF schedule. Done.",
-    body: "After payroll is approved, the Integration Hub queues statutory file generation automatically. The P9 annual summary, the P10A monthly PAYE return, the NSSF contribution schedule, and the SHIF remittance schedule are all generated from the same payroll data. Filing is submitted to the respective authorities. The HR manager gets a confirmation. The audit log records every submission with a timestamp. No separate login to iTax required.",
+    body: "After payroll is approved, the Integration Hub generates every statutory return automatically. The P9 annual summary, the P10A monthly PAYE return, the NSSF contribution schedule, and the SHIF remittance schedule are all produced from the same payroll data, each formatted to its authority's spec and ready to file. The HR manager gets a notification, and the audit log records every generated return with a timestamp.",
     screen: (
       <div className="h-full bg-white flex flex-col p-4">
         <div className="bg-brand-900 -mx-4 -mt-4 px-4 pt-5 pb-4 mb-4">
@@ -128,10 +128,10 @@ const STEPS = [
         </div>
         <div className="flex flex-col gap-2 flex-1">
           {[
-            { label: "P10A — PAYE return", status: "Filed", time: "14:03" },
-            { label: "NSSF contribution", status: "Filed", time: "14:03" },
-            { label: "SHIF schedule", status: "Filed", time: "14:04" },
-            { label: "Housing Levy", status: "Filed", time: "14:04" },
+            { label: "P10A — PAYE return", status: "Ready", time: "14:03" },
+            { label: "NSSF contribution", status: "Ready", time: "14:03" },
+            { label: "SHIF schedule", status: "Ready", time: "14:04" },
+            { label: "Housing Levy", status: "Ready", time: "14:04" },
             { label: "P9 (annual, Dec)", status: "Scheduled", time: "Dec 31" },
           ].map((f) => (
             <div key={f.label} className="flex items-center justify-between py-2.5 border-b border-ink-100 last:border-0">
@@ -139,7 +139,7 @@ const STEPS = [
                 <p className="text-[11px] font-medium text-ink-900">{f.label}</p>
                 <p className="text-[10px] text-ink-400 font-mono">{f.time}</p>
               </div>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${f.status === "Filed" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"}`}>
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${f.status === "Ready" ? "bg-brand-50 text-brand-700" : "bg-amber-light text-amber-dark"}`}>
                 {f.status}
               </span>
             </div>

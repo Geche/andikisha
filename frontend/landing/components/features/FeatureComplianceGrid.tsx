@@ -6,8 +6,8 @@ import Eyebrow from "@/components/ui/Eyebrow";
 const LEFT_CARDS = [
   {
     icon: FileText,
-    title: "Automatic statutory filings",
-    body: "P10A, NSSF schedule, SHIF remittance, Housing Levy — generated and submitted automatically after payroll approval.",
+    title: "Statutory returns, auto-generated",
+    body: "P10A, NSSF schedule, SHIF remittance, Housing Levy — generated automatically from approved payroll, formatted and ready to file.",
   },
   {
     icon: Smartphone,
