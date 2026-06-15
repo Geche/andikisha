@@ -26,6 +26,11 @@ export function findCorrectDashboard(roles: Set<string>): string {
   for (const r of ADMIN_ROLES) {
     if (roles.has(r)) return "/admin/dashboard";
   }
-  if (roles.has("EMPLOYEE")) return "/my/dashboard";
+  // Operational, non-admin roles live under /my/*. LINE_MANAGER carries a single
+  // role claim with no EMPLOYEE, so it must be matched explicitly — otherwise a
+  // successful login falls through to /access-denied (a 404 at /{workspace}/...).
+  // Per frontend CLAUDE.md, LINE_MANAGER routes through /my/* only; its team
+  // surface is a conditional section inside /my/*.
+  if (roles.has("EMPLOYEE") || roles.has("LINE_MANAGER")) return "/my/dashboard";
   return "/access-denied";
 }
