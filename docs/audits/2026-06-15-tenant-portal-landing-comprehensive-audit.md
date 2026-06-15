@@ -5,9 +5,9 @@ Scope: frontend/tenant-portal, frontend/landing
 Method: Browser-driven (Claude Preview / Chromium against the live dev stack on :3000 and :3002), DevTools console + network, plus curl for authz matrix confirmation and read-only code tracing. All six personas exercised.
 
 ## Executive summary
-- Total findings: 13 (excluding Finding Zero, which is fixed and merged)
-- Critical: 1 | High: 3 | Medium: 4 | Low: 3 | Polish: 2
-- New backlog items proposed: 9
+- Total findings: 14 (excluding Finding Zero, which is fixed and merged)
+- Critical: 1 | High: 4 | Medium: 4 | Low: 3 | Polish: 2
+- New backlog items proposed: 10
 - Existing backlog items confirmed: 4 (LEAVE-BACKLOG-001, FE-BACKLOG-014, AUTH-BACKLOG-002, AUTHZ-BACKLOG-001)
 - Decision doc conflicts found: 1 (the audit's "compliance service is the sole authority, no recalculation" principle is violated by the landing calculator)
 
@@ -67,7 +67,7 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 
 ---
 
-### High (3)
+### High (4)
 
 #### H1 — PAYROLL_OFFICER can create a payroll run but is forbidden from listing/viewing it (payroll page errors on load)
 - **What I did:** Persona PAYROLL_OFFICER (`payroll.officer@demo.co.ke`), URL `/andikisha-demo/admin/payroll`. Then confirmed via curl authz matrix.
@@ -110,6 +110,17 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 - **Category:** Missing feature / accuracy (copy).
 - **Backlog:** New (proposed PRODUCT). M-Pesa "Live" (`SandboxMpesaClient` stub) is a softer instance of the same overstatement.
 - **Evidence:** `product/page.tsx:56-60`; `FilingService.java` (no RestClient/WebClient); pricing roadmap array; home hero "Filed" mock (browser).
+
+#### H4 — LINE_MANAGER cannot view their own payslips (403 at the role gate)
+- **What I did:** Persona LINE_MANAGER, `/andikisha-demo/my/payslips`; then isolated the cause with a curl comparison.
+- **What happened:** The page calls `GET /api/v1/payroll/employees/{employeeId}/payslips` and gets **403** (DevTools console: `AxiosError 403`); the UI shows "Could not load payslips. Please try again later." Curl, same employee_id: **LINE_MANAGER → 403, ADMIN → 200**. So the data/id is fine; the rejection is at the role gate.
+- **What I expected:** A LINE_MANAGER is always employee-linked and should read their own payslips exactly as an EMPLOYEE does.
+- **Root cause:** `PayrollController` `@PreAuthorize` on `GET /employees/{employeeId}/payslips` (and `GET /payslips/{id}`) is `hasAnyRole('ADMIN','HR_MANAGER','HR_OFFICER','PAYROLL_OFFICER','EMPLOYEE')` — **`LINE_MANAGER` is omitted.** Same omission pattern as H1/H2: an operational role dropped from a grant list. (Distinct from this demo account's dangling `employee_id`, which only affects the dashboard "Could not load your profile" message — ADMIN reading the same id returns 200, proving the payslip 403 is the role, not the data.)
+- **Severity:** High (borderline High/Medium — a core self-service surface is fully unusable for the role, but it is one sub-surface rather than the role's primary function).
+- **Category:** Security / Bug (authorization).
+- **Fix shape:** add `'LINE_MANAGER'` to the `@PreAuthorize` on `GET /employees/{employeeId}/payslips` and `GET /payslips/{id}` (the service already enforces self-ownership for non-admin callers).
+- **Backlog:** New (proposed AUTHZ-BACKLOG-003); same WS-B workstream as H1/H2.
+- **Evidence:** curl LINE_MANAGER 403 vs ADMIN 200 (same employee_id); `PayrollController.java` payslip-read `@PreAuthorize` lists (EMPLOYEE present, LINE_MANAGER absent); console 403; `/my/payslips` "Could not load payslips" (browser).
 
 ---
 
@@ -196,7 +207,7 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 
 **WS-A — Marketing accuracy (prospect-facing trust):** C1 (calculator miscalc), H3 (filing "Live"/"Filed" overpromise), P1 (NHIF/SHIF label), P2 (band doc mismatch). One coherent "make the public claims true" workstream; C1 and H3 are the credibility risks.
 
-**WS-B — Role-grant completeness (authorization):** H1 (PAYROLL_OFFICER can create but not list/view payroll runs), H2 (LINE_MANAGER has no approval UI). Both are "a canonical role can't do its job" — H1 is a backend grant gap, H2 is a missing frontend surface; both trace to roles added/renamed in R3-0 without completing the surface. Tie to AUTHZ-BACKLOG-001.
+**WS-B — Role-grant completeness (authorization):** H1 (PAYROLL_OFFICER can create but not list/view payroll runs), H2 (LINE_MANAGER has no approval UI), H4 (LINE_MANAGER omitted from payslip-read grants, so can't see own payslips). All three are "an operational role dropped from a grant/surface" — H1 and H4 are backend `@PreAuthorize` omissions, H2 is a missing frontend surface; all trace to roles added/renamed in R3-0 without completing the grant set. Tie to AUTHZ-BACKLOG-001. **This is now a three-instance pattern — the whole `@PreAuthorize` matrix for LINE_MANAGER and PAYROLL_OFFICER should be swept, not patched endpoint-by-endpoint.**
 
 **WS-C — Broken/again-missing pages and error states:** M1 (change-password 404), M4 (access-denied 404), M3 (payroll error misattribution + dual state). "Pages and error states that dead-end or mislead."
 
@@ -210,11 +221,12 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 2. **AUTHZ-BACKLOG-002** (High) — PAYROLL_OFFICER missing from the `GET /runs`, `GET /runs/{id}`, `GET /runs/{id}/payslips` `@PreAuthorize` grants (though present on `POST /runs` + `/calculate`); can create a run but not list/view it.
 3. **FE-BACKLOG-015** (High) — No LINE_MANAGER leave-approval surface under `/my/*`; backend capability is unreachable.
 4. **PRODUCT-BACKLOG-002** (High) — Product/home copy claims statutory filing is "Live"/"Filed" (and WHT) with no transmission; reconcile to pricing-page roadmap framing.
-5. **FE-BACKLOG-016** (Medium) — React-Query failures render generic "Check your connection" for non-network errors (e.g. 403), and error + empty-state can render together (payroll).
-6. **FE-BACKLOG-017** (Medium) — `/{workspace}/access-denied` route is missing (404); add a workspace-scoped access-denied page.
-7. **LEAVE-BACKLOG-002** (Low) — Leave request detail: response/type contract gaps (`employeeNumber` blank, reviewer shown as email).
-8. **LEAVE-BACKLOG-003** (Low) — Leave balances show fractional values (paternity 9.3, compassionate 3.3) and surface ineligible types (paternity for a female employee); confirm accrual/eligibility.
-9. **UI-BACKLOG-004** (Low) — `RoleBadge` LINE_MANAGER purple via hardcoded hex / arbitrary Tailwind values; move to brand tokens and audit the colour map.
+5. **AUTHZ-BACKLOG-003** (High) — LINE_MANAGER omitted from `GET /employees/{employeeId}/payslips` and `GET /payslips/{id}` `@PreAuthorize`; line managers can't view their own payslips. Sweep the full `@PreAuthorize` matrix for LINE_MANAGER + PAYROLL_OFFICER (covers H1, H4) rather than patching per-endpoint.
+6. **FE-BACKLOG-016** (Medium) — React-Query failures render generic "Check your connection" for non-network errors (e.g. 403), and error + empty-state can render together (payroll).
+7. **FE-BACKLOG-017** (Medium) — `/{workspace}/access-denied` route is missing (404); add a workspace-scoped access-denied page.
+8. **LEAVE-BACKLOG-002** (Low) — Leave request detail: response/type contract gaps (`employeeNumber` blank, reviewer shown as email).
+9. **LEAVE-BACKLOG-003** (Low) — Leave balances show fractional values (paternity 9.3, compassionate 3.3) and surface ineligible types (paternity for a female employee); confirm accrual/eligibility.
+10. **UI-BACKLOG-004** (Low) — `RoleBadge` LINE_MANAGER purple via hardcoded hex / arbitrary Tailwind values; move to brand tokens and audit the colour map.
 
 (Plus P1/P2 polish items, optionally folded into LANDING/COMPLIANCE docs cleanup.)
 
