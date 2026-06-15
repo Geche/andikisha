@@ -11,7 +11,7 @@ Method: Browser-driven (Claude Preview / Chromium against the live dev stack on 
 - Existing backlog items confirmed: 4 (LEAVE-BACKLOG-001, FE-BACKLOG-014, AUTH-BACKLOG-002, AUTHZ-BACKLOG-001)
 - Decision doc conflicts found: 1 (the audit's "compliance service is the sole authority, no recalculation" principle is violated by the landing calculator)
 
-**Headline:** The product's day-to-day surfaces are largely healthy — login (post-hotfix), employees, leave apply/approve, users/roles, settings, and the real payroll engine all work and resolve names correctly. The serious problems cluster at two seams: (1) the **marketing site overstates the product** — a prospect-facing payroll calculator that miscalculates statutory deductions while claiming to be "calculated to the cent," and a product page claiming statutory filings are "Live"/"Filed" when nothing is transmitted to any authority; and (2) **two roles cannot do their jobs** — PAYROLL_OFFICER is denied every payroll endpoint, and LINE_MANAGER has no UI to approve leave despite that being the role's entire purpose.
+**Headline:** The product's day-to-day surfaces are largely healthy — login (post-hotfix), employees, leave apply/approve, users/roles, settings, and the real payroll engine all work and resolve names correctly. The serious problems cluster at two seams: (1) the **marketing site overstates the product** — a prospect-facing payroll calculator that miscalculates statutory deductions while claiming to be "calculated to the cent," and a product page claiming statutory filings are "Live"/"Filed" when nothing is transmitted to any authority; and (2) **two roles cannot do their jobs** — PAYROLL_OFFICER can create a payroll run but is forbidden from listing/viewing it (so the payroll page errors on load), and LINE_MANAGER has no UI to approve leave despite that being the role's entire purpose.
 
 ---
 
@@ -69,15 +69,28 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 
 ### High (3)
 
-#### H1 — PAYROLL_OFFICER is denied every payroll endpoint (role cannot perform its function)
+#### H1 — PAYROLL_OFFICER can create a payroll run but is forbidden from listing/viewing it (payroll page errors on load)
 - **What I did:** Persona PAYROLL_OFFICER (`payroll.officer@demo.co.ke`), URL `/andikisha-demo/admin/payroll`. Then confirmed via curl authz matrix.
-- **What happened:** Page renders, then the runs fetch returns **403** (DevTools console: `AxiosError: Request failed with status code 403`). Authz matrix on `GET /api/v1/payroll/runs`: ADMIN 200, HR_MANAGER 200, HR_OFFICER 200, **PAYROLL_OFFICER 403**.
-- **What I expected:** PAYROLL_OFFICER — an admin-tier role in `ADMIN_ROLES`, invitable and assignable, whose persona spec says it "should access payroll surfaces" — to read payroll runs.
-- **Root cause:** `PayrollController` `@PreAuthorize` is `hasAnyRole('ADMIN','HR_MANAGER','HR_OFFICER')` on `/runs`, `/runs/{id}`, `/runs/{id}/payslips` and `hasAnyRole('ADMIN','HR_MANAGER')` on approve. **PAYROLL_OFFICER appears in none of them.** R3-0 rewrote `HR → HR_OFFICER` on this controller but never added PAYROLL_OFFICER.
-- **Severity:** High. The role's sole purpose is unusable; admin can't delegate payroll to a payroll officer.
+- **What happened:** Page renders, then its mount call to list runs returns **403** (DevTools console: `AxiosError: Request failed with status code 403`), and the UI shows "Could not load payroll runs. Check your connection." (see M3). Authz matrix on `GET /api/v1/payroll/runs`: ADMIN 200, HR_MANAGER 200, HR_OFFICER 200, **PAYROLL_OFFICER 403**.
+- **What I expected:** PAYROLL_OFFICER — an admin-tier role in `ADMIN_ROLES`, invitable and assignable, whose persona spec says it "should access payroll surfaces" — to read the payroll runs it is allowed to create.
+- **Root cause — an internally inconsistent grant set, not a deliberate policy.** Reading `PayrollController.java` line by line, PAYROLL_OFFICER **is** granted the write/read endpoints around runs but **not** the three that list or open a run:
+  | Endpoint | `@PreAuthorize` | PAYROLL_OFFICER |
+  |---|---|---|
+  | `POST /runs` (create) | ADMIN, HR_MANAGER, **PAYROLL_OFFICER** | ✅ |
+  | `POST /runs/{id}/calculate` | ADMIN, HR_MANAGER, **PAYROLL_OFFICER** | ✅ |
+  | `POST /runs/{id}/approve` | ADMIN, HR_MANAGER | — (higher-tier, plausibly intentional) |
+  | **`GET /runs`** (list — the page's first call) | ADMIN, HR_MANAGER, HR_OFFICER | ❌ |
+  | **`GET /runs/{id}`** (view a run) | ADMIN, HR_MANAGER, HR_OFFICER | ❌ |
+  | **`GET /runs/{id}/payslips`** | ADMIN, HR_MANAGER, HR_OFFICER | ❌ |
+  | `GET /payslips/{id}` | …, HR_OFFICER, **PAYROLL_OFFICER**, EMPLOYEE | ✅ |
+  | `GET /employees/{id}/payslips` | …, HR_OFFICER, **PAYROLL_OFFICER**, EMPLOYEE | ✅ |
+
+  So the role can **create and calculate** a payroll run and read individual payslips, but cannot **list or open** the runs — it can produce a run it is then forbidden to see. The three `GET /runs*` endpoints received HR_OFFICER in R3-0's `HR → HR_OFFICER` rewrite but were never given PAYROLL_OFFICER, even though the sibling `POST /runs` and `POST /runs/{id}/calculate` already have it. This reads as a copy/omission oversight on those three lines, not an intent decision.
+- **Severity:** High. The payroll role's primary screen errors on load; admin can't delegate payroll management to a payroll officer.
 - **Category:** Security / Bug (authorization).
+- **Fix shape:** add `'PAYROLL_OFFICER'` to the `@PreAuthorize` on `GET /runs`, `GET /runs/{id}`, and `GET /runs/{id}/payslips` (matching the create/calculate endpoints). Approve is a separate intent question.
 - **Backlog:** Cross-references **AUTHZ-BACKLOG-001** (grant-intent audit) but is a concrete functional defect, not just an intent question. Proposed new payroll-authz item.
-- **Evidence:** curl matrix above; `PayrollController.java:71-90` `@PreAuthorize` grants; console 403.
+- **Evidence:** curl matrix above; `PayrollController.java` `@PreAuthorize` grants (POST `/runs` + `/runs/{id}/calculate` include PAYROLL_OFFICER; the three `GET /runs*` do not); console 403.
 
 #### H2 — LINE_MANAGER has no leave-approval surface in the UI (canonical workflow impossible)
 - **What I did:** Scenario 1, Step 2. Persona LINE_MANAGER. Inspected `/my/*` nav; attempted `/andikisha-demo/admin/leave`.
@@ -183,7 +196,7 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 
 **WS-A — Marketing accuracy (prospect-facing trust):** C1 (calculator miscalc), H3 (filing "Live"/"Filed" overpromise), P1 (NHIF/SHIF label), P2 (band doc mismatch). One coherent "make the public claims true" workstream; C1 and H3 are the credibility risks.
 
-**WS-B — Role-grant completeness (authorization):** H1 (PAYROLL_OFFICER denied payroll), H2 (LINE_MANAGER has no approval UI). Both are "a canonical role can't do its job" — H1 is a backend grant gap, H2 is a missing frontend surface; both trace to roles added/renamed in R3-0 without completing the surface. Tie to AUTHZ-BACKLOG-001.
+**WS-B — Role-grant completeness (authorization):** H1 (PAYROLL_OFFICER can create but not list/view payroll runs), H2 (LINE_MANAGER has no approval UI). Both are "a canonical role can't do its job" — H1 is a backend grant gap, H2 is a missing frontend surface; both trace to roles added/renamed in R3-0 without completing the surface. Tie to AUTHZ-BACKLOG-001.
 
 **WS-C — Broken/again-missing pages and error states:** M1 (change-password 404), M4 (access-denied 404), M3 (payroll error misattribution + dual state). "Pages and error states that dead-end or mislead."
 
@@ -194,7 +207,7 @@ Lawrence reported login broken for LINE_MANAGER, HR_OFFICER, and HR_MANAGER. Bro
 ## New backlog items proposed
 
 1. **LANDING-BACKLOG-001** (Critical) — Landing payroll calculator NSSF Tier-II and PAYE-base bugs in `compute-payslip.ts`; reconcile to the backend engine.
-2. **AUTHZ-BACKLOG-002** (High) — PAYROLL_OFFICER missing from all `PayrollController` `@PreAuthorize` grants; role cannot access payroll.
+2. **AUTHZ-BACKLOG-002** (High) — PAYROLL_OFFICER missing from the `GET /runs`, `GET /runs/{id}`, `GET /runs/{id}/payslips` `@PreAuthorize` grants (though present on `POST /runs` + `/calculate`); can create a run but not list/view it.
 3. **FE-BACKLOG-015** (High) — No LINE_MANAGER leave-approval surface under `/my/*`; backend capability is unreachable.
 4. **PRODUCT-BACKLOG-002** (High) — Product/home copy claims statutory filing is "Live"/"Filed" (and WHT) with no transmission; reconcile to pricing-page roadmap framing.
 5. **FE-BACKLOG-016** (Medium) — React-Query failures render generic "Check your connection" for non-network errors (e.g. 403), and error + empty-state can render together (payroll).
