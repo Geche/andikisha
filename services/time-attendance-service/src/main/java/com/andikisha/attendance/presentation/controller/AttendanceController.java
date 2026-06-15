@@ -50,7 +50,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
     @Operation(summary = "Get attendance history for an employee")
     public Page<AttendanceResponse> getEmployeeAttendance(
             @PathVariable UUID employeeId,
@@ -69,7 +69,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}/monthly-summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
     @Operation(summary = "Get monthly attendance summary for payroll")
     public MonthlySummaryResponse getMonthlySummary(
             @PathVariable UUID employeeId,
