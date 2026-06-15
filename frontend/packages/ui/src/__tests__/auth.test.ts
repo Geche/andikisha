@@ -40,6 +40,13 @@ describe("findCorrectDashboard", () => {
     expect(findCorrectDashboard(new Set(["EMPLOYEE", "LINE_MANAGER"]))).toBe("/my/dashboard");
   });
 
+  it("returns /my/dashboard for LINE_MANAGER alone (single-role JWT — the production case)", () => {
+    // Regression: JWTs carry a single `role`, so an operational LINE_MANAGER's role
+    // set is {"LINE_MANAGER"} with no EMPLOYEE. Before the fix this fell through to
+    // /access-denied, so the user landed on a 404 after a successful login.
+    expect(findCorrectDashboard(new Set(["LINE_MANAGER"]))).toBe("/my/dashboard");
+  });
+
   it("returns /access-denied for JWT with empty roles array (no recognised roles)", () => {
     expect(findCorrectDashboard(new Set<string>([]))).toBe("/access-denied");
   });
