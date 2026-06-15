@@ -149,7 +149,7 @@ export default function PayrollPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
-  const { data, isLoading, isError, refetch } = useQuery<PagedResponse<PayrollRun>>({
+  const { data, isLoading, isError, error, refetch } = useQuery<PagedResponse<PayrollRun>>({
     queryKey: ["payroll-runs", page, pageSize],
     queryFn: () =>
       apiClient
@@ -160,6 +160,15 @@ export default function PayrollPage() {
   const runs = data?.content ?? [];
   const totalElements = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
+
+  // Distinguish an authorisation failure from a transient/network failure so the
+  // message is accurate (a 403 is not a connection problem) and Retry is hidden
+  // when retrying cannot help.
+  const errorStatus = (error as { response?: { status?: number } } | null)?.response?.status;
+  const errorMessage =
+    errorStatus === 403
+      ? "You don't have permission to view payroll runs. Ask an administrator if you need access."
+      : "Could not load payroll runs. Please try again.";
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -177,17 +186,17 @@ export default function PayrollPage() {
       />
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
-        {isError && (
+        {isError ? (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
             <AlertTriangle size={15} className="flex-shrink-0" />
-            <span className="flex-1">Could not load payroll runs. Check your connection.</span>
-            <button onClick={() => void refetch()} className="text-[12px] font-semibold underline underline-offset-2">
-              Retry
-            </button>
+            <span className="flex-1">{errorMessage}</span>
+            {errorStatus !== 403 && (
+              <button onClick={() => void refetch()} className="text-[12px] font-semibold underline underline-offset-2">
+                Retry
+              </button>
+            )}
           </div>
-        )}
-
-        {isLoading ? (
+        ) : isLoading ? (
           <TableSkeleton />
         ) : (
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
@@ -219,15 +228,17 @@ export default function PayrollPage() {
           </div>
         )}
 
-        <PaginationBar
-          currentPage={page}
-          totalPages={totalPages}
-          totalCount={totalElements}
-          pageSize={pageSize}
-          itemLabel="runs"
-          onPageChange={setPage}
-          onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
-        />
+        {!isError && (
+          <PaginationBar
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalElements}
+            pageSize={pageSize}
+            itemLabel="runs"
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+          />
+        )}
       </div>
     </div>
   );
