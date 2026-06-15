@@ -27,6 +27,8 @@ export interface PayrollResult {
 export interface StatutoryRates {
   payeBands: { limit: number; rate: number }[]; // limit = upper bound (Infinity = top band)
   personalRelief: number;
+  insuranceReliefRate: number; // relief = rate × SHIF, capped at insuranceReliefMax
+  insuranceReliefMax: number;
   nssfRate: number;
   nssfTier1Limit: number;
   nssfTier2Limit: number;
@@ -40,22 +42,25 @@ interface RawSummary {
   effectiveDate: string;
   taxBrackets: { bandNumber: number; lowerBound: number; upperBound?: number | null; rate: number }[];
   statutoryRates: { rateType: string; rateValue: number; limitAmount?: number | null; secondaryLimit?: number | null }[];
-  taxReliefs: { reliefType: string; monthlyAmount?: number | null }[];
+  taxReliefs: { reliefType: string; monthlyAmount?: number | null; rate?: number | null; maxAmount?: number | null }[];
 }
 
 export function toRates(s: RawSummary): StatutoryRates {
   const byType = (t: string) => s.statutoryRates.find((r) => r.rateType === t);
   const nssf = byType("NSSF");
-  const tier1 = nssf?.limitAmount ?? 0;
-  const tier2Increment = nssf?.secondaryLimit ?? 0;
+  const tier1Ceiling = nssf?.limitAmount ?? 0;     // Tier I pensionable ceiling (KES 7,000)
+  const tier2Ceiling = nssf?.secondaryLimit ?? 0;  // Tier II pensionable ceiling (KES 36,000) — absolute, NOT an increment over Tier I
+  const insurance = s.taxReliefs.find((r) => r.reliefType === "INSURANCE_RELIEF");
   return {
     payeBands: [...s.taxBrackets]
       .sort((a, b) => a.bandNumber - b.bandNumber)
       .map((b) => ({ limit: b.upperBound ?? Infinity, rate: b.rate })),
     personalRelief: s.taxReliefs.find((r) => r.reliefType === "PERSONAL_RELIEF")?.monthlyAmount ?? 0,
+    insuranceReliefRate: insurance?.rate ?? 0,
+    insuranceReliefMax: insurance?.maxAmount ?? 0,
     nssfRate: nssf?.rateValue ?? 0,
-    nssfTier1Limit: tier1,
-    nssfTier2Limit: tier1 + tier2Increment,
+    nssfTier1Limit: tier1Ceiling,
+    nssfTier2Limit: tier2Ceiling,
     shifRate: byType("SHIF")?.rateValue ?? 0,
     housingRate: byType("HOUSING_LEVY_EMPLOYEE")?.rateValue ?? 0,
     effectiveDate: s.effectiveDate,
@@ -70,7 +75,21 @@ export function computePayslip(input: PayrollInput, rates: StatutoryRates): Payr
   const { grossMonthly, pensionPercent = 0, helbDeduction = 0 } = input;
   const gross = Math.max(0, grossMonthly);
   const pension = gross * (pensionPercent / 100);
-  const taxableIncome = gross - pension;
+
+  // NSSF first — the employee contribution is an allowable deduction that
+  // reduces PAYE-taxable income, so it must be computed before tax. Tier II uses
+  // the absolute pensionable ceiling (KES 36,000), not Tier I + an increment.
+  const nssfTier1 = Math.min(gross, rates.nssfTier1Limit) * rates.nssfRate;
+  const nssfTier2 = Math.max(0, Math.min(gross, rates.nssfTier2Limit) - rates.nssfTier1Limit) * rates.nssfRate;
+  const nssf = nssfTier1 + nssfTier2;
+
+  const shif = gross * rates.shifRate;
+  const housingLevy = gross * rates.housingRate;
+
+  // Taxable income = gross minus NSSF and registered pension. The Affordable
+  // Housing Levy is NOT deductible (KRA / Finance Act 2023) — this mirrors the
+  // payroll engine (KenyanTaxCalculator), so the calculator and payroll agree.
+  const taxableIncome = Math.max(0, gross - nssf - pension);
 
   let tax = 0;
   let prev = 0;
@@ -80,15 +99,12 @@ export function computePayslip(input: PayrollInput, rates: StatutoryRates): Payr
     tax += slice * band.rate;
     prev = band.limit;
   }
-  const paye = Math.max(0, tax - rates.personalRelief);
+  // Reliefs: personal relief + insurance relief (rate × SHIF, capped), as the engine applies.
+  const insuranceRelief = Math.min(shif * rates.insuranceReliefRate, rates.insuranceReliefMax);
+  const paye = Math.max(0, tax - rates.personalRelief - insuranceRelief);
 
-  const nssfTier1 = Math.min(gross, rates.nssfTier1Limit) * rates.nssfRate;
-  const nssfTier2 = Math.max(0, Math.min(gross, rates.nssfTier2Limit) - rates.nssfTier1Limit) * rates.nssfRate;
-  const shif = gross * rates.shifRate;
-  const housingLevy = gross * rates.housingRate;
   const helb = Math.max(0, helbDeduction);
-
-  const totalDeductions = paye + nssfTier1 + nssfTier2 + shif + housingLevy + pension + helb;
+  const totalDeductions = paye + nssf + shif + housingLevy + pension + helb;
 
   return {
     gross,
