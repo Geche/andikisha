@@ -63,7 +63,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'LINE_MANAGER', 'ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get the calling employee's own record (self-service)")
     public EmployeeDetailResponse getMe(@RequestHeader("X-User-Email") String email) {
         return queryService.findByEmail(email);
