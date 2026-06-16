@@ -42,7 +42,7 @@ export { Switch } from "./components/Switch";
 export { FormField } from "./components/FormField";
 
 // ── Primitives — Loading ──────────────────────────────────────────────────
-export { Skeleton, SkeletonText } from "./components/Skeleton";
+export { Skeleton, SkeletonText, SkeletonRegion } from "./components/Skeleton";
 export { Spinner } from "./components/Spinner";
 
 // ── Command palette ───────────────────────────────────────────────────────
