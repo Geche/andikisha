@@ -278,6 +278,37 @@ super-admin display-name source analogous to AUTH-006's `display_name`.
 
 ---
 
+### PLATFORM-BACKLOG-003 — Dashboard health grid fabricates a 13-service list on empty/error response
+
+**Raised:** 2026-06-16 (Loading-state remediation, W0 health-grid investigation).
+**Priority:** Medium — correctness/honesty on a SUPER_ADMIN operational surface; misleads during a real outage.
+
+**Problem:** `frontend/platform-portal/src/app/(platform)/dashboard/page.tsx` `ServiceHealthGrid`
+renders live data from `GET /api/v1/super-admin/system/health` on success — but on **empty or errored**
+response it falls back to a **hardcoded 13-service array, every row marked `UNKNOWN`**:
+
+```ts
+const rows = isLoading ? placeholder : services.length ? services : placeholder;
+```
+
+The `placeholder` is also reused for the loading state, so loading, empty, and error all resolve to the
+**same** 13 grey `UNKNOWN` rows. The endpoint is real and consumed (corrected from the Phase A audit's
+"ignores the endpoint" framing — it does not). The defect is the **fallback**: when the health call fails
+during an actual incident, the grid invents a normal-looking, complete service list instead of saying it
+couldn't load. A platform admin triaging an outage sees a plausible roster while the cluster is down. This
+is a correctness defect, not a missing skeleton — filed on its own terms so a postmortem can find it, even
+though the fix ships inside the W4 commit.
+
+**Fix (lands in W4, loading-state run):** separate the three states per the run's constraint #5 —
+- loading → skeleton rows matching the grid's dimensions (never the fabricated list),
+- empty/error → an explicit "Couldn't load service health" state,
+- success → the live `services` list.
+
+Never render fabricated `UNKNOWN` rows as if they were data. Backend status fidelity (DOWN vs UNKNOWN) is
+tracked separately in `docs/Engineering/backend/2026-06-16-system-health-up-unknown-only-status.md`.
+
+---
+
 ### TENANT-BACKLOG-003 — Licence-state enforcement divergence (date reconciliation + status transition + entitlement)
 
 **Raised:** 2026-05-19 · **Rescoped:** 2026-06-13
