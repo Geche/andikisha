@@ -682,6 +682,40 @@ like the profile (`ProfileView`) — an admin must not be dropped into the emplo
 shared component rendered by both `/admin/change-password` and `/my/change-password`, or a
 role-conditional link. The BFF endpoint already exists, so this is a UI page + wiring.
 
+**Update 2026-06-17:** the `/my/change-password` page now exists, but was built **without** the
+shell-awareness this item prescribed — an admin reaching it from `/admin/profile` is dropped into the
+employee shell, and the "Back to profile" link points to `/my/profile` (it bounces back via the
+`isAdmin → /admin/profile` redirect, but that bounce is racy — R2-9). The shell-awareness half of this
+item is therefore still open; tracked for a standalone fix outside the loading-states run.
+
+---
+
+### FE-BACKLOG-015 — Attendance 403s for every employee: BFF proxy allowlist prefix mismatch
+
+**Raised:** 2026-06-17 (found during loading-state W1 behavioural verification of `my/attendance`).
+**Priority:** High — `my/attendance` is non-functional for **every** employee, not a single account.
+
+**Problem:** The tenant-portal BFF proxy allowlist
+(`frontend/tenant-portal/src/app/api/proxy/[...path]/route.ts`) lists the prefix
+`/api/v1/time-attendance`, but the attendance page requests `/api/v1/attendance/employees/{id}` and the
+api-gateway routes `/api/v1/attendance/**` (+ `/api/v1/shifts/**`) to attendance-service
+(`application.yml` route `attendance-service`). The allowlist prefix therefore never matches, and the
+proxy returns `403 {"error":"FORBIDDEN","message":"Path not allowed"}` before the request ever reaches
+the gateway.
+
+**Blast radius:** every user, every request. The allowlist is a static prefix check with no per-user or
+per-role logic — so this is **not** account-specific (not a `jane.w` quirk). `my/attendance` has never
+successfully loaded data through the portal for anyone; it currently always renders its error state.
+
+**Fix:** correct the allowlist prefix `/api/v1/time-attendance` → `/api/v1/attendance` (and add
+`/api/v1/shifts` if/when the shifts UI lands). One-line change; verify `my/attendance` then loads records
+for an employee with attendance data. No backend change required — the gateway route and service are
+correct; only the BFF allowlist prefix is wrong.
+
+**Note:** the loading-state W1 work added a correct tri-state (skeleton / empty / **error**) to
+`my/attendance`; this finding is why the *error* branch is what employees see today. Fixing the prefix is
+what makes the *data* branch reachable. The two are independent — W1 did not introduce or depend on this.
+
 ### DEV-BACKLOG-001 — jane.w@demo.co.ke password reverts between sessions
 
 **Raised:** 2026-06-14 (recurring during Run-03 verification). **Priority:** Low — dev/test only, not a product defect.
