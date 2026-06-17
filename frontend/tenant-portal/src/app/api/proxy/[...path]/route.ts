@@ -9,7 +9,7 @@ const ALLOWED_PATH_PREFIXES = [
   "/api/v1/positions",
   "/api/v1/payroll",
   "/api/v1/leave",
-  "/api/v1/time-attendance",
+  "/api/v1/attendance",
   "/api/v1/compliance",
   "/api/v1/analytics",
   "/api/v1/documents",
