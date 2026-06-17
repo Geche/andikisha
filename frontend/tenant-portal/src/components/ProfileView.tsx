@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Pencil, Check, X, Upload, KeyRound } from "lucide-react";
 import { PageHeader, useToast, useCurrentUser, RoleBadge } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { ADMIN_ROLES } from "@andikisha/ui/auth";
 import type { AxiosError } from "axios";
 import Link from "next/link";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -264,6 +265,10 @@ export function ProfileView() {
   // employee fetch and render a user-only view rather than an error state.
   const currentUser = useCurrentUser();
   const hasEmployee = !!currentUser?.employeeId;
+  // Change-password lives in both shells; keep admins in the admin shell instead
+  // of routing them through /my/* (see FE-BACKLOG-014).
+  const isAdmin = (currentUser?.roles ?? []).some((r) => !!r && ADMIN_ROLES.has(r));
+  const changePasswordHref = `/${workspace}/${isAdmin ? "admin" : "my"}/change-password`;
 
   const { data: profile, isLoading, isError } = useQuery<EmployeeProfile>({
     queryKey: ["my-profile"],
@@ -338,7 +343,7 @@ export function ProfileView() {
                 <p className="text-[12px] text-neutral-400 mt-0.5">Change your login password</p>
               </div>
               <Link
-                href={`/${workspace}/my/change-password`}
+                href={changePasswordHref}
                 className="flex items-center gap-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-semibold text-[12.5px] h-9 px-3.5 rounded-lg transition-colors"
               >
                 <KeyRound size={12} />
@@ -453,7 +458,7 @@ export function ProfileView() {
                 <p className="text-[12px] text-neutral-400 mt-0.5">Change your login password</p>
               </div>
               <Link
-                href={`/${workspace}/my/change-password`}
+                href={changePasswordHref}
                 className="flex items-center gap-1.5 border border-neutral-200 text-neutral-700 hover:bg-neutral-50 font-semibold text-[12.5px] h-9 px-3.5 rounded-lg transition-colors"
               >
                 <KeyRound size={12} />

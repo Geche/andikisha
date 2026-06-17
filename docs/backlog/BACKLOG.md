@@ -688,6 +688,15 @@ employee shell, and the "Back to profile" link points to `/my/profile` (it bounc
 `isAdmin → /admin/profile` redirect, but that bounce is racy — R2-9). The shell-awareness half of this
 item is therefore still open; tracked for a standalone fix outside the loading-states run.
 
+**Resolved 2026-06-17** (branch `fix/change-password-admin-shell`, pending merge) — Option A (minimal,
+no component extraction): added an `/admin/change-password` route that re-uses the existing form body in
+the admin shell; made `ProfileView`'s "Change password" link and the form's "Back to profile" link
+role-aware (admin → `/admin/*`, else → `/my/*`). Admins now stay in the admin shell, and their back-link
+goes straight to `/admin/profile` — **removing the dependence on the racy `/my/profile` bounce (R2-9 is
+no longer load-bearing for admins)**. Verified in-browser: admin path renders in the admin shell with no
+employee-nav leak; employee path unchanged. Extraction to a shared component (Option B) was deliberately
+deferred to the "My HR" feature, which would be the real second call site.
+
 ---
 
 ### FE-BACKLOG-015 — Attendance 403s for every employee: BFF proxy allowlist prefix mismatch

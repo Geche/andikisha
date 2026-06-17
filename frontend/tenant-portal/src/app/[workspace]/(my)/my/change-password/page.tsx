@@ -4,11 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Lock, Eye, EyeOff, Check, ArrowLeft } from "lucide-react";
-import { findCorrectDashboard } from "@andikisha/ui/auth";
+import { useCurrentUser } from "@andikisha/ui";
+import { findCorrectDashboard, ADMIN_ROLES } from "@andikisha/ui/auth";
 
 export default function ChangePasswordPage() {
   const params = useParams();
   const workspace = typeof params.workspace === "string" ? params.workspace : "";
+
+  // The page is mounted in both shells (/my/* and /admin/change-password). Send
+  // the user back to the profile in THEIR shell — an admin returns to
+  // /admin/profile directly, not via the racy /my/profile → /admin/profile
+  // bounce (FE-BACKLOG-014, R2-9).
+  const currentUser = useCurrentUser();
+  const isAdmin = (currentUser?.roles ?? []).some((r) => !!r && ADMIN_ROLES.has(r));
+  const profileHref = `/${workspace}/${isAdmin ? "admin" : "my"}/profile`;
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword]         = useState("");
@@ -82,7 +91,7 @@ export default function ChangePasswordPage() {
   return (
     <div className="max-w-[480px] mx-auto py-2">
       <Link
-        href={`/${workspace}/my/profile`}
+        href={profileHref}
         className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-500 hover:text-neutral-700 mb-4"
       >
         <ArrowLeft size={15} /> Back to profile
