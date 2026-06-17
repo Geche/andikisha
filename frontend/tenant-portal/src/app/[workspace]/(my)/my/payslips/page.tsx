@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, AlertTriangle, FileText } from "lucide-react";
-import { PageHeader, PaginationBar, useCurrentUser } from "@andikisha/ui";
+import { PageHeader, PaginationBar, Skeleton, SkeletonRegion, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 // Shape matches payroll-service PaySlipResponse (self-scoped via
@@ -161,26 +161,25 @@ export default function PayslipsPage() {
           </div>
         ) : (
         <>
-        {isError && (
-          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700 mb-5">
-            <AlertTriangle size={15} className="flex-shrink-0" />
-            Could not load payslips. Please try again later.
-          </div>
-        )}
-
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           {isLoading ? (
-            <div className="space-y-0">
+            <SkeletonRegion label="Loading payslips" className="space-y-0">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="px-6 py-4 border-b border-neutral-50 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-neutral-100 rounded-xl animate-pulse"/>
+                  <Skeleton className="w-9 h-9 rounded-xl" />
                   <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-32 bg-neutral-100 rounded-full animate-pulse"/>
-                    <div className="h-2 w-24 bg-neutral-100 rounded-full animate-pulse"/>
+                    <Skeleton pill className="h-3 w-32" />
+                    <Skeleton pill className="h-2 w-24" />
                   </div>
-                  <div className="h-3 w-20 bg-neutral-100 rounded-full animate-pulse"/>
+                  <Skeleton pill className="h-3 w-20" />
                 </div>
               ))}
+            </SkeletonRegion>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <AlertTriangle size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
+              <p className="text-[14px] font-semibold text-neutral-400">Couldn&rsquo;t load payslips</p>
+              <p className="text-[13px] text-neutral-300 mt-1">Please try again in a moment</p>
             </div>
           ) : payslips.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">

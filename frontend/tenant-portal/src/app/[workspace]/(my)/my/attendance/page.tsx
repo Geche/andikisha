@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Clock } from "lucide-react";
-import { PageHeader, PaginationBar, useCurrentUser } from "@andikisha/ui";
+import { PageHeader, PaginationBar, Skeleton, SkeletonRegion, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 // Shape matches time-attendance AttendanceResponse (self-scoped via
@@ -96,13 +96,6 @@ export default function AttendancePage() {
           </div>
         ) : (
         <>
-        {isError && (
-          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
-            <AlertTriangle size={15} className="flex-shrink-0" />
-            Could not load attendance records.
-          </div>
-        )}
-
         {/* Summary chips */}
         {!isLoading && records.length > 0 && (
           <div className="flex gap-3 flex-wrap">
@@ -120,15 +113,21 @@ export default function AttendancePage() {
 
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
           {isLoading ? (
-            <div className="space-y-0">
+            <SkeletonRegion label="Loading attendance records" className="space-y-0">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="px-6 py-4 border-b border-neutral-50 flex items-center gap-3">
-                  <div className="h-3 w-24 bg-neutral-100 rounded-full animate-pulse"/>
-                  <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse ml-auto"/>
-                  <div className="h-2 w-16 bg-neutral-100 rounded-full animate-pulse"/>
-                  <div className="h-5 w-14 bg-neutral-100 rounded-full animate-pulse"/>
+                  <Skeleton pill className="h-3 w-24" />
+                  <Skeleton pill className="h-2 w-16 ml-auto" />
+                  <Skeleton pill className="h-2 w-16" />
+                  <Skeleton pill className="h-5 w-14" />
                 </div>
               ))}
+            </SkeletonRegion>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <AlertTriangle size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
+              <p className="text-[14px] font-semibold text-neutral-400">Couldn&rsquo;t load attendance records</p>
+              <p className="text-[13px] text-neutral-300 mt-1">Please try again in a moment</p>
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">

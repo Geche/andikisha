@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, AlertTriangle, Calendar } from "lucide-react";
-import { PageHeader } from "@andikisha/ui";
+import { PageHeader, Skeleton, SkeletonRegion } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { ApiError } from "@/lib/auth";
 
@@ -165,17 +165,23 @@ export default function LeavePage() {
   const [applying, setApplying] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: requests = [], isLoading, isError } = useQuery<LeaveRequest[]>({
+  const { data: requests = [], isLoading: requestsLoading, isError: requestsError } = useQuery<LeaveRequest[]>({
     queryKey: ["leave-requests"],
     queryFn: () =>
       apiClient.get("/api/v1/leave/requests?size=50&sort=createdAt,desc")
         .then((r) => r.data?.content ?? r.data ?? []),
   });
 
-  const { data: balances = [] } = useQuery<LeaveBalance[]>({
+  const { data: balances = [], isLoading: balancesLoading, isError: balancesError } = useQuery<LeaveBalance[]>({
     queryKey: ["leave-balances"],
     queryFn: () => apiClient.get("/api/v1/leave/me/balances").then((r) => r.data),
   });
+
+  // One coherent loading state for the whole page: hold both the balance cards
+  // and the requests table until the LAST needed query resolves, so neither
+  // region pops in or half-renders (constraint 6).
+  const loading = requestsLoading || balancesLoading;
+  const hasError = requestsError || balancesError;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -193,15 +199,26 @@ export default function LeavePage() {
       />
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-5">
-        {isError && (
+        {hasError && (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
             <AlertTriangle size={15} className="flex-shrink-0" />
             Could not load leave data.
           </div>
         )}
 
-        {/* Balances */}
-        {balances.length > 0 && (
+        {/* Balances — skeleton matches the real stat-card grid so there is no
+            blank gap above the table while balances load (constraint 6). */}
+        {loading ? (
+          <SkeletonRegion label="Loading leave balances" className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white border border-neutral-200 rounded-xl px-5 py-4">
+                <Skeleton pill className="h-3 w-20 mb-3" />
+                <Skeleton className="h-6 w-12" />
+                <Skeleton pill className="h-2.5 w-24 mt-2.5" />
+              </div>
+            ))}
+          </SkeletonRegion>
+        ) : balances.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
             {balances.map((b) => (
               <div key={b.leaveType} className="bg-white border border-neutral-200 rounded-xl px-5 py-4">
@@ -213,22 +230,28 @@ export default function LeavePage() {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Requests table */}
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
-          {isLoading ? (
-            <div className="space-y-0">
+          {loading ? (
+            <SkeletonRegion label="Loading leave requests" className="space-y-0">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="px-6 py-4 border-b border-neutral-50 flex items-center gap-3">
-                  <div className="w-9 h-9 bg-neutral-100 rounded-xl animate-pulse"/>
+                  <Skeleton className="w-9 h-9 rounded-xl" />
                   <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-28 bg-neutral-100 rounded-full animate-pulse"/>
-                    <div className="h-2 w-40 bg-neutral-100 rounded-full animate-pulse"/>
+                    <Skeleton pill className="h-3 w-28" />
+                    <Skeleton pill className="h-2 w-40" />
                   </div>
-                  <div className="h-5 w-16 bg-neutral-100 rounded-full animate-pulse"/>
+                  <Skeleton pill className="h-5 w-16" />
                 </div>
               ))}
+            </SkeletonRegion>
+          ) : requestsError ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <AlertTriangle size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
+              <p className="text-[14px] font-semibold text-neutral-400">Couldn&rsquo;t load your leave requests</p>
+              <p className="text-[13px] text-neutral-300 mt-1">Please try again in a moment</p>
             </div>
           ) : requests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">

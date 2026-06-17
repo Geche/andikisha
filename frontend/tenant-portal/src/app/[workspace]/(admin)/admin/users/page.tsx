@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { Check, ShieldCheck, KeyRound, UserPlus } from "lucide-react";
-import { PageHeader, Button, BaseModal, useToast, useCurrentUser } from "@andikisha/ui";
+import { Check, ShieldCheck, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
+import { PageHeader, Button, BaseModal, Skeleton, SkeletonRegion, useToast, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 
 interface RolePermissions {
@@ -72,12 +72,12 @@ export default function UsersPage() {
   const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState("HR_MANAGER");
 
-  const { data: rolesData, isLoading: rolesLoading } = useQuery<RolePermissions[]>({
+  const { data: rolesData, isLoading: rolesLoading, isError: rolesError } = useQuery<RolePermissions[]>({
     queryKey: ["users-roles"],
     queryFn: () => apiClient.get<RolePermissions[]>("/api/v1/auth/roles").then((r) => r.data),
     enabled: canManage,
   });
-  const { data: usersData, isLoading: usersLoading } = useQuery<TenantUser[]>({
+  const { data: usersData, isLoading: usersLoading, isError: usersError } = useQuery<TenantUser[]>({
     queryKey: ["users-list"],
     queryFn: () => apiClient.get<TenantUser[]>("/api/v1/auth/users").then((r) => r.data),
     enabled: canManage,
@@ -149,6 +149,8 @@ export default function UsersPage() {
     onError: (err) => toast(err.response?.data?.message ?? "Could not invite user.", "error"),
   });
 
+  const visibleUsers = (usersData ?? []).filter((u) => showInactive || u.active);
+
   if (!canManage) {
     return (
       <div className="flex flex-col h-full overflow-hidden">
@@ -193,13 +195,41 @@ export default function UsersPage() {
             </label>
           </div>
           {usersLoading ? (
-            <p className="text-[13px] text-neutral-400">Loading…</p>
+            <SkeletonRegion label="Loading users" className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+              <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 bg-neutral-50 border-b border-neutral-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                <span>User</span><span>Role</span><span>Last sign-in</span><span className="text-right">Actions</span>
+              </div>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className={`grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-center px-5 py-3 ${i > 0 ? "border-t border-neutral-100" : ""}`}>
+                  <div className="min-w-0 space-y-1.5">
+                    <Skeleton pill className="h-3.5 w-40" />
+                    <Skeleton pill className="h-2.5 w-28" />
+                  </div>
+                  <Skeleton pill className="h-5 w-20" />
+                  <Skeleton pill className="h-3 w-16" />
+                  <div className="flex justify-end"><Skeleton pill className="h-3 w-24" /></div>
+                </div>
+              ))}
+            </SkeletonRegion>
+          ) : usersError ? (
+            <div className="rounded-xl border border-neutral-200 bg-white px-5 py-10 flex flex-col items-center text-center">
+              <AlertTriangle size={28} className="text-neutral-300 mb-2" strokeWidth={1.5} />
+              <p className="text-[13.5px] font-semibold text-neutral-500">Couldn&rsquo;t load users</p>
+              <p className="text-[12.5px] text-neutral-400 mt-1">Please try again in a moment.</p>
+            </div>
+          ) : visibleUsers.length === 0 ? (
+            <div className="rounded-xl border border-neutral-200 bg-white px-5 py-10 text-center">
+              <p className="text-[13.5px] font-semibold text-neutral-500">No users to show</p>
+              <p className="text-[12.5px] text-neutral-400 mt-1">
+                {showInactive ? "No users found." : "Enable “Show inactive users” to see deactivated accounts."}
+              </p>
+            </div>
           ) : (
             <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
               <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 bg-neutral-50 border-b border-neutral-200 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
                 <span>User</span><span>Role</span><span>Last sign-in</span><span className="text-right">Actions</span>
               </div>
-              {(usersData ?? []).filter((u) => showInactive || u.active).map((u, i) => {
+              {visibleUsers.map((u, i) => {
                 const isPrivileged = u.role === "ADMIN" || u.role === "SUPER_ADMIN";
                 const isSelf = currentUser?.userId === u.id;
                 return (
@@ -275,22 +305,33 @@ export default function UsersPage() {
         {/* Roles overview */}
         <section>
           <h2 className="text-[15px] font-semibold text-near-black mb-3">Roles</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(rolesData ?? []).map((r) => {
-              const descriptor =
-                r.role === "ADMIN"
-                  ? "Full access (role-based)"
-                  : r.permissions.length > 0
-                  ? `${r.permissions.length} permission${r.permissions.length === 1 ? "" : "s"}`
-                  : "No granular permissions";
-              return (
-                <div key={r.role} className="rounded-lg border border-neutral-200 bg-white px-4 py-3">
-                  <p className="text-[13.5px] font-semibold text-near-black">{roleLabel(r.role)}</p>
-                  <p className="text-[12.5px] text-neutral-500 mt-0.5">{descriptor}</p>
+          {rolesLoading ? (
+            <SkeletonRegion label="Loading roles" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-lg border border-neutral-200 bg-white px-4 py-3 space-y-2">
+                  <Skeleton pill className="h-3.5 w-28" />
+                  <Skeleton pill className="h-2.5 w-20" />
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </SkeletonRegion>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(rolesData ?? []).map((r) => {
+                const descriptor =
+                  r.role === "ADMIN"
+                    ? "Full access (role-based)"
+                    : r.permissions.length > 0
+                    ? `${r.permissions.length} permission${r.permissions.length === 1 ? "" : "s"}`
+                    : "No granular permissions";
+                return (
+                  <div key={r.role} className="rounded-lg border border-neutral-200 bg-white px-4 py-3">
+                    <p className="text-[13.5px] font-semibold text-near-black">{roleLabel(r.role)}</p>
+                    <p className="text-[12.5px] text-neutral-500 mt-0.5">{descriptor}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Permission matrix — read-only reference, on the same page */}
@@ -304,7 +345,24 @@ export default function UsersPage() {
             <span className="font-medium text-neutral-600">Administrators</span> have full access regardless of these grants.
           </p>
           {rolesLoading ? (
-            <p className="text-[13px] text-neutral-400">Loading…</p>
+            <SkeletonRegion label="Loading permission matrix" className="rounded-xl border border-neutral-200 bg-white p-4 space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton pill className="h-3 w-44" />
+                  <div className="flex-1" />
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-4 rounded" />
+                </div>
+              ))}
+            </SkeletonRegion>
+          ) : rolesError ? (
+            <div className="rounded-xl border border-neutral-200 bg-white px-5 py-10 flex flex-col items-center text-center">
+              <AlertTriangle size={28} className="text-neutral-300 mb-2" strokeWidth={1.5} />
+              <p className="text-[13.5px] font-semibold text-neutral-500">Couldn&rsquo;t load the permission matrix</p>
+              <p className="text-[12.5px] text-neutral-400 mt-1">Please try again in a moment.</p>
+            </div>
           ) : (
             <div className="rounded-xl border border-neutral-200 bg-white overflow-x-auto">
               <table className="w-full text-[13px]">
