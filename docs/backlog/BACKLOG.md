@@ -309,6 +309,34 @@ tracked separately in `docs/Engineering/backend/2026-06-16-system-health-up-unkn
 
 ---
 
+### PLATFORM-BACKLOG-004 — Platform-portal profile menu never rendered (SUPER_ADMIN `/api/auth/me` 401)
+
+**Raised:** 2026-06-17 (found from a missing top-right avatar + a `/api/auth/me` 401 in the console).
+**Priority:** Medium — operator-facing; the profile menu (and logout via it) was unreachable on every
+platform-portal page.
+
+**Symptom:** no avatar in the platform masthead. `(platform)/layout.tsx` renders the profile menu only
+`if (user)` where `user = useCurrentUser()` ← `/api/auth/me`; that call 401'd, so `user` was null and the
+menu never rendered. The dashboard still showed data because its `/api/v1/super-admin/*` calls authenticate
+fine — the asymmetry was identity-only.
+
+**Root cause:** the platform BFF `/api/auth/me` forwarded `platform_token` to the **tenant-scoped**
+gateway `/api/v1/auth/me`. A SUPER_ADMIN identity has `tenantId: "SYSTEM"` and no employee/tenant record,
+so the tenant identity endpoint cannot serve it. (Note: the gateway filters themselves do NOT block a valid
+super-admin token — `tenantId:"SYSTEM"` is non-blank so it passes `JwtAuthenticationFilter`, and
+`TenantLicenceFilter` explicitly bypasses SUPER_ADMIN; the exact rejection is at/after auth-service's tenant
+identity handling, or a session-expiry surfacing through cached dashboard data. An earlier
+`MISSING_TENANT_CLAIM` hypothesis was wrong — the token carries `tenantId` and `email`.)
+
+**Fix (Option A, branch `fix/platform-portal-superadmin-me`):** the BFF `/api/auth/me` now derives the
+identity from the **verified `platform_token` JWT itself** (it carries `sub`/`email`/`role`), mirroring the
+decode the platform middleware already performs for route access — no backend `/me` call. Returns
+`{userId, email, roles}`; invalid/expired token → 401 (client redirects to login). Frontend-only, no
+gateway/auth-service change. Option B (a dedicated `/api/v1/auth/super-admin/me` backend endpoint) was
+deferred as unnecessary for this fix.
+
+---
+
 ### TENANT-BACKLOG-003 — Licence-state enforcement divergence (date reconciliation + status transition + entitlement)
 
 **Raised:** 2026-05-19 · **Rescoped:** 2026-06-13
