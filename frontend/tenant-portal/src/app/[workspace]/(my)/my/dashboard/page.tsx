@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { PageHeader, useCurrentUser } from "@andikisha/ui";
+import { PageHeader, Skeleton, SkeletonRegion, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -96,7 +96,7 @@ export default function DashboardPage() {
     queryFn: () => apiClient.get("/api/v1/employees/me").then((r) => r.data),
   });
 
-  const { data: leaveBalances = [] } = useQuery<LeaveBalance[]>({
+  const { data: leaveBalances = [], isLoading: balancesLoading } = useQuery<LeaveBalance[]>({
     queryKey: ["leave-balances-me"],
     queryFn: () =>
       apiClient
@@ -107,7 +107,7 @@ export default function DashboardPage() {
   const annualBalance = leaveBalances.find((b) => b.leaveType === "ANNUAL");
   const sickBalance = leaveBalances.find((b) => b.leaveType === "SICK");
 
-  const { data: payslips = [] } = useQuery<PayslipSummary[]>({
+  const { data: payslips = [], isLoading: payslipsLoading } = useQuery<PayslipSummary[]>({
     queryKey: ["payslips-recent", employeeId],
     enabled: !!employeeId,
     queryFn: () =>
@@ -118,7 +118,7 @@ export default function DashboardPage() {
         .then((r) => r.data?.content ?? r.data ?? []),
   });
 
-  const { data: leaves = [] } = useQuery<LeaveRequest[]>({
+  const { data: leaves = [], isLoading: leavesLoading } = useQuery<LeaveRequest[]>({
     queryKey: ["leave-recent", employeeId],
     enabled: !!employeeId,
     queryFn: () =>
@@ -128,6 +128,10 @@ export default function DashboardPage() {
         })
         .then((r) => r.data?.content ?? r.data ?? []),
   });
+
+  // Hold the whole stat grid until every stat query the cards need has resolved,
+  // so cards don't pop in one-by-one or flash "—" then real values (constraints 5/6).
+  const metricsLoading = balancesLoading || payslipsLoading || leavesLoading;
 
   const firstName = profile?.firstName ?? "";
   const hour = new Date().getHours();
@@ -152,6 +156,17 @@ export default function DashboardPage() {
         )}
 
         {/* Metric cards */}
+        {metricsLoading ? (
+          <SkeletonRegion label="Loading your summary" className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white border border-neutral-200 rounded-xl p-5">
+                <Skeleton pill className="h-3 w-24 mb-4" />
+                <Skeleton className="h-7 w-20" />
+                <Skeleton pill className="h-2.5 w-28 mt-2.5" />
+              </div>
+            ))}
+          </SkeletonRegion>
+        ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           <MetricCard
             label="Annual leave"
@@ -176,6 +191,7 @@ export default function DashboardPage() {
             positive={false}
           />
         </div>
+        )}
 
         {/* Recent payslips + leave side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -187,7 +203,16 @@ export default function DashboardPage() {
                 View all →
               </Link>
             </div>
-            {payslips.length === 0 ? (
+            {payslipsLoading ? (
+              <SkeletonRegion label="Loading recent payslips" className="divide-y divide-neutral-50">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="px-6 py-3.5 flex items-center justify-between">
+                    <Skeleton pill className="h-3 w-24" />
+                    <Skeleton pill className="h-3 w-20" />
+                  </div>
+                ))}
+              </SkeletonRegion>
+            ) : payslips.length === 0 ? (
               <div className="px-6 py-10 text-center text-[13px] text-neutral-400">
                 No payslips available yet
               </div>
@@ -218,7 +243,19 @@ export default function DashboardPage() {
                 Apply + view all →
               </Link>
             </div>
-            {leaves.length === 0 ? (
+            {leavesLoading ? (
+              <SkeletonRegion label="Loading recent leave requests" className="divide-y divide-neutral-50">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="px-6 py-3.5 flex items-center justify-between">
+                    <div className="space-y-1.5">
+                      <Skeleton pill className="h-3 w-28" />
+                      <Skeleton pill className="h-2.5 w-40" />
+                    </div>
+                    <Skeleton pill className="h-5 w-16" />
+                  </div>
+                ))}
+              </SkeletonRegion>
+            ) : leaves.length === 0 ? (
               <div className="px-6 py-10 text-center text-[13px] text-neutral-400">
                 No leave requests yet
               </div>
