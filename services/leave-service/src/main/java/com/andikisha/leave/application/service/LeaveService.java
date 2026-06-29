@@ -9,6 +9,7 @@ import com.andikisha.leave.application.dto.response.LeaveRequestResponse;
 import com.andikisha.leave.application.mapper.LeaveMapper;
 import com.andikisha.leave.application.port.LeaveEventPublisher;
 import com.andikisha.leave.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.leave.domain.exception.LeaveRequestNotFoundException;
 import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeavePolicy;
@@ -21,6 +22,7 @@ import com.andikisha.leave.domain.repository.LeaveRequestRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -308,10 +310,56 @@ public class LeaveService {
                 .map(mapper::toResponse);
     }
 
-    public LeaveRequestResponse getRequest(UUID leaveRequestId) {
+    public LeaveRequestResponse getRequest(UUID leaveRequestId, String callerRole,
+                                           String callerEmployeeId) {
         String tenantId = TenantContext.requireTenantId();
-        return requestRepository.findByIdAndTenantId(leaveRequestId, tenantId)
-                .map(mapper::toResponse)
+        LeaveRequest request = requestRepository.findByIdAndTenantId(leaveRequestId, tenantId)
                 .orElseThrow(() -> new LeaveRequestNotFoundException(leaveRequestId));
+        enforceReadAccess(request, callerRole, callerEmployeeId, tenantId);
+
+        // Resolve the employee number for the detail view (the entity stores only the
+        // employee UUID + denormalised name). Single lookup — not on the list path.
+        String employeeNumber = employeeGrpcClient
+                .getEmployee(tenantId, request.getEmployeeId().toString())
+                .map(EmployeeResponse::getEmployeeNumber)
+                .filter(n -> !n.isBlank())
+                .orElse(null);
+        return mapper.toResponse(request, employeeNumber);
+    }
+
+    /**
+     * A single leave request may be read by HR_OFFICER/HR_MANAGER/ADMIN (ALL), by a
+     * LINE_MANAGER only for requests within their department (DEPARTMENT), and by an
+     * EMPLOYEE only for their own request (OWN). Without this guard, adding EMPLOYEE to
+     * the endpoint would be an IDOR — any employee could read any request by id.
+     * Reuses the same scope resolution as {@link #listRequests}.
+     */
+    private void enforceReadAccess(LeaveRequest request, String callerRole,
+                                   String callerEmployeeId, String tenantId) {
+        ResolvedScope scope = scopeResolver.resolve(callerRole, tenantId, callerEmployeeId);
+
+        if (scope.type() == ScopeType.ALL) {
+            return;
+        }
+
+        if (scope.type() == ScopeType.DEPARTMENT) {
+            boolean inDepartment = employeeGrpcClient
+                    .getEmployeesByDepartment(tenantId, scope.departmentId().toString())
+                    .stream()
+                    .anyMatch(e -> e.getId().equals(request.getEmployeeId().toString()));
+            if (inDepartment) {
+                return;
+            }
+            throw new AccessDeniedException(
+                    "Access denied: this leave request is outside your department");
+        }
+
+        // OWN scope — caller may only read their own request
+        if (callerEmployeeId != null
+                && callerEmployeeId.equals(request.getEmployeeId().toString())) {
+            return;
+        }
+        throw new AccessDeniedException(
+                "Access denied: you may only view your own leave requests");
     }
 }

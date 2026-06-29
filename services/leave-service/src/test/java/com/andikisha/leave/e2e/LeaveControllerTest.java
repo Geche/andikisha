@@ -410,7 +410,7 @@ class LeaveControllerTest {
 
     @Test
     void getRequest_whenNotFound_returns404() throws Exception {
-        when(leaveService.getRequest(REQUEST_ID))
+        when(leaveService.getRequest(eq(REQUEST_ID), any(), any()))
                 .thenThrow(new LeaveRequestNotFoundException(REQUEST_ID));
 
         mockMvc.perform(get("/api/v1/leave/requests/{id}", REQUEST_ID)
@@ -422,11 +422,26 @@ class LeaveControllerTest {
     }
 
     @Test
-    void getRequest_withEmployeeRole_returns403() throws Exception {
+    void getRequest_withEmployeeRole_isAuthorizedAtController() throws Exception {
+        // EMPLOYEE is now allowed past @PreAuthorize; ownership is enforced in the
+        // service layer (covered by LeaveServiceTest IDOR cases), not by 403 here.
+        when(leaveService.getRequest(eq(REQUEST_ID), any(), any()))
+                .thenReturn(minimalRequestResponse("PENDING"));
+
         mockMvc.perform(get("/api/v1/leave/requests/{id}", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
-                        .header("X-User-Role", "EMPLOYEE"))
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", USER_ID))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void getRequest_withUnlistedRole_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/leave/requests/{id}", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "PAYROLL_OFFICER"))
                 .andExpect(status().isForbidden());
     }
 
@@ -520,7 +535,7 @@ class LeaveControllerTest {
 
     private LeaveRequestResponse minimalRequestResponse(String status) {
         return new LeaveRequestResponse(
-                REQUEST_ID, EMPLOYEE_ID, "Jane Doe", "ANNUAL",
+                REQUEST_ID, EMPLOYEE_ID, "Jane Doe", "EMP-001", "ANNUAL",
                 LocalDate.now().plusDays(7), LocalDate.now().plusDays(11),
                 BigDecimal.valueOf(5), "Family trip", status,
                 null, null, null, null, null, false, LocalDateTime.now());

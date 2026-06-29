@@ -9,6 +9,7 @@ public record LeaveRequestResponse(
         UUID id,
         UUID employeeId,
         String employeeName,
+        String employeeNumber,
         String leaveType,
         LocalDate startDate,
         LocalDate endDate,

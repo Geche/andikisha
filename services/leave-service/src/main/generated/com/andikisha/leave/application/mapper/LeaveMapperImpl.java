@@ -60,7 +60,53 @@ public class LeaveMapperImpl implements LeaveMapper {
         String leaveType = r.getLeaveType().name();
         String status = r.getStatus().name();
 
-        LeaveRequestResponse leaveRequestResponse = new LeaveRequestResponse( id, employeeId, employeeName, leaveType, startDate, endDate, days, reason, status, reviewedBy, reviewerName, reviewedAt, rejectionReason, reviewNotes, hasMedicalCert, createdAt );
+        LeaveRequestResponse leaveRequestResponse = new LeaveRequestResponse( id, employeeId, employeeName, null, leaveType, startDate, endDate, days, reason, status, reviewedBy, reviewerName, reviewedAt, rejectionReason, reviewNotes, hasMedicalCert, createdAt );
+
+        return leaveRequestResponse;
+    }
+
+    @Override
+    public LeaveRequestResponse toResponse(LeaveRequest r, String employeeNumber) {
+        if ( r == null && employeeNumber == null ) {
+            return null;
+        }
+
+        UUID id = null;
+        UUID employeeId = null;
+        String employeeName = null;
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+        BigDecimal days = null;
+        String reason = null;
+        UUID reviewedBy = null;
+        String reviewerName = null;
+        LocalDateTime reviewedAt = null;
+        String rejectionReason = null;
+        String reviewNotes = null;
+        boolean hasMedicalCert = false;
+        LocalDateTime createdAt = null;
+        if ( r != null ) {
+            id = r.getId();
+            employeeId = r.getEmployeeId();
+            employeeName = r.getEmployeeName();
+            startDate = r.getStartDate();
+            endDate = r.getEndDate();
+            days = r.getDays();
+            reason = r.getReason();
+            reviewedBy = r.getReviewedBy();
+            reviewerName = r.getReviewerName();
+            reviewedAt = r.getReviewedAt();
+            rejectionReason = r.getRejectionReason();
+            reviewNotes = r.getReviewNotes();
+            hasMedicalCert = r.isHasMedicalCert();
+            createdAt = r.getCreatedAt();
+        }
+        String employeeNumber1 = employeeNumber;
+
+        String leaveType = r.getLeaveType().name();
+        String status = r.getStatus().name();
+
+        LeaveRequestResponse leaveRequestResponse = new LeaveRequestResponse( id, employeeId, employeeName, employeeNumber1, leaveType, startDate, endDate, days, reason, status, reviewedBy, reviewerName, reviewedAt, rejectionReason, reviewNotes, hasMedicalCert, createdAt );
 
         return leaveRequestResponse;
     }
