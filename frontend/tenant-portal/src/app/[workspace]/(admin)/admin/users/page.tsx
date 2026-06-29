@@ -6,6 +6,7 @@ import type { AxiosError } from "axios";
 import { Check, ShieldCheck, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
 import { PageHeader, Button, BaseModal, Skeleton, SkeletonRegion, useToast, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { listErrorMessage } from "@/lib/queryError";
 
 interface RolePermissions {
   role: string;
@@ -77,7 +78,7 @@ export default function UsersPage() {
     queryFn: () => apiClient.get<RolePermissions[]>("/api/v1/auth/roles").then((r) => r.data),
     enabled: canManage,
   });
-  const { data: usersData, isLoading: usersLoading, isError: usersError } = useQuery<TenantUser[]>({
+  const { data: usersData, isLoading: usersLoading, isError: usersError, error: usersErrorObj } = useQuery<TenantUser[]>({
     queryKey: ["users-list"],
     queryFn: () => apiClient.get<TenantUser[]>("/api/v1/auth/users").then((r) => r.data),
     enabled: canManage,
@@ -215,7 +216,7 @@ export default function UsersPage() {
             <div className="rounded-xl border border-neutral-200 bg-white px-5 py-10 flex flex-col items-center text-center">
               <AlertTriangle size={28} className="text-neutral-300 mb-2" strokeWidth={1.5} />
               <p className="text-[13.5px] font-semibold text-neutral-500">Couldn&rsquo;t load users</p>
-              <p className="text-[12.5px] text-neutral-400 mt-1">Please try again in a moment.</p>
+              <p className="text-[12.5px] text-neutral-400 mt-1">{listErrorMessage(usersErrorObj, "users")}</p>
             </div>
           ) : visibleUsers.length === 0 ? (
             <div className="rounded-xl border border-neutral-200 bg-white px-5 py-10 text-center">

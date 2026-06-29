@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, AlertTriangle, Calendar } from "lucide-react";
 import { PageHeader, Skeleton, SkeletonRegion } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { listErrorMessage } from "@/lib/queryError";
 import { ApiError } from "@/lib/auth";
 
 interface LeaveRequest {
@@ -165,14 +166,14 @@ export default function LeavePage() {
   const [applying, setApplying] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: requests = [], isLoading: requestsLoading, isError: requestsError } = useQuery<LeaveRequest[]>({
+  const { data: requests = [], isLoading: requestsLoading, isError: requestsError, error: requestsErr } = useQuery<LeaveRequest[]>({
     queryKey: ["leave-requests"],
     queryFn: () =>
       apiClient.get("/api/v1/leave/requests?size=50&sort=createdAt,desc")
         .then((r) => r.data?.content ?? r.data ?? []),
   });
 
-  const { data: balances = [], isLoading: balancesLoading, isError: balancesError } = useQuery<LeaveBalance[]>({
+  const { data: balances = [], isLoading: balancesLoading, isError: balancesError, error: balancesErr } = useQuery<LeaveBalance[]>({
     queryKey: ["leave-balances"],
     queryFn: () => apiClient.get("/api/v1/leave/me/balances").then((r) => r.data),
   });
@@ -181,7 +182,6 @@ export default function LeavePage() {
   // and the requests table until the LAST needed query resolves, so neither
   // region pops in or half-renders (constraint 6).
   const loading = requestsLoading || balancesLoading;
-  const hasError = requestsError || balancesError;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -199,10 +199,12 @@ export default function LeavePage() {
       />
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-5">
-        {hasError && (
+        {/* Balances has no inline error region, so surface its failure here. A
+            requests failure is shown only in the table region below — never both. */}
+        {balancesError && (
           <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
             <AlertTriangle size={15} className="flex-shrink-0" />
-            Could not load leave data.
+            {listErrorMessage(balancesErr, "leave balances")}
           </div>
         )}
 
@@ -251,7 +253,7 @@ export default function LeavePage() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <AlertTriangle size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
               <p className="text-[14px] font-semibold text-neutral-400">Couldn&rsquo;t load your leave requests</p>
-              <p className="text-[13px] text-neutral-300 mt-1">Please try again in a moment</p>
+              <p className="text-[13px] text-neutral-300 mt-1">{listErrorMessage(requestsErr, "your leave requests")}</p>
             </div>
           ) : requests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">

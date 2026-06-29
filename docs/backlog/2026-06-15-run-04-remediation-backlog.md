@@ -37,16 +37,19 @@ Status key: ✅ done (PR) · 🟡 partially done · 🔲 open.
 
 ### High
 
-**B-1 · FE-BACKLOG-018 — LINE_MANAGER has no leave-approval surface** · 🔲 · **M** · `frontend/tenant-portal`
+**B-1 · FE-BACKLOG-018 — LINE_MANAGER has no leave-approval surface** · ✅ (2026-06-29) · **M** · `frontend/tenant-portal`
 > ID-collision resolved 2026-06-29: this item was previously mislabelled `FE-BACKLOG-015`,
 > which already belongs to the resolved attendance-proxy fix. Reassigned to `FE-BACKLOG-018`.
 The approval queue lives only at `/admin/leave`, which LINE_MANAGER cannot reach
 (routes through `/my/*`). The backend already grants LINE_MANAGER approve/reject and
 gives DEPARTMENT scope (`CallerScopeResolver`), so the capability exists but is
 unreachable — the role's primary purpose is impossible in the UI.
-*Do:* build a team-approvals surface under `/my/*` (list = `GET /leave/requests`
-DEPARTMENT-scoped; approve/reject actions), shown when the LINE_MANAGER role is in the
-JWT. Reuse the existing Approve/Reject modals.
+*Done:* added `(my)/my/team-approvals/page.tsx` — a DEPARTMENT-scoped queue
+(`GET /leave/requests`, status tabs, default Pending) reusing the existing `ApproveModal`/
+`RejectModal` (shared query-key prefix so their invalidation refreshes the list). A
+conditional "Team approvals" nav item (desktop rail + mobile bottom nav) renders only when
+`useHasRole("LINE_MANAGER")`; non-managers reaching the URL get a guarded empty state. The
+backend B-3 change department-scopes the underlying reads. Type-check + lint clean.
 
 **B-2 · PRODUCT-BACKLOG-003 — legal documents claim statutory filing that doesn't exist** · 🔲 · **S (needs legal)** · `frontend/landing`
 `app/privacy/page.tsx:13` states AndikishaHR "integrates with KRA iTax … to file
@@ -69,12 +72,19 @@ LINE_MANAGER over-grant (it could read any request tenant-wide). Unit IDOR tests
 
 ### Medium
 
-**B-4 · FE-BACKLOG-016 (cont.) — apply the accurate error/empty pattern to the other list pages** · 🔲 · **M** · `frontend/tenant-portal`
+**B-4 · FE-BACKLOG-016 (cont.) — apply the accurate error/empty pattern to the other list pages** · ✅ (2026-06-29) · **M** · `frontend/tenant-portal`
 #20 fixed the payroll page (status-derived message; error and empty-state mutually
 exclusive; no "check your connection" for a 403). The same generic
 "Could not load … check your connection" + possible error/empty dual-render pattern
 likely exists on other React-Query list pages.
-*Do:* sweep `admin/{leave,employees,users}` and `my/*` list pages; extract a small shared
+*Done:* extracted a shared source of truth — `src/lib/queryError.ts` (`listErrorMessage`
+derives the message from HTTP status; 403 → permission copy, not "check your connection")
+and `src/components/ListErrorState.tsx` (banner; Retry hidden on 403). Swept `admin/leave`,
+`admin/employees`, `admin/users`, `my/leave`, `my/payslips`, `my/attendance`: error/loading/
+table are now mutually exclusive (admin leave + employees restructured; `my/leave` no longer
+double-renders a top banner + table-region error), pagination hidden on error. Type-check +
+lint clean.
+*Original do:* sweep `admin/{leave,employees,users}` and `my/*` list pages; extract a small shared
 error/empty helper so it doesn't drift again.
 
 **B-5 · AUTHZ-BACKLOG-001 — grant-intent audit (the deferred design questions)** · 🔲 · **L** · all services

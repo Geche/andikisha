@@ -3,9 +3,10 @@
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { AlertTriangle, Search, ChevronUp, ChevronDown, ChevronsUpDown, Upload } from "lucide-react";
+import { Search, ChevronUp, ChevronDown, ChevronsUpDown, Upload } from "lucide-react";
 import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { ListErrorState } from "@/components/ListErrorState";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -183,7 +184,7 @@ export default function EmployeesPage() {
     setPage(0);
   }
 
-  const { data, isLoading, isError, refetch } = useQuery<PagedResponse<EmployeeSummary>>({
+  const { data, isLoading, isError, error, refetch } = useQuery<PagedResponse<EmployeeSummary>>({
     queryKey: ["employees", page, pageSize, status, debouncedSearch, sortField, sortDir],
     queryFn: () => {
       const params: Record<string, string | number> = {
@@ -265,22 +266,10 @@ export default function EmployeesPage() {
           </div>
         </div>
 
-        {/* Error */}
-        {isError && (
-          <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-5 py-3.5 text-[13px] text-red-700">
-            <AlertTriangle size={15} className="flex-shrink-0" />
-            <span className="flex-1">Could not load employees. Check your connection.</span>
-            <button
-              onClick={() => void refetch()}
-              className="ml-auto text-[12px] font-semibold underline underline-offset-2 hover:opacity-80"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-
-        {/* Table */}
-        {isLoading ? (
+        {/* Error / loading / table are mutually exclusive */}
+        {isError ? (
+          <ListErrorState error={error} noun="employees" onRetry={() => void refetch()} />
+        ) : isLoading ? (
           <TableSkeleton />
         ) : (
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
@@ -346,16 +335,18 @@ export default function EmployeesPage() {
           </div>
         )}
 
-        {/* Pagination */}
-        <PaginationBar
-          currentPage={page}
-          totalPages={totalPages}
-          totalCount={totalElements}
-          pageSize={pageSize}
-          itemLabel="employees"
-          onPageChange={setPage}
-          onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
-        />
+        {/* Pagination — hidden while the list failed to load */}
+        {!isError && (
+          <PaginationBar
+            currentPage={page}
+            totalPages={totalPages}
+            totalCount={totalElements}
+            pageSize={pageSize}
+            itemLabel="employees"
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+          />
+        )}
       </div>
     </div>
   );

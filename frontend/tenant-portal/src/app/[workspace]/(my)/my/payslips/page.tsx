@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, AlertTriangle, FileText } from "lucide-react";
 import { PageHeader, PaginationBar, Skeleton, SkeletonRegion, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { listErrorMessage } from "@/lib/queryError";
 
 // Shape matches payroll-service PaySlipResponse (self-scoped via
 // /api/v1/payroll/employees/{employeeId}/payslips — EMPLOYEE may read their own).
@@ -133,7 +134,7 @@ export default function PayslipsPage() {
   const [pageSize, setPageSize] = useState(25);
   const [selected, setSelected] = useState<Payslip | null>(null);
 
-  const { data, isLoading, isError } = useQuery<PagedResponse<Payslip>>({
+  const { data, isLoading, isError, error } = useQuery<PagedResponse<Payslip>>({
     queryKey: ["payslips", employeeId, page, pageSize],
     queryFn: () =>
       apiClient
@@ -179,7 +180,7 @@ export default function PayslipsPage() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <AlertTriangle size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
               <p className="text-[14px] font-semibold text-neutral-400">Couldn&rsquo;t load payslips</p>
-              <p className="text-[13px] text-neutral-300 mt-1">Please try again in a moment</p>
+              <p className="text-[13px] text-neutral-300 mt-1">{listErrorMessage(error, "payslips")}</p>
             </div>
           ) : payslips.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
