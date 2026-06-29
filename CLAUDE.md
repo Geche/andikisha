@@ -147,7 +147,7 @@ com.andikisha.{service}/
 
 ## Kenya Compliance Context
 
-PAYE brackets (monthly): 0-24K at 10%, 24K-32.3K at 25%, 32.3K-500K at 30%, 500K-800K at 32.5%, 800K+ at 35%.
+PAYE brackets (monthly): 0-24,000 at 10%, 24,001-32,333 at 25%, 32,334-500,000 at 30%, 500,001-800,000 at 32.5%, 800,000+ at 35%. (Band-2 ceiling is the KRA-gazetted 32,333 = 388,000 ÷ 12, not 32,300.)
 Personal relief: KES 2,400/month. Insurance relief: 15% of NHIF, max KES 5,000.
 NSSF: 6% of gross, Tier I up to KES 7,000, Tier II up to KES 36,000.
 SHIF: 2.75% of gross (replaced NHIF October 2024).

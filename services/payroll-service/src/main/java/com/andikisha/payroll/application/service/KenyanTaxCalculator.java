@@ -11,7 +11,7 @@ public class KenyanTaxCalculator {
 
     // PAYE brackets (monthly, FY 2024/2025)
     private static final BigDecimal BAND_1_LIMIT = bd(24000);
-    private static final BigDecimal BAND_2_LIMIT = bd(32300);
+    private static final BigDecimal BAND_2_LIMIT = bd(32333);
     private static final BigDecimal BAND_3_LIMIT = bd(500000);
     private static final BigDecimal BAND_4_LIMIT = bd(800000);
 
@@ -146,12 +146,13 @@ public class KenyanTaxCalculator {
         tax      = tax.add(applyBand(remaining, BAND_1_LIMIT, RATE_1));
         remaining = remaining.subtract(BAND_1_LIMIT).max(BigDecimal.ZERO);
 
-        // Band 2: 24,001 – 32,300 at 25%  (KRA annual ceiling 387,600 ÷ 12 = 32,300 exactly)
+        // Band 2: 24,001 – 32,333 at 25%  (KRA: next KES 8,333 after the first 24,000;
+        //         annual 388,000 ÷ 12 = 32,333.33, gazetted monthly ceiling 32,333)
         BigDecimal band2Width = BAND_2_LIMIT.subtract(BAND_1_LIMIT);
         tax      = tax.add(applyBand(remaining, band2Width, RATE_2));
         remaining = remaining.subtract(band2Width).max(BigDecimal.ZERO);
 
-        // Band 3: 32,301 – 500,000 at 30%
+        // Band 3: 32,334 – 500,000 at 30%
         BigDecimal band3Width = BAND_3_LIMIT.subtract(BAND_2_LIMIT);
         tax      = tax.add(applyBand(remaining, band3Width, RATE_3));
         remaining = remaining.subtract(band3Width).max(BigDecimal.ZERO);

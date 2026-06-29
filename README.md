@@ -136,7 +136,7 @@ Payroll calculations are implemented to KRA specifications:
 
 | Deduction | Rule |
 |-----------|------|
-| PAYE | 0–24K @ 10%, 24K–32.3K @ 25%, 32.3K–500K @ 30%, 500K–800K @ 32.5%, 800K+ @ 35%. Personal relief KES 2,400/month |
+| PAYE | 0–24,000 @ 10%, 24,001–32,333 @ 25%, 32,334–500,000 @ 30%, 500,001–800,000 @ 32.5%, 800,000+ @ 35%. Personal relief KES 2,400/month |
 | NSSF | 6% of gross — Tier I up to KES 7,000, Tier II up to KES 36,000 |
 | SHIF | 2.75% of gross (replaced NHIF, effective October 2024) |
 | Housing Levy | 1.5% employee + 1.5% employer |

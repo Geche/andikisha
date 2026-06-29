@@ -6,8 +6,6 @@ const FEATURES = [
   "PAYE, NSSF, SHIF, Housing Levy — calculated correctly",
   "M-Pesa and bank disbursement in one run",
   "P10A, NSSF, SHIF returns — auto-generated after approval",
-  "Employee payslips via SMS or WhatsApp",
-  "KRA P9 annual returns at year-end",
   "Data hosted in Kenya — KDPA compliant",
 ];
 
