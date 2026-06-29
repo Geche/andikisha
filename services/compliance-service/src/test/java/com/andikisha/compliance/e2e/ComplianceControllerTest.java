@@ -105,7 +105,7 @@ class ComplianceControllerTest {
     void getTaxBrackets_happyPath_returnsOrderedBrackets() throws Exception {
         when(complianceService.getTaxBrackets("ke")).thenReturn(List.of(
                 bracket(1, "0", "24000", "0.10"),
-                bracket(2, "24000.01", "32300", "0.25")
+                bracket(2, "24000.01", "32333", "0.25")
         ));
 
         mockMvc.perform(get(BASE + "/ke/tax-brackets")
@@ -116,14 +116,14 @@ class ComplianceControllerTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].bandNumber").value(1))
                 .andExpect(jsonPath("$[1].bandNumber").value(2))
-                .andExpect(jsonPath("$[1].upperBound").value(32300));
+                .andExpect(jsonPath("$[1].upperBound").value(32333));
     }
 
     @Test
-    void getTaxBrackets_band2UpperBound_is32300NotWrong32333() throws Exception {
-        // Regression guard: confirms the KRA-correct 32,300 boundary is returned
+    void getTaxBrackets_band2UpperBound_is32333() throws Exception {
+        // Regression guard: confirms the KRA-gazetted 32,333 boundary is returned
         when(complianceService.getTaxBrackets("ke")).thenReturn(List.of(
-                bracket(2, "24000.01", "32300", "0.25")
+                bracket(2, "24000.01", "32333", "0.25")
         ));
 
         mockMvc.perform(get(BASE + "/ke/tax-brackets")
@@ -131,7 +131,7 @@ class ComplianceControllerTest {
                         .header("X-User-ID", USER_ID)
                         .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].upperBound").value(32300));
+                .andExpect(jsonPath("$[0].upperBound").value(32333));
     }
 
     @Test

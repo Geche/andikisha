@@ -24,12 +24,12 @@ Status key: ✅ done (PR) · 🟡 partially done · 🔲 open.
 | **AUTHZ-BACKLOG-002** — PAYROLL_OFFICER denied payroll-run reads; + full operational-role `@PreAuthorize` sweep | High | #16 | ✅ merged |
 | **AUTHZ-BACKLOG-003** — LINE_MANAGER denied `/employees/me` + payslip reads | High | #16 | ✅ merged |
 | **PRODUCT-BACKLOG-002** — landing "filing is Live/Filed" overpromise | High | #18 | ✅ merged |
-| **AUTH-BACKLOG-002 / FE-BACKLOG-014** — voluntary change-password page (404) | Med | #19 | ✅ open PR |
-| **FE-BACKLOG-017** — `/{workspace}/access-denied` route missing (404) | Med | #19 | ✅ open PR |
+| **AUTH-BACKLOG-002 / FE-BACKLOG-014** — voluntary change-password page (404) | Med | #19 | ✅ merged |
+| **FE-BACKLOG-017** — `/{workspace}/access-denied` route missing (404) | Med | #19 | ✅ merged |
 | **FE-BACKLOG-016** — payroll error UX: 403-as-"check your connection" + error/empty dual state | Med | #20 | 🟡 payroll done; see B-4 |
-| **LEAVE-BACKLOG-001** — approve note silently discarded | Med | #21 | ✅ open PR |
+| **LEAVE-BACKLOG-001** — approve note silently discarded | Med | #21 | ✅ merged |
 
-**Open PRs awaiting review/merge:** #19, #20, #21.
+**All remediation PRs merged:** #19 and #20 on 2026-06-16, #21 on 2026-06-15.
 
 ---
 
@@ -37,7 +37,9 @@ Status key: ✅ done (PR) · 🟡 partially done · 🔲 open.
 
 ### High
 
-**B-1 · FE-BACKLOG-015 — LINE_MANAGER has no leave-approval surface** · 🔲 · **M** · `frontend/tenant-portal`
+**B-1 · FE-BACKLOG-018 — LINE_MANAGER has no leave-approval surface** · 🔲 · **M** · `frontend/tenant-portal`
+> ID-collision resolved 2026-06-29: this item was previously mislabelled `FE-BACKLOG-015`,
+> which already belongs to the resolved attendance-proxy fix. Reassigned to `FE-BACKLOG-018`.
 The approval queue lives only at `/admin/leave`, which LINE_MANAGER cannot reach
 (routes through `/my/*`). The backend already grants LINE_MANAGER approve/reject and
 gives DEPARTMENT scope (`CallerScopeResolver`), so the capability exists but is
@@ -99,33 +101,48 @@ shown for a female employee.
 *Do:* confirm the accrual/proration formula and add gender/eligibility filtering for
 leave types.
 
-**B-8 · UI-BACKLOG-004 — `RoleBadge` LINE_MANAGER is purple via hardcoded hex** · 🔲 · **S** · `frontend/packages/ui`
+**B-8 · UI-BACKLOG-004 — `RoleBadge` LINE_MANAGER is purple via hardcoded hex** · ✅ (2026-06-29) · **S** · `frontend/packages/ui`
 `RoleBadge.tsx:20` uses `bg-[#F3E8FF] text-[#6B21A8]` — purple, hardcoded hex, arbitrary
 Tailwind values; triple violation of `frontend/CLAUDE.md` (no purple / no hex / no
 arbitrary values).
-*Do:* move to brand tokens and audit the whole role-colour map for the same pattern.
+*Done:* whole role-colour map moved onto brand tokens (no hex, no blue/purple). The map also had
+PAYROLL_OFFICER blue-hex and HR_MANAGER amber text-hex — all three fixed: HR_MANAGER→`amber-text`,
+PAYROLL_OFFICER→`amber-50/700`, LINE_MANAGER→`success-bg/success`. Tradeoff accepted: roles now share
+hue families (differ by shade) since the brand palette has no blue/purple.
 
-**B-9 · AUTH-BACKLOG-010 — change-password wrong-current-password message is misleading** · 🔲 · **S** · `services/auth-service`
+**B-9 · AUTH-BACKLOG-010 — change-password wrong-current-password message is misleading** · ✅ (2026-06-29) · **S** · `services/auth-service`
 A wrong **current** password on change-password returns "Invalid email or password" — no
 email is involved.
-*Do:* return a current-password-specific message (e.g. "Current password is incorrect").
+*Done:* added a message-bearing `InvalidCredentialsException(String)` ctor and throw
+"Current password is incorrect" only on the change-password check. Login's vague anti-enumeration
+default is unchanged (it is shared across 5 call sites). Unit test asserts type, still green.
 
-**B-10 · LANDING-BACKLOG-002 — verify remaining feature bullets are shipped, not roadmap** · 🔲 · **S** · `frontend/landing`
+**B-10 · LANDING-BACKLOG-002 — verify remaining feature bullets are shipped, not roadmap** · ✅ (2026-06-29) · **S** · `frontend/landing`
 `components/cta/JoinCTA.tsx` lists "Employee payslips via SMS or WhatsApp" and
 "KRA P9 annual returns at year-end" as shipped; SMS/WhatsApp payslips were on the pricing
 **roadmap** per the audit.
-*Do:* confirm each bullet against the product and demote any unshipped ones (same treatment
-as the filing claims in #18).
+*Done:* verified both unshipped — zero SMS/WhatsApp code in any service; "P9" exists only as a
+`DocumentType.P9_FORM` enum value with no generation wired. Both bullets removed from the CTA.
+Remaining 4 bullets are real. (Bullet 3 "P10A/NSSF/SHIF returns auto-generated" is out of B-10 scope;
+#18 reviewed filing copy.)
 
 ### Polish
 
-**B-11 · payslip detail label "NHIF / SHIF" is stale** · 🔲 · **S** · `frontend/tenant-portal`
+**B-11 · payslip detail label "NHIF / SHIF" is stale** · ✅ (2026-06-29) · **S** · `frontend/tenant-portal`
 NHIF was replaced by SHIF in Oct 2024; the payslip detail still labels the health line
 "NHIF / SHIF". Rename to "SHIF". (Propose **PAYROLL-BACKLOG-006**.)
+*Done:* `my/payslips/page.tsx` health line relabelled "SHIF" (value is `p.shif`). The remaining
+"NHIF / SHIF Number" **ID-field** labels (employee form/profile) are a separate copy item, not touched.
 
-**B-12 · COMPLIANCE-BACKLOG-002 — PAYE band-2 doc/data mismatch** · 🔲 · **S** · docs
-`CLAUDE.md` states the second PAYE band ends at **32,333**; seeded compliance data and
-`KenyanTaxCalculator.java` use **32,300** (= 387,600 ÷ 12). Reconcile `CLAUDE.md` to the data.
+**B-12 · COMPLIANCE-BACKLOG-002 — PAYE band-2 ceiling wrong (was 32,300, correct is 32,333)** · ✅ (2026-06-29) · **M** · `payroll-service` + `compliance-service` + docs
+The original premise was inverted: `CLAUDE.md` already said 32.3K, while the **code** was the outlier.
+Verified against KRA (kra.go.ke): band-2 is the next KES 8,333 after the first 24,000 (24,001–32,333 @ 25%);
+annual 388,000 ÷ 12 = 32,333.33, gazetted **32,333**. The settled 32,300 (citing an unsourced "387,600 ÷ 12")
+was wrong and slightly over-deducted PAYE above the band.
+*Done:* `KenyanTaxCalculator.BAND_2_LIMIT` 32,300→32,333; new migration `V6__correct_paye_band2_ceiling.sql`
+corrects the seeded rates (V4 left intact); test seed + regression guards in compliance & payroll flipped to
+32,333 (suites green); release note corrected; `CLAUDE.md`/`README.md` made precise. Was scoped **S**, was
+actually **M** (multi-service + Flyway + test fallout).
 
 ---
 

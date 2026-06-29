@@ -83,11 +83,11 @@ class TaxBracketRepositoryTest {
     }
 
     @Test
-    void findActiveByCountryAndDate_band2_upperBoundIs32300() {
-        // Regression guard: KRA-correct boundary is KES 32,300 (not the wrong 32,333)
+    void findActiveByCountryAndDate_band2_upperBoundIs32333() {
+        // Regression guard: KRA-gazetted boundary is KES 32,333 (next 8,333 after the first 24,000)
         TaxBracket band2 = repository.findActiveByCountryAndDate(
                 Country.KE, LocalDate.of(2025, 1, 1)).get(1);
-        assertThat(band2.getUpperBound()).isEqualByComparingTo("32300");
+        assertThat(band2.getUpperBound()).isEqualByComparingTo("32333");
         assertThat(band2.getRate()).isEqualByComparingTo("0.25");
     }
 

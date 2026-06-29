@@ -11,13 +11,15 @@ const LABEL: Record<NonNullable<UserRole>, string> = {
   EMPLOYEE:        "Employee",
 };
 
+// On-brand role palette: brand (green) ramp, amber ramp, neutral, and semantic
+// green only. No blue/purple (brand rule) and no hardcoded hex (frontend/CLAUDE.md).
 const COLOR: Record<NonNullable<UserRole>, string> = {
   SUPER_ADMIN:     "bg-brand-900 text-white",
   ADMIN:           "bg-brand-100 text-brand-800",
-  HR_MANAGER:      "bg-amber-light text-[#92600A]",
+  HR_MANAGER:      "bg-amber-light text-amber-text",
   HR_OFFICER:      "bg-brand-50 text-brand-700",
-  PAYROLL_OFFICER: "bg-[#E0F2FE] text-[#0369A1]",
-  LINE_MANAGER:    "bg-[#F3E8FF] text-[#6B21A8]",
+  PAYROLL_OFFICER: "bg-amber-50 text-amber-700",
+  LINE_MANAGER:    "bg-success-bg text-success",
   EMPLOYEE:        "bg-neutral-100 text-neutral-700",
 };
 

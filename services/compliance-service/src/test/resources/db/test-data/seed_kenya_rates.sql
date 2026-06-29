@@ -3,8 +3,8 @@ INSERT INTO tax_brackets (id, tenant_id, country, band_number, lower_bound, uppe
                           is_active, created_at, updated_at, version)
 VALUES
     (gen_random_uuid(), 'SYSTEM', 'KE', 1, 0,         24000,  0.10,  '2024-07-01', TRUE, NOW(), NOW(), 0),
-    (gen_random_uuid(), 'SYSTEM', 'KE', 2, 24000.01,  32300,  0.25,  '2024-07-01', TRUE, NOW(), NOW(), 0),
-    (gen_random_uuid(), 'SYSTEM', 'KE', 3, 32300.01,  500000, 0.30,  '2024-07-01', TRUE, NOW(), NOW(), 0),
+    (gen_random_uuid(), 'SYSTEM', 'KE', 2, 24000.01,  32333,  0.25,  '2024-07-01', TRUE, NOW(), NOW(), 0),
+    (gen_random_uuid(), 'SYSTEM', 'KE', 3, 32333.01,  500000, 0.30,  '2024-07-01', TRUE, NOW(), NOW(), 0),
     (gen_random_uuid(), 'SYSTEM', 'KE', 4, 500000.01, 800000, 0.325, '2024-07-01', TRUE, NOW(), NOW(), 0),
     (gen_random_uuid(), 'SYSTEM', 'KE', 5, 800000.01, NULL,   0.35,  '2024-07-01', TRUE, NOW(), NOW(), 0);
 

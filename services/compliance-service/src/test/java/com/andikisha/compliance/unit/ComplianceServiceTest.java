@@ -110,7 +110,7 @@ class ComplianceServiceTest {
 
     @Test
     void getTaxBrackets_mapsBandNumberLowerUpperAndRate() {
-        TaxBracket band2 = taxBracket(2, "24000.01", "32300", "0.25");
+        TaxBracket band2 = taxBracket(2, "24000.01", "32333", "0.25");
         when(taxBracketRepository.findActiveByCountryAndDate(eq(Country.KE), any()))
                 .thenReturn(List.of(band2));
 
@@ -120,7 +120,7 @@ class ComplianceServiceTest {
         TaxBracketResponse r = result.get(0);
         assertThat(r.bandNumber()).isEqualTo(2);
         assertThat(r.lowerBound()).isEqualByComparingTo("24000.01");
-        assertThat(r.upperBound()).isEqualByComparingTo("32300");
+        assertThat(r.upperBound()).isEqualByComparingTo("32333");
         assertThat(r.rate()).isEqualByComparingTo("0.25");
     }
 

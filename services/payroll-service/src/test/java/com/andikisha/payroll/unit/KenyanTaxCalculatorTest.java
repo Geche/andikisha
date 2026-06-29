@@ -180,17 +180,16 @@ class KenyanTaxCalculatorTest {
     }
 
     @Test
-    @DisplayName("PAYE at Band 2 ceiling KES 32,300 — all 25% band fully applied")
-    void calculate_atBand2Ceiling_32300() {
-        // NSSF: Tier I 7,000*6% = 420; Tier II = (32,300-7,000)*6% = 1,518; total = 1,938
-        // taxable = 32,300 - 1,938 = 30,362
-        // PAYE: 24,000@10% = 2,400; (30,362-24,000)@25% = 6,362*0.25 = 1,590.50; total = 3,990.50
-        // less personal relief 2,400 → netPaye = 1,590.50
-        DeductionResult result = calculator.calculate(new BigDecimal("32300"), new BigDecimal("32300"));
-        assertThat(result.nssfEmployee()).isEqualByComparingTo("1938.00");
-        assertThat(result.taxableIncome()).isEqualByComparingTo("30362.00");
-        // verify no Band 3 (30%) tax — payeBeforeRelief should not exceed 3,991
-        assertThat(result.payeBeforeRelief()).isLessThanOrEqualTo(new BigDecimal("3991.00"));
+    @DisplayName("PAYE at Band 2 ceiling KES 32,333 — all 25% band fully applied, no Band 3")
+    void calculate_atBand2Ceiling_32333() {
+        // KRA band-2 ceiling is 32,333 (next 8,333 after the first 24,000).
+        // NSSF: Tier I 7,000*6% = 420; Tier II = (32,333-7,000)*6% = 1,519.98; total = 1,939.98
+        // taxable = 32,333 - 1,939.98 = 30,393.02 (still below the 32,333 ceiling → all Band 2)
+        DeductionResult result = calculator.calculate(new BigDecimal("32333"), new BigDecimal("32333"));
+        assertThat(result.nssfEmployee()).isEqualByComparingTo("1939.98");
+        assertThat(result.taxableIncome()).isEqualByComparingTo("30393.02");
+        // verify no Band 3 (30%) tax — taxable is within Band 2, so PAYE stays just under 4,000
+        assertThat(result.payeBeforeRelief()).isLessThanOrEqualTo(new BigDecimal("4000.00"));
     }
 
     // -------------------------------------------------------------------------

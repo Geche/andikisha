@@ -329,7 +329,9 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-            throw new InvalidCredentialsException();
+            // Caller is already authenticated here, so no enumeration risk —
+            // be specific instead of the vague login message.
+            throw new InvalidCredentialsException("Current password is incorrect");
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));

@@ -95,7 +95,7 @@ function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
           <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 pt-1">Deductions</p>
           {[
             { label: "PAYE", value: p.paye },
-            { label: "NHIF / SHIF", value: p.shif },
+            { label: "SHIF", value: p.shif },
             { label: "NSSF", value: p.nssf },
             { label: "Housing Levy (1.5%)", value: p.housingLevy },
           ].map(({ label, value }) => (
