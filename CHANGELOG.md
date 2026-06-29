@@ -4,6 +4,490 @@ All notable changes to AndikishaHR are documented here.
 
 ---
 
+## [Unreleased] — 2026-06-18
+
+### tenant-portal / @andikisha/ui — Loading-state hardening (Run W0–W2)
+
+Coordinated loading-state remediation: accessible, reduced-motion-safe primitives rolled out across data tables and dashboards, eliminating empty-as-loading and error+empty dual renders.
+
+#### Frontend
+- Hardened the shared `Spinner` and `Skeleton`/`SkeletonText` primitives (W0): `Spinner` now wraps its arc in a `role="status"` region with a visually-hidden, configurable `label` and `aria-hidden` arc; under `prefers-reduced-motion` the spin stops and collapses to a uniform `neutral-300` ring. `Skeleton` is marked decorative (`aria-hidden`) and drops its pulse under reduced motion. Added `SkeletonRegion`, a shared `aria-busy` + `role="status"` + sr-only-label wrapper exported from `@andikisha/ui`.
+- Adopted tri-state loading (loading / empty / error) across tenant-portal data tables (W1): `admin/users` (People table, Roles cards, permission matrix), `my/leave`, `my/payslips`, `my/attendance`. Replaced raw `animate-pulse` and "Loading…" text with the shared primitive, gated balance cards and tables on a unified loading flag so cards no longer render blank above a skeletoned table, and split error states out of empty states (previously rendered together on failure).
+- `my/dashboard` loading states (W2): skeletoned the 4 metric cards (no more "—" flash) and added distinct loading skeletons to the Recent Payslips / Leave Requests lists before their empty/data branches.
+
+#### Accessibility
+- All migrated loading surfaces now honour `prefers-reduced-motion` and expose `role="status"`/`aria-busy` with sr-only labels.
+
+### platform-portal — SUPER_ADMIN profile identity (PLATFORM-BACKLOG-004)
+
+#### Bug fixes
+- `/api/auth/me` now decodes the verified `platform_token` JWT locally (sub/email/role) instead of forwarding it to the tenant-scoped gateway `/api/v1/auth/me`, which returned 401 for a SUPER_ADMIN (tenantId `SYSTEM`, no tenant/employee record) and left the masthead with no avatar. Invalid/expired token → 401; response shape unchanged.
+
+### Misc
+- White-backed favicons across tenant-portal, platform-portal, and landing.
+
+---
+
+## [Unreleased] — 2026-06-17
+
+### tenant-portal — Attendance proxy and admin change-password (FE-BACKLOG-014, FE-BACKLOG-015)
+
+#### Bug fixes
+- Fixed the BFF proxy allowlist prefix in `src/app/api/proxy/[...path]/route.ts`: it listed `/api/v1/time-attendance` but the page calls `/api/v1/attendance/**` (the gateway's actual route), so the BFF returned 403 "Path not allowed" and `my/attendance` was broken for every employee. Replaced the dead prefix (no other caller).
+- Added an `/admin/change-password` route that re-uses the existing change-password form body inside the admin shell, so admins are no longer dropped into the employee shell. `ProfileView` "Change password" and the form's "Back to profile" links are now role-aware (admin → `/admin/*`), removing reliance on the racy `/my/profile` bounce.
+
+---
+
+## [Unreleased] — 2026-06-15
+
+### Audit remediation (Run 04, PRs #14–#22) — tenant-portal + landing
+
+Remediation of the 2026-06-15 comprehensive tenant-portal + landing audit. Backlog filed under `docs/backlog/BACKLOG.md`.
+
+#### Security fixes
+- **LINE_MANAGER login (Finding Zero):** `findCorrectDashboard()` had no branch for a LINE_MANAGER-only JWT, so successful logins redirected to `/access-denied` (itself a 404). Now routes LINE_MANAGER to `/my/dashboard` (per frontend CLAUDE.md, LINE_MANAGER routes through `/my/*` only). Used by both the login page and Edge middleware.
+- **Authz self-service grants (H2/H4):** added `LINE_MANAGER` to the `@PreAuthorize` on employee-service `GET /employees/me` and payroll-service `GET /payslips/{id}` and `GET /employees/{employeeId}/payslips` — a line manager (always employee-linked) was getting 403 on their own profile and payslips. `enforcePayslipOwnership()` still restricts non-privileged callers to their own `employeeId`. The PAYROLL_OFFICER `GET /runs` gap (H1) is documented, not fixed.
+
+#### Backend
+- **leave-service reviewer notes (LEAVE-BACKLOG-001 / audit M2):** reviewer's approval note was silently discarded (collected in the UI, never sent or stored). Added **Flyway `V4__add_review_notes_to_leave_requests.sql`** (nullable `review_notes` column); new `reviewNotes` field on `LeaveRequest` with an overloaded `approve(note)` (2-arg delegate keeps existing domain tests intact); `reject()` now writes the reason into `reviewNotes`. New optional `ApproveLeaveRequest` body (`@Size 1000`); `LeaveController.approve` reads it, `LeaveService` persists it, and `LeaveRequestResponse` exposes it (MapStruct). Frontend `ApproveModal` now POSTs `{ notes }`.
+
+#### Frontend
+- **Missing pages (M1/M4):** added the `/{workspace}/my/change-password` page (current/new/confirm + strength meter) — the backend `POST /api/v1/auth/change-password` and BFF route already existed, only the page 404'd; added a styled `/{workspace}/access-denied` page for unrecognised-role and SUPER_ADMIN-no-env redirects.
+- **Payroll error state (M3):** error banner and table/empty-state are now mutually-exclusive ternary branches (no more error+empty dual render); message is derived from HTTP status — 403 → permission copy with Retry hidden, otherwise a generic retryable error.
+
+#### Landing
+- **Payroll calculator math (audit, `compute-payslip.ts`):** corrected three deviations from the payroll engine — NSSF Tier II ceiling now treats 36,000 as the absolute pensionable cap (was an increment → 43,000, overcharging ~420 above gross 43,000); PAYE now computed on gross minus NSSF (allowable deduction; housing levy is not, per Finance Act 2023); insurance relief (15% of SHIF, capped 5,000) now applied. Together these had understated net by ~1,480 at gross 100,000. Now mirrors `KenyanTaxCalculator` to the cent (verified: gross 100,000 → PAYE 21,324.50, NSSF 2,160, net 72,265.50).
+- **Honest filing claims (H3):** integration-hub `FilingService` only generates/stores `FilingRecord` rows and transmits nothing, so "Live"/"submitted to the authorities"/"Filed" claims were reframed to "generated automatically … ready to file"; KRA iTax / NSSF / SHIF integration status Live → Coming; dropped the fabricated "WHT"; status pills "Filed" → "Ready". M-Pesa left as Live. Privacy policy / DPA filing language flagged for legal review, not changed.
+
+---
+
+## [Unreleased] — 2026-06-14
+
+### Authz / platform-wide — Role vocabulary canonicalization (Run 03 keystone)
+
+The product carried two competing names for the HR-officer role, half-wired in opposite directions: auth assigned `HR_OFFICER` while 9 services granted a non-existent `HR`, locking assignable HR_OFFICER users out of the entire portal. Strict rename, not a privilege-policy change.
+
+#### Breaking changes
+- Rewrote `HR` → `HR_OFFICER` in `@PreAuthorize` across 10 controllers / 16 grant sites (analytics, audit, document, employee dept+position, integration-hub, notification, payroll, tenant, time-attendance). No data migration (0 users held `HR`).
+- auth-service: added `Role.OPERATIONAL` as the single source of truth for enforced/assignable roles (drops inert `PAYROLL_MANAGER`); `changeUserRole` now rejects reserved roles (422). `/roles` lists only the 6 operational roles.
+- Frontend `ADMIN_ROLES` now `{ADMIN, HR_MANAGER, HR_OFFICER, PAYROLL_OFFICER}`; fixed `UserRole` union and `RoleBadge` label/colour map.
+- Note: the rename grants HR_OFFICER payroll approve/run access; the officer-vs-manager boundary is deferred to AUTHZ-BACKLOG-001. Decision: `docs/decisions/2026-06-14-run-03-role-canonicalization.md`.
+
+### auth-service — Standalone admin-tier users, deactivation, and name sync
+
+Round out user lifecycle: standalone (no-employee) admin-tier accounts, soft-delete, and keeping `display_name` fresh on employee rename.
+
+#### Migrations
+- **V17** (`V17__allow_standalone_admin_tier_users.sql`): relaxed `chk_operational_role_requires_employee_id` to allow null `employee_id` for the admin-tier whitelist (SUPER_ADMIN, ADMIN, HR_MANAGER, HR_OFFICER, PAYROLL_OFFICER); only EMPLOYEE and LINE_MANAGER still require an employee. Added `NOT VALID` — grandfathers existing rows (incl. the `hrmanager@demo` dangling id), enforces on new inserts only.
+- **V18** (`V18__seed_demo_admin_display_name.sql`): seeds `display_name = 'Andikisha Admin'` for `admin@demo.co.ke` only when still null; scoped by email, no-op in production.
+
+#### New endpoints
+- `PATCH /api/v1/auth/users/{id}/active` (ADMIN-only) — soft deactivate/reactivate via `is_active`. On deactivate, revokes refresh tokens; login + refresh blocked immediately, already-issued access tokens lapse within TTL (1h). Server-side guards: last-active-admin (422 `LAST_ACTIVE_ADMIN`), self-deactivation (422 `SELF_DEACTIVATION`), SUPER_ADMIN protected. `TenantUserResponse` gains `active`.
+- `POST /api/v1/auth/users/invite` (ADMIN-only) — creates a standalone admin-tier user with a one-time temp password and `mustChangePassword=true`; returns the password once. Non-admin-tier rejected (422 `INVALID_INVITE_ROLE`), duplicate 409. `Role.ADMIN_TIER` kept in sync with the V17 whitelist.
+
+#### Backend
+- New `EmployeeUpdatedListener` binds `auth.employee.updated` queue to `employee.events` / `employee.updated`; on `employee.updated` it re-resolves the name via gRPC and updates the linked user's `display_name` (idempotent, swallow-and-log, self-heals on next event). No event-contract change. Decisions: `docs/decisions/2026-06-14-run-03-tenant-006-invite.md`, `...-user-deactivation.md`.
+
+### tenant-portal — Admin IA regroup, position update, profile chip
+
+Reorganised admin sidenav around the approved Access / Workspace / Settings model. Cosmetic regroup only — every URL unchanged (rename filed TENANT-BACKLOG-010). Decision: `docs/decisions/2026-06-14-run-03-ia-reorganization.md`.
+
+#### New endpoints
+- `PUT /api/v1/positions/{id}` (ADMIN | HR_MANAGER) — positions previously had no update path while departments did (R3-3, EMP-BACKLOG-003); adds `PositionService.update` + `UpdatePositionRequest`.
+
+#### Frontend
+- New "Workspace" group surfaces Departments + Positions; "Administration" → "Access" group with "Users & roles". Settings hub stripped of dept/position/roles cards; deleted the `/admin/settings/roles` redirect stub (now 404).
+- Sidebar footer replaced by a user chip (avatar + `display_name`, email fallback) that links to `/my/profile` with Sign out below; removed redundant standalone "My profile" link and the duplicate desktop-rail Profile link.
+- `/admin/users`: "Invite user" and Deactivate/Reactivate actions; active-only default with "Show inactive" toggle and dimmed inactive rows.
+- `/my/profile`: branches on `employeeId` so standalone admin-tier users get a user-only view (identity + password change) instead of an error state.
+- Relaxed `/my/*` from EMPLOYEE-only to any authenticated user (edge middleware + `useRoleGuard`) so the new chip link doesn't trap standalone admins.
+
+#### Fixes
+- `/my/leave` balances called the non-existent `/api/v1/leave/balances` (masked as 500 by the shared handler); corrected to `/api/v1/leave/me/balances` and fixed the `LeaveBalance` shape (`available`/`used`).
+- Admin leave list/detail now resolve `employeeId` → `display_name` via `/api/v1/auth/users` and map the API's `days` field → `totalDays` (requester name and DAYS were blank).
+
+---
+
+## [Unreleased] — 2026-06-13
+
+### landing — Audit remediation (security, SEO, content, mobile)
+
+Swept audit findings across the marketing site.
+
+#### Security fixes
+- Added shared `lib/validation.ts` (stricter email, length caps, honeypot, CRLF sanitization) applied across demo/contact/newsletter routes; wired honeypots into all three forms.
+- Stopped silently dropping leads — logs loudly and returns 500 in production when `RESEND_API_KEY` is absent; surfaces previously-swallowed send errors. Added a 5s `AbortController` timeout to the compliance-rates upstream fetch.
+- Added security headers (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS, Permissions-Policy) and a permanent `/features` → `/product` redirect.
+
+#### SEO
+- Emit `BlogPosting` JSON-LD + author/modifiedTime/canonical/OG image on posts; added author frontmatter. Fixed sitemap routes (added product/partners/early-access, dropped features) with stable `lastModified`.
+
+#### Content
+- Replaced a fabricated "2026 PAYE bracket changes" post with an accurate evergreen PAYE explainer (bands attributed to Finance Act 2023, relief KES 2,400).
+- Responsive fixes: replaced inline `gridTemplateColumns` with classes that stack below `lg`. Deleted unused components (ThreePillars, ComplianceAuthority, Testimonials).
+
+---
+
+## [Unreleased] — 2026-06-12
+
+### auth-service — User display name resolved from employee (AUTH-006)
+
+Users had no name, so `/me`, `/admin/users`, and leave reviewer all showed email. Name now travels with the record rather than via synchronous gRPC on the hot `/me` path. Decision: `docs/decisions/2026-06-12-auth-user-display-name.md`.
+
+#### Migrations
+- **V16** (`V16__add_user_display_name.sql`): adds nullable `users.display_name`. NULL = "no name set" — readers fall back to email; email is never copied into the column.
+
+#### Backend
+- `provisionEmployeeUser` resolves "firstName lastName" via `EmployeeGrpcClient` at provisioning (cold path) and stores it; `UserResponse` + `TenantUserResponse` carry `displayName`, `/me` BFF maps it to `fullName`.
+- Added an idempotent `DisplayNameBackfillRunner` (`ApplicationRunner`): at startup backfills users with an `employee_id` and no `display_name`; no-op once populated, retries unresolvable users next start.
+
+### tenant-service / employee-service — KRA PIN format validation
+
+- Applied `@Pattern("^([A-Z]\\d{9}[A-Z])?$")` (optional: empty clears, non-empty must match `A123456789X`) to `UpdateStatutoryRequest.kraPin`, `UpdateTenantRequest.kraPin` (TENANT-BACKLOG-004) and employee update (EMP-BACKLOG-004) — backend previously trusted client-side validation only.
+- Added inline KRA PIN validation to the employee edit form (FE-BACKLOG-009).
+
+---
+
+## [Unreleased] — 2026-06-11
+
+### common / leave-service — Surface 405 instead of masking as 500
+
+- The shared `GlobalExceptionHandler` had a catch-all `Exception` → 500 and no `HttpRequestMethodNotSupportedException` handler, hiding two real bugs (W3 terminate, leave approve/reject) behind opaque 500s. Added a 405 handler (with `Allow` header) before the catch-all in both the shared advice and the shadowing `LeaveExceptionHandler`. Other services pick up the shared fix on next rebuild.
+
+---
+
+## [Unreleased] — 2026-06-10
+
+### compliance-service / landing — Calculator wired to a single source of truth (R2-3)
+
+#### New endpoints
+- `GET /api/v1/public/compliance/{country}/rates` — **public, unauthenticated** endpoint returning rate data (PAYE bands, NSSF/SHIF/Housing rates, reliefs), `Cache-Control: public, max-age=21600`. Permitted in `SecurityConfig`, excluded from the tenant interceptor, routed through the gateway.
+- Landing `PayrollCalculator` now fetches rates (proxied with SWR cache) and computes via `lib/compute-payslip`; **deleted** the drifting second source of truth (`lib/kenya-tax-rates-2025.ts`, `lib/payroll-calculations.ts`) and dead `HeroPayslipCard`.
+
+### tenant-service / platform-portal — Statutory edit + record-only plan change (R2-7)
+
+#### New endpoints
+- `PATCH /api/v1/super-admin/tenants/{id}/statutory` (SUPER_ADMIN) — edit KRA PIN / NSSF / SHIF via `Tenant.updateStatutoryRegistrations`.
+- Plan change reuses the existing status-preserving `POST /licences/upgrade` as record-only (updates plan/seats/price; does not transition licence status or clear the trial).
+
+### auth-service / tenant-portal — Discoverable RBAC-gated User management (R2-10)
+
+- Moved the buried roles/users screen to a top-level `/admin/users` (people list + roles overview + read-only permission matrix), nav-gated ADMIN | HR_MANAGER to match the backend `hasAnyRole`. `/admin/settings/roles` 307-redirects there. Change-role stays ADMIN-only (visible-but-disabled for HR_MANAGER).
+- `TenantUserResponse` gains `lastLogin`; per-user Reset password reuses the existing admin reset (shows temp password once).
+
+#### Fixes
+- Leave approve/reject use POST with the correct reject field; reviewer now stored from `X-User-Email` (gateway never injects the `X-User-Name` the code expected) and rendered via `reviewerName` instead of the raw UUID. Leave "View" links now include the `workspace/admin` prefix (was 404). User-management, Departments, and Positions modals got the white-card surface wrapper.
+
+---
+
+## [Unreleased] — 2026-06-09
+
+### Release Run 02 — landing launch-prep, tenant-portal admin surfaces, licence read-through
+
+Unblocked tenant write paths, fixed the gateway licence cache, and shipped the first admin settings/permissions surfaces. The W-series (W0–W5) and R2-series (R2-5/6/8) close Run 01 backlog.
+
+#### Backend
+- **Gateway licence read-through (W0, breaking behaviour fix):** `TenantLicenceFilter` previously failed closed with `503 LICENCE_CHECK_UNAVAILABLE` on every Redis cache miss because the intended gRPC read-through was never wired — once the TTL lapsed, all tenant-scoped requests 503'd permanently. The filter now reads through to tenant-service `ValidateTenantLicence` on a miss (offloaded to `boundedElastic`) and repopulates Redis with a single 30-min TTL. Asymmetric fail policy when tenant-service is unreachable: **reads fail open** (with audit log), **writes fail closed**; the `NONE`/no-licence status gap is now blocked, not passed. Disabled Spring Cloud Gateway's JSON-to-gRPC bridge (we use the net.devh client) to fix a boot failure. Decision: `docs/decisions/2026-06-08-licence-read-through.md`.
+- **Employee single + bulk create (W5):** Single create now returns 201 (was blocked solely by W0). **Migration V10 (employee-service)** drops `NOT NULL` on `national_id`, `phone_number`, `kra_pin`, `nhif_number`, `nssf_number` (catalog-only; unique indexes already permit multiple NULLs). `BulkUploadService` now stores `NULL` for absent optional fields instead of colliding placeholders (`+254700000000`, `PENDING-<empNum>`, empty statutory numbers) that caused `409 DUPLICATE` on the second incomplete row. Single create still requires all five fields via `@NotBlank`.
+
+#### New endpoints
+- `GET /api/v1/auth/roles` — role→permissions matrix, projected from the `role_permissions` table that services actually enforce (ADMIN/HR_MANAGER; read-only, cannot drift from enforcement).
+- `GET /api/v1/auth/users` — tenant users with current role, for central assignment (ADMIN/HR_MANAGER).
+- New DTOs `RolePermissionsResponse`, `TenantUserResponse`; `RolePermissionQueryService`.
+
+#### Frontend (tenant-portal + landing)
+- **Logout token revocation (W4, security):** BFF logout now calls backend `/api/v1/auth/logout` to revoke all refresh tokens before clearing the `tenant_token` cookie (best-effort) — previously refresh tokens stayed valid for up to 7 days after logout.
+- **Terminate employee verb fix (W3):** Terminate modal called `apiClient.patch` against a `@PostMapping` endpoint, failing every termination as a gateway 500. Switched to `apiClient.post` (verified end-to-end: 204, status → TERMINATED, `EmployeeTerminated` reaching the audit consumer).
+- **BFF binary proxy fix (R2-6):** Proxy decoded every request/response as UTF-8 text while forcing `Content-Type: application/json`, corrupting binary payloads — xlsx template downloads arrived as broken zips (U+FFFD bytes) and multipart uploads lost their boundary. Now forwards request bodies as raw bytes preserving `Content-Type` (keeps multipart boundary) and returns non-JSON responses as raw bytes preserving `Content-Disposition`.
+- **Admin settings (R2-5):** New `/admin/settings` index plus `/admin/settings/departments` (list/add/edit) and `/admin/settings/positions` (list/add, seed defaults) — fixes dead nav/onboarding links that 404'd. Existing endpoints, no backend change.
+- **Permissions UI (R2-8):** New `/admin/settings/roles` read-only permission matrix plus a people-and-roles list with central Change Role (legacy `HR` excluded; ADMIN-only guard, default-deny).
+- **Landing launch-prep (W1/W2):** Gated both "Log in" links behind `NEXT_PUBLIC_SHOW_LOGIN` (default off, pre-launch); removed all price/billing elements from the pricing page (per-employee KES figures, monthly/annual toggle, "Save 15%" badge, VAT subline) in favour of "Talk to us for a quote"; enhanced the contact form (danger semantic tokens, helper text, Lucide `Send` icon).
+
+#### Required manual steps
+- Set `NEXT_PUBLIC_SHOW_LOGIN` to enable the landing login links post-launch (default off).
+- Apply employee-service **V10** before relying on null-stored bulk imports.
+
+---
+
+## [Unreleased] — 2026-06-08
+
+### Platform — Redis readiness hardening + CI stabilisation
+
+Resolved the cascade where unauthenticated Redis connections 503'd all tenant-scoped traffic, and defined a degrade-not-unready readiness contract.
+
+#### Backend
+- **Redis auth + readiness contract:** Services defaulted `spring.data.redis.password` to empty; started without `REDIS_PASSWORD` they connected unauthenticated to a password-protected Redis, producing health 503 and `LICENCE_CHECK_UNAVAILABLE` on every tenant request. Final fix (after reverting an interim `:changeme` default that re-masked the bug) uses bare `${REDIS_PASSWORD}` plus a `RedisPasswordStartupGuard` (one per Redis service) asserting a non-blank resolved password at startup — config-presence only, no Redis ping, preserving the degrade-not-unready contract. Redis-down now degrades per-request (self-healing 503), and Redis is excluded from the explicit readiness group (DB retained); k8s probes already target `/actuator/health/readiness`. Adds `scripts/smoke-redis-readiness.sh`.
+- **CI green post-merge:** Scoped the Redis startup guard out of tests and re-enabled JPA auditing in `@DataJpaTest` slices.
+
+#### Required manual steps
+- **`REDIS_PASSWORD` is now a required infra var** for the 6 Redis services (api-gateway + 5 others) — services abort at startup if it is unset or blank. Redeploy clears the bug for all six.
+
+---
+
+## [Unreleased] — 2026-06-07
+
+### Design system — token consolidation (Roboto + Lucide, Tailwind v4)
+
+Multi-step migration to a single shared `@theme` token source across all three frontends, finishing the Roboto/Roboto Mono + Lucide brand stack and cutting per-app token duplication.
+
+#### Design system
+- **Shared `@theme` source (Steps 1–2):** New `@andikisha/ui` `theme.css` export — single source of truth for green/amber 25–900 ramps, warm neutrals, semantic + role tokens, green-tinted shadows, motion, and fonts mapped to Roboto/Roboto Mono. Legacy tokens (`brand-*`, `amber-*`, `surface*`, `near-black`, `ink-*`) retained as deprecated aliases (alias-then-migrate). tenant-portal and platform-portal adopted it with zero visual change.
+- **Landing → Tailwind v4 (Step 3):** Migrated landing from Tailwind v3 to v4 (`@import "tailwindcss"` + shared `theme.css`, deleted `tailwind.config.ts`, `@tailwindcss/postcss`, autoprefixer removed). Home + pricing pixel-identical before/after; zero Tailwind arbitrary values in `globals.css`.
+- **Focus halo + Button hover (Step 4):** Replaced amber focus outlines with a named green `--shadow-focus` halo across `@andikisha/ui` primitives, landing, and the platform tenants page; fixed Button primary hover to darken (`green-800`); added `prefers-reduced-motion` to both portals.
+- **Roboto Mono + stray-hex cleanup (Step 5):** Wired `Roboto_Mono` via `next/font` in all three layouts; removed all `dm-mono` references; migrated real-UI stray hex to tokens (WhatsApp `#25d366` → `bg-whatsapp`, leave/auth gradients, leave badges). Marketing mockup-chrome files marked token-exempt. `text-ui`/`text-ui-sm` marked deprecated transitional tokens.
+- **Canonical bundle:** Added self-hosted Roboto Mono, brand assets, preview specimens, and app/marketing UI kits; excluded stale Inter fonts.
+
+---
+
+## [Unreleased] — 2026-06-05
+
+### auth/employee — HR_OFFICER role completion + bug-hunt batch
+
+Completed the partial `HR` → `HR_OFFICER` rename and cleared HIGH/MEDIUM findings from the 2026-06-03 bug-hunt inventory.
+
+#### Migrations
+- **V15 (auth-service):** Seeds `HR_OFFICER` into `role_permissions` (`employee:read:all`, `employee:update:all`, `leave:read:all`; excludes create, leave:approve, payroll); deletes the 6 legacy `HR` rows; migrates any `role='HR'` users to `HR_OFFICER`.
+
+#### Backend (security/authz)
+- **HR_OFFICER operationalised (M-3):** The legacy `HR` role existed in seed data and `@PreAuthorize` expressions but was absent from the `Role` enum, while `HR_OFFICER` had no seed data and silently resolved to `OWN` scope in `CallerScopeResolver`. Removed the deprecated `HR` case, added `HR_OFFICER` to the ALL bucket, added a `log.warn` on unknown-role default, and updated `EmployeeController`/`LeaveController` `@PreAuthorize` expressions (HR_OFFICER does not approve leave).
+- **Bulk activation idempotency (H-2):** Activation always issued a fresh temp password even when the employee already had a linked user account, so HR received credentials that were never set. New `UserAlreadyActivatedException` → HTTP 422 with machine-readable `{ error, message, employeeId }` for frontend deep-linking.
+- **nationalId uniqueness at validate time (H-3):** Duplicate `nationalId` values were only caught at commit as a generic 409 rollback. `BulkUploadService.validate()` now pre-builds an in-file duplicate map and `validateRow()` runs cross-file (`existsByTenantIdAndNationalId`) + in-file checks with row-level reporting.
+- **EmployeeMapper NPE guard (H-1):** Both `grossPay` expression mappings dereferenced `getSalaryStructure()` without a null guard (MapStruct emits expressions verbatim), producing a silent NPE. Extracted `computeGrossPay(Employee)` that throws `BusinessRuleException("INCOMPLETE_SALARY_STRUCTURE", ...)` at the mapping boundary.
+
+#### Frontend
+- **useRoleGuard default-deny (M-5):** Hook returned "authorized" while the user was still loading (null), briefly flashing protected content. Added a `"loading"` `AuthStatus` returned when `authorized === null`.
+
+---
+
+## [Unreleased] — 2026-06-04
+
+### Cross-service — bug-hunt batch-1 (resilience + prod hardening)
+
+Trivial-to-medium wins from the 2026-06-03 inventory.
+
+#### Backend
+- **Leave event publisher transaction guard (M-1):** `RabbitLeaveEventPublisher` now has `sendAfterCommit()` with an `isActualTransactionActive()` guard (matching `RabbitPayrollEventPublisher`), removing the `IllegalStateException` risk when publishing outside a transaction. Adds `RabbitLeaveEventPublisherTest`.
+- **Payroll gRPC deadlines (M-2):** `EmployeeGrpcClient` + `LeaveGrpcClient` (payroll-service) apply per-call `.withDeadlineAfter()` on every blocking stub call (configurable via `app.grpc.deadline-seconds.*`, default 30s); `DEADLINE_EXCEEDED` is logged with the timeout and `EmployeeGrpcClient` throws `BusinessRuleException` so payroll fails fast instead of hanging the thread pool.
+- **Swagger disabled in prod (M-4):** Added `application-prod.yml` to all six services (auth, employee, payroll, leave, notification, api-gateway) disabling `springdoc.api-docs` and `swagger-ui`; dev unchanged.
+
+#### Frontend
+- **Self role-change cache invalidation (M-6):** `ChangeRoleModal.onSuccess` now conditionally invalidates `["current-user"]` when the changed employee is the logged-in admin, closing a 60-second stale-role window.
+
+---
+
+## [Unreleased] — 2026-06-01
+
+### auth/employee/leave/payroll — Roles, Permissions & Onboarding (Steps 1–6)
+
+Major feature build implementing invite-only registration, per-request scope enforcement, role assignment, admin password reset, profile self-service, and bulk employee upload.
+
+#### Migrations
+- **V14 (auth-service):** `NOT VALID CHECK` constraints enforcing `employee_id` invariants (invite-only registration link).
+- **V8 (employee-service):** `personal_email`, `emergency_contact_name`, `emergency_contact_phone`, `avatar_url`.
+- **V9 (employee-service):** `bulk_upload_batches` table + `pending_activation` column on employees.
+
+#### Backend (security/authz)
+- **Invite-only registration (Step 1):** `RegisterRequest` now requires `employeeId`; `User.linkEmployee()` rejects `SUPER_ADMIN`; `AuthService` enforces the link at creation and fixes `provisionEmployeeUser` idempotency. Gateway logs a warning for authenticated non-SUPER_ADMIN with empty `employeeId`. Backfill: 25 HIGH-confidence rows linked, 1 LOW-confidence orphan deleted.
+- **Per-request scope enforcement (Step 2):** New `ScopeType`, `ResolvedScope`, `DepartmentScopeException` in andikisha-common; `CallerScopeResolver` in employee-service (DB lookup) and leave-service (gRPC, via new `EmployeeGrpcClient`). `GET /employees`, `GET /leave/requests`, `GET /payslips` now scope by role: LINE_MANAGER → department, EMPLOYEE → own, HR/ADMIN/PAYROLL_OFFICER → all.
+
+#### New endpoints
+- `PATCH /api/v1/auth/users/{userId}/role` (ADMIN) — gRPC dept check for department-scoped roles; revokes refresh tokens; publishes `UserRoleChangedEvent`.
+- `GET /api/v1/auth/users/by-employee/{employeeId}` (ADMIN, HR_MANAGER).
+- `POST /api/v1/auth/users/{userId}/admin-password-reset` (ADMIN, HR_MANAGER) — HR_MANAGER cannot reset ADMIN; SUPER_ADMIN always blocked; sets `mustChangePassword=true`, revokes refresh tokens, publishes `AdminPasswordResetEvent`.
+- `PATCH /api/v1/employees/me/profile` — tier-1 self-service (phone, personalEmail, emergencyContact); tier-2 statutory fields remain HR-only.
+- `POST /api/v1/employees/me/avatar` — JPEG/PNG/WEBP ≤2MB, local storage; `MaxUploadSizeExceededException` → 422 `FILE_TOO_LARGE`.
+- Bulk upload suite: `GET /bulk-upload/template.{xlsx,csv}` (Apache POI), `POST /bulk-upload` (full-file validation: email uniqueness, role allowlist, dept/position fuzzy match via Levenshtein ≤2, date/salary/KRA-PIN/NSSF/SHIF format), `POST /bulk-upload/{id}/commit` (sets `pending_activation=true`, does NOT auto-provision users), `GET /bulk-upload/pending-activation`, `POST /bulk-upload/activate`, and `POST /auth/employees/provision` (batch activation returning temp passwords).
+
+#### New events
+- `UserRoleChangedEvent`, `AdminPasswordResetEvent` (RabbitMQ).
+
+#### Frontend (tenant-portal)
+- System Role card + `ChangeRoleModal` and a two-step admin password-reset modal on employee detail; `/my/profile` inline-edit tier-1 with read-only tier-2 (amber HR notice); `/admin/employees/bulk-upload` (upload + validation report + commit) and `/admin/employees/pending-activation` (multi-select + activation result modal).
+
+#### Required manual steps / breaking changes
+- **Registration now requires `employeeId`** — self-serve (non-invite) registration no longer works.
+- Apply auth-service **V14** and employee-service **V8/V9** before deploying.
+- Known follow-up: `EMP-BACKLOG-001` — `ListEmployees` gRPC unimplemented (workaround: `listActiveByTenant` + filter).
+
+---
+
+## [Unreleased] — 2026-05-29
+
+### Deployment — Dokploy / GHCR delivery path
+
+Stood up a Dokploy-based deployment pipeline for all 13 services and 3 frontends alongside the existing K8s path.
+
+#### Backend / infra
+- Added Dokploy compose deployment pulling `ghcr.io` images for the 13 services and shipping Dockerfiles for the 3 frontends (tenant-portal, platform-portal, landing).
+- Hardened the frontend Docker build: copy a pre-built JAR instead of rebuilding, create `public/` if missing, skip platform-portal lint during image builds.
+- Split the `protoc-gen-grpc-java` chmod into its own Docker layer and made the plugin executable under Alpine so gRPC codegen runs in-image.
+- Lowercased `ghcr.io` owner in image tags; gated the Dokploy webhook trigger to skip when the deploy secret is unset.
+- Fixed Postgres healthcheck and removed the `x-required-env` compose block incompatible with the Dokploy parser.
+- Allowlisted `.env.example` in gitleaks to stop false-positive secret detection.
+- Added a Dokploy environment setup guide (`docs/`).
+
+---
+
+## [Unreleased] — 2026-05-26
+
+### CI/CD & tests — pipeline stabilization
+
+Reworked the image promotion flow and stabilized the test suite for CI.
+
+#### CI/CD
+- CI now pushes verified Docker images to ECR on `master`; staging/production **promote** the CI-tested image rather than rebuilding it.
+- Kustomize image tags are committed back to the repo (GitOps-lite); added an ECR image preflight before production deploy.
+- Replaced swallowed/silent-skip failures: staging rollout check no longer eats failures, smoke test replaced with a retry-loop health check, and a post-rollout health check added to production.
+- Pinned staging checkout to the `workflow_run` head SHA; corrected kustomize path to `infrastructure/k8s/base`; added pnpm store cache, pnpm version pin, and full git history for gitleaks.
+
+#### Tests
+- Switched Testcontainers `@DataJpaTest`/`@SpringBootTest` from Flyway+validate to create-drop, and converted most `@DataJpaTest` classes from PostgreSQL to H2 to cut Docker load (tenant-service integration tests also moved to H2).
+- Fixed JPA auditing duplicate `@EnableJpaAuditing` imports (compliance, analytics, tenant), reactive Redis mock, random gRPC test port binding, and a 32-byte test key for `CredentialEncryptor`.
+- leave-service: unquoted reserved keyword `YEAR` in the H2 test URL; cleared JPA cache after the bulk freeze update.
+
+---
+
+## [Unreleased] — 2026-05-21
+
+### Platform — Kubernetes resilience & deploy hardening
+
+Added availability and scaling primitives to the Release 01 manifests.
+
+#### K8s
+- Added PodDisruptionBudgets for all 17 services, soft pod anti-affinity to every Release 01 deployment, and HPAs for `api-gateway` and `auth-service`.
+- Documented a NetworkPolicy prerequisite with stubs.
+
+#### Frontend
+- Replaced underline tabs with a segmented control across all filter locations; added a `PaginationBar` primitive; removed the browser-default focus ring and unified the leave table header background.
+
+---
+
+## [Unreleased] — 2026-05-20
+
+### Tenant / Auth — workspace-in-URL routing
+
+Introduced a human-readable `workspace` identifier per tenant and restructured login around it, so users log in via `/{workspace}/login` instead of carrying a hardcoded `TENANT_ID`.
+
+#### Migrations (tenant-service)
+- **V8** — added nullable `workspace_slug` (VARCHAR 50), backfilled unique kebab-case slugs from `company_name`, pinned the demo tenant to `demo`, then set NOT NULL + UNIQUE + index.
+- **V9** — replaced `workspace_slug` with `workspace` (VARCHAR 20): backfilled from the slug, enforced UNIQUE, a CHECK constraint (`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`, must start/end alphanumeric), and an index; dropped the old column, constraint, and index. **Breaking:** column rename `workspace_slug` → `workspace`, new format max 20 chars.
+- **V10** — dropped the global `UNIQUE(admin_email)` and added composite `UNIQUE(admin_email, tenant_id)`, with a pre-flight duplicate guard that aborts the migration. **Behavior change:** the same email may now administer multiple tenants (consultant-as-admin pattern); the service-level global uniqueness check was removed.
+
+#### New endpoints
+- `GET /api/v1/public/tenants/resolve?slug=` (later `workspace`) — unauthenticated slug→tenantId resolution for the BFF, with a matching first-wins gateway route.
+- Added a workspace availability endpoint plus a work-email check on `SuperAdminController`.
+- `PublicTenantController` routed through `TenantService` to respect the DDD layering.
+
+#### Security / gateway
+- Added `/api/v1/public/**` to the JWT bypass list (`GatewayPublicPaths`), `SecurityConfig`, and the tenant-service `TenantInterceptor`/`WebMvcConfig` exclusions so public resolution skips auth and tenant filters.
+
+#### Events
+- Added the `workspace` field to `TenantCreatedEvent` (published via `RabbitTenantEventPublisher`); the notification-service welcome email now includes the workspace identifier and `/{workspace}/login` URL with null-safe handling.
+
+#### Frontend (tenant-portal / platform-portal)
+- Phase 3: routes restructured under a `[workspace]` dynamic segment — `/login` asks for the workspace when missing, `/{workspace}/login` takes only email+password.
+- Login now resolves the workspace before auth and no longer depends on a `TENANT_ID` env var (fixes Issue 2).
+- Phase 2 hard gate: standalone `/set-password` route moved out of the `(my)` layout; middleware redirects all `mustChangePassword=true` sessions before any authenticated layout renders, with BFF auto-re-login landing the user on the dashboard.
+- platform-portal provision form/success modal and tenant detail strip now surface the workspace slug and login URL.
+
+---
+
+## [Unreleased] — 2026-05-19
+
+### platform-portal — internal staff portal (scaffold → tenant management)
+
+New internal Andikisha-staff portal (port 3003), built across the week and completed here.
+
+#### Frontend
+- Minimal scaffold with CSS/Tailwind v4 config, root layout + providers, and a SUPER_ADMIN-only middleware guard.
+- BFF auth routes (`GET /api/auth/me`) + real login page; nav config, `HorizontalShell` layout, dashboard with 5 widgets backed by new backend endpoints, and 10 stub pages.
+- Full tenant detail page (all 6 sections + action modals), provision form + detail stub, and a tenant list with `comingSoon` nav entries.
+
+### auth / tenant-portal — session timeout + portal-aware routing
+
+#### Frontend
+- Session idle timeout with a `returnTo` redirect.
+- Login role-aware redirect; the tenant login BFF rejects SUPER_ADMIN with `WRONG_PORTAL` 403; `CurrentUserProvider` hybrid (SSR hydration + React Query revalidation); edge-safe `auth.ts` with `findCorrectDashboard` + unit tests; root layout reads `x-user-*` headers and passes `initialUser` to the provider.
+
+---
+
+## [Unreleased] — 2026-05-18
+
+### auth-service — provisioning, password lifecycle, must-change gate
+
+#### Migrations
+- **V13 (auth-service):** `must_change_password` column on `users`.
+
+#### Backend
+- Forgot-password + reset-password flow (Redis token, 1h TTL).
+- Random temp password for employee provisioning + `EmployeeUserProvisionedEvent`; `provisionEmployeeUser` now links `employeeId`.
+- `mustChangePassword` JWT claim + middleware redirect to `/my/change-password`; `changePassword` clears `must_change_password`.
+- notification-service: credential welcome email via `AuthEventListener` on `EmployeeUserProvisionedEvent`.
+
+### employee-service — edit flow + onboarding seeds
+
+- Employee edit flow: personal info, position, bank, salary, statutory IDs.
+- Idempotent seed-defaults endpoints for departments and positions.
+
+### tenant-portal — workspace setup
+
+- `WorkspaceSetupChecklist` replaces the empty admin dashboard.
+
+---
+
+## [Unreleased] — 2026-05-16
+
+### payroll-service / payroll-ui — disbursement loop + payslip surfaces
+
+#### Backend
+- `PaymentsCompletedEvent` wires the APPROVED → COMPLETED payroll-run state transition; payslip payment-status updates + leave-balance self-heal.
+- **HELB:** full monthly HELB deduction across all layers (**V7 employee-service migration**: `add_helb_deduction`).
+
+#### Frontend
+- Payroll UI surfaces 1–9: list page with correct status enum and paths, create-page redirect fix (`/admin/payroll/{id}`), run-detail page with payment-summary panel, partial-failure indicator on the list page, and employee/dashboard field corrections.
+
+### employee-service — positions
+
+- Position controller + seed script; fixed create/detail forms.
+
+---
+
+## [Unreleased] — 2026-05-13
+
+### tenant-portal — unified portal scaffold (route groups + PWA)
+
+Consolidated the separate admin/employee portals into a single tenant-portal app.
+
+#### Frontend
+- Scaffolded tenant-portal from the admin-portal base (step 2.1); employee routes nested under `(my)/my/*` (2.2) and admin routes under `(admin)/admin/*` (2.3).
+- Steps 2.5–2.8: service worker scoped to `/my/`, PWA manifest (`start_url`/`scope` = `/my/`), intentionally-permissive middleware, and root redirect.
+
+---
+
+## [Unreleased] — 2026-05-12
+
+### @andikisha/ui + portals — design-system consolidation
+
+#### Frontend
+- Plan A Sprint 1 primitives + `/preview` route; Plan B unified shell layouts wired into all three portals.
+- Sprint 3 data components + canonical dashboards + a `Cmd+K` command palette; removed the double-header (TopBar eliminated from the main column).
+- Added the read-only `template/` reference folder (SmartHR).
+
+---
+
+## [Unreleased] — 2026-05-11
+
+### portals — consolidation + Figma-aligned redesign
+
+#### Frontend
+- Full employee-portal self-service (auth, dashboard, payslips, leave, attendance, profile); split-screen login pages across all three portals; redesigned admin/employee UI to the Figma design system; sidebar active-state cleanup (neutral active background, flat nav configs).
+
+#### Backend
+- auth-service: auto-create an EMPLOYEE user on the `employee.created` event + fixed a ghost (pre-commit) publish.
+- tenant-service: increased the licence-status Redis TTL from 60s to 30m.
+
+---
+
 ## [Unreleased] — 2026-05-10
 
 ### Full-repo security, correctness, and performance hardening (pre-deployment audit)

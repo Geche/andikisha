@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-03T01:54:47+0300",
+    date = "2026-06-28T09:45:21+0300",
     comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Amazon.com Inc.)"
 )
 @Component
@@ -76,6 +76,7 @@ public class PayrollMapperImpl implements PayrollMapper {
 
         UUID payrollRunId = null;
         String period = null;
+        String paymentPhone = null;
         UUID id = null;
         UUID employeeId = null;
         String employeeNumber = null;
@@ -94,6 +95,7 @@ public class PayrollMapperImpl implements PayrollMapper {
         BigDecimal housingLevy = null;
         BigDecimal housingLevyEmployer = null;
         BigDecimal helb = null;
+        BigDecimal nita = null;
         BigDecimal personalRelief = null;
         BigDecimal insuranceRelief = null;
         BigDecimal totalDeductions = null;
@@ -103,6 +105,7 @@ public class PayrollMapperImpl implements PayrollMapper {
 
         payrollRunId = slipPayrollRunId( slip );
         period = slipPayrollRunPeriod( slip );
+        paymentPhone = slip.getPaymentPhone();
         id = slip.getId();
         employeeId = slip.getEmployeeId();
         employeeNumber = slip.getEmployeeNumber();
@@ -121,6 +124,7 @@ public class PayrollMapperImpl implements PayrollMapper {
         housingLevy = slip.getHousingLevy();
         housingLevyEmployer = slip.getHousingLevyEmployer();
         helb = slip.getHelb();
+        nita = slip.getNita();
         personalRelief = slip.getPersonalRelief();
         insuranceRelief = slip.getInsuranceRelief();
         totalDeductions = slip.getTotalDeductions();
@@ -130,7 +134,7 @@ public class PayrollMapperImpl implements PayrollMapper {
 
         String paymentStatus = slip.getPaymentStatus().name();
 
-        PaySlipResponse paySlipResponse = new PaySlipResponse( id, payrollRunId, period, employeeId, employeeNumber, employeeName, basicPay, housingAllowance, transportAllowance, medicalAllowance, otherAllowances, totalAllowances, grossPay, paye, nssf, nssfEmployer, shif, housingLevy, housingLevyEmployer, helb, personalRelief, insuranceRelief, totalDeductions, netPay, currency, paymentStatus, mpesaReceipt );
+        PaySlipResponse paySlipResponse = new PaySlipResponse( id, payrollRunId, period, employeeId, employeeNumber, employeeName, basicPay, housingAllowance, transportAllowance, medicalAllowance, otherAllowances, totalAllowances, grossPay, paye, nssf, nssfEmployer, shif, housingLevy, housingLevyEmployer, helb, nita, personalRelief, insuranceRelief, totalDeductions, netPay, currency, paymentStatus, paymentPhone, mpesaReceipt );
 
         return paySlipResponse;
     }

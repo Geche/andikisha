@@ -729,6 +729,13 @@ deferred to the "My HR" feature, which would be the real second call site.
 
 ### FE-BACKLOG-015 — Attendance 403s for every employee: BFF proxy allowlist prefix mismatch
 
+**STATUS: RESOLVED 2026-06-29** (commit `4ab385b`, "correct attendance BFF proxy allowlist prefix").
+The allowlist prefix was corrected `/api/v1/time-attendance` → `/api/v1/attendance`; `my/attendance`
+now reaches the gateway instead of 403ing at the proxy.
+**Note — ID collision:** the Run-04 remediation backlog (`docs/backlog/2026-06-15-run-04-remediation-backlog.md`,
+item B-1) reuses `FE-BACKLOG-015` for an unrelated item ("LINE_MANAGER has no leave-approval surface"). That
+item needs a fresh ID; this one (attendance) is the original owner.
+
 **Raised:** 2026-06-17 (found during loading-state W1 behavioural verification of `my/attendance`).
 **Priority:** High — `my/attendance` is non-functional for **every** employee, not a single account.
 

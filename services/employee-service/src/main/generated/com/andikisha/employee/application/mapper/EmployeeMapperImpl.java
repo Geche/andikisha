@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-03T01:54:52+0300",
+    date = "2026-06-28T09:45:42+0300",
     comments = "version: 1.6.3, compiler: javac, environment: Java 21.0.11 (Amazon.com Inc.)"
 )
 @Component
@@ -83,7 +83,7 @@ public class EmployeeMapperImpl implements EmployeeMapper {
 
         String employmentType = e.getEmploymentType().name();
         String status = e.getStatus().name();
-        BigDecimal grossPay = e.getSalaryStructure().grossPay().getAmount();
+        BigDecimal grossPay = computeGrossPay(e);
         String gender = e.getGender() != null ? e.getGender().name() : null;
 
         EmployeeResponse employeeResponse = new EmployeeResponse( id, tenantId, employeeNumber, firstName, lastName, phoneNumber, email, dateOfBirth, gender, departmentId, departmentName, positionId, positionTitle, employmentType, status, basicSalary, housingAllowance, transportAllowance, medicalAllowance, otherAllowances, grossPay, currency, hireDate, probationEndDate, terminationDate, bankName, bankAccountNumber, createdAt );
@@ -106,6 +106,7 @@ public class EmployeeMapperImpl implements EmployeeMapper {
         BigDecimal transportAllowance = null;
         BigDecimal medicalAllowance = null;
         BigDecimal otherAllowances = null;
+        BigDecimal helbMonthlyDeduction = null;
         String currency = null;
         UUID id = null;
         String tenantId = null;
@@ -124,6 +125,10 @@ public class EmployeeMapperImpl implements EmployeeMapper {
         LocalDate terminationDate = null;
         String bankName = null;
         String bankAccountNumber = null;
+        String personalEmail = null;
+        String emergencyContactName = null;
+        String emergencyContactPhone = null;
+        String avatarUrl = null;
         LocalDateTime createdAt = null;
 
         departmentId = eDepartmentId( e );
@@ -135,6 +140,7 @@ public class EmployeeMapperImpl implements EmployeeMapper {
         transportAllowance = eSalaryStructureTransportAllowanceAmount( e );
         medicalAllowance = eSalaryStructureMedicalAllowanceAmount( e );
         otherAllowances = eSalaryStructureOtherAllowancesAmount( e );
+        helbMonthlyDeduction = eSalaryStructureHelbMonthlyDeductionAmount( e );
         currency = eSalaryStructureBasicSalaryCurrency( e );
         id = e.getId();
         tenantId = e.getTenantId();
@@ -153,14 +159,18 @@ public class EmployeeMapperImpl implements EmployeeMapper {
         terminationDate = e.getTerminationDate();
         bankName = e.getBankName();
         bankAccountNumber = e.getBankAccountNumber();
+        personalEmail = e.getPersonalEmail();
+        emergencyContactName = e.getEmergencyContactName();
+        emergencyContactPhone = e.getEmergencyContactPhone();
+        avatarUrl = e.getAvatarUrl();
         createdAt = e.getCreatedAt();
 
         String employmentType = e.getEmploymentType().name();
         String status = e.getStatus().name();
-        BigDecimal grossPay = e.getSalaryStructure().grossPay().getAmount();
+        BigDecimal grossPay = computeGrossPay(e);
         String gender = e.getGender() != null ? e.getGender().name() : null;
 
-        EmployeeDetailResponse employeeDetailResponse = new EmployeeDetailResponse( id, tenantId, employeeNumber, firstName, lastName, nationalId, phoneNumber, email, kraPin, nhifNumber, nssfNumber, dateOfBirth, gender, departmentId, departmentName, positionId, positionTitle, employmentType, status, basicSalary, housingAllowance, transportAllowance, medicalAllowance, otherAllowances, grossPay, currency, hireDate, probationEndDate, terminationDate, bankName, bankAccountNumber, createdAt );
+        EmployeeDetailResponse employeeDetailResponse = new EmployeeDetailResponse( id, tenantId, employeeNumber, firstName, lastName, nationalId, phoneNumber, email, kraPin, nhifNumber, nssfNumber, dateOfBirth, gender, departmentId, departmentName, positionId, positionTitle, employmentType, status, basicSalary, housingAllowance, transportAllowance, medicalAllowance, otherAllowances, helbMonthlyDeduction, grossPay, currency, hireDate, probationEndDate, terminationDate, bankName, bankAccountNumber, personalEmail, emergencyContactName, emergencyContactPhone, avatarUrl, createdAt );
 
         return employeeDetailResponse;
     }
@@ -346,6 +356,18 @@ public class EmployeeMapperImpl implements EmployeeMapper {
             return null;
         }
         return basicSalary.getCurrency();
+    }
+
+    private BigDecimal eSalaryStructureHelbMonthlyDeductionAmount(Employee employee) {
+        SalaryStructure salaryStructure = employee.getSalaryStructure();
+        if ( salaryStructure == null ) {
+            return null;
+        }
+        Money helbMonthlyDeduction = salaryStructure.getHelbMonthlyDeduction();
+        if ( helbMonthlyDeduction == null ) {
+            return null;
+        }
+        return helbMonthlyDeduction.getAmount();
     }
 
     private UUID dParentId(Department department) {
