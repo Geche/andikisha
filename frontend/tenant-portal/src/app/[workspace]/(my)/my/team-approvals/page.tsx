@@ -2,13 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import { PageHeader, PaginationBar } from "@andikisha/ui";
+import { ShieldCheck } from "lucide-react";
+import { PageHeader, PaginationBar, EmptyState, useHasRole } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { ListErrorState } from "@/components/ListErrorState";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { ApproveModal } from "./_components/ApproveModal";
-import { RejectModal } from "./_components/RejectModal";
+// The Approve/Reject modals and leave types are shared with the admin leave queue.
+// LINE_MANAGER reaches the same approve/reject capability from /my/* (the backend
+// DEPARTMENT-scopes GET /leave/requests for line managers).
+import { ApproveModal } from "../../../(admin)/admin/leave/_components/ApproveModal";
+import { RejectModal } from "../../../(admin)/admin/leave/_components/RejectModal";
 import {
   type LeaveRequest,
   type LeaveStatus,
@@ -18,43 +20,30 @@ import {
   statusLabel,
   formatDate,
   formatDateRange,
-} from "./_types";
+} from "../../../(admin)/admin/leave/_types";
 
-// Raw leave row as the API returns it (uses `days`; UI maps to `totalDays`).
+// API returns `days`; UI maps to `totalDays`.
 type ApiLeaveRequest = Omit<LeaveRequest, "totalDays"> & { days: number };
-// Minimal /auth/users projection for resolving employeeId → display name.
-interface TenantUserLite {
-  employeeId: string | null;
-  displayName: string | null;
-  email: string;
-}
-
-// ─── Status tab config ────────────────────────────────────────────────────────
 
 type StatusFilter = "ALL" | LeaveStatus;
 
 const STATUS_TABS: { label: string; value: StatusFilter }[] = [
-  { label: "All", value: "ALL" },
   { label: "Pending", value: "PENDING" },
   { label: "Approved", value: "APPROVED" },
   { label: "Rejected", value: "REJECTED" },
+  { label: "All", value: "ALL" },
 ];
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function TableSkeleton() {
   return (
     <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden animate-pulse">
       <div className="h-11 bg-neutral-50 border-b border-neutral-200" />
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
           className="h-[58px] border-b border-neutral-100 last:border-0 flex items-center px-6 gap-6"
         >
-          <div className="flex flex-col gap-1.5 w-36">
-            <div className="h-3 bg-neutral-100 rounded w-28" />
-            <div className="h-2.5 bg-neutral-100 rounded w-20" />
-          </div>
+          <div className="h-3 bg-neutral-100 rounded w-32" />
           <div className="h-3 bg-neutral-100 rounded w-24" />
           <div className="h-3 bg-neutral-100 rounded w-32" />
           <div className="h-3 bg-neutral-100 rounded w-8" />
@@ -67,47 +56,18 @@ function TableSkeleton() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export default function LeavePage() {
-  const workspace = useWorkspace();
+export default function TeamApprovalsPage() {
+  const isLineManager = useHasRole("LINE_MANAGER");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("PENDING");
   const [approveTarget, setApproveTarget] = useState<LeaveRequest | null>(null);
   const [rejectTarget, setRejectTarget] = useState<LeaveRequest | null>(null);
 
-  // Fetch all with PENDING status in parallel to compute the pending count for subtitle
-  const { data: pendingData } = useQuery<PagedResponse<LeaveRequest>>({
-    queryKey: ["leave-requests-pending-count"],
-    queryFn: () =>
-      apiClient
-        .get<PagedResponse<LeaveRequest>>("/api/v1/leave/requests", {
-          params: { page: 0, size: 1, sort: "createdAt,desc", status: "PENDING" },
-        })
-        .then((r) => r.data),
-  });
-
-  const pendingCount = pendingData?.totalElements ?? null;
-
-  // The leave API returns `days` (not `totalDays`) and stores the requester name as a generic
-  // "Employee" (the gateway never forwards a name on submit). Resolve employeeId → display_name
-  // via /api/v1/auth/users (admin-readable), the same identity source as AUTH-006.
-  const { data: usersData } = useQuery<TenantUserLite[]>({
-    queryKey: ["leave-user-names"],
-    queryFn: () => apiClient.get<TenantUserLite[]>("/api/v1/auth/users").then((r) => r.data),
-    staleTime: 5 * 60 * 1000,
-  });
-  const nameByEmployeeId = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const u of usersData ?? []) {
-      if (u.employeeId) m.set(u.employeeId, u.displayName || u.email);
-    }
-    return m;
-  }, [usersData]);
-
+  // Query key shares the "leave-requests" prefix so the Approve/Reject modals'
+  // invalidateQueries(["leave-requests"]) refreshes this list after an action.
   const { data, isLoading, isError, error, refetch } = useQuery<PagedResponse<ApiLeaveRequest>>({
-    queryKey: ["leave-requests", page, pageSize, statusFilter],
+    queryKey: ["leave-requests", "team", page, pageSize, statusFilter],
     queryFn: () => {
       const params: Record<string, string | number> = {
         page,
@@ -119,16 +79,12 @@ export default function LeavePage() {
         .get<PagedResponse<ApiLeaveRequest>>("/api/v1/leave/requests", { params })
         .then((r) => r.data);
     },
+    enabled: isLineManager,
   });
 
   const requests: LeaveRequest[] = useMemo(
-    () =>
-      (data?.content ?? []).map((r) => ({
-        ...r,
-        totalDays: Number(r.days),
-        employeeName: nameByEmployeeId.get(r.employeeId) || r.employeeName,
-      })),
-    [data, nameByEmployeeId],
+    () => (data?.content ?? []).map((r) => ({ ...r, totalDays: Number(r.days) })),
+    [data],
   );
   const totalElements = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
@@ -138,16 +94,24 @@ export default function LeavePage() {
     setPage(0);
   }
 
-  const subtitleText =
-    pendingCount === null
-      ? "Loading…"
-      : pendingCount === 0
-        ? "No pending approvals"
-        : `${pendingCount} pending approval${pendingCount !== 1 ? "s" : ""}`;
+  if (!isLineManager) {
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        <PageHeader title="Team approvals" subtitle="Approve and review your team's leave" />
+        <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
+          <EmptyState
+            icon={ShieldCheck}
+            title="Not available"
+            description="Team approvals are available to line managers only."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <PageHeader title="Leave Management" subtitle={subtitleText} />
+      <PageHeader title="Team approvals" subtitle="Approve and review your team's leave" />
 
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8 space-y-4">
         {/* Status tabs */}
@@ -171,11 +135,7 @@ export default function LeavePage() {
 
         {/* Error / loading / table are mutually exclusive */}
         {isError ? (
-          <ListErrorState
-            error={error}
-            noun="leave requests"
-            onRetry={() => void refetch()}
-          />
+          <ListErrorState error={error} noun="leave requests" onRetry={() => void refetch()} />
         ) : isLoading ? (
           <TableSkeleton />
         ) : (
@@ -187,7 +147,7 @@ export default function LeavePage() {
                     Employee
                   </th>
                   <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
-                    Leave Type
+                    Leave type
                   </th>
                   <th className="bg-neutral-50 text-left px-6 py-3 text-[11px] font-semibold text-neutral-500 uppercase tracking-wide">
                     Dates
@@ -210,7 +170,9 @@ export default function LeavePage() {
                 {requests.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-16 text-center text-[13px] text-neutral-400">
-                      No leave requests found
+                      {statusFilter === "PENDING"
+                        ? "No pending approvals for your team"
+                        : "No leave requests found"}
                     </td>
                   </tr>
                 ) : (
@@ -221,9 +183,6 @@ export default function LeavePage() {
                     >
                       <td className="px-6 py-4">
                         <p className="font-semibold text-near-black">{req.employeeName}</p>
-                        <p className="text-[12px] text-neutral-400 font-mono mt-0.5">
-                          {req.employeeNumber}
-                        </p>
                       </td>
                       <td className="px-6 py-4 text-neutral-600">{leaveTypeLabel(req.leaveType)}</td>
                       <td className="px-6 py-4 text-neutral-600">
@@ -257,12 +216,7 @@ export default function LeavePage() {
                             </button>
                           </div>
                         ) : (
-                          <Link
-                            href={`/${workspace}/admin/leave/${req.id}`}
-                            className="text-[12.5px] font-semibold text-brand-700 hover:underline"
-                          >
-                            View
-                          </Link>
+                          <span className="text-[12.5px] text-neutral-400">—</span>
                         )}
                       </td>
                     </tr>
@@ -273,7 +227,7 @@ export default function LeavePage() {
           </div>
         )}
 
-        {/* Pagination — hidden while the list failed to load */}
+        {/* Pagination — not shown while the list failed to load */}
         {!isError && (
           <PaginationBar
             currentPage={page}
@@ -282,23 +236,20 @@ export default function LeavePage() {
             pageSize={pageSize}
             itemLabel="requests"
             onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); setPage(0); }}
+            onPageSizeChange={(s) => {
+              setPageSize(s);
+              setPage(0);
+            }}
           />
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals (shared with the admin leave queue) */}
       {approveTarget && (
-        <ApproveModal
-          request={approveTarget}
-          onClose={() => setApproveTarget(null)}
-        />
+        <ApproveModal request={approveTarget} onClose={() => setApproveTarget(null)} />
       )}
       {rejectTarget && (
-        <RejectModal
-          request={rejectTarget}
-          onClose={() => setRejectTarget(null)}
-        />
+        <RejectModal request={rejectTarget} onClose={() => setRejectTarget(null)} />
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Clock } from "lucide-react";
 import { PageHeader, PaginationBar, Skeleton, SkeletonRegion, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
+import { listErrorMessage } from "@/lib/queryError";
 
 // Shape matches time-attendance AttendanceResponse (self-scoped via
 // /api/v1/attendance/employees/{employeeId} — EMPLOYEE may read their own). Status is
@@ -69,7 +70,7 @@ export default function AttendancePage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
-  const { data, isLoading, isError } = useQuery<PagedResponse<AttendanceRecord>>({
+  const { data, isLoading, isError, error } = useQuery<PagedResponse<AttendanceRecord>>({
     queryKey: ["attendance", employeeId, page, pageSize],
     queryFn: () =>
       apiClient
@@ -127,7 +128,7 @@ export default function AttendancePage() {
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <AlertTriangle size={36} className="text-neutral-200 mb-3" strokeWidth={1.5} />
               <p className="text-[14px] font-semibold text-neutral-400">Couldn&rsquo;t load attendance records</p>
-              <p className="text-[13px] text-neutral-300 mt-1">Please try again in a moment</p>
+              <p className="text-[13px] text-neutral-300 mt-1">{listErrorMessage(error, "attendance records")}</p>
             </div>
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
