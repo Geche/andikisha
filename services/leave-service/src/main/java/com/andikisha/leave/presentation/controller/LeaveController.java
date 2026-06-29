@@ -122,12 +122,14 @@ public class LeaveController {
     }
 
     @GetMapping("/requests/{id}")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN', 'LINE_MANAGER')")
-    @Operation(summary = "Get a leave request by ID")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN', 'LINE_MANAGER', 'EMPLOYEE')")
+    @Operation(summary = "Get a leave request by ID — scoped by role: ALL (HR_OFFICER/HR_MANAGER/ADMIN), DEPARTMENT (LINE_MANAGER), OWN (EMPLOYEE)")
     public LeaveRequestResponse getRequest(
             @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-Employee-ID", required = false) String employeeId,
             @PathVariable UUID id) {
-        return leaveService.getRequest(id);
+        return leaveService.getRequest(id, role, employeeId);
     }
 
     @GetMapping("/employees/{employeeId}/requests")

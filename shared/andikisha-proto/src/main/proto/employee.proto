@@ -53,6 +53,7 @@ message EmployeeResponse {
   string position_title = 17;
   string basic_salary = 18;
   string currency = 19;
+  string gender = 20;
 }
 
 message ListEmployeesResponse {

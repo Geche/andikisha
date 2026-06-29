@@ -56,14 +56,16 @@ are false representations in **legally binding** documents.
 *Do:* legal/business to revise the privacy policy + DPA copy and the sub-processor list.
 Not an engineering-only change — owner = legal/product.
 
-**B-3 · AUTHZ-BACKLOG-004 — `GET /leave/requests/{id}` cannot be opened to EMPLOYEE without an IDOR** · 🔲 · **M** · `services/leave-service` (security)
+**B-3 · AUTHZ-BACKLOG-004 — `GET /leave/requests/{id}` cannot be opened to EMPLOYEE without an IDOR** · ✅ (2026-06-29) · **M** · `services/leave-service` (security)
 An EMPLOYEE can submit and list their own leave but cannot open a single request by id
 (the endpoint excludes EMPLOYEE). It cannot simply be granted: `LeaveService.getRequest(id)`
 has **no ownership check**, so granting EMPLOYEE would let any employee read any request
 by id.
-*Do:* add a self-ownership guard in `getRequest` (caller's `employeeId` must match, or
-caller is privileged), then add `EMPLOYEE` to the `@PreAuthorize`. Mirror
-`enforcePayslipOwnership` / `enforceAttendanceOwnership`.
+*Done:* `getRequest` now resolves the caller's scope via the existing `CallerScopeResolver`
+(same as `listRequests`): ALL → any, DEPARTMENT → only requests in the LINE_MANAGER's
+department, OWN → only the caller's own request; mismatch throws `AccessDeniedException` (403).
+`EMPLOYEE` added to `@PreAuthorize`. This both closes the IDOR and tightens the previous
+LINE_MANAGER over-grant (it could read any request tenant-wide). Unit IDOR tests added.
 
 ### Medium
 
@@ -89,17 +91,26 @@ not a one-liner. Resolve and document the intended grant for each:
 
 ### Low
 
-**B-6 · LEAVE-BACKLOG-002 — leave request detail: blank "Employee number" + reviewer shown as email** · 🔲 · **S** · `leave-service` + `frontend/tenant-portal`
+**B-6 · LEAVE-BACKLOG-002 — leave request detail: blank "Employee number" + reviewer shown as email** · ✅ (2026-06-29) · **S** · `leave-service` + `frontend/tenant-portal`
 Detail page renders an empty "Employee number" (the API never returns it) and shows the
 reviewer as a raw email rather than a display name. (#21 already fixed the reviewer-note
 display.)
-*Do:* either populate/remove `employeeNumber`, and resolve the reviewer to `display_name`.
+*Done:* `LeaveRequestResponse` gained an `employeeNumber` field, populated on the single-request
+detail path via a one-shot `EmployeeGrpcClient.getEmployee` lookup (two-arg mapper overload;
+list path leaves it null to avoid an N+1). The frontend already consumed `employeeNumber` and
+already resolves the reviewer to `display_name` via `/api/v1/auth/users` (PR #6), so the
+reviewer half needed no further change.
 
-**B-7 · LEAVE-BACKLOG-003 — odd leave balances (fractional, ineligible types)** · 🔲 · **M** · `leave-service`
+**B-7 · LEAVE-BACKLOG-003 — odd leave balances (fractional, ineligible types)** · ✅ (2026-06-29) · **M** · `leave-service` (+ proto, employee-service)
 Balances show PATERNITY **9.3** and COMPASSIONATE **3.3** (fractional), and PATERNITY is
 shown for a female employee.
-*Do:* confirm the accrual/proration formula and add gender/eligibility filtering for
-leave types.
+*Done:* root cause was `initializeForNewEmployee` pro-rating **every** policy. Added
+`LeaveType.accruesMonthly()` (true only for ANNUAL): annual still pro-rates + accrues monthly;
+statutory/event types are granted as a whole-day entitlement and no longer accrue (kills the
+9.3/3.3). Gender eligibility added: exposed `gender` on the employee gRPC `EmployeeResponse`
+(backwards-compatible proto field + employee-service setter) and `initializeForNewEmployee`
+now skips MATERNITY for non-female / PATERNITY for non-male (skips both when gender unknown).
+Unit tests added across all three behaviours; leave + employee suites green.
 
 **B-8 · UI-BACKLOG-004 — `RoleBadge` LINE_MANAGER is purple via hardcoded hex** · ✅ (2026-06-29) · **S** · `frontend/packages/ui`
 `RoleBadge.tsx:20` uses `bg-[#F3E8FF] text-[#6B21A8]` — purple, hardcoded hex, arbitrary

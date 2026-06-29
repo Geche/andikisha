@@ -8,6 +8,8 @@ import com.andikisha.leave.domain.model.LeavePolicy;
 import com.andikisha.leave.domain.model.LeaveType;
 import com.andikisha.leave.domain.repository.LeaveBalanceRepository;
 import com.andikisha.leave.domain.repository.LeavePolicyRepository;
+import com.andikisha.leave.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.proto.employee.EmployeeResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,10 +22,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,8 +38,14 @@ class LeaveBalanceServiceTest {
     @Mock private LeaveBalanceRepository balanceRepository;
     @Mock private LeavePolicyRepository policyRepository;
     @Mock private LeaveMapper mapper;
+    @Mock private EmployeeGrpcClient employeeGrpcClient;
 
     @InjectMocks private LeaveBalanceService leaveBalanceService;
+
+    private void stubGender(String gender) {
+        when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                .thenReturn(Optional.of(EmployeeResponse.newBuilder().setGender(gender).build()));
+    }
 
     private static final String TENANT_ID   = "tenant-1";
     private static final UUID   EMPLOYEE_ID = UUID.randomUUID();
@@ -93,6 +103,50 @@ class LeaveBalanceServiceTest {
         verify(balanceRepository, times(0)).save(any());
     }
 
+    @Test
+    void initializeForNewEmployee_statutoryLeave_grantedFullNotProRated() {
+        // SICK is statutory, not accruing — a mid-year joiner gets the full 30 days,
+        // not a fractional pro-rated figure.
+        LeavePolicy sick = LeavePolicy.create(TENANT_ID, LeaveType.SICK, 30, 0, false, true);
+        when(policyRepository.findByTenantIdAndActiveTrue(TENANT_ID)).thenReturn(List.of(sick));
+
+        leaveBalanceService.initializeForNewEmployee(TENANT_ID, EMPLOYEE_ID);
+
+        ArgumentCaptor<LeaveBalance> captor = ArgumentCaptor.forClass(LeaveBalance.class);
+        verify(balanceRepository).save(captor.capture());
+        assertThat(captor.getValue().getAccrued()).isEqualByComparingTo("30");
+    }
+
+    @Test
+    void initializeForNewEmployee_skipsPaternityForFemale() {
+        LeavePolicy annual    = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL,    21, 5, true, false);
+        LeavePolicy paternity = LeavePolicy.create(TENANT_ID, LeaveType.PATERNITY, 14, 0, true, false);
+        when(policyRepository.findByTenantIdAndActiveTrue(TENANT_ID))
+                .thenReturn(List.of(annual, paternity));
+        stubGender("FEMALE");
+
+        leaveBalanceService.initializeForNewEmployee(TENANT_ID, EMPLOYEE_ID);
+
+        ArgumentCaptor<LeaveBalance> captor = ArgumentCaptor.forClass(LeaveBalance.class);
+        verify(balanceRepository).save(captor.capture());
+        assertThat(captor.getAllValues()).hasSize(1);
+        assertThat(captor.getValue().getLeaveType()).isEqualTo(LeaveType.ANNUAL);
+    }
+
+    @Test
+    void initializeForNewEmployee_createsMaternityForFemale_fullEntitlement() {
+        LeavePolicy maternity = LeavePolicy.create(TENANT_ID, LeaveType.MATERNITY, 90, 0, true, false);
+        when(policyRepository.findByTenantIdAndActiveTrue(TENANT_ID)).thenReturn(List.of(maternity));
+        stubGender("FEMALE");
+
+        leaveBalanceService.initializeForNewEmployee(TENANT_ID, EMPLOYEE_ID);
+
+        ArgumentCaptor<LeaveBalance> captor = ArgumentCaptor.forClass(LeaveBalance.class);
+        verify(balanceRepository).save(captor.capture());
+        assertThat(captor.getValue().getLeaveType()).isEqualTo(LeaveType.MATERNITY);
+        assertThat(captor.getValue().getAccrued()).isEqualByComparingTo("90");
+    }
+
     // ------------------------------------------------------------------
     // freezeForTerminatedEmployee
     // ------------------------------------------------------------------
@@ -148,5 +202,26 @@ class LeaveBalanceServiceTest {
         // Accrual should not have been saved for skipped balance
         verify(balanceRepository, times(0)).save(any());
         assertThat(balance.getAccrued()).isEqualByComparingTo("5"); // unchanged
+    }
+
+    @Test
+    void runMonthlyAccrual_doesNotAccrueStatutoryLeave() {
+        int year = LocalDate.now().getYear();
+
+        // Statutory/event leave (paternity) must not accrue monthly even with a policy.
+        LeavePolicy paternity = LeavePolicy.create(TENANT_ID, LeaveType.PATERNITY, 14, 0, true, false);
+        LeaveBalance balance = LeaveBalance.create(
+                TENANT_ID, EMPLOYEE_ID, LeaveType.PATERNITY, year,
+                BigDecimal.valueOf(14), BigDecimal.ZERO);
+
+        when(policyRepository.findByTenantIdAndActiveTrue(TENANT_ID))
+                .thenReturn(List.of(paternity));
+        when(balanceRepository.findActiveBalancesForYear(TENANT_ID, year))
+                .thenReturn(List.of(balance));
+
+        leaveBalanceService.runMonthlyAccrual(TENANT_ID);
+
+        verify(balanceRepository, never()).save(any());
+        assertThat(balance.getAccrued()).isEqualByComparingTo("14"); // unchanged
     }
 }

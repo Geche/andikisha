@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.security.access.AccessDeniedException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -459,7 +461,53 @@ class LeaveServiceTest {
         when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> leaveService.getRequest(REQUEST_ID))
+        assertThatThrownBy(() -> leaveService.getRequest(REQUEST_ID, "HR_MANAGER", null))
                 .isInstanceOf(LeaveRequestNotFoundException.class);
+    }
+
+    @Test
+    void getRequest_hrManagerAllScope_returnsRequest() {
+        LeaveRequest request = sampleRequest();
+        when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
+                .thenReturn(Optional.of(request));
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.all());
+        LeaveRequestResponse resp = mock(LeaveRequestResponse.class);
+        when(mapper.toResponse(eq(request), any())).thenReturn(resp);
+
+        assertThat(leaveService.getRequest(REQUEST_ID, "HR_MANAGER", null)).isSameAs(resp);
+    }
+
+    @Test
+    void getRequest_employeeOwnRequest_ownScope_returnsRequest() {
+        LeaveRequest request = sampleRequest(); // owned by EMPLOYEE_ID
+        when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
+                .thenReturn(Optional.of(request));
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.own());
+        LeaveRequestResponse resp = mock(LeaveRequestResponse.class);
+        when(mapper.toResponse(eq(request), any())).thenReturn(resp);
+
+        assertThat(leaveService.getRequest(REQUEST_ID, "EMPLOYEE", EMPLOYEE_ID.toString()))
+                .isSameAs(resp);
+    }
+
+    @Test
+    void getRequest_employeeOtherRequest_ownScope_throwsAccessDenied() {
+        LeaveRequest request = sampleRequest(); // owned by EMPLOYEE_ID
+        when(requestRepository.findByIdAndTenantId(REQUEST_ID, TENANT_ID))
+                .thenReturn(Optional.of(request));
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.own());
+
+        String otherEmployeeId = UUID.randomUUID().toString();
+        assertThatThrownBy(() ->
+                leaveService.getRequest(REQUEST_ID, "EMPLOYEE", otherEmployeeId))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(mapper, never()).toResponse(any(LeaveRequest.class));
+    }
+
+    private LeaveRequest sampleRequest() {
+        return LeaveRequest.create(
+                TENANT_ID, EMPLOYEE_ID, "Jane Doe", LeaveType.ANNUAL,
+                LocalDate.now().plusDays(7), LocalDate.now().plusDays(11),
+                BigDecimal.valueOf(5), "Trip");
     }
 }
