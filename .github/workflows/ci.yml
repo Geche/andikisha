@@ -243,27 +243,21 @@ jobs:
     needs: [docker-build, docker-frontend]
     if: github.ref == 'refs/heads/master'
     steps:
-      - name: Trigger redeploy via Dokploy API
+      - name: Trigger redeploy via Dokploy webhook
         env:
-          DOKPLOY_API_TOKEN: ${{ secrets.DOKPLOY_API_TOKEN }}
-          DOKPLOY_HOST: ${{ secrets.DOKPLOY_HOST }}
+          DOKPLOY_WEBHOOK_URL: ${{ secrets.DOKPLOY_WEBHOOK_URL }}
         run: |
-          if [ -z "$DOKPLOY_API_TOKEN" ] || [ -z "$DOKPLOY_HOST" ]; then
-            echo "DOKPLOY_API_TOKEN or DOKPLOY_HOST secret not set — skipping redeploy trigger"
+          if [ -z "$DOKPLOY_WEBHOOK_URL" ]; then
+            echo "DOKPLOY_WEBHOOK_URL secret not set — skipping redeploy trigger"
             exit 0
           fi
-          echo "Triggering Dokploy redeploy for andikisha-stack..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "${DOKPLOY_HOST}/api/compose.redeploy" \
-            -H "Authorization: Bearer ${DOKPLOY_API_TOKEN}" \
+          echo "Triggering Dokploy redeploy via webhook..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$DOKPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
-            -d '{"composeId":"andikisha-stack-m1ytsf"}')
-          HTTP_STATUS=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | head -1)
-          echo "Response: $BODY"
+            -d '{"ref":"refs/heads/master"}')
           echo "HTTP status: $HTTP_STATUS"
           if [ "$HTTP_STATUS" != "200" ]; then
-            echo "ERROR: Dokploy API returned HTTP $HTTP_STATUS"
+            echo "ERROR: Dokploy webhook returned HTTP $HTTP_STATUS"
             exit 1
           fi
 
