@@ -11,7 +11,7 @@ Status key: ✅ PASS · ❌ FAIL · ⛔ BLOCKED · 🟡 finding (characterizatio
 | Track | Item | Status |
 |---|---|---|
 | A1 | Past-date leave submission | 🟡 gap confirmed — decision pending |
-| A2 | Refresh-token rotation | _pending_ |
+| A2 | Refresh-token rotation | ✅ already covered; ⛔ concurrent-login 409 needs integration test |
 | B1 | Empty-tenant walk | _pending (needs stack)_ |
 | B2 | Onboarding (Scenario 2) | _pending (needs stack)_ |
 | B3 | Deactivation cycle (Scenario 3) | _pending (needs stack)_ |
@@ -35,7 +35,20 @@ Status key: ✅ PASS · ❌ FAIL · ⛔ BLOCKED · 🟡 finding (characterizatio
 
 **Status:** 🟡 finding recorded; no fix applied (decision-gated).
 
-### A2 · Refresh-token rotation — _pending_
+### A2 · Refresh-token rotation — ✅ covered (rotation) · ⛔ partial (concurrent 409)
+
+**Flow:** Exchange a refresh token for a new pair; verify rotation and conflict handling.
+
+**Observed:** `AuthService.refresh()` rotates correctly — it loads the stored token, rejects `!isValid()`, **revokes the used token**, then issues a new pair. This is already pinned by three green unit tests in `AuthServiceTest.Refresh`:
+- `withValidToken_rotatesTokenAndReturnsNewTokens` — asserts a new `accessToken` AND that the old token is revoked + saved (true rotation).
+- `withTokenNotFound_throwsTokenExpiredException` — unknown token rejected.
+- `withRevokedToken_throwsTokenExpiredException` — **reusing an already-rotated token is rejected** (the rotation-conflict case).
+
+No new tests added — adding more would duplicate existing coverage (DRY/YAGNI).
+
+**Gap (⛔):** The documented **concurrent-login 409** (AUTH-BACKLOG-009 — rapid repeat logins for the same user return 409 with no `accessToken`) is a race / DB-constraint behavior that mock-based unit tests cannot reproduce deterministically. It needs a **Testcontainers concurrency integration test** (two simultaneous `login()` calls against a real datasource, asserting the loser surfaces a clean 409 rather than a 500). Recorded as a follow-up; not implemented in this pass.
+
+**Status:** ✅ rotation verified · ⛔ concurrent-login 409 deferred to an integration test.
 
 ---
 
