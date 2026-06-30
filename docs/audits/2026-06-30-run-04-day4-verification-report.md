@@ -10,7 +10,7 @@ Status key: ✅ PASS · ❌ FAIL · ⛔ BLOCKED · 🟡 finding (characterizatio
 
 | Track | Item | Status |
 |---|---|---|
-| A1 | Past-date leave submission | 🟡 gap confirmed — decision pending |
+| A1 | Past-date leave submission | ✅ fixed — past dates rejected except SICK/COMPASSIONATE |
 | A2 | Refresh-token rotation | ✅ already covered; ⛔ concurrent-login 409 needs integration test |
 | B1 | Empty-tenant walk | _pending (needs stack)_ |
 | B2 | Onboarding (Scenario 2) | _pending (needs stack)_ |
@@ -33,7 +33,9 @@ Status key: ✅ PASS · ❌ FAIL · ⛔ BLOCKED · 🟡 finding (characterizatio
 
 **Decision pending:** A blanket past-date rejection would break retroactive SICK / COMPASSIONATE leave (legitimately filed after the fact). Recommended rule: reject past `startDate` for non-retroactive types (ANNUAL, STUDY, MATERNITY, PATERNITY); keep SICK / COMPASSIONATE backdatable. Once chosen, flip the characterization test to expect a `PAST_START_DATE` exception, add a "backdated SICK still accepted" companion, and implement the guard (plan A1 Step 5).
 
-**Status:** 🟡 finding recorded; no fix applied (decision-gated).
+**Resolution (2026-06-30, owner-approved):** added a guard in `submit()` — `PAST_START_DATE` is thrown when `startDate` is before today for any non-retroactive type; SICK and COMPASSIONATE remain backdatable. Tests: `submit_pastStartDate_nonRetroactiveType_rejected` (ANNUAL → rejected) and `submit_pastStartDate_retroactiveType_accepted` (SICK → accepted). Leave suite green (130 tests).
+
+**Status:** ✅ fixed.
 
 ### A2 · Refresh-token rotation — ✅ covered (rotation) · ⛔ partial (concurrent 409)
 
