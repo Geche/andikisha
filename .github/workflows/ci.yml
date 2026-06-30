@@ -251,8 +251,12 @@ jobs:
             echo "DOKPLOY_WEBHOOK_URL secret not set — skipping redeploy trigger"
             exit 0
           fi
+          # Normalize to https — Dokploy sits behind a reverse proxy that
+          # 301-redirects http->https, which curl loops on for POST. Force
+          # https so the deploy handler is hit directly.
+          URL="${DOKPLOY_WEBHOOK_URL/#http:\/\//https://}"
           echo "Triggering Dokploy redeploy via webhook..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --post301 --post302 -X POST "$DOKPLOY_WEBHOOK_URL" \
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --post301 --post302 -X POST "$URL" \
             -H "Content-Type: application/json" \
             -d '{"ref":"refs/heads/master"}')
           echo "HTTP status: $HTTP_STATUS"
