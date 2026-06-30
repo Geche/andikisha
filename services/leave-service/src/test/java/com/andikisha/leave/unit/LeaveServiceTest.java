@@ -39,6 +39,7 @@ import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -227,6 +228,42 @@ class LeaveServiceTest {
         // Balance repository never queried for UNPAID leave
         verify(balanceRepository, never()).findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
                 any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void submit_pastStartDate_currentlyAccepted_characterization() {
+        // Day-4 A1: documents the gap. With minDaysNotice=0, a past start date is NOT
+        // rejected today — a backdated ANNUAL request is accepted. When the policy
+        // decision lands (reject past dates for non-retroactive types; keep SICK /
+        // COMPASSIONATE backdatable), flip this to expect a PAST_START_DATE exception
+        // and add a companion test that a backdated SICK request is still accepted.
+        var dto = new SubmitLeaveRequest(
+                "ANNUAL",
+                LocalDate.now().minusDays(3),
+                LocalDate.now().minusDays(1),
+                BigDecimal.valueOf(3),
+                "Backdated");
+
+        LeavePolicy policy = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 21, 5, true, false);
+        LeaveBalance balance = LeaveBalance.create(
+                TENANT_ID, EMPLOYEE_ID, LeaveType.ANNUAL,
+                LocalDate.now().minusDays(3).getYear(),
+                BigDecimal.valueOf(21), BigDecimal.ZERO);
+
+        when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
+                .thenReturn(Optional.of(policy));
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
+                .thenReturn(Optional.of(balance));
+        when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+        when(requestRepository.findOverlappingByEmployee(any(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
+
+        // Current behavior: accepted (no throw). Changes when the past-date rule is decided.
+        assertThatCode(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
+                .doesNotThrowAnyException();
     }
 
     // ------------------------------------------------------------------

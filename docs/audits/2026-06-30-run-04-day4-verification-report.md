@@ -1,0 +1,44 @@
+# Run-04 Day-4 Verification Report
+
+**Date:** 2026-06-30
+**Plan:** `docs/superpowers/plans/2026-06-30-run-04-day4-verification.md`
+**Scope:** Section D coverage gaps from the 2026-06-15 tenant-portal + landing audit.
+
+Status key: ✅ PASS · ❌ FAIL · ⛔ BLOCKED · 🟡 finding (characterization, decision pending)
+
+## Summary
+
+| Track | Item | Status |
+|---|---|---|
+| A1 | Past-date leave submission | 🟡 gap confirmed — decision pending |
+| A2 | Refresh-token rotation | _pending_ |
+| B1 | Empty-tenant walk | _pending (needs stack)_ |
+| B2 | Onboarding (Scenario 2) | _pending (needs stack)_ |
+| B3 | Deactivation cycle (Scenario 3) | _pending (needs stack)_ |
+| B4 | Negative leave paths (UI) | _pending (needs stack)_ |
+| B5 | Bulk-upload template | _pending (needs stack)_ |
+| B6 | Departments/positions modals | _pending (needs stack)_ |
+| B7 | Terminate flow | _pending (needs stack)_ |
+| B8 | Landing mobile @375px | _pending (needs stack)_ |
+
+---
+
+## Track A — automatable backend regression
+
+### A1 · Past-date leave submission — 🟡 gap confirmed
+
+**Flow:** Submit a leave request whose `startDate`/`endDate` are in the past.
+
+**Observed:** `LeaveService.submit()` only rejects an early start date when `policy.getMinDaysNotice() > 0` (it checks `DAYS.between(now, startDate) < minDaysNotice`). With the default `minDaysNotice = 0`, a **backdated request is accepted**. Characterization test added: `LeaveServiceTest.submit_pastStartDate_currentlyAccepted_characterization` — it asserts the request is accepted today and **passes**, pinning the current behavior.
+
+**Decision pending:** A blanket past-date rejection would break retroactive SICK / COMPASSIONATE leave (legitimately filed after the fact). Recommended rule: reject past `startDate` for non-retroactive types (ANNUAL, STUDY, MATERNITY, PATERNITY); keep SICK / COMPASSIONATE backdatable. Once chosen, flip the characterization test to expect a `PAST_START_DATE` exception, add a "backdated SICK still accepted" companion, and implement the guard (plan A1 Step 5).
+
+**Status:** 🟡 finding recorded; no fix applied (decision-gated).
+
+### A2 · Refresh-token rotation — _pending_
+
+---
+
+## Track B — browser-driven flow walks (require running stack)
+
+_To be completed once the local stack is up (plan B0). Each entry will record: Flow, Steps, Expected, Observed, Screenshot, Status._
