@@ -75,6 +75,25 @@ public class LeaveService {
                     "Unknown leave type: " + request.leaveType());
         }
 
+        // Recompute the day count server-side. The client-supplied request.days() is
+        // untrusted: it drives the max-consecutive and balance checks and is what gets
+        // deducted, so a tampered low value would let an employee take a long leave that
+        // barely dents their balance (and a high value would over-deduct it). Days are
+        // inclusive calendar days, matching how balances are seeded and accrued — the
+        // system has no working-day/holiday calendar.
+        if (request.startDate().isAfter(request.endDate())) {
+            throw new BusinessRuleException("INVALID_DATE_RANGE",
+                    "Start date cannot be after end date");
+        }
+        BigDecimal days = BigDecimal.valueOf(
+                java.time.temporal.ChronoUnit.DAYS.between(
+                        request.startDate(), request.endDate()) + 1);
+        if (request.days() != null && request.days().compareTo(days) != 0) {
+            log.warn("Client-supplied leave days ({}) did not match server-computed days ({}) "
+                            + "for {} {}..{}; using server value",
+                    request.days(), days, leaveType, request.startDate(), request.endDate());
+        }
+
         // Validate against policy
         LeavePolicy policy = policyRepository.findByTenantIdAndLeaveType(tenantId, leaveType)
                 .orElseThrow(() -> new BusinessRuleException(
@@ -93,7 +112,7 @@ public class LeaveService {
 
         // Check max consecutive days
         if (policy.getMaxConsecutiveDays() != null
-                && request.days().compareTo(BigDecimal.valueOf(policy.getMaxConsecutiveDays())) > 0) {
+                && days.compareTo(BigDecimal.valueOf(policy.getMaxConsecutiveDays())) > 0) {
             throw new BusinessRuleException("EXCEEDS_MAX_CONSECUTIVE",
                     "Maximum consecutive days for " + leaveType + " is "
                             + policy.getMaxConsecutiveDays());
@@ -117,10 +136,10 @@ public class LeaveService {
                     yearStart, yearEnd);
             BigDecimal effectiveAvailable = balance.getAvailable().subtract(pendingDays);
 
-            if (request.days().compareTo(effectiveAvailable) > 0) {
+            if (days.compareTo(effectiveAvailable) > 0) {
                 throw new BusinessRuleException("INSUFFICIENT_BALANCE",
                         "Insufficient " + leaveType + " balance. Available (excluding pending): "
-                                + effectiveAvailable + ", Requested: " + request.days());
+                                + effectiveAvailable + ", Requested: " + days);
             }
         }
 
@@ -136,13 +155,13 @@ public class LeaveService {
         LeaveRequest leaveRequest = LeaveRequest.create(
                 tenantId, employeeId, employeeName, leaveType,
                 request.startDate(), request.endDate(),
-                request.days(), request.reason()
+                days, request.reason()
         );
 
         leaveRequest = requestRepository.save(leaveRequest);
         eventPublisher.publishLeaveRequested(leaveRequest);
         log.info("Leave request submitted by {} for {} days of {}",
-                employeeName, request.days(), leaveType);
+                employeeName, days, leaveType);
 
         return mapper.toResponse(leaveRequest);
     }

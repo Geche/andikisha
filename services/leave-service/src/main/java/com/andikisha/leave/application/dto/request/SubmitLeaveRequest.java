@@ -1,6 +1,5 @@
 package com.andikisha.leave.application.dto.request;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -17,8 +16,10 @@ public record SubmitLeaveRequest(
         @NotNull(message = "End date is required")
         LocalDate endDate,
 
-        @NotNull(message = "Number of days is required")
-        @DecimalMin(value = "0.1", message = "Days must be positive")
+        // Advisory only. The server recomputes the day count from startDate..endDate
+        // (inclusive calendar days) and ignores this value — it must not be trusted as
+        // it drives the balance deduction. Retained for backwards compatibility with
+        // existing clients that still send it.
         BigDecimal days,
 
         String reason
