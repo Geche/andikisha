@@ -230,6 +230,91 @@ class LeaveServiceTest {
     }
 
     // ------------------------------------------------------------------
+    // submit — server-authoritative day count (integrity: client `days` is untrusted)
+    // ------------------------------------------------------------------
+
+    @Test
+    void submit_recomputesDaysFromDateRange_ignoringInflatedOrDeflatedClientValue() {
+        // 5 inclusive calendar days (day 10 .. day 14), but client claims half a day
+        var dto = new SubmitLeaveRequest(
+                "ANNUAL",
+                LocalDate.now().plusDays(10),
+                LocalDate.now().plusDays(14),
+                BigDecimal.valueOf(0.5),
+                "Trip");
+
+        LeavePolicy policy = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 21, 5, true, false);
+        LeaveBalance balance = LeaveBalance.create(
+                TENANT_ID, EMPLOYEE_ID, LeaveType.ANNUAL, 2026,
+                BigDecimal.valueOf(21), BigDecimal.ZERO);
+
+        when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
+                .thenReturn(Optional.of(policy));
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
+                .thenReturn(Optional.of(balance));
+        when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+        when(requestRepository.findOverlappingByEmployee(any(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
+
+        leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(LeaveRequest.class);
+        verify(requestRepository).save(captor.capture());
+        assertThat(captor.getValue().getDays()).isEqualByComparingTo("5");
+    }
+
+    @Test
+    void submit_underReportedDays_cannotBypassBalanceCheck() {
+        // 30 inclusive calendar days, but client under-reports as 1 to slip past a thin balance
+        var dto = new SubmitLeaveRequest(
+                "ANNUAL",
+                LocalDate.now().plusDays(10),
+                LocalDate.now().plusDays(39),
+                BigDecimal.ONE,
+                "Long trip");
+
+        LeavePolicy policy = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 21, 5, true, false);
+        LeaveBalance balance = LeaveBalance.create(
+                TENANT_ID, EMPLOYEE_ID, LeaveType.ANNUAL, 2026,
+                BigDecimal.valueOf(10), BigDecimal.ZERO);
+
+        when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
+                .thenReturn(Optional.of(policy));
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
+                .thenReturn(Optional.of(balance));
+        when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+
+        assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
+                .isInstanceOf(BusinessRuleException.class)
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("INSUFFICIENT_BALANCE"));
+
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void submit_endDateBeforeStartDate_throwsInvalidDateRange() {
+        var dto = new SubmitLeaveRequest(
+                "ANNUAL",
+                LocalDate.now().plusDays(14),
+                LocalDate.now().plusDays(10),
+                BigDecimal.valueOf(5),
+                "Reversed range");
+
+        // The date-range guard fires before any policy/balance lookup.
+        assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
+                .isInstanceOf(BusinessRuleException.class)
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("INVALID_DATE_RANGE"));
+
+        verify(requestRepository, never()).save(any());
+    }
+
+    // ------------------------------------------------------------------
     // approve — the corrected order: state guard first, then deduct
     // ------------------------------------------------------------------
 

@@ -147,6 +147,22 @@ default is unchanged (it is shared across 5 call sites). Unit test asserts type,
 Remaining 4 bullets are real. (Bullet 3 "P10A/NSSF/SHIF returns auto-generated" is out of B-10 scope;
 #18 reviewed filing copy.)
 
+**B-13 · LEAVE-BACKLOG-004 — backend trusts client-supplied leave `days` (integrity)** · ✅ (2026-06-30) · **S** · `services/leave-service` (security)
+The submit path used the client-supplied `days` for the max-consecutive check, the balance
+check, and what was persisted/deducted — with no server-side recompute from the date range.
+An employee could request a long span (`startDate..endDate`) while claiming `days = 0.5`,
+passing the balance check and only spending half a day of balance (or inflate it to
+over-deduct). Originally flagged in Section D below.
+*Done:* `LeaveService.submit` now recomputes `days = inclusive calendar days between
+startDate and endDate` and uses that value everywhere; the client value is ignored (a
+warning is logged on mismatch as a tamper signal) and `SubmitLeaveRequest.days` is now
+advisory (validation annotations dropped, documented). Added an early `INVALID_DATE_RANGE`
+guard for `endDate < startDate`. Calendar-day counting is unchanged on purpose — the system
+has no working-day/holiday calendar; switching to working-days would alter every seeded
+balance and is a separate feature. Unit tests: recompute ignores inflated/deflated client
+value, under-reported days cannot bypass the balance check, reversed range rejected; e2e
+updated (the dropped `@DecimalMin` no longer 400s a bogus `days`). Suite green (130 tests).
+
 ### Polish
 
 **B-11 · payslip detail label "NHIF / SHIF" is stale** · ✅ (2026-06-29) · **S** · `frontend/tenant-portal`
@@ -184,5 +200,6 @@ From the audit's "Audit limitations": a dedicated **empty-tenant** walk, Scenari
 (onboarding) and **3** (deactivation full cycle), negative leave paths (over-balance /
 past-date / overlap), bulk-upload template download, departments/positions modals,
 terminate flow, refresh-token rotation, and **landing mobile 375px** responsiveness were
-not exercised. Also flagged for a dedicated test: the backend **trusts the client-supplied
-leave `days`** (no server recompute from the date range) — an integrity risk.
+not exercised. ~~Also flagged for a dedicated test: the backend **trusts the client-supplied
+leave `days`** (no server recompute from the date range) — an integrity risk.~~ → resolved
+in **B-13** (server now recomputes the day count).

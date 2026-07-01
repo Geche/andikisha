@@ -98,7 +98,12 @@ class LeaveControllerTest {
     }
 
     @Test
-    void submit_zeroDays_returns400WithValidationError() throws Exception {
+    void submit_clientSuppliedDaysIsAdvisory_notRejectedAtHttpLayer() throws Exception {
+        // `days` is no longer bean-validated: the server recomputes it from the date range
+        // and ignores the client value, so a bogus 0 passes the HTTP layer (the service
+        // layer enforces the real day count — see LeaveServiceTest).
+        when(leaveService.submit(any(), any(), any())).thenReturn(minimalRequestResponse("PENDING"));
+
         mockMvc.perform(post("/api/v1/leave/requests")
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
@@ -107,8 +112,8 @@ class LeaveControllerTest {
                         .content("""
                                 {"leaveType":"ANNUAL","startDate":"2026-05-01","endDate":"2026-05-05","days":0}
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("VALIDATION_FAILED"));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PENDING"));
     }
 
     @Test
