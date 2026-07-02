@@ -1,0 +1,525 @@
+# docker-stack.yml — Dokploy "Compose" service in STACK (Swarm) mode
+#
+# This is the Swarm variant of docker-compose.yml. Deploy it with
+# `docker stack deploy` (which is what Dokploy runs when a Compose service's
+# type is set to "Stack"). It is NOT interchangeable with docker-compose.yml:
+# `docker stack deploy` honors a different subset of the Compose spec than
+# `docker compose up`. The differences below are deliberate, not stylistic.
+#
+# What changed vs docker-compose.yml, and why:
+#   1. Traefik labels live under `deploy.labels`, not top-level `labels`.
+#      In Swarm, Traefik's provider reads SERVICE labels; container-level
+#      labels are ignored. Top-level labels here would mean NO routing.
+#   2. `internal` network is `driver: overlay` (attachable). A bridge network
+#      does not give service-to-service DNS across a Swarm.
+#   3. `restart: unless-stopped` -> `deploy.restart_policy` (restart: is ignored
+#      in Swarm).
+#   4. `depends_on` removed. Swarm ignores it entirely — there is no ordering
+#      or health gate at deploy time. Startup order is achieved by convergence:
+#      healthchecks + restart_policy retry until dependencies are reachable.
+#      (start_period is set generously so tasks aren't killed while waiting.)
+#   5. `container_name` removed. Swarm names tasks andikisha_<svc>.<n>.<id>.
+#      Inter-service hostnames use the SERVICE KEY (auth-service, postgres, …),
+#      which still resolves via the overlay network VIP — unchanged.
+#   6. `traefik.docker.network=dokploy-network` added to routed services so
+#      Traefik targets the correct overlay when a service is on two networks.
+#
+# NOTE: YAML `<<` merge is shallow. Any service that declares its own `deploy:`
+# fully replaces an inherited one, so `restart_policy` is woven into every
+# `deploy` block explicitly via the *restart-policy anchor — do not assume it
+# is inherited.
+#
+# NOTE (volumes): local volumes are node-local. This assumes the single-node
+# Dokploy VPS. For a multi-node Swarm, pin stateful services with placement
+# constraints or use a networked volume driver.
+#
+# Same .env contract as docker-compose.yml (GHCR_OWNER, RELEASE_TAG,
+# POSTGRES_*, REDIS_PASS, RABBITMQ_*, JWT_SECRET, *_DOMAIN, etc.).
+
+name: andikisha
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-restart-policy: &restart-policy
+  condition: any
+  delay: 5s
+  window: 120s
+
+x-service-defaults: &service-defaults
+  networks:
+    - internal
+  logging: *logging
+
+x-java-defaults: &java-defaults
+  <<: *service-defaults
+  deploy:
+    restart_policy: *restart-policy
+    resources:
+      limits:
+        memory: 512m
+
+x-spring-env: &spring-env
+  SPRING_PROFILES_ACTIVE: prod
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: ${RABBITMQ_USER}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASS}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: ${REDIS_PASS}
+  ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+x-db-env: &db-env
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USERNAME: ${POSTGRES_USER}
+  DB_PASSWORD: ${POSTGRES_PASS}
+
+# ─── Infrastructure ───────────────────────────────────────────────────────────
+
+services:
+
+  postgres:
+    <<: *service-defaults
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+      POSTGRES_DB: andikisha_auth
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    stop_grace_period: 30s
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 512m
+
+  redis:
+    <<: *service-defaults
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASS}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASS}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    stop_grace_period: 10s
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 128m
+
+  rabbitmq:
+    <<: *service-defaults
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    stop_grace_period: 30s
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 256m
+
+  zipkin:
+    <<: *service-defaults
+    image: openzipkin/zipkin:3
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9411/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 256m
+
+# ─── Backend services ─────────────────────────────────────────────────────────
+
+  auth-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/auth-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8081"
+      GRPC_PORT: "9081"
+      DB_NAME: andikisha_auth
+      JWT_SECRET: ${JWT_SECRET}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  tenant-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8083"
+      GRPC_PORT: "9083"
+      DB_NAME: andikisha_tenant
+      AUTH_SERVICE_HOST: auth-service
+      AUTH_SERVICE_GRPC_PORT: "9081"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  employee-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/employee-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8082"
+      GRPC_PORT: "9082"
+      DB_NAME: andikisha_employee
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  payroll-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/payroll-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8084"
+      GRPC_PORT: "9084"
+      DB_NAME: andikisha_payroll
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
+      LEAVE_SERVICE_HOST: leave-service
+      LEAVE_GRPC_PORT: "9087"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  compliance-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/compliance-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8085"
+      GRPC_PORT: "9085"
+      DB_NAME: andikisha_compliance
+      PAYROLL_SERVICE_HOST: payroll-service
+      PAYROLL_SERVICE_GRPC_PORT: "9084"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  leave-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/leave-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8087"
+      GRPC_PORT: "9087"
+      DB_NAME: andikisha_leave
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  time-attendance-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/time-attendance-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8086"
+      GRPC_PORT: "9086"
+      DB_NAME: andikisha_time
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  document-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/document-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8088"
+      GRPC_PORT: "9088"
+      DB_NAME: andikisha_document
+      PAYROLL_SERVICE_HOST: payroll-service
+      PAYROLL_GRPC_PORT: "9084"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  notification-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/notification-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8089"
+      GRPC_PORT: "9089"
+      DB_NAME: andikisha_notify
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-noreply@andikisha.co.ke}
+      SMS_API_KEY: ${SMS_API_KEY:-}
+      SMS_ENABLED: ${SMS_ENABLED:-false}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  integration-hub-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/integration-hub-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8090"
+      GRPC_PORT: "9090"
+      DB_NAME: andikisha_integration
+      MPESA_ENABLED: ${MPESA_ENABLED:-false}
+      MPESA_ENV: ${MPESA_ENV:-sandbox}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      BANK_TRANSFER_ENABLED: "false"
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY}
+      MPESA_CALLBACK_IP_VALIDATION_DISABLED: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  analytics-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/analytics-service:${RELEASE_TAG:-latest}
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8091"
+      GRPC_PORT: "9091"
+      DB_NAME: andikisha_analytics
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  audit-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/audit-service:${RELEASE_TAG:-latest}
+    # audit-service is event-driven only — it consumes RabbitMQ events and
+    # exposes a REST API. No gRPC server; omitting GRPC_PORT is intentional.
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8092"
+      DB_NAME: andikisha_audit
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  api-gateway:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/api-gateway:${RELEASE_TAG:-latest}
+    environment:
+      <<: *spring-env
+      SERVER_PORT: "8080"
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      TENANT_SERVICE_URL: http://tenant-service:8083
+      EMPLOYEE_SERVICE_URL: http://employee-service:8082
+      PAYROLL_SERVICE_URL: http://payroll-service:8084
+      COMPLIANCE_SERVICE_URL: http://compliance-service:8085
+      ATTENDANCE_SERVICE_URL: http://time-attendance-service:8086
+      LEAVE_SERVICE_URL: http://leave-service:8087
+      DOCUMENT_SERVICE_URL: http://document-service:8088
+      NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      INTEGRATION_SERVICE_URL: http://integration-hub-service:8090
+      ANALYTICS_SERVICE_URL: http://analytics-service:8091
+      AUDIT_SERVICE_URL: http://audit-service:8092
+    networks:
+      - internal
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 512m
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=dokploy-network"
+        - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+        - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+        - "traefik.http.routers.api-gateway-http.rule=Host(`${API_DOMAIN}`)"
+        - "traefik.http.routers.api-gateway-http.entrypoints=web"
+        - "traefik.http.routers.api-gateway-http.middlewares=https-redirect@swarm"
+        - "traefik.http.routers.api-gateway.rule=Host(`${API_DOMAIN}`)"
+        - "traefik.http.routers.api-gateway.entrypoints=websecure"
+        - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
+        - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
+
+# ─── Frontends ────────────────────────────────────────────────────────────────
+
+  tenant-portal:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/tenant-portal:${RELEASE_TAG:-latest}
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+      - dokploy-network
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 256m
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=dokploy-network"
+        - "traefik.http.routers.tenant-portal-http.rule=Host(`${TENANT_DOMAIN}`)"
+        - "traefik.http.routers.tenant-portal-http.entrypoints=web"
+        - "traefik.http.routers.tenant-portal-http.middlewares=https-redirect@swarm"
+        - "traefik.http.routers.tenant-portal.rule=Host(`${TENANT_DOMAIN}`)"
+        - "traefik.http.routers.tenant-portal.entrypoints=websecure"
+        - "traefik.http.routers.tenant-portal.tls.certresolver=letsencrypt"
+        - "traefik.http.services.tenant-portal.loadbalancer.server.port=3000"
+
+  platform-portal:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/platform-portal:${RELEASE_TAG:-latest}
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+      - dokploy-network
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 256m
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=dokploy-network"
+        - "traefik.http.routers.platform-portal-http.rule=Host(`${PLATFORM_DOMAIN}`)"
+        - "traefik.http.routers.platform-portal-http.entrypoints=web"
+        - "traefik.http.routers.platform-portal-http.middlewares=https-redirect@swarm"
+        - "traefik.http.routers.platform-portal.rule=Host(`${PLATFORM_DOMAIN}`)"
+        - "traefik.http.routers.platform-portal.entrypoints=websecure"
+        - "traefik.http.routers.platform-portal.tls.certresolver=letsencrypt"
+        - "traefik.http.services.platform-portal.loadbalancer.server.port=3000"
+
+  landing:
+    <<: *service-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/landing:${RELEASE_TAG:-latest}
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+      - dokploy-network
+    deploy:
+      restart_policy: *restart-policy
+      resources:
+        limits:
+          memory: 256m
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=dokploy-network"
+        - "traefik.http.routers.landing-http.rule=Host(`${LANDING_DOMAIN}`)"
+        - "traefik.http.routers.landing-http.entrypoints=web"
+        - "traefik.http.routers.landing-http.middlewares=https-redirect@swarm"
+        - "traefik.http.routers.landing.rule=Host(`${LANDING_DOMAIN}`)"
+        - "traefik.http.routers.landing.entrypoints=websecure"
+        - "traefik.http.routers.landing.tls.certresolver=letsencrypt"
+        - "traefik.http.services.landing.loadbalancer.server.port=3000"
+
+# ─── Networks & Volumes ───────────────────────────────────────────────────────
+
+networks:
+  internal:
+    driver: overlay
+    attachable: true
+  dokploy-network:
+    external: true
+
+volumes:
+  pg_data:
+  redis_data:
+  rabbitmq_data:
