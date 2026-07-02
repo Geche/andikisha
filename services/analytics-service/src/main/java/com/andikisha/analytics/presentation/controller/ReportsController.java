@@ -33,7 +33,7 @@ public class ReportsController {
     }
 
     @GetMapping("/payroll-trend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get payroll cost trend over a period range")
     public List<PayrollSummaryResponse> payrollTrend(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -43,7 +43,7 @@ public class ReportsController {
     }
 
     @GetMapping("/headcount-trend")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get headcount trend over a date range")
     public List<HeadcountSnapshotResponse> headcountTrend(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -53,7 +53,7 @@ public class ReportsController {
     }
 
     @GetMapping("/leave-breakdown/{period}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get leave breakdown by type for a period")
     public List<LeaveAnalyticsResponse> leaveBreakdown(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -62,7 +62,7 @@ public class ReportsController {
     }
 
     @GetMapping("/leave-trend/{leaveType}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER')")
     @Operation(summary = "Get leave trend over time for a specific leave type")
     public List<LeaveAnalyticsResponse> leaveTrend(
             @RequestHeader("X-Tenant-ID") String tenantId,

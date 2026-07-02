@@ -209,4 +209,29 @@ class ReportsControllerTest {
                         .header("X-Tenant-ID", TENANT))
                 .andExpect(status().isOk());
     }
+
+    // B-5 / D2: reports are tenant-level aggregates (same sensitivity as the dashboard
+    // HR_OFFICER already sees), so HR_OFFICER is granted drill-down access.
+    @Test
+    void payrollTrend_asHrOfficer_returns200() throws Exception {
+        when(analyticsService.getPayrollTrend("2026-01", "2026-02"))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/analytics/reports/payroll-trend")
+                        .header("X-User-ID", "officer-user").header("X-User-Role", "HR_OFFICER")
+                        .header("X-Tenant-ID", TENANT)
+                        .param("fromPeriod", "2026-01")
+                        .param("toPeriod", "2026-02"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void payrollTrend_asEmployee_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/analytics/reports/payroll-trend")
+                        .header("X-User-ID", "emp-user").header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", TENANT)
+                        .param("fromPeriod", "2026-01")
+                        .param("toPeriod", "2026-02"))
+                .andExpect(status().isForbidden());
+    }
 }
