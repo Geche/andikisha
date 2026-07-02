@@ -39,6 +39,7 @@ import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -227,6 +228,58 @@ class LeaveServiceTest {
         // Balance repository never queried for UNPAID leave
         verify(balanceRepository, never()).findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(
                 any(), any(), any(), anyInt());
+    }
+
+    @Test
+    void submit_pastStartDate_nonRetroactiveType_rejected() {
+        // Day-4 A1: a backdated ANNUAL request is rejected — past start dates are only
+        // allowed for retroactive types (SICK / COMPASSIONATE).
+        var dto = new SubmitLeaveRequest(
+                "ANNUAL",
+                LocalDate.now().minusDays(3),
+                LocalDate.now().minusDays(1),
+                BigDecimal.valueOf(3),
+                "Backdated");
+
+        // The past-date guard fires before any policy/balance lookup.
+        assertThatThrownBy(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
+                .isInstanceOf(BusinessRuleException.class)
+                .satisfies(ex -> assertThat(((BusinessRuleException) ex).getCode())
+                        .isEqualTo("PAST_START_DATE"));
+
+        verify(requestRepository, never()).save(any());
+    }
+
+    @Test
+    void submit_pastStartDate_retroactiveType_accepted() {
+        // SICK leave is legitimately filed after the fact — a backdated SICK request
+        // must still be accepted.
+        var dto = new SubmitLeaveRequest(
+                "SICK",
+                LocalDate.now().minusDays(3),
+                LocalDate.now().minusDays(1),
+                BigDecimal.valueOf(3),
+                "Was ill");
+
+        LeavePolicy policy = LeavePolicy.create(TENANT_ID, LeaveType.SICK, 30, 0, true, false);
+        LeaveBalance balance = LeaveBalance.create(
+                TENANT_ID, EMPLOYEE_ID, LeaveType.SICK,
+                LocalDate.now().minusDays(3).getYear(),
+                BigDecimal.valueOf(30), BigDecimal.ZERO);
+
+        when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.SICK))
+                .thenReturn(Optional.of(policy));
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
+                .thenReturn(Optional.of(balance));
+        when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+        when(requestRepository.findOverlappingByEmployee(any(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
+
+        assertThatCode(() -> leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto))
+                .doesNotThrowAnyException();
     }
 
     // ------------------------------------------------------------------

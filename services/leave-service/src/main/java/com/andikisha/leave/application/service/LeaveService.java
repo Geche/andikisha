@@ -75,16 +75,26 @@ public class LeaveService {
                     "Unknown leave type: " + request.leaveType());
         }
 
-        // Recompute the day count server-side. The client-supplied request.days() is
-        // untrusted: it drives the max-consecutive and balance checks and is what gets
-        // deducted, so a tampered low value would let an employee take a long leave that
-        // barely dents their balance (and a high value would over-deduct it). Days are
-        // inclusive calendar days, matching how balances are seeded and accrued — the
-        // system has no working-day/holiday calendar.
+        // Validate the date range, then recompute the day count server-side. The
+        // client-supplied request.days() is untrusted: it drives the max-consecutive and
+        // balance checks and is what gets deducted, so a tampered low value would let an
+        // employee take a long leave that barely dents their balance (and a high value
+        // would over-deduct it). Days are inclusive calendar days, matching how balances
+        // are seeded and accrued — the system has no working-day/holiday calendar.
         if (request.startDate().isAfter(request.endDate())) {
             throw new BusinessRuleException("INVALID_DATE_RANGE",
                     "Start date cannot be after end date");
         }
+
+        // Past start dates are only allowed for retroactive types (sickness and
+        // bereavement are legitimately filed after the fact). All other types must be
+        // requested for a future/current date.
+        boolean retroactive = leaveType == LeaveType.SICK || leaveType == LeaveType.COMPASSIONATE;
+        if (!retroactive && request.startDate().isBefore(LocalDate.now())) {
+            throw new BusinessRuleException("PAST_START_DATE",
+                    "Start date cannot be in the past for " + leaveType + " leave");
+        }
+
         BigDecimal days = BigDecimal.valueOf(
                 java.time.temporal.ChronoUnit.DAYS.between(
                         request.startDate(), request.endDate()) + 1);
