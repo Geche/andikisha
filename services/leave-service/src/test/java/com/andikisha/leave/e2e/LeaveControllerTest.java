@@ -199,6 +199,30 @@ class LeaveControllerTest {
                 .andExpect(jsonPath("$.status").value("APPROVED"));
     }
 
+    @Test
+    void approve_asHrOfficer_returns200() throws Exception {
+        // B-5 / D1: HR_OFFICER may approve/reject leave (tenant-wide, self-approval still blocked).
+        when(leaveService.approve(eq(REQUEST_ID), any(), any(), any()))
+                .thenReturn(minimalRequestResponse("APPROVED"));
+
+        mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_OFFICER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+    }
+
+    @Test
+    void approve_asEmployee_returns403() throws Exception {
+        // Boundary: rank-and-file employees still cannot approve.
+        mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isForbidden());
+    }
+
     // ------------------------------------------------------------------
     // POST /api/v1/leave/requests/{id}/reject
     // ------------------------------------------------------------------

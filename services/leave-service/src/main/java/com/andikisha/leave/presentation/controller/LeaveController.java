@@ -56,7 +56,7 @@ public class LeaveController {
     }
 
     @PostMapping("/requests/{id}/approve")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN', 'LINE_MANAGER')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN', 'LINE_MANAGER')")
     @Operation(summary = "Approve a leave request")
     public LeaveRequestResponse approve(
             @RequestHeader("X-Tenant-ID") String tenantId,
@@ -72,7 +72,7 @@ public class LeaveController {
     }
 
     @PostMapping("/requests/{id}/reject")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'ADMIN', 'LINE_MANAGER')")
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN', 'LINE_MANAGER')")
     @Operation(summary = "Reject a leave request")
     public LeaveRequestResponse reject(
             @RequestHeader("X-Tenant-ID") String tenantId,
