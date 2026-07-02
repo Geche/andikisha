@@ -48,11 +48,17 @@ public class DocumentController {
     }
 
     @GetMapping("/{id}/download")
+    // Method-level grant overrides the class-level admin-tier restriction: EMPLOYEE and
+    // LINE_MANAGER may reach this endpoint, but DocumentService.download enforces OWN-scope
+    // + a self-service type allowlist (payslip / P9). Tenant-wide listing stays admin-only.
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
     @Operation(summary = "Download a document file")
     public ResponseEntity<byte[]> download(
             @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-Employee-ID", required = false) String employeeId,
             @PathVariable UUID id) {
-        DocumentService.DownloadResult result = documentService.download(id);
+        DocumentService.DownloadResult result = documentService.download(id, role, employeeId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + result.fileName() + "\"")

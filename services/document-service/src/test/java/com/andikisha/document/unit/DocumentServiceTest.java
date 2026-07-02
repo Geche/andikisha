@@ -10,6 +10,7 @@ import com.andikisha.document.application.service.DocumentService;
 import com.andikisha.document.domain.model.Document;
 import com.andikisha.document.domain.model.DocumentStatus;
 import com.andikisha.document.domain.model.DocumentType;
+import org.springframework.security.access.AccessDeniedException;
 import com.andikisha.document.domain.repository.DocumentRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +105,7 @@ class DocumentServiceTest {
         when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(doc));
         when(fileStorage.retrieve(doc.getFilePath())).thenReturn(expected);
 
-        DocumentService.DownloadResult result = service.download(DOC_ID);
+        DocumentService.DownloadResult result = service.download(DOC_ID, "HR_MANAGER", null);
 
         assertThat(result.content()).isEqualTo(expected);
         assertThat(result.fileName()).isEqualTo(doc.getFileName());
@@ -118,7 +119,7 @@ class DocumentServiceTest {
     void download_whenDocumentNotFound_throwsResourceNotFoundException() {
         when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.download(DOC_ID))
+        assertThatThrownBy(() -> service.download(DOC_ID, "HR_MANAGER", null))
                 .isInstanceOf(ResourceNotFoundException.class);
 
         verifyNoInteractions(fileStorage);
@@ -166,6 +167,48 @@ class DocumentServiceTest {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // download ownership (B-5 D4) — EMPLOYEE/LINE_MANAGER own-scope + type allowlist
+    // -------------------------------------------------------------------------
+
+    @Test
+    void download_asEmployeeOwnPayslip_returnsFileBytes() {
+        Document doc = stubDocument(); // PAYSLIP owned by EMPLOYEE_ID
+        byte[] expected = "PDF".getBytes();
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(doc));
+        when(fileStorage.retrieve(doc.getFilePath())).thenReturn(expected);
+
+        DocumentService.DownloadResult result =
+                service.download(DOC_ID, "EMPLOYEE", EMPLOYEE_ID.toString());
+
+        assertThat(result.content()).isEqualTo(expected);
+    }
+
+    @Test
+    void download_asEmployeeOtherEmployeesDocument_throwsAccessDenied() {
+        Document doc = stubDocument(); // owned by EMPLOYEE_ID
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(doc));
+
+        assertThatThrownBy(() ->
+                service.download(DOC_ID, "EMPLOYEE", UUID.randomUUID().toString()))
+                .isInstanceOf(AccessDeniedException.class);
+        verifyNoInteractions(fileStorage);
+    }
+
+    @Test
+    void download_asEmployeeOwnNonSelfServiceType_throwsAccessDenied() {
+        Document warning = Document.create(TENANT_ID, EMPLOYEE_ID, "Jane Mwangi",
+                DocumentType.WARNING_LETTER, "Warning", "warn.pdf",
+                TENANT_ID + "/warn.pdf", "application/pdf");
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(warning));
+
+        // Owns the document, but a warning letter is not a self-service type.
+        assertThatThrownBy(() ->
+                service.download(DOC_ID, "EMPLOYEE", EMPLOYEE_ID.toString()))
+                .isInstanceOf(AccessDeniedException.class);
+        verifyNoInteractions(fileStorage);
+    }
 
     private Document stubDocument() {
         Document doc = Document.create(TENANT_ID, EMPLOYEE_ID, "Jane Mwangi",

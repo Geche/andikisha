@@ -11,10 +11,12 @@ import com.andikisha.document.domain.model.DocumentType;
 import com.andikisha.document.domain.repository.DocumentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -40,15 +42,46 @@ public class DocumentService {
         return mapper.toResponse(doc);
     }
 
+    // Roles that may download any document in the tenant.
+    private static final Set<String> PRIVILEGED_ROLES = Set.of("ADMIN", "HR_MANAGER", "HR_OFFICER");
+    // Document types an employee may download for themselves. Deliberately NOT "any own
+    // document" — HR may store sensitive docs against an employee (e.g. WARNING_LETTER).
+    private static final Set<DocumentType> SELF_SERVICE_TYPES =
+            Set.of(DocumentType.PAYSLIP, DocumentType.P9_FORM);
+
     /**
      * Single DB round-trip for download — combines metadata + file retrieval.
+     *
+     * <p>Privileged roles (ADMIN/HR_MANAGER/HR_OFFICER) may download any document. An
+     * EMPLOYEE or LINE_MANAGER may download only their OWN document (by employeeId) and
+     * only a self-service type (payslip / P9). Without this guard, opening the endpoint to
+     * employees would be an IDOR — any employee could pull any document by id (B-5 D4).
      */
-    public DownloadResult download(UUID documentId) {
+    public DownloadResult download(UUID documentId, String callerRole, String callerEmployeeId) {
         String tenantId = TenantContext.requireTenantId();
         Document doc = repository.findByIdAndTenantId(documentId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
+        enforceDownloadAccess(doc, callerRole, callerEmployeeId);
         byte[] content = fileStorage.retrieve(doc.getFilePath());
         return new DownloadResult(doc.getFileName(), doc.getContentType(), content);
+    }
+
+    private void enforceDownloadAccess(Document doc, String callerRole, String callerEmployeeId) {
+        if (callerRole != null && PRIVILEGED_ROLES.contains(callerRole.toUpperCase())) {
+            return;
+        }
+        // Self-service: own document only. LINE_MANAGER is OWN-scoped here too — payslips are
+        // private comp, so a manager downloads their own, not their team's.
+        if (callerEmployeeId == null || callerEmployeeId.isBlank()
+                || doc.getEmployeeId() == null
+                || !callerEmployeeId.equals(doc.getEmployeeId().toString())) {
+            throw new AccessDeniedException(
+                    "Access denied: you may only download your own documents");
+        }
+        if (!SELF_SERVICE_TYPES.contains(doc.getDocumentType())) {
+            throw new AccessDeniedException(
+                    "Access denied: this document type is not available for self-service download");
+        }
     }
 
     public Page<DocumentResponse> getForEmployee(UUID employeeId, Pageable pageable) {
