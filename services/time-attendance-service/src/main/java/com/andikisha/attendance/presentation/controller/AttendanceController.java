@@ -69,7 +69,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/employees/{employeeId}/monthly-summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'PAYROLL_MANAGER', 'PAYROLL_OFFICER', 'EMPLOYEE')")
     @Operation(summary = "Get monthly attendance summary for payroll")
     public MonthlySummaryResponse getMonthlySummary(
             @PathVariable UUID employeeId,

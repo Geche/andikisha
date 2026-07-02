@@ -1,5 +1,6 @@
 package com.andikisha.leave.presentation.controller;
 
+import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.leave.application.dto.request.ApproveLeaveRequest;
 import com.andikisha.leave.application.dto.request.ReviewLeaveRequest;
 import com.andikisha.leave.application.dto.request.SubmitLeaveRequest;
@@ -90,9 +91,16 @@ public class LeaveController {
     @Operation(summary = "Cancel a pending leave request (employee only)")
     public void cancel(
             @RequestHeader("X-Tenant-ID") String tenantId,
-            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader(value = "X-Employee-ID", required = false) String employeeId,
             @PathVariable UUID id) {
-        leaveService.cancel(id, UUID.fromString(userId));
+        // Ownership is by employee record, not user account: LeaveService.cancel compares
+        // against the request's employeeId. Passing X-User-ID here made every cancel fail
+        // NOT_OWNER (userId != employeeId — SEC-BACKLOG-001 / B-5 D6).
+        if (employeeId == null || employeeId.isBlank()) {
+            throw new BusinessRuleException("NO_EMPLOYEE_CONTEXT",
+                    "Only the employee who created a request can cancel it");
+        }
+        leaveService.cancel(id, UUID.fromString(employeeId));
     }
 
     @PostMapping("/requests/{id}/reverse")
@@ -143,11 +151,17 @@ public class LeaveController {
     }
 
     @GetMapping("/employees/{employeeId}/balances")
-    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN', 'LINE_MANAGER') or #employeeId.toString().equals(authentication.name)")
+    // Managers see anyone's; an employee may see their OWN. The self-branch compares the path
+    // employeeId to the caller's X-Employee-ID — NOT authentication.name, which is the user UUID
+    // (the old `authentication.name` form was the SEC-BACKLOG-001 mismatch: it only matched when
+    // userId == employeeId, which never holds in production).
+    @PreAuthorize("hasAnyRole('HR_MANAGER', 'HR_OFFICER', 'ADMIN', 'LINE_MANAGER') "
+            + "or #employeeId.toString().equals(#callerEmployeeId)")
     @Operation(summary = "Get leave balances for an employee")
     public List<LeaveBalanceResponse> balances(
             @RequestHeader("X-Tenant-ID") String tenantId,
             @PathVariable UUID employeeId,
+            @RequestHeader(value = "X-Employee-ID", required = false) String callerEmployeeId,
             @RequestParam(required = false) Integer year) {
         int y = year != null ? year : LocalDate.now().getYear();
         return balanceService.getBalances(employeeId, y);

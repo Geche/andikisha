@@ -223,13 +223,17 @@ public class AttendanceService {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static final SimpleGrantedAuthority ROLE_ADMIN       = new SimpleGrantedAuthority("ROLE_ADMIN");
-    private static final SimpleGrantedAuthority ROLE_HR_MANAGER  = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
-    private static final SimpleGrantedAuthority ROLE_HR_OFFICER  = new SimpleGrantedAuthority("ROLE_HR_OFFICER");
+    private static final SimpleGrantedAuthority ROLE_ADMIN            = new SimpleGrantedAuthority("ROLE_ADMIN");
+    private static final SimpleGrantedAuthority ROLE_HR_MANAGER       = new SimpleGrantedAuthority("ROLE_HR_MANAGER");
+    private static final SimpleGrantedAuthority ROLE_HR_OFFICER       = new SimpleGrantedAuthority("ROLE_HR_OFFICER");
+    private static final SimpleGrantedAuthority ROLE_PAYROLL_MANAGER  = new SimpleGrantedAuthority("ROLE_PAYROLL_MANAGER");
+    private static final SimpleGrantedAuthority ROLE_PAYROLL_OFFICER  = new SimpleGrantedAuthority("ROLE_PAYROLL_OFFICER");
 
     /**
      * Employees may only read their own attendance records.
-     * ADMIN, HR_MANAGER, and HR_OFFICER roles may read any employee's records within the tenant.
+     * ADMIN, HR_MANAGER, HR_OFFICER, and the payroll roles (PAYROLL_MANAGER / PAYROLL_OFFICER)
+     * may read any employee's records within the tenant — payroll computes pay from attendance
+     * (overtime, absence deductions), so they need cross-employee reads (B-5 / D3).
      * A null authentication indicates a trusted internal/gRPC caller — access is allowed.
      */
     private void enforceAttendanceOwnership(UUID targetEmployeeId, Authentication authentication) {
@@ -240,7 +244,9 @@ public class AttendanceService {
         }
         boolean isPrivileged = authentication.getAuthorities().contains(ROLE_ADMIN)
                 || authentication.getAuthorities().contains(ROLE_HR_MANAGER)
-                || authentication.getAuthorities().contains(ROLE_HR_OFFICER);
+                || authentication.getAuthorities().contains(ROLE_HR_OFFICER)
+                || authentication.getAuthorities().contains(ROLE_PAYROLL_MANAGER)
+                || authentication.getAuthorities().contains(ROLE_PAYROLL_OFFICER);
         if (isPrivileged) {
             return;
         }

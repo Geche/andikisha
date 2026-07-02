@@ -39,6 +39,7 @@ public class BulkUploadController {
     }
 
     @GetMapping("/template/xlsx")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Download Excel upload template")
     public ResponseEntity<byte[]> templateXlsx() throws IOException {
         byte[] xlsx = bulkService.generateXlsxTemplate();
@@ -51,6 +52,7 @@ public class BulkUploadController {
     }
 
     @GetMapping("/template/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER')")
     @Operation(summary = "Download CSV upload template")
     public ResponseEntity<byte[]> templateCsv() {
         byte[] csv = bulkService.generateCsvTemplate().getBytes(StandardCharsets.UTF_8);

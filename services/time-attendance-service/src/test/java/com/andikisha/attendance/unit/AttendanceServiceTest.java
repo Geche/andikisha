@@ -26,7 +26,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
+
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 
 
@@ -312,6 +318,37 @@ class AttendanceServiceTest {
         assertThat(result.earlyDepartureDays()).isEqualTo(1);
         assertThat(result.regularHours()).isEqualByComparingTo(new BigDecimal("144.00"));
         assertThat(result.totalHoursWorked()).isEqualByComparingTo(new BigDecimal("164.00"));
+    }
+
+    @Test
+    void getMonthlySummary_payrollOfficer_canReadAnotherEmployee() {
+        // B-5 / D3: payroll roles are privileged for cross-employee attendance reads.
+        UUID otherEmployee = UUID.randomUUID();
+        when(recordRepository.sumRegularHours(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(recordRepository.sumWeekdayOvertime(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(recordRepository.sumWeekendOvertime(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(recordRepository.sumHolidayHours(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+        Authentication payrollOfficer = new UsernamePasswordAuthenticationToken(
+                "payroll-user", null,
+                List.of(new SimpleGrantedAuthority("ROLE_PAYROLL_OFFICER")));
+
+        MonthlySummaryResponse result =
+                service.getMonthlySummary(otherEmployee, "2024-04", payrollOfficer);
+
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void getMonthlySummary_employeeReadingAnother_stillDenied() {
+        // Regression: adding payroll roles must not loosen EMPLOYEE own-only scoping.
+        UUID otherEmployee = UUID.randomUUID();
+        Authentication employee = new UsernamePasswordAuthenticationToken(
+                "user-id", EMPLOYEE_ID.toString(), // credentials carries the caller's own employee id
+                List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
+
+        assertThatThrownBy(() -> service.getMonthlySummary(otherEmployee, "2024-04", employee))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     // -------------------------------------------------------------------------
