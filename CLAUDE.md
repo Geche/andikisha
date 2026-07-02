@@ -70,7 +70,7 @@ Direct. Plain. Technical. No filler, no apologies for disagreeing, no closing re
 
 - Java 21 LTS, Spring Boot 3.4, Spring Cloud 2024.0
 - Gradle Kotlin DSL (multi-module build)
-- PostgreSQL 16 (database-per-service, schema-per-tenant)
+- PostgreSQL 18 (database-per-service, schema-per-tenant)
 - RabbitMQ (async domain events with topic exchanges)
 - gRPC (synchronous inter-service communication via grpc-spring-boot-starter)
 - Redis (caching, rate limiting, session)
