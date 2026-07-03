@@ -55,7 +55,7 @@ app:
 grpc:
   client:
     employee-service:
-      address: static://localhost:9082
+      address: static://${EMPLOYEE_SERVICE_HOST:localhost}:${EMPLOYEE_GRPC_PORT:9082}
       negotiation-type: plaintext
 
 springdoc:

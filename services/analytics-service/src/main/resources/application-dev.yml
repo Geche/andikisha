@@ -1,18 +1,21 @@
+# Dev profile. Infra hosts/ports are env-overridable so the same profile works both
+# bare-metal (defaults to localhost) and in Docker (compose injects DB_HOST/RABBITMQ_HOST/REDIS_HOST/…).
+# See INFRA-1 (#33). Base application.yml stays env-only (no defaults) for prod fail-fast.
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5443/andikisha_analytics
-    username: andikisha
-    password: changeme
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5443}/${DB_NAME:andikisha_analytics}
+    username: ${DB_USERNAME:andikisha}
+    password: ${DB_PASSWORD:changeme}
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: andikisha
-    password: changeme
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:andikisha}
+    password: ${RABBITMQ_PASSWORD:changeme}
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: changeme
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
   jpa:
     show-sql: true
     properties:
