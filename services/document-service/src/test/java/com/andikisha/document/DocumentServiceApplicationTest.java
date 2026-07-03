@@ -1,5 +1,6 @@
 package com.andikisha.document;
 
+import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.document.infrastructure.grpc.PayrollGrpcClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -32,6 +33,10 @@ class DocumentServiceApplicationTest {
     // Prevents grpc-spring-boot-starter from trying to connect to payroll-service on startup
     @MockitoBean
     private PayrollGrpcClient payrollGrpcClient;
+
+    // Same for the employee-service client used by the certificate-of-service generator
+    @MockitoBean
+    private EmployeeGrpcClient employeeGrpcClient;
 
     @Test
     void contextLoads() {

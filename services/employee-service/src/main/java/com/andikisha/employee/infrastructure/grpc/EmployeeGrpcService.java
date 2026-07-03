@@ -193,7 +193,14 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
         if (dto.departmentName() != null) builder.setDepartmentName(dto.departmentName());
         if (dto.positionId() != null)    builder.setPositionId(dto.positionId().toString());
         if (dto.positionTitle() != null) builder.setPositionTitle(dto.positionTitle());
+        if (dto.hireDate() != null)        builder.setHireDate(toTimestamp(dto.hireDate()));
+        if (dto.terminationDate() != null) builder.setTerminationDate(toTimestamp(dto.terminationDate()));
 
         return builder.build();
+    }
+
+    private static com.google.protobuf.Timestamp toTimestamp(java.time.LocalDate date) {
+        long seconds = date.atStartOfDay(java.time.ZoneOffset.UTC).toEpochSecond();
+        return com.google.protobuf.Timestamp.newBuilder().setSeconds(seconds).build();
     }
 }

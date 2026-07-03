@@ -49,6 +49,8 @@ app:
   grpc:
     payroll:
       deadline-seconds: ${PAYROLL_GRPC_DEADLINE_SECONDS:10}
+    employee:
+      deadline-seconds: ${EMPLOYEE_GRPC_DEADLINE_SECONDS:10}
 
 grpc:
   server:
@@ -56,6 +58,9 @@ grpc:
   client:
     payroll-service:
       address: static://${PAYROLL_SERVICE_HOST}:${PAYROLL_GRPC_PORT:9084}
+      negotiation-type: plaintext
+    employee-service:
+      address: static://${EMPLOYEE_SERVICE_HOST}:${EMPLOYEE_GRPC_PORT:9082}
       negotiation-type: plaintext
 
 management:
