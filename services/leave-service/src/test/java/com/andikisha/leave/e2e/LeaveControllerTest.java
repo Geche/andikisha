@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -198,6 +199,30 @@ class LeaveControllerTest {
                 .andExpect(jsonPath("$.status").value("APPROVED"));
     }
 
+    @Test
+    void approve_asHrOfficer_returns200() throws Exception {
+        // B-5 / D1: HR_OFFICER may approve/reject leave (tenant-wide, self-approval still blocked).
+        when(leaveService.approve(eq(REQUEST_ID), any(), any(), any()))
+                .thenReturn(minimalRequestResponse("APPROVED"));
+
+        mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "HR_OFFICER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+    }
+
+    @Test
+    void approve_asEmployee_returns403() throws Exception {
+        // Boundary: rank-and-file employees still cannot approve.
+        mockMvc.perform(post("/api/v1/leave/requests/{id}/approve", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isForbidden());
+    }
+
     // ------------------------------------------------------------------
     // POST /api/v1/leave/requests/{id}/reject
     // ------------------------------------------------------------------
@@ -248,14 +273,30 @@ class LeaveControllerTest {
     }
 
     @Test
-    void cancel_happyPath_returns204() throws Exception {
-        doNothing().when(leaveService).cancel(any(), any());
+    void cancel_happyPath_passesEmployeeIdNotUserId_returns204() throws Exception {
+        UUID empId = UUID.randomUUID();
+        doNothing().when(leaveService).cancel(eq(REQUEST_ID), eq(empId));
 
+        // X-User-ID authenticates (TrustedHeaderAuthFilter); X-Employee-ID (distinct) is the
+        // ownership identity — the point of D6/SEC-1 is that cancel uses the latter, not the former.
+        mockMvc.perform(post("/api/v1/leave/requests/{id}/cancel", REQUEST_ID)
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-Employee-ID", empId.toString())
+                        .header("X-User-Role", "EMPLOYEE"))
+                .andExpect(status().isNoContent());
+
+        verify(leaveService).cancel(REQUEST_ID, empId);
+    }
+
+    @Test
+    void cancel_missingEmployeeId_returns422() throws Exception {
         mockMvc.perform(post("/api/v1/leave/requests/{id}/cancel", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
                         .header("X-User-Role", "EMPLOYEE"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error").value("NO_EMPLOYEE_CONTEXT"));
     }
 
     @Test
@@ -266,7 +307,8 @@ class LeaveControllerTest {
 
         mockMvc.perform(post("/api/v1/leave/requests/{id}/cancel", REQUEST_ID)
                         .header("X-Tenant-ID", TENANT_ID)
-                        .header("X-User-ID", UUID.randomUUID().toString())
+                        .header("X-User-ID", USER_ID)
+                        .header("X-Employee-ID", UUID.randomUUID().toString())
                         .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("NOT_OWNER"));
@@ -456,10 +498,11 @@ class LeaveControllerTest {
 
     @Test
     void balances_missingTenantHeader_returns400() throws Exception {
-        // X-User-ID matches the path EMPLOYEE_ID so the ownership @PreAuthorize passes;
+        // X-Employee-ID matches the path EMPLOYEE_ID so the ownership @PreAuthorize passes;
         // TenantInterceptor then rejects the missing X-Tenant-ID with 400.
         mockMvc.perform(get("/api/v1/leave/employees/{id}/balances", EMPLOYEE_ID)
                         .header("X-User-ID", USER_ID)
+                        .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isBadRequest());
     }
@@ -469,10 +512,11 @@ class LeaveControllerTest {
         when(balanceService.getBalances(eq(EMPLOYEE_ID), anyInt()))
                 .thenReturn(List.of(minimalBalanceResponse()));
 
-        // X-User-ID must match the path EMPLOYEE_ID for the ownership @PreAuthorize check
+        // X-Employee-ID must match the path EMPLOYEE_ID for the ownership @PreAuthorize check
         mockMvc.perform(get("/api/v1/leave/employees/{id}/balances", EMPLOYEE_ID)
                         .header("X-Tenant-ID", TENANT_ID)
                         .header("X-User-ID", USER_ID)
+                        .header("X-Employee-ID", EMPLOYEE_ID.toString())
                         .header("X-User-Role", "EMPLOYEE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
@@ -490,6 +534,7 @@ class LeaveControllerTest {
                         BigDecimal.valueOf(21), false)));
         mockMvc.perform(get("/api/v1/leave/employees/{employeeId}/balances", employeeId)
                         .header("X-User-ID", employeeId)
+                        .header("X-Employee-ID", employeeId)
                         .header("X-User-Role", "EMPLOYEE")
                         .header("X-Tenant-ID", "tenant-abc"))
                 .andExpect(status().isOk());
