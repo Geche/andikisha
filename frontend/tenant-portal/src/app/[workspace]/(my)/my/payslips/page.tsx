@@ -27,6 +27,22 @@ interface PagedResponse<T> {
   totalPages: number;
 }
 
+// Shape matches document-service DocumentResponse (self-service subset via
+// /api/v1/documents/my — payslips / P9 forms the caller owns).
+interface DocumentMeta {
+  id: string;
+  documentType: string;
+  period: string;
+}
+
+// PDF bytes stream through the BFF proxy, which forwards the auth cookie; the
+// gateway derives X-Employee-ID from the JWT, and document-service enforces
+// own-scope + the payslip/P9 type allowlist. Same anchor pattern as the
+// bulk-upload xlsx template download.
+function downloadHref(documentId: string) {
+  return `/api/proxy/api/v1/documents/${documentId}/download`;
+}
+
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     PAID: "bg-brand-100 text-brand-800",
@@ -45,7 +61,7 @@ function fmt(amount: number | null | undefined) {
   return `KES ${(amount ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function PayslipRow({ p, onClick }: { p: Payslip; onClick: () => void }) {
+function PayslipRow({ p, docId, onClick }: { p: Payslip; docId?: string; onClick: () => void }) {
   return (
     <tr
       className="border-b border-neutral-50 hover:bg-neutral-50 cursor-pointer transition-colors"
@@ -65,18 +81,29 @@ function PayslipRow({ p, onClick }: { p: Payslip; onClick: () => void }) {
         <StatusBadge status={p.paymentStatus} />
       </td>
       <td className="px-6 py-4 text-right">
-        <button
-          onClick={(e) => { e.stopPropagation(); }}
-          className="flex items-center gap-1 text-[12px] font-semibold text-brand-900 hover:text-brand-700 ml-auto"
-        >
-          <Download size={13} /> PDF
-        </button>
+        {docId ? (
+          <a
+            href={downloadHref(docId)}
+            download
+            onClick={(e) => { e.stopPropagation(); }}
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-900 hover:text-brand-700 ml-auto"
+          >
+            <Download size={13} /> PDF
+          </a>
+        ) : (
+          <span
+            title="PDF not available yet"
+            className="inline-flex items-center gap-1 text-[12px] font-semibold text-neutral-300 ml-auto cursor-default"
+          >
+            <Download size={13} /> PDF
+          </span>
+        )}
       </td>
     </tr>
   );
 }
 
-function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
+function PayslipDetail({ p, docId, onClose }: { p: Payslip; docId?: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
@@ -118,9 +145,22 @@ function PayslipDetail({ p, onClose }: { p: Payslip; onClose: () => void }) {
           >
             Close
           </button>
-          <button className="flex-1 flex items-center justify-center gap-1.5 bg-brand-900 hover:bg-brand-950 text-white font-semibold text-[13.5px] h-10 rounded-lg transition-colors">
-            <Download size={14} /> Download PDF
-          </button>
+          {docId ? (
+            <a
+              href={downloadHref(docId)}
+              download
+              className="flex-1 flex items-center justify-center gap-1.5 bg-brand-900 hover:bg-brand-950 text-white font-semibold text-[13.5px] h-10 rounded-lg transition-colors"
+            >
+              <Download size={14} /> Download PDF
+            </a>
+          ) : (
+            <span
+              title="PDF not available yet"
+              className="flex-1 flex items-center justify-center gap-1.5 bg-neutral-100 text-neutral-400 font-semibold text-[13.5px] h-10 rounded-lg cursor-default"
+            >
+              <Download size={14} /> Not available yet
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -142,6 +182,20 @@ export default function PayslipsPage() {
         .then((r) => r.data),
     enabled: !!employeeId,
   });
+
+  // Self-service document metadata — used to resolve each payslip period to its
+  // downloadable PDF documentId. Bounded list (payslips + P9s), fetched once.
+  const { data: myDocs } = useQuery<DocumentMeta[]>({
+    queryKey: ["my-documents", employeeId],
+    queryFn: () => apiClient.get(`/api/v1/documents/my`).then((r) => r.data),
+    enabled: !!employeeId,
+  });
+
+  const payslipDocByPeriod = new Map<string, string>(
+    (myDocs ?? [])
+      .filter((d) => d.documentType === "PAYSLIP" && d.period)
+      .map((d) => [d.period, d.id])
+  );
 
   const payslips = data?.content ?? [];
   const total = data?.totalElements ?? 0;
@@ -202,7 +256,12 @@ export default function PayslipsPage() {
                 </thead>
                 <tbody>
                   {payslips.map((p) => (
-                    <PayslipRow key={p.id} p={p} onClick={() => setSelected(p)} />
+                    <PayslipRow
+                      key={p.id}
+                      p={p}
+                      docId={payslipDocByPeriod.get(p.period)}
+                      onClick={() => setSelected(p)}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -224,7 +283,13 @@ export default function PayslipsPage() {
         )}
       </div>
 
-      {selected && <PayslipDetail p={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <PayslipDetail
+          p={selected}
+          docId={payslipDocByPeriod.get(selected.period)}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }

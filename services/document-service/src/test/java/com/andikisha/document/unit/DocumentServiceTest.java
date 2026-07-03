@@ -210,6 +210,42 @@ class DocumentServiceTest {
         verifyNoInteractions(fileStorage);
     }
 
+    // -------------------------------------------------------------------------
+    // getMySelfServiceDocuments (B-5 D4 follow-on) — own docs, self-service types only
+    // -------------------------------------------------------------------------
+
+    @Test
+    void getMySelfServiceDocuments_queriesOwnDocsRestrictedToSelfServiceTypes() {
+        Document doc = stubDocument();
+        DocumentResponse response = stubResponse(doc);
+        when(repository.findByTenantIdAndEmployeeIdAndDocumentTypeInOrderByCreatedAtDesc(
+                eq(TENANT_ID), eq(EMPLOYEE_ID), any()))
+                .thenReturn(List.of(doc));
+        when(mapper.toResponse(doc)).thenReturn(response);
+
+        List<DocumentResponse> result = service.getMySelfServiceDocuments(EMPLOYEE_ID);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).id()).isEqualTo(DOC_ID);
+        // The type filter must be exactly the self-service allowlist (PAYSLIP, P9_FORM) —
+        // never any-own-document, which would leak e.g. a WARNING_LETTER.
+        var typesCaptor = org.mockito.ArgumentCaptor.forClass(java.util.Collection.class);
+        verify(repository).findByTenantIdAndEmployeeIdAndDocumentTypeInOrderByCreatedAtDesc(
+                eq(TENANT_ID), eq(EMPLOYEE_ID), typesCaptor.capture());
+        assertThat(typesCaptor.getValue())
+                .containsExactlyInAnyOrder(DocumentType.PAYSLIP, DocumentType.P9_FORM);
+    }
+
+    @Test
+    void getMySelfServiceDocuments_whenNoneExist_returnsEmptyList() {
+        when(repository.findByTenantIdAndEmployeeIdAndDocumentTypeInOrderByCreatedAtDesc(
+                eq(TENANT_ID), eq(EMPLOYEE_ID), any()))
+                .thenReturn(List.of());
+
+        assertThat(service.getMySelfServiceDocuments(EMPLOYEE_ID)).isEmpty();
+        verifyNoInteractions(fileStorage);
+    }
+
     private Document stubDocument() {
         Document doc = Document.create(TENANT_ID, EMPLOYEE_ID, "Jane Mwangi",
                 DocumentType.PAYSLIP, "Payslip Apr-2024",

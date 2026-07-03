@@ -167,6 +167,50 @@ class DocumentControllerTest {
     }
 
     // -------------------------------------------------------------------------
+    // GET /api/v1/documents/my — self-service discovery (B-5 D4 follow-on)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void myDocuments_asEmployee_returns200WithList() throws Exception {
+        when(documentService.getMySelfServiceDocuments(any()))
+                .thenReturn(List.of(stubResponse()));
+
+        mockMvc.perform(get("/api/v1/documents/my")
+                        .header("X-User-ID", "emp-user-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", EMPLOYEE_ID.toString())
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].documentType").value("PAYSLIP"));
+    }
+
+    @Test
+    void myDocuments_missingEmployeeHeader_returns422() throws Exception {
+        // No X-Employee-ID: account not linked to an employee record → NO_EMPLOYEE_CONTEXT.
+        mockMvc.perform(get("/api/v1/documents/my")
+                        .header("X-User-ID", "emp-user-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error").value("NO_EMPLOYEE_CONTEXT"));
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("GET /api/v1/documents/my is not shadowed by /{id}")
+    void myDocuments_literalPath_notTreatedAsDocumentId() throws Exception {
+        when(documentService.getMySelfServiceDocuments(any()))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/documents/my")
+                        .header("X-User-ID", "emp-user-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", EMPLOYEE_ID.toString())
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isOk());
+    }
+
+    // -------------------------------------------------------------------------
     // GET /api/v1/documents/employees/{employeeId}
     // -------------------------------------------------------------------------
 

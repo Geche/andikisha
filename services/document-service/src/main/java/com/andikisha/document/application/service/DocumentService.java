@@ -91,6 +91,20 @@ public class DocumentService {
                 .map(mapper::toResponse);
     }
 
+    /**
+     * Self-service discovery for the calling employee: their own documents, restricted to the
+     * self-service type allowlist (payslip / P9). Lets the portal resolve a downloadable
+     * documentId without exposing the admin-only tenant-wide listing endpoints. Own-scope is
+     * guaranteed by employeeId coming from the gateway-supplied X-Employee-ID header, not a
+     * client-chosen path variable, so there is no IDOR surface (B-5 D4 follow-on).
+     */
+    public List<DocumentResponse> getMySelfServiceDocuments(UUID employeeId) {
+        String tenantId = TenantContext.requireTenantId();
+        return repository.findByTenantIdAndEmployeeIdAndDocumentTypeInOrderByCreatedAtDesc(
+                        tenantId, employeeId, SELF_SERVICE_TYPES)
+                .stream().map(mapper::toResponse).toList();
+    }
+
     public Page<DocumentResponse> getByType(String type, Pageable pageable) {
         String tenantId = TenantContext.requireTenantId();
         DocumentType docType;
