@@ -48,6 +48,9 @@ public class RabbitMqConfig {
     @Bean TopicExchange authExchange() {
         return new TopicExchange(AUTH_EXCHANGE, true, false);
     }
+    @Bean TopicExchange documentExchange() {
+        return new TopicExchange("document.events", true, false);
+    }
     // Queues
     @Bean Queue notificationEmployeeQueue() {
         return QueueBuilder.durable("notification.employee-events")
@@ -67,6 +70,10 @@ public class RabbitMqConfig {
     }
     @Bean Queue notificationAuthQueue() {
         return QueueBuilder.durable("notification.auth-events")
+                .withArgument("x-dead-letter-exchange", "dlx.notification").build();
+    }
+    @Bean Queue notificationDocumentQueue() {
+        return QueueBuilder.durable("notification.document-events")
                 .withArgument("x-dead-letter-exchange", "dlx.notification").build();
     }
 
@@ -89,6 +96,10 @@ public class RabbitMqConfig {
     }
     @Bean Binding bindAuth(Queue notificationAuthQueue, TopicExchange authExchange) {
         return BindingBuilder.bind(notificationAuthQueue).to(authExchange).with("auth.*");
+    }
+    @Bean Binding bindDocument() {
+        return BindingBuilder.bind(notificationDocumentQueue())
+                .to(documentExchange()).with("document.ready");
     }
 
     @Bean Jackson2JsonMessageConverter messageConverter(ObjectMapper objectMapper) {

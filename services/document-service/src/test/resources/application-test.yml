@@ -36,3 +36,6 @@ grpc:
     payroll-service:
       address: 'static://localhost:9084'
       negotiation-type: plaintext
+    employee-service:
+      address: 'static://localhost:9082'
+      negotiation-type: plaintext

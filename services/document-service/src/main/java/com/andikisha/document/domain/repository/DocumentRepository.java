@@ -34,4 +34,7 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     Optional<Document> findByTenantIdAndEmployeeIdAndDocumentTypeAndPeriod(
             String tenantId, UUID employeeId, DocumentType type, String period);
+
+    boolean existsByTenantIdAndEmployeeIdAndDocumentTypeAndStatusIn(
+            String tenantId, UUID employeeId, DocumentType type, Collection<DocumentStatus> statuses);
 }
