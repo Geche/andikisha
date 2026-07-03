@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   PageHeader,
   KpiGroup,
@@ -10,8 +11,11 @@ import {
   Badge,
   InlineAlert,
   MoneyAmount,
+  Skeleton,
+  SkeletonRegion,
 } from "@andikisha/ui";
 import type { BadgeStatus } from "@andikisha/ui";
+import { AlertTriangle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -77,13 +81,20 @@ function trialsCardVariant(expiring7: number, expiring48: number): string {
 
 // ─── ServiceHealthGrid ───────────────────────────────────────────────────────
 
+// Number of skeleton rows shown while health is loading — approximates the grid's
+// filled height. This is a layout hint only; it is NEVER rendered as if it were
+// live service data (that fabrication was PLATFORM-BACKLOG-003).
+const HEALTH_SKELETON_ROWS = 13;
+
 function ServiceHealthGrid({
   services,
   isLoading,
+  isError,
   onServiceClick,
 }: {
   services: ServiceHealth[];
   isLoading: boolean;
+  isError: boolean;
   onServiceClick: () => void;
 }) {
   const dotColor = (status: string) => {
@@ -92,25 +103,32 @@ function ServiceHealthGrid({
     return "bg-neutral-300";
   };
 
-  const placeholder: ServiceHealth[] = [
-    "auth-service", "employee-service", "tenant-service", "payroll-service",
-    "compliance-service", "time-attendance-service", "leave-service",
-    "document-service", "notification-service", "integration-hub-service",
-    "analytics-service", "audit-service", "api-gateway",
-  ].map((name) => ({ name, status: "UNKNOWN" as const }));
-
-  const rows = isLoading ? placeholder : services.length ? services : placeholder;
-
-  return (
-    <button
-      onClick={onServiceClick}
-      className="w-full text-left bg-surface border border-neutral-200 rounded-xl p-5 hover:border-neutral-300 transition-colors"
-    >
-      <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500 mb-4">
-        Platform Health
-      </p>
+  // Three distinct states — loading, error/empty, and live — never share a rendering.
+  // A failed or empty health call must show an explicit "couldn't load" state, not a
+  // fabricated roster that looks like a healthy cluster during an outage.
+  let body: ReactNode;
+  if (isLoading) {
+    body = (
+      <SkeletonRegion label="Loading service health" className="flex flex-col gap-2">
+        {Array.from({ length: HEALTH_SKELETON_ROWS }).map((_, i) => (
+          <div key={i} className="flex items-center gap-2.5">
+            <Skeleton pill className="w-2 h-2 flex-shrink-0" />
+            <Skeleton pill className="h-3 w-32" />
+          </div>
+        ))}
+      </SkeletonRegion>
+    );
+  } else if (isError || services.length === 0) {
+    body = (
+      <div className="flex items-start gap-2 text-[13px] text-neutral-600">
+        <AlertTriangle className="w-4 h-4 text-error flex-shrink-0 mt-px" aria-hidden="true" />
+        <span>Couldn&apos;t load service health. Check backend service connectivity.</span>
+      </div>
+    );
+  } else {
+    body = (
       <div className="flex flex-col gap-2">
-        {rows.map((svc) => (
+        {services.map((svc) => (
           <div key={svc.name} className="flex items-center gap-2.5">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor(svc.status)}`} />
             <span className="text-[13px] text-neutral-700 truncate">{svc.name}</span>
@@ -120,6 +138,18 @@ function ServiceHealthGrid({
           </div>
         ))}
       </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={onServiceClick}
+      className="w-full text-left bg-surface border border-neutral-200 rounded-xl p-5 hover:border-neutral-300 transition-colors"
+    >
+      <p className="text-[12px] font-semibold uppercase tracking-wide text-neutral-500 mb-4">
+        Platform Health
+      </p>
+      {body}
     </button>
   );
 }
@@ -153,7 +183,7 @@ export default function DashboardPage() {
       refetchOnWindowFocus: true,
     });
 
-  const { data: healthData, isLoading: healthLoading } =
+  const { data: healthData, isLoading: healthLoading, isError: healthError } =
     useQuery<SystemHealth>({
       queryKey: ["platform-system-health"],
       queryFn: () =>
@@ -304,6 +334,7 @@ export default function DashboardPage() {
             <ServiceHealthGrid
               services={healthData?.services ?? []}
               isLoading={healthLoading}
+              isError={healthError}
               onServiceClick={() => router.push("/system")}
             />
           </div>
