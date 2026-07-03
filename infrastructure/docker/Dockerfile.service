@@ -20,6 +20,13 @@ COPY services/${SERVICE_NAME}/build/libs/ /tmp/jars/
 RUN find /tmp/jars -name '*.jar' ! -name '*plain*' | head -1 | xargs -I{} cp {} app.jar && \
     rm -rf /tmp/jars
 
+# document-service writes generated PDFs (payslip/P9) via LocalFileStorage, whose
+# default base-path (./document-storage) resolves to /app/document-storage. /app is
+# root-owned, so create this dir owned by appuser before dropping privileges — otherwise
+# Files.createDirectories() fails for the non-root user. A named volume mounted here
+# inherits this ownership on first init. Harmless (empty dir) for the other services.
+RUN mkdir -p /app/document-storage && chown -R appuser:appgroup /app/document-storage
+
 USER appuser
 
 EXPOSE 8080-8092 9081-9092

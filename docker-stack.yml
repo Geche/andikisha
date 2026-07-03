@@ -291,6 +291,10 @@ services:
       DB_NAME: andikisha_document
       PAYROLL_SERVICE_HOST: payroll-service
       PAYROLL_GRPC_PORT: "9084"
+      # Persist generated payslip/P9 PDFs on a writable, appuser-owned volume (#39).
+      STORAGE_BASE_PATH: /app/document-storage
+    volumes:
+      - document_storage:/app/document-storage
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
       interval: 30s
@@ -526,3 +530,4 @@ volumes:
   pg_data:
   redis_data:
   rabbitmq_data:
+  document_storage:
