@@ -58,7 +58,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -103,7 +103,7 @@ services:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -141,7 +141,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -193,7 +193,7 @@ services:
       employee-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -237,7 +237,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -283,7 +283,7 @@ services:
       leave-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -328,7 +328,7 @@ services:
       payroll-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -366,7 +366,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -418,7 +418,7 @@ services:
       payroll-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -465,7 +465,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -514,7 +514,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -559,7 +559,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -595,7 +595,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
