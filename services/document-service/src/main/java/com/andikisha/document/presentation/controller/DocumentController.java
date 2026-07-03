@@ -1,5 +1,6 @@
 package com.andikisha.document.presentation.controller;
 
+import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.document.application.dto.response.DocumentResponse;
 import com.andikisha.document.application.service.DocumentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -65,6 +66,23 @@ public class DocumentController {
                 .contentType(MediaType.parseMediaType(result.contentType()))
                 .contentLength(result.content().length)
                 .body(result.content());
+    }
+
+    @GetMapping("/my")
+    // Self-service: any authenticated user with an employee record lists their OWN documents,
+    // restricted to self-service types (payslip / P9) by the service. employeeId comes from the
+    // gateway-supplied X-Employee-ID header — never a path variable — so there is no IDOR
+    // surface. Lets the portal resolve a downloadable documentId (B-5 D4 follow-on).
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER', 'LINE_MANAGER', 'EMPLOYEE')")
+    @Operation(summary = "List my own self-service documents (payslips, P9 forms)")
+    public List<DocumentResponse> myDocuments(
+            @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader(value = "X-Employee-ID", required = false) String employeeId) {
+        if (employeeId == null || employeeId.isBlank()) {
+            throw new BusinessRuleException("NO_EMPLOYEE_CONTEXT",
+                    "Your account is not linked to an employee record");
+        }
+        return documentService.getMySelfServiceDocuments(UUID.fromString(employeeId));
     }
 
     @GetMapping("/employees/{employeeId}")
