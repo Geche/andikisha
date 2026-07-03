@@ -1,13 +1,16 @@
+# Dev profile. Infra hosts/ports are env-overridable so the same profile works both
+# bare-metal (defaults to localhost) and in Docker (compose injects DB_HOST/RABBITMQ_HOST/*_SERVICE_HOST/…).
+# See INFRA-1 (#33). Base application.yml stays env-only (no defaults) for prod fail-fast.
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5436/andikisha_payroll
-    username: andikisha
-    password: changeme
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5436}/${DB_NAME:andikisha_payroll}
+    username: ${DB_USERNAME:andikisha}
+    password: ${DB_PASSWORD:changeme}
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: andikisha
-    password: changeme
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:andikisha}
+    password: ${RABBITMQ_PASSWORD:changeme}
   jpa:
     show-sql: true
     properties:
@@ -17,9 +20,9 @@ spring:
 grpc:
   client:
     employee-service:
-      address: static://localhost:9082
+      address: static://${EMPLOYEE_SERVICE_HOST:localhost}:${EMPLOYEE_GRPC_PORT:9082}
     leave-service:
-      address: static://localhost:9087
+      address: static://${LEAVE_SERVICE_HOST:localhost}:${LEAVE_GRPC_PORT:9087}
 
 springdoc:
   api-docs:

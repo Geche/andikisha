@@ -49,6 +49,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:-changeme}
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       andikisha-auth:
@@ -226,6 +228,8 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       andikisha-leave:
@@ -399,6 +403,8 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
       PAYROLL_SERVICE_HOST: payroll-service
       PAYROLL_GRPC_PORT: "9084"
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
       # Writable, appuser-owned dir for generated payslip/P9 PDFs (#39).
       STORAGE_BASE_PATH: /app/document-storage

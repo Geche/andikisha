@@ -1,12 +1,17 @@
+# Dev profile. Infra hosts/ports are env-overridable so the same profile works both
+# bare-metal (defaults to localhost) and in Docker (compose injects REDIS_HOST/RABBITMQ_HOST/…).
+# See INFRA-1 (#33). Base application.yml stays env-only (no defaults) for prod fail-fast.
 spring:
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: changeme
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:changeme}
   rabbitmq:
-    username: andikisha
-    password: changeme
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:andikisha}
+    password: ${RABBITMQ_PASSWORD:changeme}
 
 # Dev JWT secret — valid base64url, 64 bytes. Never use outside local development.
 # Spring resolves ${JWT_SECRET} in application.yml from this property when running locally.
