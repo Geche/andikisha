@@ -400,6 +400,10 @@ services:
       PAYROLL_SERVICE_HOST: payroll-service
       PAYROLL_GRPC_PORT: "9084"
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      # Writable, appuser-owned dir for generated payslip/P9 PDFs (#39).
+      STORAGE_BASE_PATH: /app/document-storage
+    volumes:
+      - document_storage:/app/document-storage
     depends_on:
       andikisha-document:
         condition: service_healthy
@@ -590,3 +594,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+
+volumes:
+  document_storage:
