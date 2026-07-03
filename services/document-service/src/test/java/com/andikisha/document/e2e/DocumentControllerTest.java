@@ -125,7 +125,7 @@ class DocumentControllerTest {
         byte[] content = "PDF-BYTES".getBytes();
         DocumentService.DownloadResult result =
                 new DocumentService.DownloadResult("payslip.pdf", "application/pdf", content);
-        when(documentService.download(DOC_ID)).thenReturn(result);
+        when(documentService.download(eq(DOC_ID), any(), any())).thenReturn(result);
 
         mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID)
                         .header("X-User-ID", "hr-user-1")
@@ -139,8 +139,24 @@ class DocumentControllerTest {
     }
 
     @Test
+    void download_asEmployee_reachesEndpoint_returns200() throws Exception {
+        // B-5 D4: EMPLOYEE is now allowed past @PreAuthorize (previously admin-tier only);
+        // the service enforces own-scope + type allowlist (covered in DocumentServiceTest).
+        byte[] content = "PDF-BYTES".getBytes();
+        when(documentService.download(eq(DOC_ID), any(), any()))
+                .thenReturn(new DocumentService.DownloadResult("payslip.pdf", "application/pdf", content));
+
+        mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID)
+                        .header("X-User-ID", "emp-user-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", "11111111-1111-1111-1111-111111111111")
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void download_unknownDocument_returns404() throws Exception {
-        when(documentService.download(DOC_ID))
+        when(documentService.download(eq(DOC_ID), any(), any()))
                 .thenThrow(new ResourceNotFoundException("Document", DOC_ID));
 
         mockMvc.perform(get("/api/v1/documents/{id}/download", DOC_ID)
