@@ -32,7 +32,7 @@ class CertificateOfServiceHtmlBuilderTest {
 
     @Test
     void build_statesPeriodOfEmployment() {
-        String html = builder.build("Acme Ltd", "Jane Mwangi", "EMP-001",
+        String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Engineer", "Engineering",
                 LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
 
@@ -56,7 +56,7 @@ class CertificateOfServiceHtmlBuilderTest {
      */
     @Test
     void build_doesNotContainTerminationReason() {
-        String html = builder.build("Acme Ltd", "Jane Mwangi", "EMP-001",
+        String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Engineer", "Engineering",
                 LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
 
@@ -71,7 +71,7 @@ class CertificateOfServiceHtmlBuilderTest {
 
     @Test
     void build_nullDates_renderNotOnRecord() {
-        String html = builder.build("Acme Ltd", "Jane Mwangi", "EMP-001",
+        String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Engineer", "Engineering", null, null, LocalDate.of(2026, 6, 30));
 
         assertThat(html).contains("Not on record");
@@ -79,7 +79,7 @@ class CertificateOfServiceHtmlBuilderTest {
 
     @Test
     void build_escapesSpecialCharsInNames() {
-        String html = builder.build("Smith & Sons <Nairobi>", "Ann <A>", "EMP-9",
+        String html = builder.build(null, "Smith & Sons <Nairobi>", "Ann <A>", "EMP-9",
                 "Clerk", "Ops", LocalDate.of(2021, 3, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1));
 
         assertThat(html)
@@ -98,8 +98,23 @@ class CertificateOfServiceHtmlBuilderTest {
         assertThat(html).contains("<body>").contains("</body>");
     }
 
+    @Test
+    void build_withLogo_rendersLetterheadImage() {
+        String dataUri = "data:image/png;base64,UE5H";
+        String html = builder.build(dataUri, "Acme Ltd", "Jane Mwangi", "EMP-001",
+                "Engineer", "Engineering",
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+
+        assertThat(html).contains("<img class='logo'").contains(dataUri);
+    }
+
+    @Test
+    void build_withoutLogo_omitsImage() {
+        assertThat(sample()).doesNotContain("<img");
+    }
+
     private String sample() {
-        return builder.build("Acme Ltd", "Jane Mwangi", "EMP-001",
+        return builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Software Engineer", "Engineering",
                 LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
     }

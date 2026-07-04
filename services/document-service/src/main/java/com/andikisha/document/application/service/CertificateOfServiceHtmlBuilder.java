@@ -21,7 +21,7 @@ public class CertificateOfServiceHtmlBuilder {
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMMM yyyy");
 
-    public String build(String employerName, String employeeName, String employeeNumber,
+    public String build(String logoDataUri, String employerName, String employeeName, String employeeNumber,
                         String positionTitle, String departmentName,
                         LocalDate hireDate, LocalDate terminationDate, LocalDate issueDate) {
 
@@ -30,6 +30,7 @@ public class CertificateOfServiceHtmlBuilder {
                 .append("<meta charset='UTF-8'>")
                 .append("<style>")
                 .append("body{font-family:Arial,sans-serif;font-size:12px;margin:40px;color:#1a1a1a;line-height:1.6;}")
+                .append(".logo{display:block;margin:0 auto 16px;max-height:80px;}")
                 .append("h1{font-size:20px;text-align:center;margin-bottom:4px;letter-spacing:1px;}")
                 .append(".subtitle{text-align:center;color:#555;font-size:11px;margin-bottom:30px;}")
                 .append(".employer{text-align:center;font-size:14px;font-weight:bold;margin-bottom:24px;}")
@@ -40,6 +41,10 @@ public class CertificateOfServiceHtmlBuilder {
                 .append(".footer{color:#999;font-size:10px;margin-top:40px;border-top:1px solid #eee;padding-top:10px;}")
                 .append("</style></head><body>");
 
+        // Company logo letterhead when the tenant has uploaded one (#57); otherwise a name-only header.
+        if (logoDataUri != null && !logoDataUri.isBlank()) {
+            html.append("<img class='logo' src='").append(logoDataUri).append("' alt='Company logo'/>");
+        }
         html.append("<h1>CERTIFICATE OF SERVICE</h1>");
         html.append("<div class='subtitle'>Issued pursuant to Section 51 of the Employment Act, 2007 (Kenya)</div>");
         html.append("<div class='employer'>").append(escape(employerName)).append("</div>");
