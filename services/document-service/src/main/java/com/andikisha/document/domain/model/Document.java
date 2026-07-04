@@ -86,6 +86,18 @@ public class Document extends BaseEntity {
         this.generatedAt = LocalDateTime.now();
     }
 
+    /** Auto-generated but awaiting HR review/issue (hybrid documents, e.g. Certificate of Service). */
+    public void markDraft(long fileSize) {
+        this.status = DocumentStatus.DRAFT;
+        this.fileSize = fileSize;
+        this.generatedAt = LocalDateTime.now();
+    }
+
+    /** HR issues a reviewed DRAFT — only ISSUED documents are delivered/downloadable. */
+    public void markIssued() {
+        this.status = DocumentStatus.ISSUED;
+    }
+
     public void markFailed(String error) {
         this.status = DocumentStatus.FAILED;
         this.errorMessage = error;

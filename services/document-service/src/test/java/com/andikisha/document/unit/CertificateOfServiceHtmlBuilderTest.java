@@ -42,13 +42,17 @@ class CertificateOfServiceHtmlBuilderTest {
     }
 
     @Test
-    void build_citesEmploymentActSection52() {
-        assertThat(sample()).contains("Section 52");
+    void build_citesEmploymentActSection51_notSection52() {
+        // Section 51 is the Certificate of Service provision of the Employment Act 2007 (#56).
+        assertThat(sample())
+                .contains("Section 51")
+                .doesNotContain("Section 52");
     }
 
     /**
-     * §52(2) of the Employment Act forbids the certificate from stating the reason for termination
-     * or any judgement of the employee's conduct. The termination reason must never be rendered.
+     * A Certificate of Service is a record of service only — §51(3) provides the employer need not
+     * give a testimonial/reference on character or performance, so the termination reason carried
+     * on the event must never be rendered.
      */
     @Test
     void build_doesNotContainTerminationReason() {

@@ -6,16 +6,15 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Builds the HTML body of a Kenya Employment Act §52 Certificate of Service.
+ * Builds the HTML body of a Kenya Employment Act, 2007 Section 51 Certificate of Service.
  *
- * Legal constraints baked into the layout:
- *   - §52(2) forbids the certificate from stating the reason for termination or
- *     any judgement of the employee's conduct/capability unless the employee
- *     requests it. The termination reason carried on EmployeeTerminatedEvent is
- *     therefore deliberately NOT rendered here.
- *   - §52(1) requires the name/description of the employer, the name of the
- *     employee, the dates of engagement and of the end of employment, and the
- *     nature/description of the work.
+ * Legal basis:
+ *   - §51(2) requires the certificate to state the employer's name and postal address, the
+ *     employee's name, the dates employment commenced and ended, and the nature and usual place
+ *     of the work.
+ *   - §51(3) provides that the employer is not required to give a testimonial or reference as to
+ *     the employee's character or performance. The certificate is therefore a record of service
+ *     only — the termination reason carried on EmployeeTerminatedEvent is deliberately NOT rendered.
  */
 @Component
 public class CertificateOfServiceHtmlBuilder {
@@ -42,7 +41,7 @@ public class CertificateOfServiceHtmlBuilder {
                 .append("</style></head><body>");
 
         html.append("<h1>CERTIFICATE OF SERVICE</h1>");
-        html.append("<div class='subtitle'>Issued pursuant to Section 52 of the Employment Act, 2007 (Kenya)</div>");
+        html.append("<div class='subtitle'>Issued pursuant to Section 51 of the Employment Act, 2007 (Kenya)</div>");
         html.append("<div class='employer'>").append(escape(employerName)).append("</div>");
 
         html.append("<p>This is to certify that the following person was employed as set out below:</p>");
@@ -64,9 +63,10 @@ public class CertificateOfServiceHtmlBuilder {
                 .append(issueDate != null ? DATE.format(issueDate) : "").append("</td>")
                 .append("</tr></table>");
 
-        html.append("<p class='footer'>This is a computer-generated Certificate of Service. ")
-                .append("In accordance with Section 52(2) of the Employment Act, it contains no statement ")
-                .append("as to the reason for termination or the employee's conduct or capability.</p>");
+        html.append("<p class='footer'>This is a computer-generated Certificate of Service issued under ")
+                .append("Section 51 of the Employment Act, 2007. It is a record of service only; in accordance ")
+                .append("with Section 51(3), it is not a testimonial or reference as to the employee's ")
+                .append("character or performance.</p>");
         html.append("</body></html>");
 
         return html.toString();

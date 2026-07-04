@@ -1,7 +1,6 @@
 package com.andikisha.document.application.service;
 
 import com.andikisha.common.tenant.TenantContext;
-import com.andikisha.document.application.port.DocumentEventPublisher;
 import com.andikisha.document.application.port.FileStorage;
 import com.andikisha.document.application.port.PdfGenerator;
 import com.andikisha.document.domain.model.Document;
@@ -46,7 +45,6 @@ public class CertificateOfServiceGenerator {
     private final PdfGenerator pdfGenerator;
     private final FileStorage fileStorage;
     private final DocumentPersistenceHelper persistenceHelper;
-    private final DocumentEventPublisher eventPublisher;
 
     public CertificateOfServiceGenerator(DocumentRepository documentRepository,
                                          EmployeeGrpcClient employeeClient,
@@ -54,8 +52,7 @@ public class CertificateOfServiceGenerator {
                                          CertificateOfServiceHtmlBuilder htmlBuilder,
                                          PdfGenerator pdfGenerator,
                                          FileStorage fileStorage,
-                                         DocumentPersistenceHelper persistenceHelper,
-                                         DocumentEventPublisher eventPublisher) {
+                                         DocumentPersistenceHelper persistenceHelper) {
         this.documentRepository = documentRepository;
         this.employeeClient = employeeClient;
         this.tenantClient = tenantClient;
@@ -63,7 +60,6 @@ public class CertificateOfServiceGenerator {
         this.pdfGenerator = pdfGenerator;
         this.fileStorage = fileStorage;
         this.persistenceHelper = persistenceHelper;
-        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -118,11 +114,12 @@ public class CertificateOfServiceGenerator {
                 byte[] pdfBytes = pdfGenerator.generateFromHtml(html);
                 fileStorage.store(filePath, pdfBytes);
 
-                // Transaction 2: mark READY and commit.
-                Document ready = persistenceHelper.markReady(doc.getId(), pdfBytes.length);
-                eventPublisher.publishDocumentReady(ready);
+                // Transaction 2: mark DRAFT and commit. A Certificate of Service is NOT delivered on
+                // generation — it awaits HR review/branding/signature and issuance (#56). Delivery
+                // (portal + email) is triggered by the Issue action (DocumentService.issue), not here.
+                persistenceHelper.markDraft(doc.getId(), pdfBytes.length);
 
-                log.info("Certificate of service generated for {} ({} bytes)",
+                log.info("Certificate of service DRAFTED for {} ({} bytes) — awaiting HR issue",
                         employeeName, pdfBytes.length);
 
             } catch (Exception e) {

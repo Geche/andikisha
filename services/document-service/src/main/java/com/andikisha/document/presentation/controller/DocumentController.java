@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,6 +47,17 @@ public class DocumentController {
             @RequestHeader("X-Tenant-ID") String tenantId,
             @PathVariable UUID id) {
         return documentService.getById(id);
+    }
+
+    @PostMapping("/{id}/issue")
+    // HR issues a reviewed DRAFT certificate (Employment Act §51). Class-level ADMIN/HR_MANAGER/
+    // HR_OFFICER guard applies. Transitions DRAFT → ISSUED and triggers delivery (#56).
+    @Operation(summary = "Issue a reviewed draft document (e.g. Certificate of Service)")
+    public DocumentResponse issue(
+            @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader("X-User-ID") String userId,
+            @PathVariable UUID id) {
+        return documentService.issue(id, userId);
     }
 
     @GetMapping("/{id}/download")

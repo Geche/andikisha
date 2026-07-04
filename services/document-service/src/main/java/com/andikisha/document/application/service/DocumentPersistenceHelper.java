@@ -45,6 +45,14 @@ public class DocumentPersistenceHelper {
     }
 
     @Transactional
+    public Document markDraft(UUID documentId, long fileSize) {
+        Document doc = repository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
+        doc.markDraft(fileSize);
+        return repository.save(doc);
+    }
+
+    @Transactional
     public void markFailed(UUID documentId, String error) {
         repository.findById(documentId).ifPresent(doc -> {
             doc.markFailed(error);
