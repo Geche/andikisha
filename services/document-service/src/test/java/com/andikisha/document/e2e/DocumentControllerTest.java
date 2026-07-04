@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(DocumentController.class)
@@ -320,6 +321,31 @@ class DocumentControllerTest {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/documents/{id}/issue — HR issues a reviewed draft (#56)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void issue_asHrManager_returns200() throws Exception {
+        when(documentService.issue(eq(DOC_ID), any())).thenReturn(stubResponse());
+
+        mockMvc.perform(post("/api/v1/documents/{id}/issue", DOC_ID)
+                        .header("X-User-ID", "hr-user-1")
+                        .header("X-User-Role", "HR_MANAGER")
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(DOC_ID.toString()));
+    }
+
+    @Test
+    void issue_asEmployee_returns403() throws Exception {
+        mockMvc.perform(post("/api/v1/documents/{id}/issue", DOC_ID)
+                        .header("X-User-ID", "emp-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isForbidden());
+    }
 
     private DocumentResponse stubResponse() {
         return new DocumentResponse(

@@ -5,10 +5,14 @@ import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.document.application.dto.response.DocumentResponse;
 import com.andikisha.document.application.mapper.DocumentMapper;
+import com.andikisha.document.application.port.DocumentEventPublisher;
 import com.andikisha.document.application.port.FileStorage;
 import com.andikisha.document.domain.model.Document;
+import com.andikisha.document.domain.model.DocumentStatus;
 import com.andikisha.document.domain.model.DocumentType;
 import com.andikisha.document.domain.repository.DocumentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,16 +27,51 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class DocumentService {
 
+    private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
+
+    // Document types that follow the DRAFT → HR-issue → deliver lifecycle (#56).
+    private static final Set<DocumentType> ISSUABLE_TYPES = Set.of(DocumentType.CERTIFICATE_OF_SERVICE);
+
     private final DocumentRepository repository;
     private final DocumentMapper mapper;
     private final FileStorage fileStorage;
+    private final DocumentEventPublisher eventPublisher;
 
     public DocumentService(DocumentRepository repository,
                            DocumentMapper mapper,
-                           FileStorage fileStorage) {
+                           FileStorage fileStorage,
+                           DocumentEventPublisher eventPublisher) {
         this.repository = repository;
         this.mapper = mapper;
         this.fileStorage = fileStorage;
+        this.eventPublisher = eventPublisher;
+    }
+
+    /**
+     * HR issues a reviewed DRAFT certificate (Employment Act §51). Transitions DRAFT → ISSUED and
+     * publishes the ready event that drives delivery (portal + email, #54). Only a DRAFT of an
+     * issuable type can be issued; re-issuing or issuing a non-draft is rejected.
+     */
+    @Transactional
+    public DocumentResponse issue(UUID documentId, String issuedBy) {
+        String tenantId = TenantContext.requireTenantId();
+        Document doc = repository.findByIdAndTenantId(documentId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
+
+        if (!ISSUABLE_TYPES.contains(doc.getDocumentType())) {
+            throw new BusinessRuleException("NOT_ISSUABLE",
+                    "This document type cannot be issued: " + doc.getDocumentType());
+        }
+        if (doc.getStatus() != DocumentStatus.DRAFT) {
+            throw new BusinessRuleException("NOT_DRAFT",
+                    "Only a DRAFT document can be issued; current status is " + doc.getStatus());
+        }
+
+        doc.markIssued();
+        Document issued = repository.save(doc);
+        eventPublisher.publishDocumentReady(issued);
+        log.info("Certificate {} issued by {} — delivery triggered", documentId, issuedBy);
+        return mapper.toResponse(issued);
     }
 
     public DocumentResponse getById(UUID documentId) {

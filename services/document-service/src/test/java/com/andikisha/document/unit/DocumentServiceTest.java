@@ -5,6 +5,7 @@ import com.andikisha.common.exception.ResourceNotFoundException;
 import com.andikisha.common.tenant.TenantContext;
 import com.andikisha.document.application.dto.response.DocumentResponse;
 import com.andikisha.document.application.mapper.DocumentMapper;
+import com.andikisha.document.application.port.DocumentEventPublisher;
 import com.andikisha.document.application.port.FileStorage;
 import com.andikisha.document.application.service.DocumentService;
 import com.andikisha.document.domain.model.Document;
@@ -42,12 +43,13 @@ class DocumentServiceTest {
     @Mock DocumentRepository repository;
     @Mock DocumentMapper mapper;
     @Mock FileStorage fileStorage;
+    @Mock DocumentEventPublisher eventPublisher;
 
     private DocumentService service;
 
     @BeforeEach
     void setUp() {
-        service = new DocumentService(repository, mapper, fileStorage);
+        service = new DocumentService(repository, mapper, fileStorage, eventPublisher);
         TenantContext.setTenantId(TENANT_ID);
     }
 
@@ -244,6 +246,66 @@ class DocumentServiceTest {
 
         assertThat(service.getMySelfServiceDocuments(EMPLOYEE_ID)).isEmpty();
         verifyNoInteractions(fileStorage);
+    }
+
+    // -------------------------------------------------------------------------
+    // issue — DRAFT → ISSUED + publish (#56)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void issue_draftCertificate_transitionsToIssuedAndPublishes() {
+        Document draft = draftCertificate();
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(draft));
+        when(repository.save(draft)).thenReturn(draft);
+
+        service.issue(DOC_ID, "hr-user");
+
+        assertThat(draft.getStatus()).isEqualTo(DocumentStatus.ISSUED);
+        verify(repository).save(draft);
+        verify(eventPublisher).publishDocumentReady(draft);
+    }
+
+    @Test
+    void issue_nonDraft_throwsBusinessRuleAndDoesNotPublish() {
+        Document already = draftCertificate();
+        already.markIssued(); // already ISSUED
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(already));
+
+        assertThatThrownBy(() -> service.issue(DOC_ID, "hr-user"))
+                .isInstanceOf(BusinessRuleException.class)
+                .satisfies(e -> assertThat(((BusinessRuleException) e).getCode()).isEqualTo("NOT_DRAFT"));
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void issue_nonIssuableType_throwsBusinessRuleAndDoesNotPublish() {
+        Document payslip = Document.create(TENANT_ID, EMPLOYEE_ID, "Jane Mwangi",
+                DocumentType.PAYSLIP, "Payslip", "p.pdf", TENANT_ID + "/p.pdf", "application/pdf");
+        payslip.markDraft(10);
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(payslip));
+
+        assertThatThrownBy(() -> service.issue(DOC_ID, "hr-user"))
+                .isInstanceOf(BusinessRuleException.class)
+                .satisfies(e -> assertThat(((BusinessRuleException) e).getCode()).isEqualTo("NOT_ISSUABLE"));
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void issue_documentNotFound_throwsResourceNotFound() {
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.issue(DOC_ID, "hr-user"))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verifyNoInteractions(eventPublisher);
+    }
+
+    private Document draftCertificate() {
+        Document doc = Document.create(TENANT_ID, EMPLOYEE_ID, "Jane Mwangi",
+                DocumentType.CERTIFICATE_OF_SERVICE, "Certificate of Service - Jane Mwangi",
+                "certificate_of_service_JM.pdf",
+                TENANT_ID + "/certificates/certificate_of_service_JM.pdf", "application/pdf");
+        doc.markDraft(1024);
+        return doc;
     }
 
     private Document stubDocument() {

@@ -1,6 +1,5 @@
 package com.andikisha.document.unit;
 
-import com.andikisha.document.application.port.DocumentEventPublisher;
 import com.andikisha.document.application.port.FileStorage;
 import com.andikisha.document.application.port.PdfGenerator;
 import com.andikisha.document.application.service.CertificateOfServiceGenerator;
@@ -46,11 +45,10 @@ class CertificateOfServiceGeneratorTest {
     @Mock PdfGenerator pdfGenerator;
     @Mock FileStorage fileStorage;
     @Mock DocumentPersistenceHelper persistenceHelper;
-    @Mock DocumentEventPublisher eventPublisher;
 
     private CertificateOfServiceGenerator generator() {
         return new CertificateOfServiceGenerator(documentRepository, employeeClient, tenantClient,
-                htmlBuilder, pdfGenerator, fileStorage, persistenceHelper, eventPublisher);
+                htmlBuilder, pdfGenerator, fileStorage, persistenceHelper);
     }
 
     @Test
@@ -61,46 +59,42 @@ class CertificateOfServiceGeneratorTest {
 
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
-        verifyNoInteractions(employeeClient, tenantClient, htmlBuilder, pdfGenerator, fileStorage, eventPublisher);
+        verifyNoInteractions(employeeClient, tenantClient, htmlBuilder, pdfGenerator, fileStorage);
         verify(persistenceHelper, never()).createGenerating(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
-    void generateAsync_happyPath_usesResolvedEmployerNameAndPublishesReady() {
+    void generateAsync_happyPath_usesResolvedEmployerNameAndMarksDraft() {
         stubForGeneration();
         when(tenantClient.getTenant(TENANT_ID))
                 .thenReturn(TenantResponse.newBuilder().setName("Acme Ltd").build());
 
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
-        // §52(1): the resolved employer name (not the placeholder) is the first arg to the builder.
+        // §51(2): the resolved employer name (not the placeholder) is the first arg to the builder.
         verify(htmlBuilder).build(eq("Acme Ltd"), eq("Jane Mwangi"), eq("EMP-001"),
                 any(), any(), any(), any(), any());
-        verify(persistenceHelper).createGenerating(eq(TENANT_ID), eq(EMPLOYEE_ID), eq("Jane Mwangi"),
-                eq(DocumentType.CERTIFICATE_OF_SERVICE), anyString(), anyString(), anyString(),
-                eq("application/pdf"), isNull(), isNull(), eq("SYSTEM"));
-        verify(fileStorage).store(anyString(), any(byte[].class));
-        verify(persistenceHelper).markReady(eq(DOC_ID), anyLong());
-        verify(eventPublisher).publishDocumentReady(any());
+        // #56: certificate is DRAFTED (awaiting HR issue), never auto-marked READY/delivered.
+        verify(persistenceHelper).markDraft(eq(DOC_ID), anyLong());
+        verify(persistenceHelper, never()).markReady(any(), anyLong());
         verify(persistenceHelper, never()).markFailed(any(), any());
     }
 
     @Test
-    void generateAsync_whenTenantLookupFails_fallsBackToPlaceholderAndStillGenerates() {
+    void generateAsync_whenTenantLookupFails_fallsBackToPlaceholderAndStillDrafts() {
         stubForGeneration();
         when(tenantClient.getTenant(TENANT_ID)).thenThrow(new RuntimeException("tenant-service down"));
 
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
-        // A failed employer lookup must not fail generation — degrade to the placeholder.
         verify(htmlBuilder).build(eq(EMPLOYER_PLACEHOLDER), anyString(), anyString(),
                 any(), any(), any(), any(), any());
-        verify(eventPublisher).publishDocumentReady(any());
+        verify(persistenceHelper).markDraft(eq(DOC_ID), anyLong());
         verify(persistenceHelper, never()).markFailed(any(), any());
     }
 
     @Test
-    void generateAsync_whenStorageFails_marksFailedAndDoesNotPublish() {
+    void generateAsync_whenStorageFails_marksFailedAndDoesNotDraft() {
         stubForGeneration();
         when(tenantClient.getTenant(TENANT_ID))
                 .thenReturn(TenantResponse.newBuilder().setName("Acme Ltd").build());
@@ -109,7 +103,7 @@ class CertificateOfServiceGeneratorTest {
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
         verify(persistenceHelper).markFailed(eq(DOC_ID), anyString());
-        verify(eventPublisher, never()).publishDocumentReady(any());
+        verify(persistenceHelper, never()).markDraft(any(), anyLong());
     }
 
     /** Common stubs for the path where a certificate is actually generated. */
@@ -123,7 +117,6 @@ class CertificateOfServiceGeneratorTest {
         when(generating.getId()).thenReturn(DOC_ID);
         when(persistenceHelper.createGenerating(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(generating);
-        lenient().when(persistenceHelper.markReady(eq(DOC_ID), anyLong())).thenReturn(mock(Document.class));
     }
 
     private EmployeeResponse sampleEmployee() {
