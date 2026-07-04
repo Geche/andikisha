@@ -1,6 +1,8 @@
 package com.andikisha.document.infrastructure.grpc;
 
+import com.andikisha.proto.tenant.GetTenantLogoRequest;
 import com.andikisha.proto.tenant.GetTenantRequest;
+import com.andikisha.proto.tenant.TenantLogoResponse;
 import com.andikisha.proto.tenant.TenantResponse;
 import com.andikisha.proto.tenant.TenantServiceGrpc;
 import io.grpc.Channel;
@@ -11,8 +13,8 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Reads tenant profile (notably the registered employer name) from tenant-service. Used by the
- * Certificate of Service generator to name the employer per Employment Act §52(1) (#45 slice 1).
+ * Reads tenant profile (employer name §51(2), company logo) from tenant-service for the
+ * Certificate of Service (#45).
  */
 @Component
 public class TenantGrpcClient {
@@ -30,6 +32,13 @@ public class TenantGrpcClient {
     public TenantResponse getTenant(String tenantId) {
         return stub.withDeadlineAfter(deadlineSeconds, TimeUnit.SECONDS)
                 .getTenant(GetTenantRequest.newBuilder()
+                        .setTenantId(tenantId)
+                        .build());
+    }
+
+    public TenantLogoResponse getTenantLogo(String tenantId) {
+        return stub.withDeadlineAfter(deadlineSeconds, TimeUnit.SECONDS)
+                .getTenantLogo(GetTenantLogoRequest.newBuilder()
                         .setTenantId(tenantId)
                         .build());
     }

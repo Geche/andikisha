@@ -39,7 +39,20 @@ class OpenHtmlPdfGeneratorTest {
     @Test
     void generateFromHtml_realCertificateBuilderOutput_producesRealPdf() {
         String html = new CertificateOfServiceHtmlBuilder().build(
-                "Acme Ltd", "Jane Mwangi", "EMP-001",
+                null, "Acme Ltd", "Jane Mwangi", "EMP-001",
+                "Software Engineer", "Engineering",
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+
+        assertIsPdf(generator.generateFromHtml(html));
+    }
+
+    @Test
+    void generateFromHtml_certificateWithLogoDataUri_rendersRealPdf() {
+        // A 1x1 PNG as a data URI — proves openhtmltopdf embeds the logo letterhead (#57).
+        String logo = "data:image/png;base64,"
+                + "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+        String html = new CertificateOfServiceHtmlBuilder().build(
+                logo, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Software Engineer", "Engineering",
                 LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
 

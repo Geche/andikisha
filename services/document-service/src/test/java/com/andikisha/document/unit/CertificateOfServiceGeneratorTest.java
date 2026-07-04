@@ -11,7 +11,9 @@ import com.andikisha.document.domain.repository.DocumentRepository;
 import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.document.infrastructure.grpc.TenantGrpcClient;
 import com.andikisha.proto.employee.EmployeeResponse;
+import com.andikisha.proto.tenant.TenantLogoResponse;
 import com.andikisha.proto.tenant.TenantResponse;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,13 +73,29 @@ class CertificateOfServiceGeneratorTest {
 
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
-        // §51(2): the resolved employer name (not the placeholder) is the first arg to the builder.
-        verify(htmlBuilder).build(eq("Acme Ltd"), eq("Jane Mwangi"), eq("EMP-001"),
+        // §51(2): the resolved employer name is passed to the builder (logo arg is first, #57).
+        verify(htmlBuilder).build(any(), eq("Acme Ltd"), eq("Jane Mwangi"), eq("EMP-001"),
                 any(), any(), any(), any(), any());
         // #56: certificate is DRAFTED (awaiting HR issue), never auto-marked READY/delivered.
         verify(persistenceHelper).markDraft(eq(DOC_ID), anyLong());
         verify(persistenceHelper, never()).markReady(any(), anyLong());
         verify(persistenceHelper, never()).markFailed(any(), any());
+    }
+
+    @Test
+    void generateAsync_whenTenantHasLogo_passesLogoDataUriToBuilder() {
+        stubForGeneration();
+        when(tenantClient.getTenant(TENANT_ID))
+                .thenReturn(TenantResponse.newBuilder().setName("Acme Ltd").build());
+        when(tenantClient.getTenantLogo(TENANT_ID)).thenReturn(TenantLogoResponse.newBuilder()
+                .setHasLogo(true).setContentType("image/png")
+                .setData(ByteString.copyFromUtf8("PNG")).build());
+
+        generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
+
+        // #57: the logo is embedded as a base64 data URI (first arg to the builder).
+        verify(htmlBuilder).build(eq("data:image/png;base64,UE5H"), eq("Acme Ltd"),
+                anyString(), anyString(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -87,7 +105,7 @@ class CertificateOfServiceGeneratorTest {
 
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
-        verify(htmlBuilder).build(eq(EMPLOYER_PLACEHOLDER), anyString(), anyString(),
+        verify(htmlBuilder).build(any(), eq(EMPLOYER_PLACEHOLDER), anyString(), anyString(),
                 any(), any(), any(), any(), any());
         verify(persistenceHelper).markDraft(eq(DOC_ID), anyLong());
         verify(persistenceHelper, never()).markFailed(any(), any());
@@ -111,7 +129,7 @@ class CertificateOfServiceGeneratorTest {
         when(documentRepository.existsByTenantIdAndEmployeeIdAndDocumentTypeAndStatusIn(
                 any(), any(), any(), any())).thenReturn(false);
         when(employeeClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString())).thenReturn(sampleEmployee());
-        when(htmlBuilder.build(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<html>cert</html>");
+        when(htmlBuilder.build(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<html>cert</html>");
         when(pdfGenerator.generateFromHtml(anyString())).thenReturn("cert-bytes".getBytes());
         Document generating = mock(Document.class);
         when(generating.getId()).thenReturn(DOC_ID);

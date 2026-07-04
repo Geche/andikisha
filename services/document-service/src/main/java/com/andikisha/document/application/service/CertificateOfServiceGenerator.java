@@ -107,8 +107,9 @@ public class CertificateOfServiceGenerator {
             try {
                 // I/O outside any transaction — DB connection is free.
                 String employerName = resolveEmployerName(tenantId);
+                String logoDataUri = resolveLogoDataUri(tenantId);
                 String html = htmlBuilder.build(
-                        employerName, employeeName, emp.getEmployeeNumber(),
+                        logoDataUri, employerName, employeeName, emp.getEmployeeNumber(),
                         emp.getPositionTitle(), emp.getDepartmentName(),
                         hireDate, terminationDate, issueDate);
                 byte[] pdfBytes = pdfGenerator.generateFromHtml(html);
@@ -149,6 +150,23 @@ public class CertificateOfServiceGenerator {
             log.warn("Could not resolve employer name for tenant {}: {}", tenantId, e.getMessage());
         }
         return EMPLOYER_PLACEHOLDER;
+    }
+
+    /**
+     * Resolves the tenant's company logo as a data URI for the certificate letterhead (#57). A
+     * missing logo or a failed lookup yields null — the certificate falls back to a name-only header.
+     */
+    private String resolveLogoDataUri(String tenantId) {
+        try {
+            var logo = tenantClient.getTenantLogo(tenantId);
+            if (logo.getHasLogo() && !logo.getData().isEmpty()) {
+                String base64 = java.util.Base64.getEncoder().encodeToString(logo.getData().toByteArray());
+                return "data:" + logo.getContentType() + ";base64," + base64;
+            }
+        } catch (Exception e) {
+            log.warn("Could not resolve logo for tenant {}: {}", tenantId, e.getMessage());
+        }
+        return null;
     }
 
     private static LocalDate toLocalDate(Timestamp ts) {
