@@ -13,6 +13,7 @@ const ALLOWED_PATH_PREFIXES = [
   "/api/v1/compliance",
   "/api/v1/analytics",
   "/api/v1/documents",
+  "/api/v1/tenant",
   "/api/v1/auth",
   "/api/v1/notifications",
   "/api/v1/payments",
