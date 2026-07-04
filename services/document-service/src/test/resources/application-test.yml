@@ -39,3 +39,6 @@ grpc:
     employee-service:
       address: 'static://localhost:9082'
       negotiation-type: plaintext
+    tenant-service:
+      address: 'static://localhost:9083'
+      negotiation-type: plaintext

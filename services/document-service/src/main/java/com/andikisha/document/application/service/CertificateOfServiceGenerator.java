@@ -9,6 +9,7 @@ import com.andikisha.document.domain.model.DocumentStatus;
 import com.andikisha.document.domain.model.DocumentType;
 import com.andikisha.document.domain.repository.DocumentRepository;
 import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.document.infrastructure.grpc.TenantGrpcClient;
 import com.andikisha.proto.employee.EmployeeResponse;
 import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
@@ -34,13 +35,13 @@ public class CertificateOfServiceGenerator {
     private static final EnumSet<DocumentStatus> ACTIVE_STATUSES =
             EnumSet.of(DocumentStatus.GENERATING, DocumentStatus.READY);
 
-    // TODO: resolve the registered employer name via tenant-service. The termination event and the
-    // employee record do not carry it; until that lookup is wired, the certificate names the tenant
-    // placeholder. This feature is not yet production-issued (the PDF generator is also a stub).
+    // Fallback only — used when tenant-service can't be reached or has no name on file. The
+    // employer name is normally resolved via TenantGrpcClient (Employment Act §52(1)).
     private static final String EMPLOYER_PLACEHOLDER = "[Employer name pending tenant profile]";
 
     private final DocumentRepository documentRepository;
     private final EmployeeGrpcClient employeeClient;
+    private final TenantGrpcClient tenantClient;
     private final CertificateOfServiceHtmlBuilder htmlBuilder;
     private final PdfGenerator pdfGenerator;
     private final FileStorage fileStorage;
@@ -49,6 +50,7 @@ public class CertificateOfServiceGenerator {
 
     public CertificateOfServiceGenerator(DocumentRepository documentRepository,
                                          EmployeeGrpcClient employeeClient,
+                                         TenantGrpcClient tenantClient,
                                          CertificateOfServiceHtmlBuilder htmlBuilder,
                                          PdfGenerator pdfGenerator,
                                          FileStorage fileStorage,
@@ -56,6 +58,7 @@ public class CertificateOfServiceGenerator {
                                          DocumentEventPublisher eventPublisher) {
         this.documentRepository = documentRepository;
         this.employeeClient = employeeClient;
+        this.tenantClient = tenantClient;
         this.htmlBuilder = htmlBuilder;
         this.pdfGenerator = pdfGenerator;
         this.fileStorage = fileStorage;
@@ -107,8 +110,9 @@ public class CertificateOfServiceGenerator {
 
             try {
                 // I/O outside any transaction — DB connection is free.
+                String employerName = resolveEmployerName(tenantId);
                 String html = htmlBuilder.build(
-                        EMPLOYER_PLACEHOLDER, employeeName, emp.getEmployeeNumber(),
+                        employerName, employeeName, emp.getEmployeeNumber(),
                         emp.getPositionTitle(), emp.getDepartmentName(),
                         hireDate, terminationDate, issueDate);
                 byte[] pdfBytes = pdfGenerator.generateFromHtml(html);
@@ -131,6 +135,23 @@ public class CertificateOfServiceGenerator {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    /**
+     * Resolves the registered employer name from tenant-service (§52(1)). A failed lookup or a
+     * blank name must not fail certificate generation — degrade to the placeholder and log.
+     */
+    private String resolveEmployerName(String tenantId) {
+        try {
+            String name = tenantClient.getTenant(tenantId).getName();
+            if (name != null && !name.isBlank()) {
+                return name;
+            }
+            log.warn("Tenant {} has no registered name — using placeholder on certificate", tenantId);
+        } catch (Exception e) {
+            log.warn("Could not resolve employer name for tenant {}: {}", tenantId, e.getMessage());
+        }
+        return EMPLOYER_PLACEHOLDER;
     }
 
     private static LocalDate toLocalDate(Timestamp ts) {

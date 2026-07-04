@@ -2,6 +2,7 @@ package com.andikisha.document;
 
 import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
 import com.andikisha.document.infrastructure.grpc.PayrollGrpcClient;
+import com.andikisha.document.infrastructure.grpc.TenantGrpcClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -37,6 +38,10 @@ class DocumentServiceApplicationTest {
     // Same for the employee-service client used by the certificate-of-service generator
     @MockitoBean
     private EmployeeGrpcClient employeeGrpcClient;
+
+    // Same for the tenant-service client that resolves the employer name (#45 slice 1)
+    @MockitoBean
+    private TenantGrpcClient tenantGrpcClient;
 
     @Test
     void contextLoads() {

@@ -51,6 +51,8 @@ app:
       deadline-seconds: ${PAYROLL_GRPC_DEADLINE_SECONDS:10}
     employee:
       deadline-seconds: ${EMPLOYEE_GRPC_DEADLINE_SECONDS:10}
+    tenant:
+      deadline-seconds: ${TENANT_GRPC_DEADLINE_SECONDS:10}
 
 grpc:
   server:
@@ -61,6 +63,9 @@ grpc:
       negotiation-type: plaintext
     employee-service:
       address: static://${EMPLOYEE_SERVICE_HOST}:${EMPLOYEE_GRPC_PORT:9082}
+      negotiation-type: plaintext
+    tenant-service:
+      address: static://${TENANT_SERVICE_HOST}:${TENANT_GRPC_PORT:9083}
       negotiation-type: plaintext
 
 management:

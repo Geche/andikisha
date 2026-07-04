@@ -23,6 +23,8 @@ grpc:
       address: static://${PAYROLL_SERVICE_HOST:localhost}:${PAYROLL_GRPC_PORT:9084}
     employee-service:
       address: static://${EMPLOYEE_SERVICE_HOST:localhost}:${EMPLOYEE_GRPC_PORT:9082}
+    tenant-service:
+      address: static://${TENANT_SERVICE_HOST:localhost}:${TENANT_GRPC_PORT:9083}
 
 springdoc:
   api-docs:

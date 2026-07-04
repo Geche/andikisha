@@ -405,6 +405,8 @@ services:
       PAYROLL_GRPC_PORT: "9084"
       EMPLOYEE_SERVICE_HOST: employee-service
       EMPLOYEE_GRPC_PORT: "9082"
+      TENANT_SERVICE_HOST: tenant-service
+      TENANT_GRPC_PORT: "9083"
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
       # Writable, appuser-owned dir for generated payslip/P9 PDFs (#39).
       STORAGE_BASE_PATH: /app/document-storage
