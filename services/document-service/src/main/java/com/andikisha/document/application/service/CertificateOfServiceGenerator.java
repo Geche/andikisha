@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ import java.util.EnumSet;
 import java.util.UUID;
 
 @Service
-@Transactional(readOnly = true)
 public class CertificateOfServiceGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(CertificateOfServiceGenerator.class);
