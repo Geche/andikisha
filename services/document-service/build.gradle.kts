@@ -41,6 +41,11 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
+    // PDF generation — real HTML→PDF rendering. jsoup normalises the builders' loose HTML
+    // (unclosed <meta>) into well-formed XHTML that openhtmltopdf's strict parser accepts.
+    implementation("com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10")
+    implementation("org.jsoup:jsoup:1.18.1")
+
     // API docs
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:$springdocVersion")
 
