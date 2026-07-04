@@ -27,6 +27,11 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
     Page<Document> findByTenantIdAndDocumentTypeOrderByCreatedAtDesc(
             String tenantId, DocumentType type, Pageable pageable);
 
+    // HR review queue: documents of a given type in a given status (e.g. DRAFT certificates
+    // awaiting issue — #59).
+    Page<Document> findByTenantIdAndDocumentTypeAndStatusOrderByCreatedAtDesc(
+            String tenantId, DocumentType type, DocumentStatus status, Pageable pageable);
+
     List<Document> findByTenantIdAndPayrollRunId(String tenantId, UUID payrollRunId);
 
     Page<Document> findByTenantIdOrderByCreatedAtDesc(

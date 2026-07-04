@@ -159,6 +159,14 @@ public class DocumentService {
                 .map(mapper::toResponse);
     }
 
+    /** DRAFT Certificates of Service awaiting HR review/issue (#59). */
+    public Page<DocumentResponse> getCertificateDrafts(Pageable pageable) {
+        String tenantId = TenantContext.requireTenantId();
+        return repository.findByTenantIdAndDocumentTypeAndStatusOrderByCreatedAtDesc(
+                        tenantId, DocumentType.CERTIFICATE_OF_SERVICE, DocumentStatus.DRAFT, pageable)
+                .map(mapper::toResponse);
+    }
+
     public List<DocumentResponse> getForPayrollRun(UUID payrollRunId) {
         String tenantId = TenantContext.requireTenantId();
         return repository.findByTenantIdAndPayrollRunId(tenantId, payrollRunId)

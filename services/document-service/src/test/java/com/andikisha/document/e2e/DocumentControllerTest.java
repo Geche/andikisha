@@ -323,6 +323,32 @@ class DocumentControllerTest {
     // -------------------------------------------------------------------------
 
     // -------------------------------------------------------------------------
+    // GET /api/v1/documents/certificates/drafts — HR review queue (#59)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void certificateDrafts_asHrManager_returns200() throws Exception {
+        when(documentService.getCertificateDrafts(any()))
+                .thenReturn(new PageImpl<>(List.of(stubResponse()), PageRequest.of(0, 25), 1));
+
+        mockMvc.perform(get("/api/v1/documents/certificates/drafts")
+                        .header("X-User-ID", "hr-1")
+                        .header("X-User-Role", "HR_MANAGER")
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    void certificateDrafts_asEmployee_returns403() throws Exception {
+        mockMvc.perform(get("/api/v1/documents/certificates/drafts")
+                        .header("X-User-ID", "emp-1")
+                        .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Tenant-ID", TENANT_ID))
+                .andExpect(status().isForbidden());
+    }
+
+    // -------------------------------------------------------------------------
     // POST /api/v1/documents/{id}/issue — HR issues a reviewed draft (#56)
     // -------------------------------------------------------------------------
 
