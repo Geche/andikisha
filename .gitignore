@@ -7,6 +7,10 @@ build/
 config/env/*.env
 !config/env/*.env.example
 
+# MapStruct generated impls — regenerated into build/generated on every build and
+# compiled from there; the src/main/generated copies are vestigial and drift silently (#28)
+**/src/main/generated/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
