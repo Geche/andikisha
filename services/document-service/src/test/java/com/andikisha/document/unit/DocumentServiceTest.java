@@ -299,6 +299,19 @@ class DocumentServiceTest {
         verifyNoInteractions(eventPublisher);
     }
 
+    @Test
+    void getCertificateDrafts_queriesDraftCertificatesOnly() {
+        var pageable = PageRequest.of(0, 25);
+        when(repository.findByTenantIdAndDocumentTypeAndStatusOrderByCreatedAtDesc(
+                eq(TENANT_ID), eq(DocumentType.CERTIFICATE_OF_SERVICE), eq(DocumentStatus.DRAFT), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        service.getCertificateDrafts(pageable);
+
+        verify(repository).findByTenantIdAndDocumentTypeAndStatusOrderByCreatedAtDesc(
+                TENANT_ID, DocumentType.CERTIFICATE_OF_SERVICE, DocumentStatus.DRAFT, pageable);
+    }
+
     private Document draftCertificate() {
         Document doc = Document.create(TENANT_ID, EMPLOYEE_ID, "Jane Mwangi",
                 DocumentType.CERTIFICATE_OF_SERVICE, "Certificate of Service - Jane Mwangi",

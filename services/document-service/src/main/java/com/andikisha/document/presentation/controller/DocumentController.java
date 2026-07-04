@@ -97,6 +97,14 @@ public class DocumentController {
         return documentService.getMySelfServiceDocuments(UUID.fromString(employeeId));
     }
 
+    @GetMapping("/certificates/drafts")
+    @Operation(summary = "List Certificate of Service drafts awaiting HR issue")
+    public Page<DocumentResponse> certificateDrafts(
+            @RequestHeader("X-Tenant-ID") String tenantId,
+            Pageable pageable) {
+        return documentService.getCertificateDrafts(pageable);
+    }
+
     @GetMapping("/employees/{employeeId}")
     @Operation(summary = "Get documents for an employee")
     public Page<DocumentResponse> forEmployee(

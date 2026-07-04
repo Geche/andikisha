@@ -4,7 +4,7 @@ import { NavRailItem, NavRailGroup, useCurrentUser } from "@andikisha/ui";
 import {
   Home, Users, CreditCard, Calendar,
   Clock, FileCheck, BarChart2, Building2, Briefcase,
-  Settings, UserCog,
+  Settings, UserCog, ScrollText,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -44,9 +44,10 @@ export function AdminNav() {
       label: "HR",
       spacer: true,
       items: [
-        { label: "Employees", href: `${base}/admin/employees`, icon: Users },
-        { label: "Payroll",   href: `${base}/admin/payroll`,   icon: CreditCard },
-        { label: "Leave",     href: `${base}/admin/leave`,     icon: Calendar },
+        { label: "Employees",    href: `${base}/admin/employees`,    icon: Users },
+        { label: "Payroll",      href: `${base}/admin/payroll`,      icon: CreditCard },
+        { label: "Leave",        href: `${base}/admin/leave`,        icon: Calendar },
+        { label: "Certificates", href: `${base}/admin/certificates`, icon: ScrollText },
       ],
     },
     {
