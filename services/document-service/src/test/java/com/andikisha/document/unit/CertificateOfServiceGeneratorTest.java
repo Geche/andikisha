@@ -6,6 +6,7 @@ import com.andikisha.document.application.service.CertificateOfServiceGenerator;
 import com.andikisha.document.application.service.CertificateOfServiceHtmlBuilder;
 import com.andikisha.document.application.service.DocumentPersistenceHelper;
 import com.andikisha.document.domain.model.Document;
+import com.andikisha.document.domain.model.DocumentStatus;
 import com.andikisha.document.domain.model.DocumentType;
 import com.andikisha.document.domain.repository.DocumentRepository;
 import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
@@ -24,6 +25,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -63,6 +65,15 @@ class CertificateOfServiceGeneratorTest {
 
         verifyNoInteractions(employeeClient, tenantClient, htmlBuilder, pdfGenerator, fileStorage);
         verify(persistenceHelper, never()).createGenerating(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+
+        // Idempotency must cover the DRAFT/ISSUED lifecycle (#56) so a redelivered termination
+        // event can't create a duplicate; only a prior FAILED attempt may retry.
+        var statuses = org.mockito.ArgumentCaptor.forClass(java.util.Collection.class);
+        verify(documentRepository).existsByTenantIdAndEmployeeIdAndDocumentTypeAndStatusIn(
+                any(), any(), any(), statuses.capture());
+        assertThat(statuses.getValue())
+                .contains(DocumentStatus.GENERATING, DocumentStatus.DRAFT, DocumentStatus.ISSUED)
+                .doesNotContain(DocumentStatus.FAILED);
     }
 
     @Test

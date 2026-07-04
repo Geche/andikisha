@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -24,15 +23,16 @@ import java.util.EnumSet;
 import java.util.UUID;
 
 @Service
-@Transactional(readOnly = true)
 public class CertificateOfServiceGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(CertificateOfServiceGenerator.class);
 
-    // A certificate that is already generating or ready must not be regenerated on a redelivered
-    // termination event. A previously FAILED attempt is allowed to retry (not in this set).
+    // Idempotency: skip if a certificate already exists in ANY non-FAILED state (GENERATING,
+    // DRAFT, ISSUED, …) — a termination event can be redelivered (RabbitMQ is at-least-once).
+    // Only a previously FAILED attempt is allowed to retry. Must cover the DRAFT/ISSUED lifecycle
+    // (#56) — the old {GENERATING, READY} set let redelivery create duplicate drafts.
     private static final EnumSet<DocumentStatus> ACTIVE_STATUSES =
-            EnumSet.of(DocumentStatus.GENERATING, DocumentStatus.READY);
+            EnumSet.complementOf(EnumSet.of(DocumentStatus.FAILED));
 
     // Fallback only — used when tenant-service can't be reached or has no name on file. The
     // employer name is normally resolved via TenantGrpcClient (Employment Act §52(1)).

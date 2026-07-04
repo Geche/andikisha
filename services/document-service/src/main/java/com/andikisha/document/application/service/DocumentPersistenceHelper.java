@@ -5,14 +5,18 @@ import com.andikisha.document.domain.model.Document;
 import com.andikisha.document.domain.model.DocumentType;
 import com.andikisha.document.domain.repository.DocumentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 /**
  * Short-lived transactional operations for document status transitions.
- * Each method opens its own transaction so that I/O work in PayslipGenerator
- * never holds a database connection.
+ *
+ * <p>Each method uses REQUIRES_NEW so it commits in its OWN transaction, independent of the caller.
+ * The async generators orchestrate I/O (PDF render, gRPC) outside any transaction; without
+ * REQUIRES_NEW these writes would join the caller's context and, when that context is read-only,
+ * be silently discarded (the generators were @Transactional(readOnly=true), so nothing persisted).
  */
 @Service
 public class DocumentPersistenceHelper {
@@ -23,7 +27,7 @@ public class DocumentPersistenceHelper {
         this.repository = repository;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Document createGenerating(String tenantId, UUID employeeId, String employeeName,
                                      DocumentType type, String title,
                                      String fileName, String filePath, String contentType,
@@ -36,7 +40,7 @@ public class DocumentPersistenceHelper {
         return repository.save(doc);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Document markReady(UUID documentId, long fileSize) {
         Document doc = repository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
@@ -44,7 +48,7 @@ public class DocumentPersistenceHelper {
         return repository.save(doc);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Document markDraft(UUID documentId, long fileSize) {
         Document doc = repository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
@@ -52,7 +56,7 @@ public class DocumentPersistenceHelper {
         return repository.save(doc);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(UUID documentId, String error) {
         repository.findById(documentId).ifPresent(doc -> {
             doc.markFailed(error);

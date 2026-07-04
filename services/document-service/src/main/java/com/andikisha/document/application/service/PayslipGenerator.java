@@ -10,14 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
-@Transactional(readOnly = true)
 public class PayslipGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(PayslipGenerator.class);
