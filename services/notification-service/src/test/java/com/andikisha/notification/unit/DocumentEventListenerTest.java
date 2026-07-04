@@ -3,8 +3,6 @@ package com.andikisha.notification.unit;
 import com.andikisha.events.document.DocumentReadyEvent;
 import com.andikisha.notification.application.listener.DocumentEventListener;
 import com.andikisha.notification.application.service.NotificationService;
-import com.andikisha.notification.domain.model.NotificationChannel;
-import com.andikisha.notification.domain.model.NotificationPriority;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -12,9 +10,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,21 +23,19 @@ class DocumentEventListenerTest {
         return new DocumentEventListener(notificationService);
     }
 
+    // #42: the certificate is not yet production-issuable (stub PDF, placeholder employer) and is
+    // not self-service downloadable, so the "ready to download" notification is suppressed. This is
+    // a regression guard — re-enabling a notification must be a deliberate change that updates this
+    // test (and should target the ex-employee's personal email with the real certificate attached).
     @Test
-    void handle_certificateReady_notifiesEmployee() {
+    void handle_certificateReady_isSuppressedPendingRealCertificate() {
         String employeeId = UUID.randomUUID().toString();
         DocumentReadyEvent event = new DocumentReadyEvent(TENANT_ID, UUID.randomUUID().toString(),
                 employeeId, "CERTIFICATE_OF_SERVICE", "certificate.pdf", null);
 
         listener().handle(event);
 
-        verify(notificationService).sendNotification(
-                eq(TENANT_ID), eq(UUID.fromString(employeeId)),
-                isNull(), isNull(), isNull(),
-                eq(NotificationChannel.IN_APP),
-                eq("OFFBOARDING"), eq("Certificate of Service Available"), any(),
-                eq(NotificationPriority.NORMAL),
-                eq(event.getEventId()), eq(event.getEventType()));
+        verifyNoInteractions(notificationService);
     }
 
     @Test
