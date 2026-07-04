@@ -2,9 +2,13 @@ package com.andikisha.tenant.infrastructure.grpc;
 
 import com.andikisha.common.domain.model.LicenceStatus;
 import com.andikisha.common.infrastructure.cache.RedisKeys;
+import com.andikisha.proto.tenant.GetTenantLogoRequest;
 import com.andikisha.proto.tenant.GetTenantRequest;
+import com.andikisha.proto.tenant.TenantLogoResponse;
 import com.andikisha.proto.tenant.TenantResponse;
 import com.andikisha.proto.tenant.TenantServiceGrpc;
+import com.andikisha.tenant.application.service.TenantLogoService;
+import com.google.protobuf.ByteString;
 import com.andikisha.proto.tenant.ValidateLicenceRequest;
 import com.andikisha.proto.tenant.ValidateLicenceResponse;
 import com.andikisha.proto.tenant.VerifyTenantRequest;
@@ -40,15 +44,41 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
             LicenceStatus.GRACE_PERIOD, LicenceStatus.SUSPENDED);
 
     private final TenantService tenantService;
+    private final TenantLogoService tenantLogoService;
     private final TenantLicenceRepository licenceRepository;
     private final StringRedisTemplate redisTemplate;
 
     public TenantGrpcService(TenantService tenantService,
+                             TenantLogoService tenantLogoService,
                              TenantLicenceRepository licenceRepository,
                              StringRedisTemplate redisTemplate) {
         this.tenantService = tenantService;
+        this.tenantLogoService = tenantLogoService;
         this.licenceRepository = licenceRepository;
         this.redisTemplate = redisTemplate;
+    }
+
+    @Override
+    public void getTenantLogo(GetTenantLogoRequest request,
+                              StreamObserver<TenantLogoResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
+        try {
+            TenantLogoResponse.Builder response = TenantLogoResponse.newBuilder();
+            tenantLogoService.getForTenant(request.getTenantId()).ifPresentOrElse(
+                    logo -> response.setHasLogo(true)
+                            .setContentType(logo.getContentType())
+                            .setData(ByteString.copyFrom(logo.getData())),
+                    () -> response.setHasLogo(false));
+            observer.onNext(response.build());
+            observer.onCompleted();
+        } catch (Exception e) {
+            log.error("GetTenantLogo failed", e);
+            observer.onError(Status.INTERNAL.withDescription("Internal error").asException());
+        }
     }
 
     @Override

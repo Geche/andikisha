@@ -8,10 +8,21 @@ service TenantService {
   rpc GetTenant(GetTenantRequest) returns (TenantResponse);
   rpc VerifyTenantActive(VerifyTenantRequest) returns (VerifyTenantResponse);
   rpc ValidateTenantLicence(ValidateLicenceRequest) returns (ValidateLicenceResponse);
+  rpc GetTenantLogo(GetTenantLogoRequest) returns (TenantLogoResponse);
 }
 
 message GetTenantRequest {
   string tenant_id = 1;
+}
+
+message GetTenantLogoRequest {
+  string tenant_id = 1;
+}
+
+message TenantLogoResponse {
+  bool has_logo = 1;
+  string content_type = 2;
+  bytes data = 3;
 }
 
 message TenantResponse {

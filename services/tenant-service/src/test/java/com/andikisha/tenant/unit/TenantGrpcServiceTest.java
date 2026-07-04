@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 class TenantGrpcServiceTest {
 
     @Mock private TenantService tenantService;
+    @Mock private com.andikisha.tenant.application.service.TenantLogoService tenantLogoService;
     @Mock private TenantLicenceRepository licenceRepository;
     @Mock private StringRedisTemplate redisTemplate;
 
