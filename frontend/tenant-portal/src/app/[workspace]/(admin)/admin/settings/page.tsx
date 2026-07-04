@@ -1,6 +1,8 @@
 "use client";
 
-import { Clock3, Plug, Receipt, Bell, ScrollText } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Clock3, Plug, Receipt, Bell, ScrollText, Image as ImageIcon, ChevronRight } from "lucide-react";
 import { PageHeader } from "@andikisha/ui";
 
 // Workspace structure (departments, positions) and Access (users & roles) moved to
@@ -16,11 +18,29 @@ const UPCOMING = [
 ];
 
 export default function SettingsPage() {
+  const pathname = usePathname();
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader title="Settings" subtitle="Configure how your organisation runs on Andikisha." />
       <div className="flex-1 min-h-0 overflow-y-auto px-8 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl">
+          <Link
+            href={`${pathname}/branding`}
+            className="flex items-start gap-4 rounded-xl border border-neutral-200 bg-white p-5 hover:border-neutral-300 transition-colors"
+          >
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center">
+              <ImageIcon className="w-5 h-5 text-brand-900" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[14px] font-semibold text-near-black">Branding</p>
+                <ChevronRight className="w-4 h-4 text-neutral-300 flex-shrink-0" aria-hidden="true" />
+              </div>
+              <p className="text-[13px] text-neutral-500 leading-snug mt-1">
+                Your company logo, shown on generated documents.
+              </p>
+            </div>
+          </Link>
           {UPCOMING.map((s) => (
             <div
               key={s.label}
