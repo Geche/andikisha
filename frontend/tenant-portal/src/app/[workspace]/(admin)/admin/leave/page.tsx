@@ -7,8 +7,8 @@ import { PageHeader, PaginationBar } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { ListErrorState } from "@/components/ListErrorState";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { ApproveModal } from "./_components/ApproveModal";
-import { RejectModal } from "./_components/RejectModal";
+import { ApproveModal } from "@/components/leave/ApproveModal";
+import { RejectModal } from "@/components/leave/RejectModal";
 import {
   type LeaveRequest,
   type LeaveStatus,
@@ -18,7 +18,7 @@ import {
   statusLabel,
   formatDate,
   formatDateRange,
-} from "./_types";
+} from "@/components/leave/types";
 
 // Raw leave row as the API returns it (uses `days`; UI maps to `totalDays`).
 type ApiLeaveRequest = Omit<LeaveRequest, "totalDays"> & { days: number };

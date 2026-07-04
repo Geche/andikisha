@@ -9,8 +9,8 @@ import { ListErrorState } from "@/components/ListErrorState";
 // The Approve/Reject modals and leave types are shared with the admin leave queue.
 // LINE_MANAGER reaches the same approve/reject capability from /my/* (the backend
 // DEPARTMENT-scopes GET /leave/requests for line managers).
-import { ApproveModal } from "../../../(admin)/admin/leave/_components/ApproveModal";
-import { RejectModal } from "../../../(admin)/admin/leave/_components/RejectModal";
+import { ApproveModal } from "@/components/leave/ApproveModal";
+import { RejectModal } from "@/components/leave/RejectModal";
 import {
   type LeaveRequest,
   type LeaveStatus,
@@ -20,7 +20,7 @@ import {
   statusLabel,
   formatDate,
   formatDateRange,
-} from "../../../(admin)/admin/leave/_types";
+} from "@/components/leave/types";
 
 // API returns `days`; UI maps to `totalDays`.
 type ApiLeaveRequest = Omit<LeaveRequest, "totalDays"> & { days: number };
