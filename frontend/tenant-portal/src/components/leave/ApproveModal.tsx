@@ -9,14 +9,14 @@ import {
   type LeaveRequest,
   leaveTypeLabel,
   formatDateRange,
-} from "../_types";
+} from "./types";
 
-interface RejectModalProps {
+interface ApproveModalProps {
   request: LeaveRequest;
   onClose: () => void;
 }
 
-export function RejectModal({ request, onClose }: RejectModalProps) {
+export function ApproveModal({ request, onClose }: ApproveModalProps) {
   const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -24,39 +24,38 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
   const mutation = useMutation<LeaveRequest, AxiosError<{ message?: string }>, void>({
     mutationFn: () =>
       apiClient
-        // Backend is POST (not PATCH) and reads `rejectionReason` (@NotBlank), not `notes`.
-        .post<LeaveRequest>(`/api/v1/leave/requests/${request.id}/reject`, {
-          rejectionReason: notes.trim(),
-        })
+        // Send the optional reviewer note; the backend persists it as review_notes
+        // and the request-detail view shows it (LEAVE-BACKLOG-001).
+        .post<LeaveRequest>(
+          `/api/v1/leave/requests/${request.id}/approve`,
+          notes.trim() ? { notes: notes.trim() } : undefined,
+        )
         .then((r) => r.data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
       void queryClient.invalidateQueries({ queryKey: ["leave-request", request.id] });
-      toast("Leave rejected", "success");
+      toast("Leave approved", "success");
       onClose();
     },
     onError: (err) => {
       const msg =
-        err.response?.data?.message ?? "Failed to reject leave request. Please try again.";
+        err.response?.data?.message ?? "Failed to approve leave request. Please try again.";
       toast(msg, "error");
     },
   });
 
-  const canSubmit = notes.trim().length > 0 && !mutation.isPending;
-
   return (
-    <BaseModal labelId="reject-leave-modal-title" onClose={onClose}>
+    <BaseModal labelId="approve-leave-modal-title" onClose={onClose}>
       <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[480px] p-6">
         <h2
-          id="reject-leave-modal-title"
+          id="approve-leave-modal-title"
           className="text-[16px] font-bold text-neutral-900 mb-1"
         >
-          Reject Leave Request
+          Approve Leave Request
         </h2>
         <p className="text-[13px] text-neutral-500 mb-5">
-          You are rejecting a leave request from{" "}
-          <span className="font-semibold text-near-black">{request.employeeName}</span>. A reason
-          is required.
+          You are approving a leave request for{" "}
+          <span className="font-semibold text-near-black">{request.employeeName}</span>.
         </p>
 
         {/* Summary */}
@@ -83,25 +82,25 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
           </div>
         </div>
 
-        {/* Required reason */}
+        {/* Optional notes */}
         <div className="mb-6">
           <label
-            htmlFor="reject-notes"
+            htmlFor="approve-notes"
             className="block text-[12.5px] font-semibold text-neutral-600 mb-1.5"
           >
-            Reason for rejection{" "}
-            <span className="text-red-500">*</span>
+            Notes{" "}
+            <span className="font-normal text-neutral-400">(optional)</span>
           </label>
           <textarea
-            id="reject-notes"
-            rows={4}
-            maxLength={500}
+            id="approve-notes"
+            rows={3}
+            maxLength={300}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Explain why this leave request is being rejected…"
-            className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13px] text-near-black placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none"
+            placeholder="Add a note for the employee…"
+            className="w-full border border-neutral-200 rounded-lg px-3 py-2.5 text-[13px] text-near-black placeholder:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-brand-900/20 focus:border-brand-900 resize-none"
           />
-          <p className="text-right text-[11px] text-neutral-400 mt-1">{notes.length}/500</p>
+          <p className="text-right text-[11px] text-neutral-400 mt-1">{notes.length}/300</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -115,11 +114,11 @@ export function RejectModal({ request, onClose }: RejectModalProps) {
           </button>
           <button
             type="button"
-            disabled={!canSubmit}
+            disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
-            className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
+            className="flex-1 bg-brand-900 hover:bg-brand-950 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-[13.5px] py-2.5 rounded-lg transition-colors"
           >
-            {mutation.isPending ? "Rejecting…" : "Reject Leave"}
+            {mutation.isPending ? "Approving…" : "Approve Leave"}
           </button>
         </div>
       </div>

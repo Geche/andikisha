@@ -1,4 +1,8 @@
 // ─── Shared leave types ───────────────────────────────────────────────────────
+// Neutral home for leave request types/helpers + the Approve/Reject modals, shared by
+// the admin leave queue (/admin/leave) and the LINE_MANAGER team-approvals surface
+// (/my/team-approvals). Previously lived in the admin route's private _components/_types,
+// which coupled /my/* to /admin/* internals (#29).
 
 export type LeaveType =
   | "ANNUAL"
