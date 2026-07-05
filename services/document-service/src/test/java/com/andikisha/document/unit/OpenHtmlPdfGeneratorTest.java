@@ -41,7 +41,7 @@ class OpenHtmlPdfGeneratorTest {
         String html = new CertificateOfServiceHtmlBuilder().build(
                 null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Software Engineer", "Engineering",
-                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), null);
 
         assertIsPdf(generator.generateFromHtml(html));
     }
@@ -54,7 +54,7 @@ class OpenHtmlPdfGeneratorTest {
         String html = new CertificateOfServiceHtmlBuilder().build(
                 logo, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Software Engineer", "Engineering",
-                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), null);
 
         assertIsPdf(generator.generateFromHtml(html));
     }

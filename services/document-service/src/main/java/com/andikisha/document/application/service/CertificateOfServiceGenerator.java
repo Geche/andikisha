@@ -108,10 +108,11 @@ public class CertificateOfServiceGenerator {
                 // I/O outside any transaction — DB connection is free.
                 String employerName = resolveEmployerName(tenantId);
                 String logoDataUri = resolveLogoDataUri(tenantId);
+                CertificateOfServiceHtmlBuilder.Signatory signatory = resolveSignatory(tenantId);
                 String html = htmlBuilder.build(
                         logoDataUri, employerName, employeeName, emp.getEmployeeNumber(),
                         emp.getPositionTitle(), emp.getDepartmentName(),
-                        hireDate, terminationDate, issueDate);
+                        hireDate, terminationDate, issueDate, signatory);
                 byte[] pdfBytes = pdfGenerator.generateFromHtml(html);
                 fileStorage.store(filePath, pdfBytes);
 
@@ -165,6 +166,26 @@ public class CertificateOfServiceGenerator {
             }
         } catch (Exception e) {
             log.warn("Could not resolve logo for tenant {}: {}", tenantId, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the tenant's authorized signatory (name, title, signature image) for the signature
+     * block (#58). A missing signatory or a failed lookup yields null — the certificate renders
+     * without a signature block.
+     */
+    private CertificateOfServiceHtmlBuilder.Signatory resolveSignatory(String tenantId) {
+        try {
+            var s = tenantClient.getTenantSignatory(tenantId);
+            if (s.getHasSignatory()) {
+                String dataUri = s.getSignatureData().isEmpty() ? null
+                        : "data:" + s.getSignatureContentType() + ";base64,"
+                          + java.util.Base64.getEncoder().encodeToString(s.getSignatureData().toByteArray());
+                return new CertificateOfServiceHtmlBuilder.Signatory(s.getName(), s.getTitle(), dataUri);
+            }
+        } catch (Exception e) {
+            log.warn("Could not resolve signatory for tenant {}: {}", tenantId, e.getMessage());
         }
         return null;
     }

@@ -34,7 +34,7 @@ class CertificateOfServiceHtmlBuilderTest {
     void build_statesPeriodOfEmployment() {
         String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Engineer", "Engineering",
-                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), null);
 
         assertThat(html)
                 .contains("15 January 2020")
@@ -58,7 +58,7 @@ class CertificateOfServiceHtmlBuilderTest {
     void build_doesNotContainTerminationReason() {
         String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Engineer", "Engineering",
-                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), null);
 
         // The actual termination reason value carried on the event must never leak onto the
         // certificate. (The footer's boilerplate legally *references* the exclusion of the reason;
@@ -72,7 +72,7 @@ class CertificateOfServiceHtmlBuilderTest {
     @Test
     void build_nullDates_renderNotOnRecord() {
         String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
-                "Engineer", "Engineering", null, null, LocalDate.of(2026, 6, 30));
+                "Engineer", "Engineering", null, null, LocalDate.of(2026, 6, 30), null);
 
         assertThat(html).contains("Not on record");
     }
@@ -80,7 +80,7 @@ class CertificateOfServiceHtmlBuilderTest {
     @Test
     void build_escapesSpecialCharsInNames() {
         String html = builder.build(null, "Smith & Sons <Nairobi>", "Ann <A>", "EMP-9",
-                "Clerk", "Ops", LocalDate.of(2021, 3, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1));
+                "Clerk", "Ops", LocalDate.of(2021, 3, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), null);
 
         assertThat(html)
                 .contains("Smith &amp; Sons")
@@ -103,7 +103,7 @@ class CertificateOfServiceHtmlBuilderTest {
         String dataUri = "data:image/png;base64,UE5H";
         String html = builder.build(dataUri, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Engineer", "Engineering",
-                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), null);
 
         assertThat(html).contains("<img class='logo'").contains(dataUri);
     }
@@ -113,9 +113,30 @@ class CertificateOfServiceHtmlBuilderTest {
         assertThat(sample()).doesNotContain("<img");
     }
 
+    @Test
+    void build_withSignatory_rendersSignatureBlock() {
+        var sig = new CertificateOfServiceHtmlBuilder.Signatory(
+                "Grace Wanjiku", "HR Manager", "data:image/png;base64,UE5H");
+        String html = builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
+                "Engineer", "Engineering",
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), sig);
+
+        assertThat(html)
+                .contains("<div class='signature'>")
+                .contains("Grace Wanjiku")
+                .contains("HR Manager")
+                .contains("class='sig-img'")
+                .contains("data:image/png;base64,UE5H");
+    }
+
+    @Test
+    void build_withoutSignatory_omitsSignatureBlock() {
+        assertThat(sample()).doesNotContain("<div class='signature'>");
+    }
+
     private String sample() {
         return builder.build(null, "Acme Ltd", "Jane Mwangi", "EMP-001",
                 "Software Engineer", "Engineering",
-                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30));
+                LocalDate.of(2020, 1, 15), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 30), null);
     }
 }
