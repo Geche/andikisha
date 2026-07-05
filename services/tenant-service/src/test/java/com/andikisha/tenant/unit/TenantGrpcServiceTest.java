@@ -31,6 +31,7 @@ class TenantGrpcServiceTest {
 
     @Mock private TenantService tenantService;
     @Mock private com.andikisha.tenant.application.service.TenantLogoService tenantLogoService;
+    @Mock private com.andikisha.tenant.application.service.TenantSignatoryService tenantSignatoryService;
     @Mock private TenantLicenceRepository licenceRepository;
     @Mock private StringRedisTemplate redisTemplate;
 
