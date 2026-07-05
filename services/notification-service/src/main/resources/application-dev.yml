@@ -11,12 +11,21 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:andikisha}
     password: ${RABBITMQ_PASSWORD:changeme}
-  # MailHog for local development — catches all outbound email without sending
+  # MailHog for local development — catches all outbound email without sending.
+  # MailHog speaks plain SMTP: no AUTH, no STARTTLS. The base application.yml enables
+  # both (for real prod relays), so the dev profile must switch them off or the send
+  # fails with "AuthenticationFailedException: no password specified".
   mail:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
     username: ""
     password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
   jpa:
     show-sql: true
     properties:
