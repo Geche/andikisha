@@ -54,4 +54,23 @@ public class SpringMailEmailSender implements EmailSender {
             throw new RuntimeException("Failed to send HTML email to " + to, e);
         }
     }
+
+    @Override
+    public void sendWithAttachment(String to, String subject, String htmlBody,
+                                   String attachmentName, byte[] attachment, String attachmentContentType) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8"); // multipart
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+            helper.addAttachment(attachmentName,
+                    new org.springframework.core.io.ByteArrayResource(attachment), attachmentContentType);
+            mailSender.send(message);
+            log.debug("Email with attachment ({}) sent to {}: {}", attachmentName, to, subject);
+        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException("Failed to send email with attachment to " + to, e);
+        }
+    }
 }

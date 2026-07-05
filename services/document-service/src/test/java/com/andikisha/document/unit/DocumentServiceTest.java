@@ -8,6 +8,8 @@ import com.andikisha.document.application.mapper.DocumentMapper;
 import com.andikisha.document.application.port.DocumentEventPublisher;
 import com.andikisha.document.application.port.FileStorage;
 import com.andikisha.document.application.service.DocumentService;
+import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
+import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.document.domain.model.Document;
 import com.andikisha.document.domain.model.DocumentStatus;
 import com.andikisha.document.domain.model.DocumentType;
@@ -44,12 +46,13 @@ class DocumentServiceTest {
     @Mock DocumentMapper mapper;
     @Mock FileStorage fileStorage;
     @Mock DocumentEventPublisher eventPublisher;
+    @Mock EmployeeGrpcClient employeeClient;
 
     private DocumentService service;
 
     @BeforeEach
     void setUp() {
-        service = new DocumentService(repository, mapper, fileStorage, eventPublisher);
+        service = new DocumentService(repository, mapper, fileStorage, eventPublisher, employeeClient);
         TenantContext.setTenantId(TENANT_ID);
     }
 
@@ -253,16 +256,33 @@ class DocumentServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void issue_draftCertificate_transitionsToIssuedAndPublishes() {
+    void issue_draftCertificate_transitionsToIssuedAndPublishesWithRecipientEmail() {
         Document draft = draftCertificate();
         when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(draft));
         when(repository.save(draft)).thenReturn(draft);
+        // #54: the ex-employee's personal email is resolved and carried on the ready event.
+        when(employeeClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                .thenReturn(EmployeeResponse.newBuilder().setPersonalEmail("bob@personal.com").build());
 
         service.issue(DOC_ID, "hr-user");
 
         assertThat(draft.getStatus()).isEqualTo(DocumentStatus.ISSUED);
         verify(repository).save(draft);
-        verify(eventPublisher).publishDocumentReady(draft);
+        verify(eventPublisher).publishDocumentReady(draft, "bob@personal.com");
+    }
+
+    @Test
+    void issue_whenNoPersonalEmail_publishesWithNullRecipient() {
+        Document draft = draftCertificate();
+        when(repository.findByIdAndTenantId(DOC_ID, TENANT_ID)).thenReturn(Optional.of(draft));
+        when(repository.save(draft)).thenReturn(draft);
+        // Blank personal email → null recipient → notification-service skips email delivery.
+        when(employeeClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString()))
+                .thenReturn(EmployeeResponse.newBuilder().setPersonalEmail("").build());
+
+        service.issue(DOC_ID, "hr-user");
+
+        verify(eventPublisher).publishDocumentReady(draft, null);
     }
 
     @Test

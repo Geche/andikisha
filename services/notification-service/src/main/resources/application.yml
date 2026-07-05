@@ -60,6 +60,9 @@ spring:
 # email.from and sms operational defaults are not secrets — kept here.
 # sms.api-key has no fallback; Spring fails fast if SMS_ENABLED=true without it.
 app:
+  document-service:
+    # For fetching a Certificate of Service PDF to attach on delivery (#54).
+    url: ${DOCUMENT_SERVICE_URL:http://localhost:8088}
   notifications:
     email:
       from: ${MAIL_FROM:noreply@andikisha.co.ke}
