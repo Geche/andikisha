@@ -4,10 +4,13 @@ import com.andikisha.common.domain.model.LicenceStatus;
 import com.andikisha.common.infrastructure.cache.RedisKeys;
 import com.andikisha.proto.tenant.GetTenantLogoRequest;
 import com.andikisha.proto.tenant.GetTenantRequest;
+import com.andikisha.proto.tenant.GetTenantSignatoryRequest;
 import com.andikisha.proto.tenant.TenantLogoResponse;
 import com.andikisha.proto.tenant.TenantResponse;
 import com.andikisha.proto.tenant.TenantServiceGrpc;
+import com.andikisha.proto.tenant.TenantSignatoryResponse;
 import com.andikisha.tenant.application.service.TenantLogoService;
+import com.andikisha.tenant.application.service.TenantSignatoryService;
 import com.google.protobuf.ByteString;
 import com.andikisha.proto.tenant.ValidateLicenceRequest;
 import com.andikisha.proto.tenant.ValidateLicenceResponse;
@@ -45,17 +48,45 @@ public class TenantGrpcService extends TenantServiceGrpc.TenantServiceImplBase {
 
     private final TenantService tenantService;
     private final TenantLogoService tenantLogoService;
+    private final TenantSignatoryService tenantSignatoryService;
     private final TenantLicenceRepository licenceRepository;
     private final StringRedisTemplate redisTemplate;
 
     public TenantGrpcService(TenantService tenantService,
                              TenantLogoService tenantLogoService,
+                             TenantSignatoryService tenantSignatoryService,
                              TenantLicenceRepository licenceRepository,
                              StringRedisTemplate redisTemplate) {
         this.tenantService = tenantService;
         this.tenantLogoService = tenantLogoService;
+        this.tenantSignatoryService = tenantSignatoryService;
         this.licenceRepository = licenceRepository;
         this.redisTemplate = redisTemplate;
+    }
+
+    @Override
+    public void getTenantSignatory(GetTenantSignatoryRequest request,
+                                   StreamObserver<TenantSignatoryResponse> observer) {
+        if (request.getTenantId() == null || request.getTenantId().isBlank()) {
+            observer.onError(Status.INVALID_ARGUMENT
+                    .withDescription("tenant_id is required").asException());
+            return;
+        }
+        try {
+            TenantSignatoryResponse.Builder response = TenantSignatoryResponse.newBuilder();
+            tenantSignatoryService.getForTenant(request.getTenantId()).ifPresentOrElse(
+                    s -> response.setHasSignatory(true)
+                            .setName(s.getName())
+                            .setTitle(s.getTitle())
+                            .setSignatureContentType(s.getSignatureContentType())
+                            .setSignatureData(ByteString.copyFrom(s.getSignatureData())),
+                    () -> response.setHasSignatory(false));
+            observer.onNext(response.build());
+            observer.onCompleted();
+        } catch (Exception e) {
+            log.error("GetTenantSignatory failed", e);
+            observer.onError(Status.INTERNAL.withDescription("Internal error").asException());
+        }
     }
 
     @Override

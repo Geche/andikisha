@@ -9,6 +9,7 @@ service TenantService {
   rpc VerifyTenantActive(VerifyTenantRequest) returns (VerifyTenantResponse);
   rpc ValidateTenantLicence(ValidateLicenceRequest) returns (ValidateLicenceResponse);
   rpc GetTenantLogo(GetTenantLogoRequest) returns (TenantLogoResponse);
+  rpc GetTenantSignatory(GetTenantSignatoryRequest) returns (TenantSignatoryResponse);
 }
 
 message GetTenantRequest {
@@ -23,6 +24,18 @@ message TenantLogoResponse {
   bool has_logo = 1;
   string content_type = 2;
   bytes data = 3;
+}
+
+message GetTenantSignatoryRequest {
+  string tenant_id = 1;
+}
+
+message TenantSignatoryResponse {
+  bool has_signatory = 1;
+  string name = 2;
+  string title = 3;
+  string signature_content_type = 4;
+  bytes signature_data = 5;
 }
 
 message TenantResponse {
