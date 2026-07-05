@@ -188,6 +188,7 @@ public class EmployeeGrpcService extends EmployeeServiceGrpc.EmployeeServiceImpl
                 .setCurrency(dto.currency());
 
         if (dto.email() != null)         builder.setEmail(dto.email());
+        if (dto.personalEmail() != null) builder.setPersonalEmail(dto.personalEmail());
         if (dto.gender() != null)        builder.setGender(dto.gender());
         if (dto.departmentId() != null)  builder.setDepartmentId(dto.departmentId().toString());
         if (dto.departmentName() != null) builder.setDepartmentName(dto.departmentName());

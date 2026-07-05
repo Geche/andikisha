@@ -55,6 +55,7 @@ message EmployeeResponse {
   string currency = 19;
   string gender = 20;
   google.protobuf.Timestamp termination_date = 21;
+  string personal_email = 22;
 }
 
 message ListEmployeesResponse {

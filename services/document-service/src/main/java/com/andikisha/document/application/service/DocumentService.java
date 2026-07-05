@@ -11,6 +11,7 @@ import com.andikisha.document.domain.model.Document;
 import com.andikisha.document.domain.model.DocumentStatus;
 import com.andikisha.document.domain.model.DocumentType;
 import com.andikisha.document.domain.repository.DocumentRepository;
+import com.andikisha.document.infrastructure.grpc.EmployeeGrpcClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -36,15 +37,18 @@ public class DocumentService {
     private final DocumentMapper mapper;
     private final FileStorage fileStorage;
     private final DocumentEventPublisher eventPublisher;
+    private final EmployeeGrpcClient employeeClient;
 
     public DocumentService(DocumentRepository repository,
                            DocumentMapper mapper,
                            FileStorage fileStorage,
-                           DocumentEventPublisher eventPublisher) {
+                           DocumentEventPublisher eventPublisher,
+                           EmployeeGrpcClient employeeClient) {
         this.repository = repository;
         this.mapper = mapper;
         this.fileStorage = fileStorage;
         this.eventPublisher = eventPublisher;
+        this.employeeClient = employeeClient;
     }
 
     /**
@@ -69,9 +73,27 @@ public class DocumentService {
 
         doc.markIssued();
         Document issued = repository.save(doc);
-        eventPublisher.publishDocumentReady(issued);
-        log.info("Certificate {} issued by {} — delivery triggered", documentId, issuedBy);
+        String recipientEmail = resolveRecipientEmail(tenantId, doc.getEmployeeId());
+        eventPublisher.publishDocumentReady(issued, recipientEmail);
+        log.info("Certificate {} issued by {} — delivery triggered (recipient email {})",
+                documentId, issuedBy, recipientEmail != null ? "present" : "absent");
         return mapper.toResponse(issued);
+    }
+
+    /**
+     * The ex-employee's personal email for delivery (#54). Decision: personal email only — a
+     * terminated employee's work email may be deactivated. Null (absent/blank/lookup failure)
+     * means notification-service skips email delivery; HR can still deliver via the admin download.
+     */
+    private String resolveRecipientEmail(String tenantId, UUID employeeId) {
+        if (employeeId == null) return null;
+        try {
+            String personal = employeeClient.getEmployee(tenantId, employeeId.toString()).getPersonalEmail();
+            return (personal != null && !personal.isBlank()) ? personal : null;
+        } catch (Exception e) {
+            log.warn("Could not resolve recipient email for employee {}: {}", employeeId, e.getMessage());
+            return null;
+        }
     }
 
     public DocumentResponse getById(UUID documentId) {

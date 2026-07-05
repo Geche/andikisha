@@ -451,6 +451,8 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      # document-service, for fetching a Certificate of Service PDF to attach on delivery (#54)
+      DOCUMENT_SERVICE_URL: http://document-service:8088
       # Mail — point at MailHog or a real SMTP relay in dev
       MAIL_HOST: ${MAIL_HOST:-mailhog}
       MAIL_PORT: ${MAIL_PORT:-1025}

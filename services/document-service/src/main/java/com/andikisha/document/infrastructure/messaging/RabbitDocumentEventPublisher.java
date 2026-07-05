@@ -21,13 +21,19 @@ public class RabbitDocumentEventPublisher implements DocumentEventPublisher {
 
     @Override
     public void publishDocumentReady(Document doc) {
+        publishDocumentReady(doc, null);
+    }
+
+    @Override
+    public void publishDocumentReady(Document doc, String recipientEmail) {
         var event = new DocumentReadyEvent(
                 doc.getTenantId(),
                 doc.getId().toString(),
                 doc.getEmployeeId() != null ? doc.getEmployeeId().toString() : null,
                 doc.getDocumentType().name(),
                 doc.getFileName(),
-                doc.getPeriod()
+                doc.getPeriod(),
+                recipientEmail
         );
         rabbitTemplate.convertAndSend(
                 RabbitMqConfig.DOCUMENT_EXCHANGE, "document.ready", event);
