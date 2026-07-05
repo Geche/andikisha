@@ -14,6 +14,7 @@ import com.andikisha.document.infrastructure.grpc.TenantGrpcClient;
 import com.andikisha.proto.employee.EmployeeResponse;
 import com.andikisha.proto.tenant.TenantLogoResponse;
 import com.andikisha.proto.tenant.TenantResponse;
+import com.andikisha.proto.tenant.TenantSignatoryResponse;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import org.junit.jupiter.api.Test;
@@ -86,7 +87,7 @@ class CertificateOfServiceGeneratorTest {
 
         // §51(2): the resolved employer name is passed to the builder (logo arg is first, #57).
         verify(htmlBuilder).build(any(), eq("Acme Ltd"), eq("Jane Mwangi"), eq("EMP-001"),
-                any(), any(), any(), any(), any());
+                any(), any(), any(), any(), any(), any());
         // #56: certificate is DRAFTED (awaiting HR issue), never auto-marked READY/delivered.
         verify(persistenceHelper).markDraft(eq(DOC_ID), anyLong());
         verify(persistenceHelper, never()).markReady(any(), anyLong());
@@ -106,7 +107,26 @@ class CertificateOfServiceGeneratorTest {
 
         // #57: the logo is embedded as a base64 data URI (first arg to the builder).
         verify(htmlBuilder).build(eq("data:image/png;base64,UE5H"), eq("Acme Ltd"),
-                anyString(), anyString(), any(), any(), any(), any(), any());
+                anyString(), anyString(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void generateAsync_whenTenantHasSignatory_passesSignatoryToBuilder() {
+        stubForGeneration();
+        when(tenantClient.getTenant(TENANT_ID))
+                .thenReturn(TenantResponse.newBuilder().setName("Acme Ltd").build());
+        when(tenantClient.getTenantSignatory(TENANT_ID)).thenReturn(TenantSignatoryResponse.newBuilder()
+                .setHasSignatory(true).setName("Grace Wanjiku").setTitle("HR Manager")
+                .setSignatureContentType("image/png").setSignatureData(ByteString.copyFromUtf8("SIG")).build());
+
+        generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
+
+        // #58: the signatory (name/title + signature data URI) is the last arg to the builder.
+        verify(htmlBuilder).build(any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                org.mockito.ArgumentMatchers.<CertificateOfServiceHtmlBuilder.Signatory>argThat(sig ->
+                        sig != null && "Grace Wanjiku".equals(sig.name()) && "HR Manager".equals(sig.title())
+                                && sig.signatureDataUri() != null
+                                && sig.signatureDataUri().startsWith("data:image/png;base64,")));
     }
 
     @Test
@@ -117,7 +137,7 @@ class CertificateOfServiceGeneratorTest {
         generator().generateAsync(TENANT_ID, EMPLOYEE_ID.toString(), FALLBACK);
 
         verify(htmlBuilder).build(any(), eq(EMPLOYER_PLACEHOLDER), anyString(), anyString(),
-                any(), any(), any(), any(), any());
+                any(), any(), any(), any(), any(), any());
         verify(persistenceHelper).markDraft(eq(DOC_ID), anyLong());
         verify(persistenceHelper, never()).markFailed(any(), any());
     }
@@ -140,7 +160,7 @@ class CertificateOfServiceGeneratorTest {
         when(documentRepository.existsByTenantIdAndEmployeeIdAndDocumentTypeAndStatusIn(
                 any(), any(), any(), any())).thenReturn(false);
         when(employeeClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString())).thenReturn(sampleEmployee());
-        when(htmlBuilder.build(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<html>cert</html>");
+        when(htmlBuilder.build(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn("<html>cert</html>");
         when(pdfGenerator.generateFromHtml(anyString())).thenReturn("cert-bytes".getBytes());
         Document generating = mock(Document.class);
         when(generating.getId()).thenReturn(DOC_ID);

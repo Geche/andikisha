@@ -21,9 +21,13 @@ public class CertificateOfServiceHtmlBuilder {
 
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("d MMMM yyyy");
 
+    /** Authorized signatory block (#58). Null when the tenant has configured none. */
+    public record Signatory(String name, String title, String signatureDataUri) {}
+
     public String build(String logoDataUri, String employerName, String employeeName, String employeeNumber,
                         String positionTitle, String departmentName,
-                        LocalDate hireDate, LocalDate terminationDate, LocalDate issueDate) {
+                        LocalDate hireDate, LocalDate terminationDate, LocalDate issueDate,
+                        Signatory signatory) {
 
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head>")
@@ -38,6 +42,11 @@ public class CertificateOfServiceHtmlBuilder {
                 .append("td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top;}")
                 .append("td.label{color:#555;width:35%;}")
                 .append("p{margin:14px 0;}")
+                .append(".signature{margin-top:40px;}")
+                .append(".sig-img{max-height:60px;display:block;margin-bottom:2px;}")
+                .append(".sig-line{border-top:1px solid #333;width:240px;padding-top:4px;}")
+                .append(".sig-name{font-weight:bold;}")
+                .append(".sig-title{color:#555;font-size:11px;}")
                 .append(".footer{color:#999;font-size:10px;margin-top:40px;border-top:1px solid #eee;padding-top:10px;}")
                 .append("</style></head><body>");
 
@@ -67,6 +76,20 @@ public class CertificateOfServiceHtmlBuilder {
                 .append("<td class='label'>Date of Issue</td><td>")
                 .append(issueDate != null ? DATE.format(issueDate) : "").append("</td>")
                 .append("</tr></table>");
+
+        // Authorized signatory block (#58): signature image (if any) over a signature line with the
+        // signatory's name and title. HR authorizes issuance via the Issue action (#56).
+        if (signatory != null) {
+            html.append("<div class='signature'>");
+            if (signatory.signatureDataUri() != null && !signatory.signatureDataUri().isBlank()) {
+                html.append("<img class='sig-img' src='").append(signatory.signatureDataUri())
+                        .append("' alt='Signature'/>");
+            }
+            html.append("<div class='sig-line'><span class='sig-name'>")
+                    .append(escape(signatory.name())).append("</span></div>")
+                    .append("<div class='sig-title'>").append(escape(signatory.title())).append("</div>")
+                    .append("</div>");
+        }
 
         html.append("<p class='footer'>This is a computer-generated Certificate of Service issued under ")
                 .append("Section 51 of the Employment Act, 2007. It is a record of service only; in accordance ")
