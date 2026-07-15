@@ -1345,3 +1345,46 @@ surfaces as 405, not a generic 500. Broader 4xx (415/406) hardening left as a re
 **Raised:** 2026-06-09 · **Priority:** Medium — compliance/payment correctness (pre-existing; not introduced by W5).
 Placeholder/pending-activation rows (NULL statutory IDs after V10) must be excluded from payroll runs and
 statutory filings. Full write-up: `docs/Engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`.
+
+---
+
+## Lifecycle Workflows (Run L1)
+
+Filed 2026-07-15 during Run L1 Phase A (Employee Lifecycle Workflows). See
+`docs/decisions/0003-lifecycle-workflows-phase-a.md`. All explicitly out of Run L1 scope.
+
+### LIFECYCLE-BACKLOG-001 — `CreateEmployeeFromCandidate` gRPC RPC / recruitment integration
+
+**Raised:** 2026-07-15 · **Priority:** Deferred — no caller. The Recruitment Service does not exist.
+An onboarding workflow initiated from a hired candidate would need a `CreateEmployeeFromCandidate`
+RPC on employee-service. Build only when Recruitment ships and has a concrete caller.
+
+### LIFECYCLE-BACKLOG-002 — Asset-return automation for offboarding
+
+**Raised:** 2026-07-15 · **Priority:** Deferred — Asset Service does not exist. Offboarding "company
+property return" ships as a MANUAL checklist task. When an Asset Service exists, wire asset-return
+tasks to real asset records (auto-complete on return check-in).
+
+### LIFECYCLE-BACKLOG-003 — Final-pay computation integration for offboarding
+
+**Raised:** 2026-07-15 · **Priority:** Deferred — payroll owns money; the offboarding workflow only
+links. The "final pay" offboarding task is a manual link that computes nothing. A future integration
+could surface the final-pay run status/amount inline (read-only) from payroll-service.
+
+### DOCUMENT-BACKLOG-002 — Synchronous "generate Certificate of Service" endpoint
+
+**Raised:** 2026-07-15 · **Priority:** Medium. Today the Certificate of Service draft is generated
+ONLY event-driven, on `EmployeeTerminatedEvent` (document-service `EmployeeTerminatedEventListener`).
+There is no synchronous REST endpoint to generate a draft on demand — the only sync action is
+`POST /api/v1/documents/{id}/issue` on an already-existing draft. An offboarding checklist cannot
+therefore have a pre-completion "generate certificate" task (the draft doesn't exist yet). A sync
+`POST /api/v1/documents/certificates/generate` (employeeId, tenant) would let a workflow request the
+draft on demand. Until then, Run L1 renders a post-completion hint (see D3).
+
+### NOTIFICATION-BACKLOG-002 — Generic "task-assigned / action-required" notification type + template
+
+**Raised:** 2026-07-15 · **Priority:** Medium. notification-service has no generic task/action-required
+notification type — every notification is a domain-specific listener with hard-coded copy, and there is
+no template engine. A lifecycle workflow that wants to alert an assignee ("You have an onboarding task
+due") needs a new event + listener + type string + (ideally) a template mechanism. Run L1 ships without
+task-assignment alerts (D4); the in-app pipeline board and `/my/dashboard` card are the v1 surfaces.
