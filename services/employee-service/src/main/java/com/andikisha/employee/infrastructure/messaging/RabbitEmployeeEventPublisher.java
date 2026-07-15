@@ -2,10 +2,14 @@ package com.andikisha.employee.infrastructure.messaging;
 
 import com.andikisha.employee.application.port.EmployeeEventPublisher;
 import com.andikisha.employee.domain.model.Employee;
+import com.andikisha.employee.domain.model.LifecycleWorkflowInstance;
 import com.andikisha.employee.infrastructure.config.RabbitMqConfig;
 import com.andikisha.events.employee.EmployeeCreatedEvent;
 import com.andikisha.events.employee.EmployeeTerminatedEvent;
 import com.andikisha.events.employee.EmployeeUpdatedEvent;
+import com.andikisha.events.employee.OffboardingStartedEvent;
+import com.andikisha.events.employee.OnboardingCompletedEvent;
+import com.andikisha.events.employee.OnboardingStartedEvent;
 import com.andikisha.events.employee.SalaryChangedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +72,36 @@ public class RabbitEmployeeEventPublisher implements EmployeeEventPublisher {
                 employee.getSalaryStructure().getBasicSalary().getCurrency(), changedBy);
         sendAfterCommit(RabbitMqConfig.EMPLOYEE_EXCHANGE, "employee.salary_changed", event,
                 employee.getEmployeeNumber());
+    }
+
+    @Override
+    public void publishOnboardingStarted(LifecycleWorkflowInstance instance) {
+        var event = new OnboardingStartedEvent(
+                instance.getTenantId(),
+                instance.getEmployeeId().toString(),
+                instance.getId().toString());
+        sendAfterCommit(RabbitMqConfig.EMPLOYEE_EXCHANGE, "employee.onboarding.started", event,
+                instance.getEmployeeId().toString());
+    }
+
+    @Override
+    public void publishOnboardingCompleted(LifecycleWorkflowInstance instance) {
+        var event = new OnboardingCompletedEvent(
+                instance.getTenantId(),
+                instance.getEmployeeId().toString(),
+                instance.getId().toString());
+        sendAfterCommit(RabbitMqConfig.EMPLOYEE_EXCHANGE, "employee.onboarding.completed", event,
+                instance.getEmployeeId().toString());
+    }
+
+    @Override
+    public void publishOffboardingStarted(LifecycleWorkflowInstance instance) {
+        var event = new OffboardingStartedEvent(
+                instance.getTenantId(),
+                instance.getEmployeeId().toString(),
+                instance.getId().toString());
+        sendAfterCommit(RabbitMqConfig.EMPLOYEE_EXCHANGE, "employee.offboarding.started", event,
+                instance.getEmployeeId().toString());
     }
 
     /**

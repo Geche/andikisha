@@ -9,14 +9,19 @@ import com.andikisha.employee.application.port.EmployeeEventPublisher;
 import com.andikisha.employee.application.service.EmployeeNumberGenerator;
 import com.andikisha.employee.application.service.EmployeeService;
 import com.andikisha.employee.domain.model.Employee;
+import com.andikisha.employee.domain.model.LifecycleType;
+import com.andikisha.employee.domain.model.LifecycleWorkflowInstance;
+import com.andikisha.employee.domain.model.LifecycleInstanceStatus;
 import com.andikisha.employee.domain.repository.DepartmentRepository;
 import com.andikisha.employee.domain.repository.EmployeeHistoryRepository;
 import com.andikisha.employee.domain.repository.EmployeeRepository;
+import com.andikisha.employee.domain.repository.LifecycleWorkflowInstanceRepository;
 import com.andikisha.employee.domain.repository.PositionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -42,6 +47,7 @@ class EmployeeServiceTest {
     @Mock private EmployeeMapper mapper;
     @Mock private EmployeeEventPublisher eventPublisher;
     @Mock private EmployeeNumberGenerator numberGenerator;
+    @Mock private LifecycleWorkflowInstanceRepository lifecycleInstanceRepository;
 
     @InjectMocks private EmployeeService employeeService;
 
@@ -139,5 +145,55 @@ class EmployeeServiceTest {
                     (com.andikisha.employee.domain.model.EmployeeHistory) h;
             return "SUSPENDED".equals(history.getOldValue());
         }));
+    }
+
+    @Test
+    void terminate_cancelsOpenOffboardingInstance_andFiresExactlyOneTerminatedEvent() {
+        var employeeId = java.util.UUID.randomUUID();
+        Employee employee = mock(Employee.class);
+        when(employee.getStatus()).thenReturn(com.andikisha.employee.domain.model.EmploymentStatus.ACTIVE);
+        when(employeeRepository.findByIdAndTenantId(employeeId, TENANT_ID))
+                .thenReturn(java.util.Optional.of(employee));
+        when(employeeRepository.save(any())).thenReturn(employee);
+        when(historyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        // One still-open offboarding workflow for this employee (status IN_PROGRESS)
+        LifecycleWorkflowInstance openOffboarding = LifecycleWorkflowInstance.start(
+                TENANT_ID, employeeId, java.util.UUID.randomUUID(),
+                LifecycleType.OFFBOARDING, "hr-user");
+        when(lifecycleInstanceRepository.findByTenantIdAndEmployeeIdAndTypeAndStatusIn(
+                eq(TENANT_ID), eq(employeeId), eq(LifecycleType.OFFBOARDING), any()))
+                .thenReturn(java.util.List.of(openOffboarding));
+
+        employeeService.terminate(employeeId, "Resigned", "hr-user");
+
+        // Instance cancelled with the system note, in the same transaction
+        assertThat(openOffboarding.getStatus()).isEqualTo(LifecycleInstanceStatus.CANCELLED);
+        assertThat(openOffboarding.getSystemNote()).isEqualTo("Closed by direct termination");
+        assertThat(openOffboarding.getCompletedAt()).isNotNull();
+        verify(lifecycleInstanceRepository).save(openOffboarding);
+
+        // The cancel sweep queries ONLY open statuses (PENDING/IN_PROGRESS/BLOCKED). A COMPLETED
+        // offboarding instance — e.g. one that just finished normally and then routed into
+        // terminate() — is structurally excluded, so completion's own instance can never be
+        // cancelled by terminate(). This is the load-bearing proof for that invariant.
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<java.util.List<LifecycleInstanceStatus>> statusCaptor =
+                ArgumentCaptor.forClass(java.util.List.class);
+        verify(lifecycleInstanceRepository).findByTenantIdAndEmployeeIdAndTypeAndStatusIn(
+                eq(TENANT_ID), eq(employeeId), eq(LifecycleType.OFFBOARDING), statusCaptor.capture());
+        assertThat(statusCaptor.getValue())
+                .containsExactlyInAnyOrder(
+                        LifecycleInstanceStatus.PENDING,
+                        LifecycleInstanceStatus.IN_PROGRESS,
+                        LifecycleInstanceStatus.BLOCKED)
+                .doesNotContain(LifecycleInstanceStatus.COMPLETED, LifecycleInstanceStatus.CANCELLED);
+
+        // D2: a direct termination archives the employee too, identically to the offboarding path.
+        verify(employee).archive();
+
+        // Exactly ONE EmployeeTerminatedEvent
+        verify(eventPublisher, org.mockito.Mockito.times(1))
+                .publishEmployeeTerminated(any(Employee.class), eq("Resigned"), eq("hr-user"));
     }
 }

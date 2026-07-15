@@ -20,6 +20,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     Page<Employee> findByTenantId(String tenantId, Pageable pageable);
 
+    /** Default roster list — excludes archived (offboarded) employees (D2). */
+    Page<Employee> findByTenantIdAndArchivedAtIsNull(String tenantId, Pageable pageable);
+
     Page<Employee> findByTenantIdAndId(String tenantId, UUID id, Pageable pageable);
 
     Page<Employee> findByTenantIdAndStatus(String tenantId, EmploymentStatus status, Pageable pageable);

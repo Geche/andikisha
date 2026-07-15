@@ -96,7 +96,8 @@ public class EmployeeQueryService {
             return repository.findByTenantIdAndStatus(tenantId, empStatus, pageable)
                     .map(mapper::toSummary);
         }
-        return repository.findByTenantId(tenantId, pageable).map(mapper::toSummary);
+        // Default roster excludes archived (offboarded) employees (D2).
+        return repository.findByTenantIdAndArchivedAtIsNull(tenantId, pageable).map(mapper::toSummary);
     }
 
     public List<EmployeeDetailResponse> findAllActive() {

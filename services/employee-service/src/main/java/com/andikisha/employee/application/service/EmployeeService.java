@@ -18,11 +18,14 @@ import com.andikisha.employee.domain.model.Employee;
 import com.andikisha.employee.domain.model.EmployeeHistory;
 import com.andikisha.employee.domain.model.EmploymentType;
 import com.andikisha.employee.domain.model.Gender;
+import com.andikisha.employee.domain.model.LifecycleType;
+import com.andikisha.employee.domain.model.LifecycleWorkflowInstance;
 import com.andikisha.employee.domain.model.Position;
 import com.andikisha.employee.domain.model.SalaryStructure;
 import com.andikisha.employee.domain.repository.DepartmentRepository;
 import com.andikisha.employee.domain.repository.EmployeeHistoryRepository;
 import com.andikisha.employee.domain.repository.EmployeeRepository;
+import com.andikisha.employee.domain.repository.LifecycleWorkflowInstanceRepository;
 import com.andikisha.employee.domain.repository.PositionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -44,6 +48,7 @@ public class EmployeeService {
     private final EmployeeMapper mapper;
     private final EmployeeEventPublisher eventPublisher;
     private final EmployeeNumberGenerator numberGenerator;
+    private final LifecycleWorkflowInstanceRepository lifecycleInstanceRepository;
 
     public EmployeeService(EmployeeRepository employeeRepository,
                            DepartmentRepository departmentRepository,
@@ -51,7 +56,8 @@ public class EmployeeService {
                            EmployeeHistoryRepository historyRepository,
                            EmployeeMapper mapper,
                            EmployeeEventPublisher eventPublisher,
-                           EmployeeNumberGenerator numberGenerator) {
+                           EmployeeNumberGenerator numberGenerator,
+                           LifecycleWorkflowInstanceRepository lifecycleInstanceRepository) {
         this.employeeRepository = employeeRepository;
         this.departmentRepository = departmentRepository;
         this.positionRepository = positionRepository;
@@ -59,6 +65,7 @@ public class EmployeeService {
         this.mapper = mapper;
         this.eventPublisher = eventPublisher;
         this.numberGenerator = numberGenerator;
+        this.lifecycleInstanceRepository = lifecycleInstanceRepository;
     }
 
     @Transactional
@@ -258,11 +265,29 @@ public class EmployeeService {
 
         String previousStatus = employee.getStatus().name();
         employee.terminate(reason);
+        // D2: archive on EVERY termination so both exit paths (direct terminate and
+        // offboarding completion, which routes through here) archive identically. The
+        // default roster query excludes archived employees.
+        employee.archive();
         employeeRepository.save(employee);
 
         historyRepository.save(EmployeeHistory.record(
                 tenantId, employeeId, "TERMINATED", "status",
                 previousStatus, "TERMINATED", terminatedBy));
+
+        // Close any still-open offboarding workflow in the SAME transaction. An offboarding
+        // that completes normally sets its instance COMPLETED before calling terminate(), so
+        // this sweep only touches workflows abandoned by a direct termination — never a
+        // just-completed one. Injecting the repository (not LifecycleWorkflowService) avoids a
+        // dependency cycle, since the lifecycle service calls terminate().
+        List<LifecycleWorkflowInstance> openOffboarding =
+                lifecycleInstanceRepository.findByTenantIdAndEmployeeIdAndTypeAndStatusIn(
+                        tenantId, employeeId, LifecycleType.OFFBOARDING,
+                        LifecycleWorkflowService.OPEN_STATUSES);
+        for (LifecycleWorkflowInstance instance : openOffboarding) {
+            instance.cancelBySystem("Closed by direct termination");
+            lifecycleInstanceRepository.save(instance);
+        }
 
         final Employee terminated = employee;
         publishAfterCommit(() -> eventPublisher.publishEmployeeTerminated(terminated, reason, terminatedBy));
