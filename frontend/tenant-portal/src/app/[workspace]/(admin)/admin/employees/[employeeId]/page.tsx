@@ -3,12 +3,13 @@
 import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock, ShieldCheck, KeyRound } from "lucide-react";
-import { PageHeader, BaseModal, useToast, useCurrentUser } from "@andikisha/ui";
+import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock, ShieldCheck, KeyRound, UserPlus, UserMinus } from "lucide-react";
+import { PageHeader, BaseModal, useToast, useCurrentUser, PermissionGate, Button, DialogRoot, DialogContent } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { KRA_RE, KRA_PIN_MESSAGE } from "@/lib/employee-validation";
+import type { LifecycleInstance } from "@/types/lifecycle";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -946,6 +947,117 @@ function ActionsMenu({
   );
 }
 
+// ─── Lifecycle actions (Start onboarding / offboarding) ───────────────────────
+
+function LifecycleActions({
+  employeeId,
+  employeeName,
+}: {
+  employeeId: string;
+  employeeName: string;
+}) {
+  const [showOffboard, setShowOffboard] = useState(false);
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  // The employee's own lifecycle instances — used to hide "Start onboarding"
+  // when one is already open (not COMPLETED/CANCELLED).
+  const { data: instances } = useQuery<LifecycleInstance[]>({
+    queryKey: ["employee-lifecycle-instances", employeeId],
+    queryFn: () =>
+      apiClient
+        .get<LifecycleInstance[]>(`/api/v1/employees/${employeeId}/lifecycle/instances`)
+        .then((r) => r.data),
+    enabled: Boolean(employeeId),
+  });
+
+  const hasOpenOnboarding = (instances ?? []).some(
+    (i) => i.type === "ONBOARDING" && i.status !== "COMPLETED" && i.status !== "CANCELLED",
+  );
+
+  function invalidate() {
+    void queryClient.invalidateQueries({ queryKey: ["employee-lifecycle-instances", employeeId] });
+    void queryClient.invalidateQueries({ queryKey: ["lifecycle-instances"] });
+    void queryClient.invalidateQueries({ queryKey: ["employee", employeeId] });
+    void queryClient.invalidateQueries({ queryKey: ["employees"] });
+  }
+
+  const onboard = useMutation<LifecycleInstance, AxiosError<{ message?: string }>, void>({
+    mutationFn: () =>
+      apiClient
+        .post<LifecycleInstance>(`/api/v1/employees/${employeeId}/lifecycle/onboarding`)
+        .then((r) => r.data),
+    onSuccess: () => { invalidate(); toast("Onboarding started", "success"); },
+    onError: (err) => toast(err.response?.data?.message ?? "Could not start onboarding. Please try again.", "error"),
+  });
+
+  const offboard = useMutation<LifecycleInstance, AxiosError<{ message?: string }>, void>({
+    mutationFn: () =>
+      apiClient
+        .post<LifecycleInstance>(`/api/v1/employees/${employeeId}/lifecycle/offboarding`)
+        .then((r) => r.data),
+    onSuccess: () => { invalidate(); toast("Offboarding started", "success"); setShowOffboard(false); },
+    onError: (err) => toast(err.response?.data?.message ?? "Could not start offboarding. Please try again.", "error"),
+  });
+
+  return (
+    <PermissionGate anyOf={["ADMIN", "HR_MANAGER"]}>
+      {!hasOpenOnboarding && (
+        <Button
+          variant="secondary"
+          size="md"
+          disabled={onboard.isPending}
+          onClick={() => onboard.mutate()}
+        >
+          <UserPlus size={14} aria-hidden="true" />
+          {onboard.isPending ? "Starting…" : "Start onboarding"}
+        </Button>
+      )}
+      <Button variant="secondary" size="md" onClick={() => setShowOffboard(true)}>
+        <UserMinus size={14} aria-hidden="true" />
+        Start offboarding
+      </Button>
+
+      <DialogRoot open={showOffboard} onOpenChange={setShowOffboard}>
+        {showOffboard && (
+          <DialogContent
+            title="Start offboarding"
+            description={`Begin the exit workflow for ${employeeName}.`}
+            maxWidth="max-w-md"
+          >
+            <div className="flex items-start gap-2.5 rounded-xl bg-amber-light border border-amber px-4 py-3 mb-5">
+              <AlertTriangle size={15} className="text-amber flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-[12.5px] text-amber-text leading-relaxed">
+                This employee will be terminated and archived. The record is retained for audit.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="md"
+                className="flex-1"
+                disabled={offboard.isPending}
+                onClick={() => setShowOffboard(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="md"
+                className="flex-1"
+                disabled={offboard.isPending}
+                onClick={() => offboard.mutate()}
+              >
+                {offboard.isPending ? "Starting…" : "Start offboarding"}
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </DialogRoot>
+    </PermissionGate>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EmployeeDetailPage({
@@ -1041,6 +1153,7 @@ export default function EmployeeDetailPage({
                     Reset password
                   </button>
                 )}
+                <LifecycleActions employeeId={employee.id} employeeName={fullName} />
                 <ActionsMenu
                   status={employee.status}
                   employeeId={employee.id}
