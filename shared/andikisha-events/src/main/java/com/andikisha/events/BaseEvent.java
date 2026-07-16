@@ -14,6 +14,9 @@ import com.andikisha.events.document.DocumentReadyEvent;
 import com.andikisha.events.employee.EmployeeCreatedEvent;
 import com.andikisha.events.employee.EmployeeTerminatedEvent;
 import com.andikisha.events.employee.EmployeeUpdatedEvent;
+import com.andikisha.events.employee.OffboardingStartedEvent;
+import com.andikisha.events.employee.OnboardingCompletedEvent;
+import com.andikisha.events.employee.OnboardingStartedEvent;
 import com.andikisha.events.employee.SalaryChangedEvent;
 import com.andikisha.events.leave.LeaveApprovedEvent;
 import com.andikisha.events.leave.LeaveRejectedEvent;
@@ -56,6 +59,9 @@ import java.util.UUID;
         @JsonSubTypes.Type(value = EmployeeUpdatedEvent.class,      name = "EmployeeUpdated"),
         @JsonSubTypes.Type(value = EmployeeTerminatedEvent.class,   name = "EmployeeTerminated"),
         @JsonSubTypes.Type(value = SalaryChangedEvent.class,        name = "SalaryChanged"),
+        @JsonSubTypes.Type(value = OnboardingStartedEvent.class,    name = "OnboardingStarted"),
+        @JsonSubTypes.Type(value = OnboardingCompletedEvent.class,  name = "OnboardingCompleted"),
+        @JsonSubTypes.Type(value = OffboardingStartedEvent.class,   name = "OffboardingStarted"),
         @JsonSubTypes.Type(value = TenantCreatedEvent.class,        name = "TenantCreated"),
         @JsonSubTypes.Type(value = TenantSuspendedEvent.class,      name = "TenantSuspended"),
         @JsonSubTypes.Type(value = TenantReactivatedEvent.class,    name = "TenantReactivated"),

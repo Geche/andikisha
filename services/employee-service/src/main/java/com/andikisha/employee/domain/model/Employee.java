@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -124,6 +125,12 @@ public class Employee extends BaseEntity {
 
     @Column(name = "pending_activation", nullable = false)
     private boolean pendingActivation = false;
+
+    // Set when an offboarding workflow completes (D2 archive model). Archived
+    // employees are excluded from the default roster list. Nullable — most
+    // employees are never archived.
+    @Column(name = "archived_at")
+    private Instant archivedAt;
 
     protected Employee() {}
 
@@ -268,6 +275,16 @@ public class Employee extends BaseEntity {
         this.status = EmploymentStatus.TERMINATED;
         this.terminationDate = LocalDate.now();
         this.terminationReason = reason;
+    }
+
+    /**
+     * Marks the employee record archived (D2). Idempotent-safe: a second call is a
+     * no-op so re-running a completed offboarding does not move the timestamp.
+     */
+    public void archive() {
+        if (this.archivedAt == null) {
+            this.archivedAt = Instant.now();
+        }
     }
 
     public String getFullName() {

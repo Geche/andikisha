@@ -1,6 +1,7 @@
 package com.andikisha.employee.application.port;
 
 import com.andikisha.employee.domain.model.Employee;
+import com.andikisha.employee.domain.model.LifecycleWorkflowInstance;
 import java.math.BigDecimal;
 
 public interface EmployeeEventPublisher {
@@ -13,4 +14,10 @@ public interface EmployeeEventPublisher {
 
     void publishSalaryChanged(Employee employee, BigDecimal oldSalary,
                               BigDecimal newSalary, String changedBy);
+
+    void publishOnboardingStarted(LifecycleWorkflowInstance instance);
+
+    void publishOnboardingCompleted(LifecycleWorkflowInstance instance);
+
+    void publishOffboardingStarted(LifecycleWorkflowInstance instance);
 }

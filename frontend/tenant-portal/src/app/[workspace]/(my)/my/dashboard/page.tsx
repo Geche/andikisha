@@ -6,6 +6,7 @@ import Link from "next/link";
 import { PageHeader, Skeleton, SkeletonRegion, useCurrentUser } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { MyOnboardingCard } from "@/components/lifecycle/MyOnboardingCard";
 
 interface EmployeeProfile {
   id: string;
@@ -154,6 +155,9 @@ export default function DashboardPage() {
             Could not load your profile. Some information may be unavailable.
           </div>
         )}
+
+        {/* Onboarding tasks — renders only while the employee has open onboarding tasks */}
+        <MyOnboardingCard />
 
         {/* Metric cards */}
         {metricsLoading ? (
