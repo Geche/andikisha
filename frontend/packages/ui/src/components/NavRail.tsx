@@ -70,8 +70,15 @@ export function NavRailItem({
   if (locked || !href) {
     return <div onClick={onClick}>{inner}</div>;
   }
+  // The link carried no focus styling, so the browser painted its own blue outline —
+  // off-brand (no blue) and inconsistent with every other control. Use the shared
+  // green focus halo (--shadow-focus), matching Button; rounded to the item's own shape.
   return (
-    <Link href={href} onClick={onClick}>
+    <Link
+      href={href}
+      onClick={onClick}
+      className="block rounded-lg focus:outline-none focus-visible:shadow-focus"
+    >
       {inner}
     </Link>
   );
