@@ -1371,6 +1371,48 @@ tasks to real asset records (auto-complete on return check-in).
 links. The "final pay" offboarding task is a manual link that computes nothing. A future integration
 could surface the final-pay run status/amount inline (read-only) from payroll-service.
 
+### LIFECYCLE-BACKLOG-004 — Employee document-upload flow for DOCUMENT_UPLOAD onboarding tasks
+
+**Raised:** 2026-07-16 (Run L1 W3) · **Priority:** Medium. The default onboarding template
+includes a DOCUMENT_UPLOAD task ("Upload national ID"), but tenant-portal has no employee-facing
+document-upload UI and document-service exposes no employee upload endpoint (only GET/list/issue on
+existing documents). W3 therefore renders DOCUMENT_UPLOAD tasks with a "coming soon" hint and lets
+the employee confirm-complete without attaching a file (the backend does not require a documentId).
+Build: an employee upload endpoint (document-service) + an upload control on the `/my` onboarding
+card that captures the returned documentId and passes it to the task-complete call.
+
+### LIFECYCLE-BACKLOG-005 — Role-matched task completion (LINE_MANAGER cannot complete assigned tasks)
+
+**Raised:** 2026-07-16 (Run L1 W1 review) · **Priority:** Medium — offboarding UX/authz. The default
+offboarding template assigns tasks by role (LINE_MANAGER handover, ADMIN access revocation, HR_OFFICER
+property return, HR_MANAGER final pay). But the task-completion endpoint authorises only EMPLOYEE
+(own EMPLOYEE-assigned task, via X-Employee-ID) and HR_MANAGER/ADMIN (any task). So a **LINE_MANAGER
+or HR_OFFICER assigned a task cannot complete it themselves** — HR_MANAGER/ADMIN tick those off from
+the admin board. That is acceptable for v1 (offboarding is an admin-driven board), but role-matched
+completion (each assignee completes their own assigned tasks) is a deliberate follow-up: decide whether
+to grant per-assignee-role completion (LINE_MANAGER completes LINE_MANAGER tasks, etc.) and whether
+LINE_MANAGER reaches these tasks through `/my/*` (they route there, not `/admin/*`). Decide later.
+
+### FE-BACKLOG-019 — No dedicated "Archived employees" view (reachable only via the Terminated status filter)
+
+**Raised:** 2026-07-16 (Run L1 live verification) · **Priority:** Medium — archived employees ARE
+reachable, so this is discoverability/UX, not data loss.
+
+D2 assumed "the existing Archived employees view surfaces them". **There is no such view.** What exists
+is the employees-list **status filter tab "Terminated"**
+(`admin/employees/page.tsx:47,195` → `?status=TERMINATED`), which the backend does NOT archive-filter —
+so it returns archived rows. Verified live 2026-07-16: default roster returned 33 employees with **0
+TERMINATED** (archived correctly excluded), while `?status=TERMINATED` returned **all 7** archived
+employees. So archived employees are reachable, just not via anything labelled "archived", and the
+`archived_at` distinction is invisible in the UI (a TERMINATED-but-not-archived row would look identical
+to an archived one).
+
+**Fix (when picked up):** either (a) label the affordance honestly — an "Archived" filter/section driven
+by `archived_at` (needs a backend `archived` filter param + a `findByTenantIdAndArchivedAtIsNotNull`
+query), or (b) accept the Terminated tab as the archived surface and drop the "Archived employees view"
+language from the D2 decision record. Option (a) is the more truthful model now that `archived_at` and
+`status` are separate concepts.
+
 ### DOCUMENT-BACKLOG-002 — Synchronous "generate Certificate of Service" endpoint
 
 **Raised:** 2026-07-15 · **Priority:** Medium. Today the Certificate of Service draft is generated
