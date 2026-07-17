@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock, ShieldCheck, KeyRound, UserPlus, UserMinus } from "lucide-react";
+import { ArrowLeft, AlertTriangle, ChevronDown, Pencil, Lock, ShieldCheck, KeyRound, UserPlus, UserMinus, BadgeCheck } from "lucide-react";
 import { PageHeader, BaseModal, useToast, useCurrentUser, PermissionGate, Button, DialogRoot, DialogContent } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import type { AxiosError } from "axios";
@@ -1058,6 +1058,95 @@ function LifecycleActions({
   );
 }
 
+// ─── Confirm probation ────────────────────────────────────────────────────────
+
+/**
+ * Confirms an employee's probation via the existing
+ * POST /api/v1/employees/{id}/confirm-probation endpoint (ON_PROBATION → ACTIVE).
+ * Renders only for ON_PROBATION employees, and only for the roles the backend
+ * @PreAuthorize already allows (HR_MANAGER, ADMIN) — the gate here is UX; the
+ * backend is the authority. The endpoint rejects a non-ON_PROBATION employee with
+ * 422; that message is surfaced verbatim rather than guessed at client-side.
+ */
+function ConfirmProbationAction({
+  employeeId,
+  employeeName,
+  status,
+}: {
+  employeeId: string;
+  employeeName: string;
+  status: EmployeeStatus;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  const confirmProbation = useMutation<EmployeeDetail, AxiosError<{ message?: string }>, void>({
+    mutationFn: () =>
+      apiClient
+        .post<EmployeeDetail>(`/api/v1/employees/${employeeId}/confirm-probation`)
+        .then((r) => r.data),
+    onSuccess: () => {
+      // Refresh the profile (status badge + probation date) and the roster without a manual reload.
+      void queryClient.invalidateQueries({ queryKey: ["employee", employeeId] });
+      void queryClient.invalidateQueries({ queryKey: ["employees"] });
+      toast("Probation confirmed", "success");
+      setShowConfirm(false);
+    },
+    onError: (err) =>
+      toast(err.response?.data?.message ?? "Could not confirm probation. Please try again.", "error"),
+  });
+
+  if (status !== "ON_PROBATION") return null;
+
+  return (
+    <PermissionGate anyOf={["ADMIN", "HR_MANAGER"]}>
+      <Button variant="secondary" size="md" onClick={() => setShowConfirm(true)}>
+        <BadgeCheck size={14} aria-hidden="true" />
+        Confirm probation
+      </Button>
+
+      <DialogRoot open={showConfirm} onOpenChange={setShowConfirm}>
+        {showConfirm && (
+          <DialogContent
+            title="Confirm probation"
+            description={`Confirm ${employeeName}'s probation period.`}
+            maxWidth="max-w-md"
+          >
+            <div className="flex items-start gap-2.5 rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 mb-5">
+              <BadgeCheck size={15} className="text-brand-700 flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-[12.5px] text-brand-900 leading-relaxed">
+                Employment status moves from <strong>Probation</strong> to <strong>Active</strong>.
+                This confirms the employee has passed probation. The probation end date is cleared.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="md"
+                className="flex-1"
+                disabled={confirmProbation.isPending}
+                onClick={() => setShowConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                className="flex-1"
+                disabled={confirmProbation.isPending}
+                onClick={() => confirmProbation.mutate()}
+              >
+                {confirmProbation.isPending ? "Confirming…" : "Confirm probation"}
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </DialogRoot>
+    </PermissionGate>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function EmployeeDetailPage({
@@ -1153,6 +1242,11 @@ export default function EmployeeDetailPage({
                     Reset password
                   </button>
                 )}
+                <ConfirmProbationAction
+                  employeeId={employee.id}
+                  employeeName={fullName}
+                  status={employee.status}
+                />
                 <LifecycleActions employeeId={employee.id} employeeName={fullName} />
                 <ActionsMenu
                   status={employee.status}
@@ -1229,6 +1323,12 @@ export default function EmployeeDetailPage({
                   </span>
                 }
               />
+              {/* Set at creation (hire date + 3 months) and cleared on confirmation, so it
+                  only means anything while the employee is on probation. Display only —
+                  no overdue/"ending soon" computation (EMP-BACKLOG-007). */}
+              {employee.status === "ON_PROBATION" && (
+                <InfoRow label="Probation Ends" value={formatDate(employee.probationEndDate)} />
+              )}
             </InfoCard>
 
             {/* Compensation */}

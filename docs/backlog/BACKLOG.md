@@ -143,6 +143,52 @@ kept as its own PR per the one-item-one-PR cadence.
 
 ---
 
+### EMP-BACKLOG-005 — `employmentType` is not editable (display-only)
+
+**Raised:** 2026-07-17 (Run E1 Phase A) · **Priority:** Medium — a real HR need (contract → permanent
+conversion) with no path today.
+
+`UpdateEmployeeRequest` has **no `employmentType` field**, so employment type cannot be changed after
+creation — backend or frontend. The profile renders it read-only
+(`admin/employees/[employeeId]/page.tsx`, Employment card "Type"). Converting a contract employee to
+permanent currently requires a direct DB update.
+
+**Fix:** add `employmentType` to `UpdateEmployeeRequest` + `EmployeeService.update()` (with an
+`EmployeeHistory` "FIELD_CHANGE" row, matching how department/position/bank changes are audited), then
+surface it in the edit form. **Decide first:** whether a type change should be restricted (e.g. ADMIN/
+HR_MANAGER only) and whether it has payroll/statutory consequences — that decision is the real work.
+
+### EMP-BACKLOG-006 — `confirmProbation` publishes no domain event
+
+**Raised:** 2026-07-17 (Run E1 Phase A) · **Priority:** Medium — silent state change; asymmetric with
+every other mutation.
+
+`EmployeeService.confirmProbation()` transitions ON_PROBATION → ACTIVE, writes an `EmployeeHistory`
+row, and **publishes nothing**. Every other mutation on the aggregate publishes:
+`create` → `EmployeeCreatedEvent`, `update` → `EmployeeUpdatedEvent`, `terminate` →
+`EmployeeTerminatedEvent`, `updateSalary` → `SalaryChangedEvent`. So no downstream service (payroll,
+analytics, notification, audit) learns that an employee became ACTIVE.
+
+**Why deferred (Run L1 lesson):** publishing into `employee.events` requires a **consumer audit first**.
+L1 found `EmployeeTerminatedEvent` was already consumed by 6 services, and naively publishing it again
+would have double-fired certificate generation, payroll exit, notifications and audit. A new
+`ProbationConfirmedEvent` needs the same discipline: who should consume it, and what should they do?
+That is its own small run, not a fold-in.
+
+### EMP-BACKLOG-007 — Overdue-probation indicator in the list surface
+
+**Raised:** 2026-07-17 (Run E1) · **Priority:** Low–Medium — visibility, not correctness.
+
+`Employee.probationEndDate` is set at creation (`hireDate + 3 months`) and cleared on confirmation. E1
+displays it on the profile for ON_PROBATION employees (**display only**); any computation was
+deliberately excluded. An employee whose `probationEndDate` is in the past is invisible as such — the
+demo tenant has 33 employees on probation, many long overdue, with nothing surfacing it.
+
+**Fix (needs a placement decision first):** an "overdue" indicator where `probationEndDate < today` —
+candidates: a badge/marker on the employees list rows, a sort on the Probation filter tab, or a
+dashboard count. **Decide placement before building**; also decide whether "ending soon" (a window) is
+wanted, which implies a threshold nobody has specified yet.
+
 ### AUTH-BACKLOG-005 — Migrate hardcoded scope mapping in CallerScopeResolver to read from role_permissions
 
 **Raised:** 2026-05-31
@@ -580,6 +626,60 @@ true, that wraps children in the standard card), or make the surface a required 
 omitting it is a type/visual error rather than a silently-degraded render. Then audit existing callers.
 
 ---
+
+### FE-BACKLOG-020 — BaseModal steals focus after one keystroke — every modal form is unusable
+
+**Raised:** 2026-07-17 (Run E1 browser verification) · **Priority:** **HIGH** — every `BaseModal` caller
+in tenant-portal loses input focus after a single character. Any create/edit flow that needs typing into
+a modal is effectively broken.
+
+**Reproduction (verified 2026-07-17, Chrome, LastPass NOT installed):**
+Departments → **Add department** → click the **Name** field → type `Typing test in Chrome` (21 chars) →
+the field contains **`T`**. One character. Every subsequent keystroke is lost.
+
+**Root cause** — `frontend/packages/ui/src/components/BaseModal.tsx`:
+
+```tsx
+useEffect(() => {
+  containerRef.current?.focus();                    // focuses the modal CONTAINER
+  function handleKeyDown(e) { if (e.key === "Escape") onClose(); }
+  document.addEventListener("keydown", handleKeyDown);
+  return () => document.removeEventListener("keydown", handleKeyDown);
+}, [onClose]);                                      // <-- dependency
+```
+
+Callers pass an inline arrow — e.g. `<BaseModal onClose={() => setModalOpen(false)}>` — so `onClose` has
+a **new identity on every render**. Typing one character calls `setName(...)` → the page re-renders → the
+`onClose` identity changes → the effect re-runs → `containerRef.current.focus()` **pulls focus off the
+input** onto the modal container. Keystroke two onwards goes nowhere.
+
+**Blast radius:** NOT departments-specific. Every `BaseModal` caller passing an inline `onClose` is
+affected — departments, positions, employee edit/salary/change-role, terminate, users. Passing an inline
+arrow is ordinary React; the fault is entirely in `BaseModal`.
+
+**Misdiagnosis on record:** this was first attributed to the **LastPass** extension, after a
+`data-lastpass-icon-root` hydration mismatch was observed in Arc. That theory was **wrong** — the bug
+reproduces cleanly in Chrome with no LastPass. The LastPass hydration warning is a separate, cosmetic
+issue in Arc only.
+
+**Fix direction (three lines, `BaseModal` only — no caller changes):** split the effect so focus runs
+once on mount, and let the Escape handler re-bind freely:
+
+```tsx
+useEffect(() => { containerRef.current?.focus(); }, []);   // mount only
+useEffect(() => {
+  function handleKeyDown(e) { if (e.key === "Escape") onClose(); }
+  document.addEventListener("keydown", handleKeyDown);
+  return () => document.removeEventListener("keydown", handleKeyDown);
+}, [onClose]);                                             // free to re-bind
+```
+
+**Must survive the fix:** focus still lands on the modal when it opens (the effect's original purpose),
+and Escape still closes it.
+
+**Related:** this is the "can't add departments/positions" half of the 2026-07-16 report. The "can't
+remove" half is separate and unaffected — delete was simply never built ([[TENANT-BACKLOG-007]]).
+[[FE-BACKLOG-007]] is a different `BaseModal` defect (missing surface), not this one.
 
 ### FE-BACKLOG-008 — Departments/Positions Add/Edit forms render without backdrop surface
 
