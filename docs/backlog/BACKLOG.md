@@ -955,6 +955,33 @@ Also wire `audit-service` `TenantAuditListener` to handle `TenantCancelledEvent`
 
 ## Security
 
+### AUTHZ-BACKLOG-005 — LINE_MANAGER cannot see their team's attendance (needs BOTH layers)
+
+**Raised:** 2026-07-17 (reviving the orphaned `a8148c4b` authz sweep) · **Priority:** Medium — a
+LINE_MANAGER's core job is team oversight, and attendance is invisible to them.
+
+`AttendanceController.getEmployeeAttendance` and `getMonthlySummary` exclude `LINE_MANAGER`, so a line
+manager cannot see any team member's attendance.
+
+**Why this is not a one-line grant.** The orphaned sweep tried exactly that — adding `LINE_MANAGER` to
+the two `@PreAuthorize` annotations. It would not have worked. `AttendanceService`'s ownership
+privileged-set is `ADMIN / HR_MANAGER / HR_OFFICER / PAYROLL_MANAGER / PAYROLL_OFFICER` — **no
+LINE_MANAGER** — so `enforceAttendanceOwnership` would treat them as unprivileged and allow only their
+*own* records. The role would pass the annotation and still be denied its team's data: a half-fix that
+looks shipped. This is precisely the trap [[AUTHZ-BACKLOG-001]]'s B-5 D3 flagged for PAYROLL_OFFICER
+("needs adding to the ownership privileged-set, not just the `@PreAuthorize`, to be functional") — D3
+got both layers; LINE_MANAGER never got either.
+
+**Fix (both layers, plus a scope decision first):** grant `LINE_MANAGER` on the two reads AND add it to
+the privileged-set — but **decide the scope**: ADMIN/HR/payroll get tenant-wide (`ALL`); LINE_MANAGER
+should almost certainly be **DEPARTMENT-scoped**, matching `CallerScopeResolver` in leave-service, not
+tenant-wide. The privileged-set is currently a binary privileged/own flag with no DEPARTMENT tier, so
+this likely needs a scope resolver in attendance-service rather than another entry in the set. That
+design decision is the real work.
+
+**Related:** same class of gap as `FE-BACKLOG-018` (LINE_MANAGER had no leave-approval surface) — the
+role exists but its capabilities are unreachable.
+
 ### AUTHZ-BACKLOG-001 — Audit @PreAuthorize role-grant *intent* across all 9 services
 
 **Raised:** 2026-06-14 during Run 03 R3-0 (role-vocabulary canonicalization). **Priority:** Medium–High — privilege-boundary correctness.
