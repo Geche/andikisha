@@ -23,6 +23,7 @@ DATABASES=(
   andikisha_integration
   andikisha_analytics
   andikisha_audit
+  andikisha_recruitment
 )
 
 for db in "${DATABASES[@]}"; do

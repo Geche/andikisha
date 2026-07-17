@@ -1,0 +1,73 @@
+# services/recruitment-service/src/main/resources/application.yml
+#
+# Base configuration — applies to ALL profiles (dev, prod).
+# No secrets. No hardcoded values. Everything sensitive comes
+# from environment variables injected at runtime.
+#
+# The ${VAR_NAME} syntax means: read from environment variable.
+# Spring will fail to start if a required variable is missing and
+# no fallback is defined — which is intentional for prod safety.
+
+server:
+  port: ${SERVER_PORT:8094}
+
+spring:
+  application:
+    name: recruitment-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.batch_size: 25
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      use-big-decimal-for-floats: true
+    generator:
+      write-bigdecimal-as-plain: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-},%X{tenantId:-},%X{userId:-}]"

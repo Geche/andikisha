@@ -18,6 +18,7 @@
 #   andikisha-integration  5442
 #   andikisha-analytics    5443
 #   andikisha-audit        5444
+#   andikisha-recruitment  5446
 #
 # Supporting infrastructure:
 #   RabbitMQ AMQP         5672
@@ -274,6 +275,29 @@ services:
       start_period: 10s
 
   # ═══════════════════════════════════════════════════════════════════════════
+  # RELEASE 02 — Recruitment
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  andikisha-recruitment:
+    image: postgres:16-alpine
+    container_name: andikisha-postgres-recruitment
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: andikisha_recruitment
+      POSTGRES_USER: ${POSTGRES_USER:-andikisha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5446:5432"
+    volumes:
+      - pg_recruitment_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-andikisha} -d andikisha_recruitment"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ═══════════════════════════════════════════════════════════════════════════
   # MESSAGING, CACHE, TRACING
   # ═══════════════════════════════════════════════════════════════════════════
 
@@ -338,5 +362,6 @@ volumes:
   pg_integration_data:
   pg_analytics_data:
   pg_audit_data:
+  pg_recruitment_data:
   rabbitmq_data:
   redis_data:

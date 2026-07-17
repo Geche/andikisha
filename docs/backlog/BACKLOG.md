@@ -1570,6 +1570,26 @@ per the R1 A6 audit) PLUS the backend `@PreAuthorize` role sets across recruitme
 whether per-recruiter scoping (a recruiter sees only their own requisitions) is wanted — that changes it
 from a role addition to a scope-resolver change.
 
+### GATEWAY-BACKLOG-001 — Circuit-breaker fallbacks never match (routes forward to `/fallback/<x>-service`, controller maps `/fallback/<x>`)
+
+**Raised:** 2026-07-17 (found during Run R1 W1). **Priority:** Medium — degraded error UX under an open
+circuit; not a security or data issue.
+
+Every gateway route's CircuitBreaker `fallbackUri` is `forward:/fallback/<name>-service` (e.g.
+`forward:/fallback/leave-service`), but `FallbackController` maps the **short** names
+(`/fallback/leave`, `/fallback/employee`, …) with **no `-service` suffix**
+(`services/api-gateway/.../controller/FallbackController.java`). So when a downstream circuit opens, the
+forward target matches no handler and the caller gets a 404/unmapped error instead of the intended
+`503 SERVICE_UNAVAILABLE` body. Affects all 13 existing routes.
+
+Run R1 W1 wired **recruitment** correctly (route `forward:/fallback/recruitment-service` → controller
+`/fallback/recruitment-service`), so recruitment is the only route whose fallback actually fires — it is
+deliberately inconsistent with the buggy siblings rather than bug-compatible.
+
+**Fix:** rename either side to agree across all routes (simplest: add `-service` to the 13 controller
+mappings, matching the route convention recruitment already uses). Also remove the unused `ALL_METHODS`
+field in `FallbackController` (dead code). One small PR; verify with an induced circuit-open.
+
 ---
 
 ## Lifecycle Workflows (Run L1)
