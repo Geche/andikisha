@@ -63,8 +63,8 @@ function ActivationResultModal({
   }
 
   return (
-    <BaseModal labelId="activation-result-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[620px] max-h-[85vh] flex flex-col">
+    <BaseModal labelId="activation-result-title" onClose={onClose} className="max-w-none w-[620px] p-0 overflow-hidden">
+      <div className="max-h-[85vh] flex flex-col">
         <div className="px-6 py-5 border-b border-neutral-100">
           <h2 id="activation-result-title" className="text-[16px] font-bold text-neutral-900">
             Activation Complete
@@ -351,8 +351,8 @@ export default function PendingActivationPage() {
 
       {/* Confirmation modal */}
       {showConfirm && (
-        <BaseModal labelId="activate-confirm-title" onClose={() => setShowConfirm(false)}>
-          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[420px] p-6 flex flex-col gap-4">
+        <BaseModal labelId="activate-confirm-title" onClose={() => setShowConfirm(false)} className="max-w-none w-[420px]">
+          <div className="flex flex-col gap-4">
             <h2 id="activate-confirm-title" className="text-[16px] font-bold text-neutral-900">
               Activate {selectedCount} account{selectedCount !== 1 ? "s" : ""}?
             </h2>

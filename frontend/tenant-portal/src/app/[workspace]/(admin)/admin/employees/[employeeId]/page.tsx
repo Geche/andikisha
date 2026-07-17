@@ -259,8 +259,8 @@ function EditEmployeeModal({ employee, hasPayslips, onClose }: EditEmployeeModal
   }
 
   return (
-    <BaseModal labelId="edit-employee-modal-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[640px] max-h-[85vh] flex flex-col">
+    <BaseModal labelId="edit-employee-modal-title" onClose={onClose} className="max-w-none w-[640px] p-0 overflow-hidden">
+      <div className="max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-5 border-b border-neutral-100 flex-shrink-0">
           <h2 id="edit-employee-modal-title" className="text-[16px] font-bold text-neutral-900">
@@ -467,8 +467,8 @@ function SalaryModal({ employee, onClose }: SalaryModalProps) {
   const moneyInputCls = inputCls + " font-mono";
 
   return (
-    <BaseModal labelId="salary-modal-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[520px] flex flex-col">
+    <BaseModal labelId="salary-modal-title" onClose={onClose} className="max-w-none w-[520px] p-0 overflow-hidden">
+      <div className="flex flex-col">
         <div className="px-6 py-5 border-b border-neutral-100">
           <h2 id="salary-modal-title" className="text-[16px] font-bold text-neutral-900">
             Update Salary Structure
@@ -569,8 +569,8 @@ function TerminateModal({
   });
 
   return (
-    <BaseModal labelId="terminate-modal-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[480px] p-6">
+    <BaseModal labelId="terminate-modal-title" onClose={onClose} className="max-w-none w-[480px]">
+      <div>
         <h2 id="terminate-modal-title" className="text-[16px] font-bold text-neutral-900 mb-1">
           Terminate Employee
         </h2>
@@ -664,8 +664,8 @@ function ResetPasswordModal({
   // Step 1 — Confirmation
   if (!result) {
     return (
-      <BaseModal labelId="reset-pw-modal-title" onClose={mutation.isPending ? onClose : onClose}>
-        <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[440px] p-6 flex flex-col gap-4">
+      <BaseModal labelId="reset-pw-modal-title" onClose={mutation.isPending ? onClose : onClose} className="max-w-none w-[440px]">
+        <div className="flex flex-col gap-4">
           <h2 id="reset-pw-modal-title" className="text-[16px] font-bold text-neutral-900">
             Reset Password
           </h2>
@@ -699,8 +699,8 @@ function ResetPasswordModal({
 
   // Step 2 — Temp password display (no auto-close)
   return (
-    <BaseModal labelId="reset-pw-result-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[460px] p-6 flex flex-col gap-4">
+    <BaseModal labelId="reset-pw-result-title" onClose={onClose} className="max-w-none w-[460px]">
+      <div className="flex flex-col gap-4">
         <h2 id="reset-pw-result-title" className="text-[16px] font-bold text-neutral-900">
           Password Reset
         </h2>
@@ -803,8 +803,8 @@ function ChangeRoleModal({
   const hasChanged = selectedRole !== userAccount.role;
 
   return (
-    <BaseModal labelId="change-role-modal-title" onClose={onClose}>
-      <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-[440px] flex flex-col">
+    <BaseModal labelId="change-role-modal-title" onClose={onClose} className="max-w-none w-[440px] p-0 overflow-hidden">
+      <div className="flex flex-col">
         {/* Header */}
         <div className="px-6 py-5 border-b border-neutral-100">
           <h2 id="change-role-modal-title" className="text-[16px] font-bold text-neutral-900">
