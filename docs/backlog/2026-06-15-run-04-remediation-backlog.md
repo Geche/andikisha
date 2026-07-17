@@ -21,7 +21,7 @@ Status key: ✅ done (PR) · 🟡 partially done · 🔲 open.
 |---|---|---|---|
 | Finding Zero — LINE_MANAGER login → `/access-denied` (404) | Crit | #14 | ✅ merged |
 | **LANDING-BACKLOG-001** — payroll calculator NSSF/PAYE/insurance-relief math | Crit | #17 | ✅ merged |
-| **AUTHZ-BACKLOG-002** — PAYROLL_OFFICER denied payroll-run reads; + full operational-role `@PreAuthorize` sweep | High | #16 | ✅ merged |
+| **AUTHZ-BACKLOG-002** — PAYROLL_OFFICER denied payroll-run reads; + full operational-role `@PreAuthorize` sweep | High | #16 | 🟡 **PARTIAL — the ✅ was wrong, see below** |
 | **AUTHZ-BACKLOG-003** — LINE_MANAGER denied `/employees/me` + payslip reads | High | #16 | ✅ merged |
 | **PRODUCT-BACKLOG-002** — landing "filing is Live/Filed" overpromise | High | #18 | ✅ merged |
 | **AUTH-BACKLOG-002 / FE-BACKLOG-014** — voluntary change-password page (404) | Med | #19 | ✅ merged |
@@ -30,6 +30,39 @@ Status key: ✅ done (PR) · 🟡 partially done · 🔲 open.
 | **LEAVE-BACKLOG-001** — approve note silently discarded | Med | #21 | ✅ merged |
 
 **All remediation PRs merged:** #19 and #20 on 2026-06-16, #21 on 2026-06-15.
+
+> ### ⚠️ Correction (2026-07-17): AUTHZ-BACKLOG-002's ✅ was false for a month
+>
+> PR #16 merged at `2026-06-15T11:52Z`. Commit **`a8148c4b`** — the rest of the sweep —
+> was authored **13 minutes later** and pushed to `fix/operational-role-preauthorize-grants`
+> *after* that PR had already closed. GitHub does not reopen a merged PR for new commits,
+> so **it never landed**. The table said ✅; master did not have the fix.
+>
+> **What was still broken on master until 2026-07-17:** `PAYROLL_OFFICER` could
+> `POST /payroll/runs` and `POST /runs/{id}/calculate` but was denied `GET /runs`,
+> `GET /runs/{id}` and `GET /runs/{id}/payslips` — the role could start and calculate a
+> payroll run and then be 403'd reading it back. That is *precisely* the defect this item
+> describes. Also missing: `LINE_MANAGER` on department/position/attendance reads, and
+> `PAYROLL_OFFICER` on `FilingController`.
+>
+> **Cost of the false ✅:** the Run L1 B-5 grant-intent audit read master's payroll grants,
+> saw `PAYROLL_OFFICER` absent from run reads, and did **not** flag it — because this table
+> said the item was already resolved. A false ✅ doesn't just hide a bug; it actively
+> teaches later audits to treat the bug as intentional.
+>
+> **Remediation (2026-07-17)**, splitting the revived commit by risk:
+> - Payroll-run reads + LINE_MANAGER dept/position reads → `fix/authz-payroll-officer-run-reads`
+>   (uncontroversial; flip this row to ✅ only when that merges).
+> - `FilingController` +PAYROLL_OFFICER → `fix/authz-filing-payroll-officer` — a regulatory
+>   statutory-filing surface, needs a deliberate grant decision.
+> - `AttendanceController` +LINE_MANAGER → **filed, not shipped**: `AttendanceService`'s
+>   ownership privileged-set has no LINE_MANAGER, so the annotation grant alone is a
+>   half-fix — the role would pass `@PreAuthorize` and still be denied its team's records by
+>   `enforceAttendanceOwnership`. Exactly the trap B-5's D3 flagged. Needs both layers.
+>
+> **Process lesson:** a merged PR is not evidence the branch is empty. Check
+> `git log origin/master..<branch>` before trusting a ✅, and delete branches at merge time
+> so a stray follow-up commit has nowhere to hide.
 
 ---
 
