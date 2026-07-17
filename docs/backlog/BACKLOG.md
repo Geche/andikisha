@@ -143,6 +143,52 @@ kept as its own PR per the one-item-one-PR cadence.
 
 ---
 
+### EMP-BACKLOG-005 — `employmentType` is not editable (display-only)
+
+**Raised:** 2026-07-17 (Run E1 Phase A) · **Priority:** Medium — a real HR need (contract → permanent
+conversion) with no path today.
+
+`UpdateEmployeeRequest` has **no `employmentType` field**, so employment type cannot be changed after
+creation — backend or frontend. The profile renders it read-only
+(`admin/employees/[employeeId]/page.tsx`, Employment card "Type"). Converting a contract employee to
+permanent currently requires a direct DB update.
+
+**Fix:** add `employmentType` to `UpdateEmployeeRequest` + `EmployeeService.update()` (with an
+`EmployeeHistory` "FIELD_CHANGE" row, matching how department/position/bank changes are audited), then
+surface it in the edit form. **Decide first:** whether a type change should be restricted (e.g. ADMIN/
+HR_MANAGER only) and whether it has payroll/statutory consequences — that decision is the real work.
+
+### EMP-BACKLOG-006 — `confirmProbation` publishes no domain event
+
+**Raised:** 2026-07-17 (Run E1 Phase A) · **Priority:** Medium — silent state change; asymmetric with
+every other mutation.
+
+`EmployeeService.confirmProbation()` transitions ON_PROBATION → ACTIVE, writes an `EmployeeHistory`
+row, and **publishes nothing**. Every other mutation on the aggregate publishes:
+`create` → `EmployeeCreatedEvent`, `update` → `EmployeeUpdatedEvent`, `terminate` →
+`EmployeeTerminatedEvent`, `updateSalary` → `SalaryChangedEvent`. So no downstream service (payroll,
+analytics, notification, audit) learns that an employee became ACTIVE.
+
+**Why deferred (Run L1 lesson):** publishing into `employee.events` requires a **consumer audit first**.
+L1 found `EmployeeTerminatedEvent` was already consumed by 6 services, and naively publishing it again
+would have double-fired certificate generation, payroll exit, notifications and audit. A new
+`ProbationConfirmedEvent` needs the same discipline: who should consume it, and what should they do?
+That is its own small run, not a fold-in.
+
+### EMP-BACKLOG-007 — Overdue-probation indicator in the list surface
+
+**Raised:** 2026-07-17 (Run E1) · **Priority:** Low–Medium — visibility, not correctness.
+
+`Employee.probationEndDate` is set at creation (`hireDate + 3 months`) and cleared on confirmation. E1
+displays it on the profile for ON_PROBATION employees (**display only**); any computation was
+deliberately excluded. An employee whose `probationEndDate` is in the past is invisible as such — the
+demo tenant has 33 employees on probation, many long overdue, with nothing surfacing it.
+
+**Fix (needs a placement decision first):** an "overdue" indicator where `probationEndDate < today` —
+candidates: a badge/marker on the employees list rows, a sort on the Probation filter tab, or a
+dashboard count. **Decide placement before building**; also decide whether "ending soon" (a window) is
+wanted, which implies a threshold nobody has specified yet.
+
 ### AUTH-BACKLOG-005 — Migrate hardcoded scope mapping in CallerScopeResolver to read from role_permissions
 
 **Raised:** 2026-05-31
