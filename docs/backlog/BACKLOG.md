@@ -612,6 +612,19 @@ a systematic pass over other actor surfaces — which the audit found largely do
 
 ### FE-BACKLOG-007 — BaseModal silent-empty-modal trap
 
+**STATUS: RESOLVED 2026-07-17** (`a63591ce`, branch `fix/basemodal-focus-theft`). Took the first of the
+two options below — `BaseModal` now **default-provides the surface**, using `DialogContent`'s tokens
+(`bg-surface rounded-2xl shadow-2xl border-neutral-200 p-6`) so the two modal primitives are visually
+identical. All **16 call sites across 7 files** were stripped of the duplicated
+`bg-white rounded-xl shadow-xl border border-neutral-200` (more than the ~7 estimated below — the count
+was files, not instances). Escape hatches via tailwind-merge: `maxWidth` (default `max-w-lg`, mirroring
+`DialogContent`) and `className` for fixed widths and for `p-0` on the scrollable modals that pad their
+own header/body/footer. A caller can no longer forget the surface, so the trap is gone rather than
+documented. **Gotcha found in-browser:** fixed-width callers need `max-w-none` alongside `w-[Npx]` —
+tailwind-merge does NOT reconcile `width` against `max-width`, so the default `max-w-lg` silently
+squeezed every fixed-width modal (the Edit Employee modal narrowed and wrapped its statutory labels).
+`tsc` and lint were both clean; only looking at it caught that.
+
 **Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 2)
 **Priority:** Low/Medium — ergonomics; prevents a recurring "broken-but-plausible" render.
 
@@ -628,6 +641,17 @@ omitting it is a type/visual error rather than a silently-degraded render. Then 
 ---
 
 ### FE-BACKLOG-020 — BaseModal steals focus after one keystroke — every modal form is unusable
+
+**STATUS: RESOLVED 2026-07-17** (`43fca786`, branch `fix/basemodal-focus-theft`). Fixed exactly as the
+direction below prescribed: the focus call and the Escape listener are now **separate effects** —
+focus-on-mount with an empty dependency array, Escape free to re-bind on `onClose`. A comment records
+why the empty array must stay, so it is not "tidied" back into one effect and the bug reintroduced.
+**No caller changes were needed** for this fix; passing an inline `onClose` is ordinary React and the
+fault was entirely in `BaseModal`. **Verified in Chrome** (LastPass not installed): departments — the
+21-character repro that previously produced `T` now types in full; positions — three fields hold their
+values across field switches; employee Edit — 21 characters plus replacing a pre-populated value. Focus
+still lands on the modal when it opens, and Escape still closes (both re-tested, since splitting the
+effect is exactly what could have broken them).
 
 **Raised:** 2026-07-17 (Run E1 browser verification) · **Priority:** **HIGH** — every `BaseModal` caller
 in tenant-portal loses input focus after a single character. Any create/edit flow that needs typing into
@@ -690,6 +714,11 @@ other caller (users ×3, leave ×2, employees ×2) already had the surface. The 
 prevention (BaseModal default/required surface) stays as **FE-BACKLOG-007**: the safe version
 must touch all ~7 callers to de-duplicate surfaces, which would expand this mechanical PR, so
 it's kept separate per the one-item cadence.
+
+**Systemic prevention landed 2026-07-17** ([[FE-BACKLOG-007]], `a63591ce`): `BaseModal` now owns the
+surface and all 16 call sites had the hand-rolled copy removed. This class of bug — a caller forgetting
+the surface and rendering bare content over the backdrop — can no longer occur, so the one-off fix
+recorded above is now backed by the structural one.
 
 **Raised:** 2026-06-12 (browser review).
 **Priority:** Medium — visible to tenant admin/HR; forms look broken (table bleeds through).

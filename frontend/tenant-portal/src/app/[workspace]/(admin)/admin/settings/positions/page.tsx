@@ -161,8 +161,8 @@ export default function PositionsSettingsPage() {
       </div>
 
       {modalOpen && (
-        <BaseModal labelId="pos-modal-title" onClose={() => setModalOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl border border-neutral-200 w-full max-w-md p-6">
+        <BaseModal labelId="pos-modal-title" onClose={() => setModalOpen(false)} maxWidth="max-w-md">
+          <div>
             <h2 id="pos-modal-title" className="text-[16px] font-bold text-near-black mb-4">
               {editing ? "Edit position" : "Add position"}
             </h2>
