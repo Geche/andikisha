@@ -1504,6 +1504,74 @@ statutory filings. Full write-up: `docs/Engineering/backend/2026-06-09-pending-a
 
 ---
 
+## Recruitment (Run R1)
+
+Filed 2026-07-17 during Run R1 Phase A (Recruitment Service core). See
+`docs/decisions/2026-07-17-release-02-resequencing-recruitment-first.md`. All explicitly out of
+Run R1 scope (pipeline core only: requisitions, postings, applicants, interviews).
+
+### RECRUITMENT-BACKLOG-001 — Paid-tier gating for the ATS (no prefix/tier gating mechanism exists)
+
+**Raised:** 2026-07-17 · **Priority:** Medium — commercial, not correctness. ADR 0002 §2.8 sells the ATS
+as "Professional tier and above", but there is **no mechanism today that can gate a whole service prefix
+by plan tier**. `TenantLicenceFilter` (gateway) enforces subscription STATUS only (ACTIVE/SUSPENDED/…),
+carrying no tier or feature dimension. `FeatureFlag` (tenant-service, `feature_flags` table +
+`FeatureFlagService.isEnabled`) is a per-feature boolean that **nothing consults at runtime** — the
+platform-portal `featureFlagsRegistry.ts` is empty by design and the gateway has no FeatureFlag client.
+Run R1 therefore ships recruitment **ungated** behind the standard `TenantLicenceFilter` (active-sub
+check, same as every route). **Fix:** either wire per-service `featureFlagService.isEnabled(tenantId,
+"recruitment-ats")` checks in recruitment controllers, or build real plan-tier→feature enforcement at
+the edge. Decide the enforcement layer first (in-service boolean vs gateway tier-map).
+
+### RECRUITMENT-BACKLOG-002 — Job-board distribution (BrighterMonday / Fuzu / LinkedIn)
+
+**Raised:** 2026-07-17 · **Priority:** Low — Integration Hub concern. Publishing a JobPosting to external
+job boards is an outbound integration and belongs in integration-hub-service, not recruitment-service
+(same boundary as M-Pesa/KRA). Build when there is a concrete board + credentials to integrate.
+
+### RECRUITMENT-BACKLOG-003 — Offer entity + e-signature (Run R2)
+
+**Raised:** 2026-07-17 · **Priority:** Deferred to R2. The `Offer` entity and offer-letter e-signature
+are gated on the Release 01 item they depend on: **Document Service e-signature, which does not exist**
+(only the Certificate-of-Service signatory *letterhead* block exists, not e-signature). R1 stops at the
+Offer-category pipeline stage; R2 wires the offer/acceptance/e-sign flow.
+
+### RECRUITMENT-BACKLOG-004 — Public careers page + candidate self-submission + CV parsing/scoring
+
+**Raised:** 2026-07-17 · **Priority:** Deferred — gated on ADR 0002 decisions 2–6 (LLM vs local
+extraction given data-residency positioning; candidate-data retention ceiling; frontend placement;
+commercial packaging; whether to re-order Release 02). This is the sold add-on, but it has no product
+without the ATS core (this run) underneath it, and KDPA obligations (advisory-only scoring, consent,
+retention, candidate DSAR) must be decided first. See ADR 0002 Part 2.
+
+### RECRUITMENT-BACKLOG-005 — WhatsApp candidate messaging
+
+**Raised:** 2026-07-17 · **Priority:** Deferred — depends on the Notification Service Release 01
+bi-directional WhatsApp upgrade (unbuilt; verified no WhatsApp code in any service). Candidate status
+updates via WhatsApp fit the local market but ride on that upgrade.
+
+### RECRUITMENT-BACKLOG-006 — k8s manifests + Dokploy/Swarm deploy blocks for recruitment-service
+
+**Raised:** 2026-07-17 · **Priority:** Medium — deploy-time. Run R1 W1 wires docker-compose (dev) only.
+A partial k8s stub exists (`infrastructure/k8s/services/recruitment-service/` — a live `pdb.yaml` +
+commented `hpa.yaml`/`anti-affinity-patch.yaml`/`kustomization.yaml` placeholders) but is **NOT wired
+into `infrastructure/k8s/base/kustomization.yaml`**, so nothing renders. Completion needs:
+`deployment.yaml` + `service.yaml`, uncommenting the folder's kustomization, adding
+`../services/recruitment-service` to base, and adding recruitment blocks to root `docker-compose.yml`
+and `docker-stack.yml` (Dokploy/Swarm). Do in a deployment run alongside the other services' manifests.
+
+### RECRUITMENT-BACKLOG-007 — Dedicated RECRUITER role
+
+**Raised:** 2026-07-17 · **Priority:** Low — Run R1 reuses existing roles (ADMIN/HR_MANAGER write,
+HR_OFFICER read, LINE_MANAGER limited write via /my). A dedicated `RECRUITER` role would let a tenant
+grant recruitment access without full HR-manager rights. If added, it is a one-line change to
+`ADMIN_ROLES` in `frontend/packages/ui/src/lib/auth.ts` (auto-propagates to middleware + AdminRoleGuard,
+per the R1 A6 audit) PLUS the backend `@PreAuthorize` role sets across recruitment controllers. Decide
+whether per-recruiter scoping (a recruiter sees only their own requisitions) is wanted — that changes it
+from a role addition to a scope-resolver change.
+
+---
+
 ## Lifecycle Workflows (Run L1)
 
 Filed 2026-07-15 during Run L1 Phase A (Employee Lifecycle Workflows). See
