@@ -166,6 +166,13 @@ export interface CreateInterviewInput {
   location: string | null;
 }
 
+// Matches SubmitFeedbackRequest — the assigned interviewer's verdict on a candidate.
+export interface SubmitFeedbackInput {
+  rating: number; // 1-5, required
+  recommendation: FeedbackRecommendation | null;
+  comments: string | null;
+}
+
 // ─── Display helpers ─────────────────────────────────────────────────────────
 
 export const EMPLOYMENT_TYPE_OPTIONS: EmploymentType[] = [
@@ -196,6 +203,20 @@ export const INTERVIEW_STATUS_LABELS: Record<InterviewStatus, string> = {
   SCHEDULED: "Scheduled",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
+};
+
+export const FEEDBACK_RECOMMENDATION_OPTIONS: FeedbackRecommendation[] = [
+  "STRONG_YES",
+  "YES",
+  "NO",
+  "STRONG_NO",
+];
+
+export const FEEDBACK_RECOMMENDATION_LABELS: Record<FeedbackRecommendation, string> = {
+  STRONG_YES: "Strong yes",
+  YES: "Yes",
+  NO: "No",
+  STRONG_NO: "Strong no",
 };
 
 // Non-anchor categories a tenant may assign to a custom stage.

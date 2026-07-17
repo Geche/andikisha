@@ -20,6 +20,8 @@ export const recruitmentKeys = {
   templates: ["recruitment", "pipeline-templates"] as const,
   applicants: (postingId: string) => ["recruitment", "applicants", postingId] as const,
   interviews: ["recruitment", "interviews"] as const,
+  // LINE_MANAGER self-service: interviews assigned to the calling interviewer.
+  myInterviews: ["recruitment", "me", "interviews"] as const,
 };
 
 export function useRequisitions() {
@@ -64,5 +66,18 @@ export function useInterviews() {
   return useQuery<Interview[]>({
     queryKey: recruitmentKeys.interviews,
     queryFn: () => apiClient.get<Interview[]>(`${BASE}/interviews`).then((r) => r.data),
+  });
+}
+
+/**
+ * Interviews assigned to the calling interviewer. The gateway derives the
+ * interviewer from the JWT employeeId claim, so no path/query param is needed.
+ * Used by the LINE_MANAGER `/my/recruitment/interviews` surface.
+ */
+export function useMyInterviews(enabled = true) {
+  return useQuery<Interview[]>({
+    queryKey: recruitmentKeys.myInterviews,
+    queryFn: () => apiClient.get<Interview[]>(`${BASE}/me/interviews`).then((r) => r.data),
+    enabled,
   });
 }
