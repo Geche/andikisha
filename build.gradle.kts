@@ -33,6 +33,11 @@ subprojects {
 
         tasks.withType<Test> {
             useJUnitPlatform()
+            // Docker Engine 29+ (Desktop 4.81+) rejects API < 1.40, but the docker-java bundled
+            // with Testcontainers 1.20.x still defaults to 1.32 and reads the target version only
+            // from the "api.version" system property (never from DOCKER_API_VERSION). When that env
+            // is exported, forward it so Testcontainers can reach a modern engine. No-op otherwise.
+            System.getenv("DOCKER_API_VERSION")?.let { systemProperty("api.version", it) }
         }
     }
 }
