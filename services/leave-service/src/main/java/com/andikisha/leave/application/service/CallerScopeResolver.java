@@ -24,8 +24,9 @@ import java.util.UUID;
  *
  * Note: the legacy 'HR' role was deprecated in V15 and replaced by HR_OFFICER.
  * The 'HR' case has been removed from this mapping; no users should hold HR role.
- * HR_OFFICER has leave:read:all but NOT leave:approve — approval stays with
- * HR_MANAGER, ADMIN, and LINE_MANAGER (for their department).
+ * HR_OFFICER has leave:read:all and, since B-5 decision D1, leave:approve —
+ * approval is held by HR_MANAGER, HR_OFFICER, ADMIN, and LINE_MANAGER (for
+ * their department). Self-approval remains blocked for all roles.
  */
 @Component
 public class CallerScopeResolver {
