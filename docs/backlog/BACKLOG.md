@@ -2,6 +2,28 @@
 
 Items that were deferred during development with clear rationale. Ordered roughly by priority within each section.
 
+## How this backlog works
+
+This file is the **source of truth** for deferred, engineering-owned work. GitHub issues are used
+**selectively**, not as a mirror of this file. The rule:
+
+**Keep it here (default)** — engineering-owned, well-scoped items that aren't scheduled yet, plus all
+resolved history (mark `STATUS: RESOLVED <date>` with the fixing commit/PR; don't delete). The value of
+this file is that it lives with the code: diffable, greppable, cross-linked with `[[wikilinks]]`, and
+editable in the same PR that fixes the item.
+
+**Graduate to a GitHub issue** only when an item needs something this file can't give it:
+- it needs a **non-engineering decision or sign-off** — product, legal, or security (e.g. the closed
+  #26 legal-copy and #27 grant-intent items);
+- it's **active work this cycle** you want auto-linked to a PR (`Fixes #N`) and closed on merge, or tracked
+  on a board/milestone;
+- it's **externally visible** or a collaborator needs to own it.
+
+When an item graduates, open a **thin** issue that **links back to its anchor here** — do not copy the full
+body into the issue. One source of truth per item; the issue is just the "being worked now / needs a
+decision" handle. Do **not** backfill issues for already-resolved items, and never maintain full copies in
+both places (they drift).
+
 ---
 
 ## Engineering Practice
@@ -704,6 +726,23 @@ and Escape still closes it.
 **Related:** this is the "can't add departments/positions" half of the 2026-07-16 report. The "can't
 remove" half is separate and unaffected — delete was simply never built ([[TENANT-BACKLOG-007]]).
 [[FE-BACKLOG-007]] is a different `BaseModal` defect (missing surface), not this one.
+
+### FE-BACKLOG-021 — /my raise-requisition validates only title; salary + blank currency reaches a server 400
+
+**Raised:** 2026-07-18 (Run R1 recruitment Slow-3G manual pass). **Priority:** Low — the server rejects it
+and the message toasts; this is a "should be inline" polish, not a functional break. The happy path
+(title + defaults) is 201 and unaffected.
+
+**Problem:** In `frontend/tenant-portal/src/components/recruitment/MyRequisitionView.tsx`, `canSubmit`
+guards only `title.trim().length > 0`. Salary is optional, but the form sends `salaryMin`/`salaryMax` as
+`{ amount: Number(x), currency }` whenever the amount is filled, with no client check that `currency` is
+non-blank. If a user types a salary amount and clears the currency (defaults to `KES`), **Send to HR**
+stays enabled and `POST /me/requisitions` is rejected with `400 VALIDATION_FAILED`
+(`salaryMin.currency: "must not be blank"`), surfaced as an error toast instead of inline field validation.
+
+**Fix:** extend client validation so a filled salary amount requires a non-blank currency before enabling
+submit (match the server contract — `MoneyInput.currency` is `@NotBlank`). Check whether the admin
+`RequisitionsView` create form shares the shape and needs the same guard.
 
 ### FE-BACKLOG-008 — Departments/Positions Add/Edit forms render without backdrop surface
 
