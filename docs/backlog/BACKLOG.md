@@ -705,6 +705,23 @@ and Escape still closes it.
 remove" half is separate and unaffected — delete was simply never built ([[TENANT-BACKLOG-007]]).
 [[FE-BACKLOG-007]] is a different `BaseModal` defect (missing surface), not this one.
 
+### FE-BACKLOG-021 — /my raise-requisition validates only title; salary + blank currency reaches a server 400
+
+**Raised:** 2026-07-18 (Run R1 recruitment Slow-3G manual pass). **Priority:** Low — the server rejects it
+and the message toasts; this is a "should be inline" polish, not a functional break. The happy path
+(title + defaults) is 201 and unaffected.
+
+**Problem:** In `frontend/tenant-portal/src/components/recruitment/MyRequisitionView.tsx`, `canSubmit`
+guards only `title.trim().length > 0`. Salary is optional, but the form sends `salaryMin`/`salaryMax` as
+`{ amount: Number(x), currency }` whenever the amount is filled, with no client check that `currency` is
+non-blank. If a user types a salary amount and clears the currency (defaults to `KES`), **Send to HR**
+stays enabled and `POST /me/requisitions` is rejected with `400 VALIDATION_FAILED`
+(`salaryMin.currency: "must not be blank"`), surfaced as an error toast instead of inline field validation.
+
+**Fix:** extend client validation so a filled salary amount requires a non-blank currency before enabling
+submit (match the server contract — `MoneyInput.currency` is `@NotBlank`). Check whether the admin
+`RequisitionsView` create form shares the shape and needs the same guard.
+
 ### FE-BACKLOG-008 — Departments/Positions Add/Edit forms render without backdrop surface
 
 **STATUS: RESOLVED 2026-06-12.** Added the white-card wrapper to both modals' content div
