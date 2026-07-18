@@ -25,3 +25,6 @@ include("services:integration-hub-service")
 // Phase 4: Intelligence Services
 include("services:analytics-service")
 include("services:audit-service")
+
+// Release 02: Recruitment
+include("services:recruitment-service")

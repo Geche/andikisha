@@ -109,6 +109,14 @@ public class FallbackController {
         return serviceUnavailable("audit-service");
     }
 
+    // Path matches the route's fallbackUri (forward:/fallback/recruitment-service) exactly.
+    @RequestMapping(value = "/recruitment-service", method = {RequestMethod.GET, RequestMethod.POST,
+            RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public Mono<Map<String, String>> recruitmentFallback() {
+        return serviceUnavailable("recruitment-service");
+    }
+
     private Mono<Map<String, String>> serviceUnavailable(String service) {
         return Mono.just(Map.of(
                 "error", "SERVICE_UNAVAILABLE",

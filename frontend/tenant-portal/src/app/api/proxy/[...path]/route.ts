@@ -17,6 +17,7 @@ const ALLOWED_PATH_PREFIXES = [
   "/api/v1/auth",
   "/api/v1/notifications",
   "/api/v1/payments",
+  "/api/v1/recruitment",
 ];
 
 function isAllowedPath(path: string): boolean {

@@ -908,6 +908,34 @@ state from an integration/e2e suite that resets credentials; or a scheduled demo
 (grep seed scripts, CI fixtures, scheduled jobs), then either stop it touching the demo account or make
 the documented password the seeded one. Not blocking; affects only local verification.
 
+### DEV-BACKLOG-002 — Running compose `:local` images go stale against the branch
+
+**Raised:** 2026-07-17 (recurring — hit again in Run R1). **Priority:** High — silently invalidates local
+verification: you exercise last-built code while believing you are testing the branch.
+
+**Symptom:** `docker-compose.full.yml` runs pre-built `andikisha/<service>:local` images (`Dockerfile.service`
+packages an already-built fat JAR — it does **not** build from source). So a running stack reflects whatever
+image was last built, not the current checkout. Branch changes to a service's code, `application.yml`, or
+gateway routes have **no effect** until that specific service's image is rebuilt
+(`./gradlew :services:<svc>:bootJar` → `docker build -f infrastructure/docker/Dockerfile.service
+--build-arg SERVICE_NAME=<svc> -t andikisha/<svc>:local .` → `docker compose ... up -d --no-deps
+--force-recreate <svc>`). Nothing warns you; the stack looks healthy and serves stale behaviour.
+
+**Recurrence in Run R1 (2026-07-17):** the running `api-gateway` image predated W1, so it had no
+`/api/v1/recruitment/**` route — every recruitment call 404'd at the gateway (gateway-shaped 404, not the
+service's) until the image was rebuilt from the branch. Same class of failure had appeared in earlier runs
+whenever a service's config changed without an image rebuild.
+
+**What it needs (pick one):**
+- A `make verify` / script target that rebuilds the images for services changed on the current branch
+  (`git diff --name-only master...HEAD` → affected `services/*`) before bringing the stack up, or
+- a compose **dev override** that bind-mounts the built `libs/` (or builds from source) so `bootJar` alone
+  refreshes the container, or
+- at minimum, a documented "rebuild before you verify" checklist step in the run playbook naming the
+  gateway as the most common offender.
+
+Not a product defect; it is a verification-integrity hazard that has now cost time in more than one run.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
@@ -1501,6 +1529,94 @@ surfaces as 405, not a generic 500. Broader 4xx (415/406) hardening left as a re
 **Raised:** 2026-06-09 · **Priority:** Medium — compliance/payment correctness (pre-existing; not introduced by W5).
 Placeholder/pending-activation rows (NULL statutory IDs after V10) must be excluded from payroll runs and
 statutory filings. Full write-up: `docs/Engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`.
+
+---
+
+## Recruitment (Run R1)
+
+Filed 2026-07-17 during Run R1 Phase A (Recruitment Service core). See
+`docs/decisions/2026-07-17-release-02-resequencing-recruitment-first.md`. All explicitly out of
+Run R1 scope (pipeline core only: requisitions, postings, applicants, interviews).
+
+### RECRUITMENT-BACKLOG-001 — Paid-tier gating for the ATS (no prefix/tier gating mechanism exists)
+
+**Raised:** 2026-07-17 · **Priority:** Medium — commercial, not correctness. ADR 0002 §2.8 sells the ATS
+as "Professional tier and above", but there is **no mechanism today that can gate a whole service prefix
+by plan tier**. `TenantLicenceFilter` (gateway) enforces subscription STATUS only (ACTIVE/SUSPENDED/…),
+carrying no tier or feature dimension. `FeatureFlag` (tenant-service, `feature_flags` table +
+`FeatureFlagService.isEnabled`) is a per-feature boolean that **nothing consults at runtime** — the
+platform-portal `featureFlagsRegistry.ts` is empty by design and the gateway has no FeatureFlag client.
+Run R1 therefore ships recruitment **ungated** behind the standard `TenantLicenceFilter` (active-sub
+check, same as every route). **Fix:** either wire per-service `featureFlagService.isEnabled(tenantId,
+"recruitment-ats")` checks in recruitment controllers, or build real plan-tier→feature enforcement at
+the edge. Decide the enforcement layer first (in-service boolean vs gateway tier-map).
+
+### RECRUITMENT-BACKLOG-002 — Job-board distribution (BrighterMonday / Fuzu / LinkedIn)
+
+**Raised:** 2026-07-17 · **Priority:** Low — Integration Hub concern. Publishing a JobPosting to external
+job boards is an outbound integration and belongs in integration-hub-service, not recruitment-service
+(same boundary as M-Pesa/KRA). Build when there is a concrete board + credentials to integrate.
+
+### RECRUITMENT-BACKLOG-003 — Offer entity + e-signature (Run R2)
+
+**Raised:** 2026-07-17 · **Priority:** Deferred to R2. The `Offer` entity and offer-letter e-signature
+are gated on the Release 01 item they depend on: **Document Service e-signature, which does not exist**
+(only the Certificate-of-Service signatory *letterhead* block exists, not e-signature). R1 stops at the
+Offer-category pipeline stage; R2 wires the offer/acceptance/e-sign flow.
+
+### RECRUITMENT-BACKLOG-004 — Public careers page + candidate self-submission + CV parsing/scoring
+
+**Raised:** 2026-07-17 · **Priority:** Deferred — gated on ADR 0002 decisions 2–6 (LLM vs local
+extraction given data-residency positioning; candidate-data retention ceiling; frontend placement;
+commercial packaging; whether to re-order Release 02). This is the sold add-on, but it has no product
+without the ATS core (this run) underneath it, and KDPA obligations (advisory-only scoring, consent,
+retention, candidate DSAR) must be decided first. See ADR 0002 Part 2.
+
+### RECRUITMENT-BACKLOG-005 — WhatsApp candidate messaging
+
+**Raised:** 2026-07-17 · **Priority:** Deferred — depends on the Notification Service Release 01
+bi-directional WhatsApp upgrade (unbuilt; verified no WhatsApp code in any service). Candidate status
+updates via WhatsApp fit the local market but ride on that upgrade.
+
+### RECRUITMENT-BACKLOG-006 — k8s manifests + Dokploy/Swarm deploy blocks for recruitment-service
+
+**Raised:** 2026-07-17 · **Priority:** Medium — deploy-time. Run R1 W1 wires docker-compose (dev) only.
+A partial k8s stub exists (`infrastructure/k8s/services/recruitment-service/` — a live `pdb.yaml` +
+commented `hpa.yaml`/`anti-affinity-patch.yaml`/`kustomization.yaml` placeholders) but is **NOT wired
+into `infrastructure/k8s/base/kustomization.yaml`**, so nothing renders. Completion needs:
+`deployment.yaml` + `service.yaml`, uncommenting the folder's kustomization, adding
+`../services/recruitment-service` to base, and adding recruitment blocks to root `docker-compose.yml`
+and `docker-stack.yml` (Dokploy/Swarm). Do in a deployment run alongside the other services' manifests.
+
+### RECRUITMENT-BACKLOG-007 — Dedicated RECRUITER role
+
+**Raised:** 2026-07-17 · **Priority:** Low — Run R1 reuses existing roles (ADMIN/HR_MANAGER write,
+HR_OFFICER read, LINE_MANAGER limited write via /my). A dedicated `RECRUITER` role would let a tenant
+grant recruitment access without full HR-manager rights. If added, it is a one-line change to
+`ADMIN_ROLES` in `frontend/packages/ui/src/lib/auth.ts` (auto-propagates to middleware + AdminRoleGuard,
+per the R1 A6 audit) PLUS the backend `@PreAuthorize` role sets across recruitment controllers. Decide
+whether per-recruiter scoping (a recruiter sees only their own requisitions) is wanted — that changes it
+from a role addition to a scope-resolver change.
+
+### GATEWAY-BACKLOG-001 — Circuit-breaker fallbacks never match (routes forward to `/fallback/<x>-service`, controller maps `/fallback/<x>`)
+
+**Raised:** 2026-07-17 (found during Run R1 W1). **Priority:** Medium — degraded error UX under an open
+circuit; not a security or data issue.
+
+Every gateway route's CircuitBreaker `fallbackUri` is `forward:/fallback/<name>-service` (e.g.
+`forward:/fallback/leave-service`), but `FallbackController` maps the **short** names
+(`/fallback/leave`, `/fallback/employee`, …) with **no `-service` suffix**
+(`services/api-gateway/.../controller/FallbackController.java`). So when a downstream circuit opens, the
+forward target matches no handler and the caller gets a 404/unmapped error instead of the intended
+`503 SERVICE_UNAVAILABLE` body. Affects all 13 existing routes.
+
+Run R1 W1 wired **recruitment** correctly (route `forward:/fallback/recruitment-service` → controller
+`/fallback/recruitment-service`), so recruitment is the only route whose fallback actually fires — it is
+deliberately inconsistent with the buggy siblings rather than bug-compatible.
+
+**Fix:** rename either side to agree across all routes (simplest: add `-service` to the 13 controller
+mappings, matching the route convention recruitment already uses). Also remove the unused `ALL_METHODS`
+field in `FallbackController` (dead code). One small PR; verify with an induced circuit-open.
 
 ---
 

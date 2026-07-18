@@ -16,6 +16,8 @@
 | SEC-002 | Observability | `userId` never written to MDC in TrustedHeaderAuthFilter across all services — `%X{userId:-}` always empty in logs |
 | ROUTE-001 | Config | Gateway declares routes for expense/recruitment/performance/asset services that don't exist — all return 503 |
 
+> **Correction (2026-07-17, Run R1 Phase A audit):** ROUTE-001 is stale — the current api-gateway/application.yml declares no recruitment/expense/performance/asset routes; Run R1 W1 adds the recruitment route (`/api/v1/recruitment/**`) as the first such route. See docs/decisions/2026-07-17-release-02-resequencing-recruitment-first.md.
+
 ## Major (fix before Phase 2 ships)
 
 | ID | Area | Issue |

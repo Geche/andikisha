@@ -209,6 +209,18 @@ spring:
                 name: auditServiceCB
                 fallbackUri: forward:/fallback/audit-service
 
+        # ── Release 02: Recruitment ─────────────────────────────────────────
+        - id: recruitment-service
+          uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8094}
+          predicates:
+            - Path=/api/v1/recruitment/**
+          filters:
+            - TenantLicenceFilter
+            - name: CircuitBreaker
+              args:
+                name: recruitmentServiceCB
+                fallbackUri: forward:/fallback/recruitment-service
+
         # ── Downstream Swagger api-docs (aggregated) ────────────────────────
         - id: auth-api-docs
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
@@ -294,6 +306,13 @@ spring:
           filters:
             - StripPrefix=2
 
+        - id: recruitment-api-docs
+          uri: ${RECRUITMENT_SERVICE_URL:http://localhost:8094}
+          predicates:
+            - Path=/services/recruitment/v3/api-docs/**
+          filters:
+            - StripPrefix=2
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -362,6 +381,8 @@ springdoc:
         url: /services/analytics/v3/api-docs
       - name: 12. Audit
         url: /services/audit/v3/api-docs
+      - name: 13. Recruitment
+        url: /services/recruitment/v3/api-docs
 
 # Circuit breakers — default profile for all services.
 # Financial profile (payroll, compliance, integration hub) is stricter.

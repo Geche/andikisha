@@ -147,6 +147,42 @@ services:
       retries: 5
       start_period: 60s
 
+  recruitment-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.service
+      args:
+        SERVICE_NAME: recruitment-service
+    image: andikisha/recruitment-service:local
+    container_name: andikisha-recruitment-service
+    restart: unless-stopped
+    ports:
+      - "8094:8094"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: "8094"
+      DB_HOST: andikisha-postgres-recruitment
+      DB_PORT: "5432"
+      DB_NAME: andikisha_recruitment
+      DB_USERNAME: ${POSTGRES_USER:-andikisha}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: ${RABBITMQ_DEFAULT_USER:-andikisha}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-changeme}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+    depends_on:
+      andikisha-recruitment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8094/actuator/health/readiness"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   api-gateway:
     build:
       context: ../..
@@ -182,6 +218,7 @@ services:
       INTEGRATION_SERVICE_URL: http://integration-hub-service:8090
       ANALYTICS_SERVICE_URL: http://analytics-service:8091
       AUDIT_SERVICE_URL: http://audit-service:8092
+      RECRUITMENT_SERVICE_URL: http://recruitment-service:8094
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       rabbitmq:

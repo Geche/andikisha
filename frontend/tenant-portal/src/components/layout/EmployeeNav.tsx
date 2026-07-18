@@ -1,7 +1,7 @@
 "use client";
 
 import { NavRailItem, NavRailGroup, useHasRole, type BottomNavItem } from "@andikisha/ui";
-import { Home, FileText, Calendar, Clock, User, ClipboardCheck } from "lucide-react";
+import { Home, FileText, Calendar, Clock, User, ClipboardCheck, ClipboardList, CalendarClock } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
@@ -15,9 +15,13 @@ export function useBottomNavItems(): BottomNavItem[] {
     { label: "Home",     href: `${base}/my/dashboard`, icon: Home },
     { label: "Payslips", href: `${base}/my/payslips`,  icon: FileText },
     { label: "Leave",    href: `${base}/my/leave`,     icon: Calendar },
-    // Team approvals is the LINE_MANAGER's primary task surface — only role that sees it.
+    // Team approvals + recruitment are LINE_MANAGER-only self-service surfaces.
     ...(isLineManager
-      ? [{ label: "Team", href: `${base}/my/team-approvals`, icon: ClipboardCheck }]
+      ? [
+          { label: "Team",       href: `${base}/my/team-approvals`,          icon: ClipboardCheck },
+          { label: "Hiring",     href: `${base}/my/recruitment/requisitions`, icon: ClipboardList },
+          { label: "Interviews", href: `${base}/my/recruitment/interviews`,   icon: CalendarClock },
+        ]
       : []),
     { label: "Profile",  href: `${base}/my/profile`,   icon: User },
   ];
@@ -43,7 +47,11 @@ export function EmployeeDesktopNav() {
     { label: "Attendance", href: `${base}/my/attendance`, icon: Clock },
     // Shown only when the LINE_MANAGER role is present in the JWT claims.
     ...(isLineManager
-      ? [{ label: "Team approvals", href: `${base}/my/team-approvals`, icon: ClipboardCheck }]
+      ? [
+          { label: "Team approvals", href: `${base}/my/team-approvals`,           icon: ClipboardCheck },
+          { label: "Requisitions",   href: `${base}/my/recruitment/requisitions`, icon: ClipboardList },
+          { label: "Interviews",     href: `${base}/my/recruitment/interviews`,   icon: CalendarClock },
+        ]
       : []),
   ];
 

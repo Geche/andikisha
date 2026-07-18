@@ -5,6 +5,7 @@ import {
   Home, Users, CreditCard, Calendar,
   Clock, FileCheck, BarChart2, Building2, Briefcase,
   Settings, UserCog, ScrollText, UserPlus, UserMinus,
+  FileText, ClipboardList, CalendarClock, GitBranch,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -64,6 +65,16 @@ function buildGroups(base: string, canManageUsers: boolean): NavGroup[] {
         { label: "Payroll",      href: `${base}/admin/payroll`,      icon: CreditCard },
         { label: "Leave",        href: `${base}/admin/leave`,        icon: Calendar },
         { label: "Certificates", href: `${base}/admin/certificates`, icon: ScrollText },
+      ],
+    },
+    {
+      label: "Recruitment",
+      spacer: true,
+      items: [
+        { label: "Requisitions",      href: `${base}/admin/recruitment/requisitions`, icon: ClipboardList },
+        { label: "Job postings",      href: `${base}/admin/recruitment/postings`,     icon: FileText },
+        { label: "Interviews",        href: `${base}/admin/recruitment/interviews`,   icon: CalendarClock },
+        { label: "Pipeline templates", href: `${base}/admin/recruitment/templates`,   icon: GitBranch },
       ],
     },
     {
