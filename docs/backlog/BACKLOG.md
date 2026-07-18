@@ -2,6 +2,28 @@
 
 Items that were deferred during development with clear rationale. Ordered roughly by priority within each section.
 
+## How this backlog works
+
+This file is the **source of truth** for deferred, engineering-owned work. GitHub issues are used
+**selectively**, not as a mirror of this file. The rule:
+
+**Keep it here (default)** — engineering-owned, well-scoped items that aren't scheduled yet, plus all
+resolved history (mark `STATUS: RESOLVED <date>` with the fixing commit/PR; don't delete). The value of
+this file is that it lives with the code: diffable, greppable, cross-linked with `[[wikilinks]]`, and
+editable in the same PR that fixes the item.
+
+**Graduate to a GitHub issue** only when an item needs something this file can't give it:
+- it needs a **non-engineering decision or sign-off** — product, legal, or security (e.g. the closed
+  #26 legal-copy and #27 grant-intent items);
+- it's **active work this cycle** you want auto-linked to a PR (`Fixes #N`) and closed on merge, or tracked
+  on a board/milestone;
+- it's **externally visible** or a collaborator needs to own it.
+
+When an item graduates, open a **thin** issue that **links back to its anchor here** — do not copy the full
+body into the issue. One source of truth per item; the issue is just the "being worked now / needs a
+decision" handle. Do **not** backfill issues for already-resolved items, and never maintain full copies in
+both places (they drift).
+
 ---
 
 ## Engineering Practice
