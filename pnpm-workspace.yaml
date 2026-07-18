@@ -2,3 +2,7 @@ packages:
   - "frontend/*"
   - "frontend/packages/*"
   - '!template/**'
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
