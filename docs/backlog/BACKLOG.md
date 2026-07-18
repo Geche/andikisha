@@ -908,6 +908,34 @@ state from an integration/e2e suite that resets credentials; or a scheduled demo
 (grep seed scripts, CI fixtures, scheduled jobs), then either stop it touching the demo account or make
 the documented password the seeded one. Not blocking; affects only local verification.
 
+### DEV-BACKLOG-002 — Running compose `:local` images go stale against the branch
+
+**Raised:** 2026-07-17 (recurring — hit again in Run R1). **Priority:** High — silently invalidates local
+verification: you exercise last-built code while believing you are testing the branch.
+
+**Symptom:** `docker-compose.full.yml` runs pre-built `andikisha/<service>:local` images (`Dockerfile.service`
+packages an already-built fat JAR — it does **not** build from source). So a running stack reflects whatever
+image was last built, not the current checkout. Branch changes to a service's code, `application.yml`, or
+gateway routes have **no effect** until that specific service's image is rebuilt
+(`./gradlew :services:<svc>:bootJar` → `docker build -f infrastructure/docker/Dockerfile.service
+--build-arg SERVICE_NAME=<svc> -t andikisha/<svc>:local .` → `docker compose ... up -d --no-deps
+--force-recreate <svc>`). Nothing warns you; the stack looks healthy and serves stale behaviour.
+
+**Recurrence in Run R1 (2026-07-17):** the running `api-gateway` image predated W1, so it had no
+`/api/v1/recruitment/**` route — every recruitment call 404'd at the gateway (gateway-shaped 404, not the
+service's) until the image was rebuilt from the branch. Same class of failure had appeared in earlier runs
+whenever a service's config changed without an image rebuild.
+
+**What it needs (pick one):**
+- A `make verify` / script target that rebuilds the images for services changed on the current branch
+  (`git diff --name-only master...HEAD` → affected `services/*`) before bringing the stack up, or
+- a compose **dev override** that bind-mounts the built `libs/` (or builds from source) so `bootJar` alone
+  refreshes the container, or
+- at minimum, a documented "rebuild before you verify" checklist step in the run playbook naming the
+  gateway as the most common offender.
+
+Not a product defect; it is a verification-integrity hazard that has now cost time in more than one run.
+
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
 **Raised:** 2026-05-19  
