@@ -6,9 +6,14 @@
 # cache. Re-seeds the Redis licence cache at the end as cheap insurance.
 #
 # Usage:
-#   scripts/restart-services.sh           # restart all 13 services
-#   scripts/restart-services.sh stop      # stop only
-#   scripts/restart-services.sh start     # start only
+#   scripts/restart-services.sh                        # restart all 13 services
+#   scripts/restart-services.sh stop                   # stop only
+#   scripts/restart-services.sh start                  # start only
+#   scripts/restart-services.sh restart auth-service   # target one or more services
+#   scripts/restart-services.sh start api-gateway leave-service
+#
+# When one or more service names follow the action, only those are acted on
+# (scripts/redeploy.sh --jvm uses this to refresh a single rebuilt service).
 #
 # Logs:  logs/<service>.log     PIDs: logs/<service>.pid
 set -euo pipefail
@@ -99,11 +104,31 @@ seed_redis() {
   fi
 }
 
-case "${1:-restart}" in
+ACTION="${1:-restart}"
+shift || true
+
+# Optional service-name filters. When present, reduce SERVICES to just those
+# (order preserved so start/stop ordering still holds), erroring on unknown names.
+if [ "$#" -gt 0 ]; then
+  # Validate every requested name against the canonical list first.
+  for want in "$@"; do
+    ok=""
+    for entry in "${SERVICES[@]}"; do [ "${entry%%:*}" = "$want" ] && ok=1 && break; done
+    [ -z "$ok" ] && { echo "ERROR: unknown service '$want'"; exit 2; }
+  done
+  # Keep canonical order (foundation -> gateway) so start/stop sequencing holds.
+  filtered=()
+  for entry in "${SERVICES[@]}"; do
+    for want in "$@"; do [ "${entry%%:*}" = "$want" ] && filtered+=("$entry") && break; done
+  done
+  SERVICES=("${filtered[@]}")
+fi
+
+case "$ACTION" in
   stop)    do_stop ;;
   start)   do_start; seed_redis ;;
   restart) do_stop; echo; do_start; seed_redis ;;
-  *) echo "usage: $0 [restart|stop|start]"; exit 2 ;;
+  *) echo "usage: $0 [restart|stop|start] [service-name...]"; exit 2 ;;
 esac
 
 echo

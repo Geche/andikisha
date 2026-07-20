@@ -9,6 +9,12 @@
 # The infra compose provides: postgres instances, rabbitmq, redis, zipkin.
 # This file adds the 13 Spring Boot services that consume those resources.
 #
+# ⚠ After editing a service, do NOT rely on `docker compose up` to pick up the
+#   change — it reuses the existing andikisha/<svc>:local image and serves stale
+#   code (DEV-BACKLOG-002). Use the paved path instead:
+#     scripts/redeploy.sh <service...>     # rebuild jar + recreate only that container
+#     scripts/doctor.sh                    # confirm running services match git HEAD
+#
 # All secrets must be present in a .env file alongside this file.
 # See .env.example for required variables.
 
