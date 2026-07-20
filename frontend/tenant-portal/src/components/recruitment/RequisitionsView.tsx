@@ -138,7 +138,6 @@ function RequisitionFormModal({
   const [employmentType, setEmploymentType] = useState<EmploymentType>("PERMANENT");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
-  const [currency, setCurrency] = useState("KES");
   const [headcount, setHeadcount] = useState("1");
   const [targetStartDate, setTargetStartDate] = useState("");
   const [description, setDescription] = useState("");
@@ -150,8 +149,10 @@ function RequisitionFormModal({
         departmentId: departmentId || null,
         positionId: positionId || null,
         employmentType,
-        salaryMin: salaryMin.trim() ? { amount: Number(salaryMin), currency } : null,
-        salaryMax: salaryMax.trim() ? { amount: Number(salaryMax), currency } : null,
+        // Currency fixed to KES — see MyRequisitionView; no other money surface
+        // renders anything else yet.
+        salaryMin: salaryMin.trim() ? { amount: Number(salaryMin), currency: "KES" } : null,
+        salaryMax: salaryMax.trim() ? { amount: Number(salaryMax), currency: "KES" } : null,
         headcount: headcount.trim() ? Number(headcount) : null,
         targetStartDate: targetStartDate || null,
         description: description.trim() || null,
@@ -214,18 +215,14 @@ function RequisitionFormModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Salary min</label>
+            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Salary min (KES)</label>
             <input type="number" min={0} value={salaryMin} onChange={(e) => setSalaryMin(e.target.value)} className={inputCls} disabled={create.isPending} placeholder="Optional" />
           </div>
           <div>
-            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Salary max</label>
+            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Salary max (KES)</label>
             <input type="number" min={0} value={salaryMax} onChange={(e) => setSalaryMax(e.target.value)} className={inputCls} disabled={create.isPending} placeholder="Optional" />
-          </div>
-          <div>
-            <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">Currency</label>
-            <input value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} className={inputCls} disabled={create.isPending} maxLength={3} />
           </div>
         </div>
 

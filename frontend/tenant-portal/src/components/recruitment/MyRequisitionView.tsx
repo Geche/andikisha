@@ -30,7 +30,6 @@ export function MyRequisitionView() {
   const [headcount, setHeadcount] = useState("1");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
-  const [currency, setCurrency] = useState("KES");
   const [targetStartDate, setTargetStartDate] = useState("");
   const [description, setDescription] = useState("");
 
@@ -43,8 +42,11 @@ export function MyRequisitionView() {
         departmentId: null,
         positionId: null,
         employmentType,
-        salaryMin: salaryMin.trim() ? { amount: Number(salaryMin), currency } : null,
-        salaryMax: salaryMax.trim() ? { amount: Number(salaryMax), currency } : null,
+        // Currency is fixed to KES — the only currency the rest of the product
+        // (payroll, payslips, formatMoney) can render. A free currency picker
+        // here would be speculative until multi-currency lands product-wide.
+        salaryMin: salaryMin.trim() ? { amount: Number(salaryMin), currency: "KES" } : null,
+        salaryMax: salaryMax.trim() ? { amount: Number(salaryMax), currency: "KES" } : null,
         headcount: headcount.trim() ? Number(headcount) : null,
         targetStartDate: targetStartDate || null,
         description: description.trim() || null,
@@ -61,7 +63,6 @@ export function MyRequisitionView() {
     setHeadcount("1");
     setSalaryMin("");
     setSalaryMax("");
-    setCurrency("KES");
     setTargetStartDate("");
     setDescription("");
     raise.reset();
@@ -151,10 +152,10 @@ export function MyRequisitionView() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
-                  Salary min
+                  Salary min (KES)
                 </label>
                 <input
                   type="number"
@@ -168,7 +169,7 @@ export function MyRequisitionView() {
               </div>
               <div>
                 <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
-                  Salary max
+                  Salary max (KES)
                 </label>
                 <input
                   type="number"
@@ -178,18 +179,6 @@ export function MyRequisitionView() {
                   className={inputCls}
                   disabled={raise.isPending}
                   placeholder="Optional"
-                />
-              </div>
-              <div>
-                <label className="block text-[12px] font-semibold text-neutral-600 mb-1.5">
-                  Currency
-                </label>
-                <input
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                  className={inputCls}
-                  disabled={raise.isPending}
-                  maxLength={3}
                 />
               </div>
             </div>
