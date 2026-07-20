@@ -729,6 +729,18 @@ remove" half is separate and unaffected — delete was simply never built ([[TEN
 
 ### FE-BACKLOG-021 — /my raise-requisition validates only title; salary + blank currency reaches a server 400
 
+**STATUS: RESOLVED 2026-07-19.** Fixed by *removing* the free-text currency input from both
+`MyRequisitionView.tsx` (/my) and `RequisitionsView.tsx` (admin) and hardcoding `currency: "KES"` in the
+request body, rather than adding inline validation as originally prescribed. Rationale: these two forms were
+the only user-editable currency field in the entire product — every other money surface (payroll, payslips,
+employee salary, `formatMoney`, `MoneyAmount`) hardcodes KES. The free `maxLength={3}` input invented a
+multi-currency capability nothing downstream can render or convert. Inline validation would have hardened a
+field that shouldn't exist and still let garbage codes (`"XY"`) through the server's `@NotBlank`-only guard.
+Dropping the field makes blank *and* garbage structurally impossible and is a net code deletion. Salary
+labels now read "Salary min/max (KES)"; grids collapsed 3-col → 2-col. When East African multi-currency
+lands it should be a shared primitive across payroll + recruitment, not a bare text box. Type-check + lint
+clean. Display-side `salaryRange` formatter still reads currency off the server response (unchanged).
+
 **Raised:** 2026-07-18 (Run R1 recruitment Slow-3G manual pass). **Priority:** Low — the server rejects it
 and the message toasts; this is a "should be inline" polish, not a functional break. The happy path
 (title + defaults) is 201 and unaffected.
