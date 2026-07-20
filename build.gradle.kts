@@ -3,6 +3,9 @@ plugins {
     id("org.springframework.boot") version "3.4.1" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("com.google.protobuf") version "0.9.4" apply false
+    // Stamps each bootable service's jar with its git commit id / build time so a
+    // running container can report which source it was built from (DEV-BACKLOG-002).
+    id("com.gorylenko.gradle-git-properties") version "2.4.2" apply false
 }
 
 allprojects {
@@ -38,6 +41,18 @@ subprojects {
             // from the "api.version" system property (never from DOCKER_API_VERSION). When that env
             // is exported, forward it so Testcontainers can reach a modern engine. No-op otherwise.
             System.getenv("DOCKER_API_VERSION")?.let { systemProperty("api.version", it) }
+        }
+    }
+
+    // Every bootable service gets a git.properties baked onto its classpath, which
+    // Spring Boot actuator auto-exposes at /actuator/info under git.*. scripts/doctor.sh
+    // reads that to detect a container running stale source (DEV-BACKLOG-002). Applied
+    // only to modules with the Spring Boot plugin (skips the shared libraries).
+    plugins.withId("org.springframework.boot") {
+        apply(plugin = "com.gorylenko.gradle-git-properties")
+        configure<com.gorylenko.GitPropertiesPluginExtension> {
+            // A fresh clone or a build context without .git must not fail the build.
+            failOnNoGitDirectory = false
         }
     }
 }

@@ -961,6 +961,32 @@ the documented password the seeded one. Not blocking; affects only local verific
 
 ### DEV-BACKLOG-002 — Running compose `:local` images go stale against the branch
 
+**STATUS: RESOLVED 2026-07-20.** Fixed with a paved-path command plus a freshness guard, not a
+compose-internals change (rejected multi-stage in-container Gradle build as too slow for the local loop):
+
+- **`scripts/redeploy.sh <svc…>`** — atomic build→run per service. Rebuilds the jar (`bootJar`, Gradle on
+  the host so the daemon/incremental cache stay warm) **then** refreshes only that service:
+  `docker compose … up -d --build --no-deps --force-recreate <svc>` (compose loop, default), or
+  `restart-services.sh restart <svc>` (bare-JVM loop, `--jvm` flag). Closes both staleness layers at once —
+  `up` never rebuilding, and `--build` re-COPYing a stale jar. Also `make redeploy SVC="…" [JVM=1]`.
+- **`scripts/doctor.sh`** — reads each running service's `/actuator/info` (now stamped with the git commit
+  id at build time by the `com.gorylenko.gradle-git-properties` plugin, applied to every bootable module via
+  the root `subprojects { plugins.withId("org.springframework.boot") }` hook) and reports which services are
+  `ok` / `STALE` / `down` / `no-stamp` vs `git rev-parse HEAD`, plus a dirty-tree warning. Exits non-zero on
+  any STALE so it can gate a verification run. `make doctor [SVC=…]`. Works for both run loops (reads the
+  artifact's own stamp over HTTP; nothing Docker-specific). Prod impact: none beyond `/actuator/info` gaining
+  a `git` block, which is not publicly routed (Traefik routes API paths only; gateway does not proxy
+  `/actuator/**`).
+
+**New run-playbook step:** after touching a service, `scripts/redeploy.sh <svc>` (never a bare
+`docker compose up`), then `scripts/doctor.sh` before trusting any local verification.
+
+Spec: `docs/superpowers/specs/2026-07-20-local-build-freshness-design.md`.
+
+---
+
+<details><summary>Original report (2026-07-17)</summary>
+
 **Raised:** 2026-07-17 (recurring — hit again in Run R1). **Priority:** High — silently invalidates local
 verification: you exercise last-built code while believing you are testing the branch.
 
@@ -986,6 +1012,8 @@ whenever a service's config changed without an image rebuild.
   gateway as the most common offender.
 
 Not a product defect; it is a verification-integrity hazard that has now cost time in more than one run.
+
+</details>
 
 ### TENANT-BACKLOG-002 — Server-side search and plan filter for SUPER_ADMIN tenant list
 
