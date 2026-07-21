@@ -91,7 +91,7 @@ Across Steps 3 and 5, behavioral verification gates (curl tests, DB queries, liv
 
 1. **Leave-service test cascade (Step 3):** Adding `EmployeeGrpcClient` to leave-service broke `contextLoads()` because the full Spring context couldn't wire the gRPC channel. This cascaded into 20 failing integration tests (`JdbcBatchUpdateException` on simple `save()` calls) due to Spring's context cache poisoning. Build reported `BUILD SUCCESSFUL` for the service JAR; tests failed only when the context was loaded against a real H2 DB in the test suite. Fixed by adding `@MockitoBean EmployeeGrpcClient` to `LeaveServiceApplicationTest`.
 
-2. **Audit log masking defect (Step 5):** `EmployeeService.update()` was logging `"****" + fullAccountNumber` (e.g. `****1234567890`) instead of `"****" + last4` (e.g. `****7890`). The service compiled, all unit tests passed, and the endpoint returned HTTP 200. The defect was only visible when querying `employee_history` after a live PUT call. Fixed by extracting a `maskAccount()` helper and corrected the one bad row in the database (see `docs/Engineering/backfill/2026-05-31-audit-log-masking-fix.md`).
+2. **Audit log masking defect (Step 5):** `EmployeeService.update()` was logging `"****" + fullAccountNumber` (e.g. `****1234567890`) instead of `"****" + last4` (e.g. `****7890`). The service compiled, all unit tests passed, and the endpoint returned HTTP 200. The defect was only visible when querying `employee_history` after a live PUT call. Fixed by extracting a `maskAccount()` helper and corrected the one bad row in the database (see `docs/engineering/backfill/2026-05-31-audit-log-masking-fix.md`).
 
 **Implication:**
 Behavioral verification — running actual API calls against a live service and checking database state — is not redundant with build-level checks. It catches:
@@ -227,7 +227,7 @@ The mapping matches the `SYSTEM`-tenant seed data in `role_permissions` exactly 
 **2026-06-05 update (M-3 fix):** HR_OFFICER has been added to the hardcoded mapping (ALL scope on employee:read/update and leave:read). The legacy `HR` role has been removed from the mapping and deprecated (V15 migration). When this backlog item is eventually implemented, the DB-driven query must include HR_OFFICER with `employee:read:all`, `employee:update:all`, and `leave:read:all`.
 
 **When this becomes load-bearing:**
-The premium per-tenant role customization feature (deferred per `docs/Engineering/2026-05-22-role-permissions-onboarding-plan.md`) makes `role_permissions` tenant-specific. At that point, a hardcoded mapping would silently ignore per-tenant configuration.
+The premium per-tenant role customization feature (deferred per `docs/plans/2026-05-22-role-permissions-onboarding-plan.md`) makes `role_permissions` tenant-specific. At that point, a hardcoded mapping would silently ignore per-tenant configuration.
 
 **Fix:**
 Replace the `switch` statement in each resolver with a call to auth-service via gRPC:
@@ -254,7 +254,7 @@ Migration `V14__enforce_employee_id_invariants.sql` adds two CHECK constraints w
 
 `NOT VALID` means new INSERTs and UPDATEs are enforced immediately, but existing rows in violation are not checked. This was intentional to avoid blocking the migration on legacy dev data.
 
-The backfill audit (`docs/Engineering/backfill/2026-05-31-null-employee-id-audit.md`) identified 25 HIGH-confidence EMPLOYEE users with null `employee_id` (all dev seed data) and 1 LOW-confidence orphan. Once those rows are manually remediated, the constraints can be promoted to full validation.
+The backfill audit (`docs/engineering/backfill/2026-05-31-null-employee-id-audit.md`) identified 25 HIGH-confidence EMPLOYEE users with null `employee_id` (all dev seed data) and 1 LOW-confidence orphan. Once those rows are manually remediated, the constraints can be promoted to full validation.
 
 **Fix:**
 After all violating rows are remediated:
@@ -373,7 +373,7 @@ though the fix ships inside the W4 commit.
 - success → the live `services` list.
 
 Never render fabricated `UNKNOWN` rows as if they were data. Backend status fidelity (DOWN vs UNKNOWN) is
-tracked separately in `docs/Engineering/backend/2026-06-16-system-health-up-unknown-only-status.md`.
+tracked separately in `docs/engineering/backend/2026-06-16-system-health-up-unknown-only-status.md`.
 
 ---
 
@@ -827,8 +827,8 @@ format asymmetry.)
 **Problem:** FE-BACKLOG-001…006 (design-system gap items — accent bar / Card primitive, StatCard chip +
 delta + Badge/Avatar dots + Badge semantic tones, type-scale tokens + table/sidebar alignment +
 `KES`→`KSh`, shared-primitive adoption) are tracked **only** in `docs/Engineering/frontend/`
-(`2026-06-05-gap-audit-correction.md` is the authoritative reconciled list; also referenced in
-`design-system-gap-audit.md`, `token-consolidation-plan.md`). They don't appear in BACKLOG.md, so an
+(`../audits/2026-06-05-gap-audit-correction.md` is the authoritative reconciled list; also referenced in
+`../audits/2026-06-05-design-system-gap-audit.md`, `../design/system/2026-06-05-token-consolidation-plan.md`). They don't appear in BACKLOG.md, so an
 ID-based scan of BACKLOG.md misses them.
 
 **Fix:** copy FE-001…006 in as stub entries (one-line summary + status + cross-ref to the frontend Eng
@@ -981,7 +981,7 @@ compose-internals change (rejected multi-stage in-container Gradle build as too 
 **New run-playbook step:** after touching a service, `scripts/redeploy.sh <svc>` (never a bare
 `docker compose up`), then `scripts/doctor.sh` before trusting any local verification.
 
-Spec: `docs/superpowers/specs/2026-07-20-local-build-freshness-design.md`.
+Spec: `docs/specs/2026-07-20-local-build-freshness-design.md`.
 
 ---
 
@@ -1565,7 +1565,7 @@ full diagnoses + fixes live in the linked docs (single source of truth for the d
 
 **Raised:** 2026-06-07 · **Priority:** High — deployment-blocking.
 On Redis unavailability the service readiness flaps and tenant-data requests 503. Full write-up:
-`docs/Engineering/backend/2026-06-07-redis-readiness-503-backlog.md`.
+`docs/engineering/backend/2026-06-07-redis-readiness-503-backlog.md`.
 
 ---
 
@@ -1573,7 +1573,7 @@ On Redis unavailability the service readiness flaps and tenant-data requests 503
 
 **Raised:** 2026-06-08 · **Priority:** Medium — latent broken tests, not a production defect.
 `@DataJpaTest` slices don't load `@EnableJpaAuditing`, so auditing-dependent persistence can fail in those
-slices. Full write-up: `docs/Engineering/backend/2026-06-08-datajpatest-auditing-gap-backlog.md`.
+slices. Full write-up: `docs/engineering/backend/2026-06-08-datajpatest-auditing-gap-backlog.md`.
 (Related: PAYROLL-BACKLOG-002, audit `@EnableJpaAuditing` across services.)
 
 ---
@@ -1582,7 +1582,7 @@ slices. Full write-up: `docs/Engineering/backend/2026-06-08-datajpatest-auditing
 
 **Raised:** 2026-06-08 · **Priority:** High / support-critical.
 SUPER_ADMIN cannot impersonate a tenant (impersonation endpoint 500s). Full write-up:
-`docs/Engineering/backend/2026-06-08-superadmin-impersonation-500-backlog.md`.
+`docs/engineering/backend/2026-06-08-superadmin-impersonation-500-backlog.md`.
 
 ---
 
@@ -1590,7 +1590,7 @@ SUPER_ADMIN cannot impersonate a tenant (impersonation endpoint 500s). Full writ
 
 **Raised:** 2026-06-08 · **Priority:** Low–Medium — endpoint currently unused by the tenant-portal BFF.
 Concurrent/rotated refresh returns 409 (seen transiently after change-password re-auth). Full write-up:
-`docs/Engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md`.
+`docs/engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md`.
 
 ---
 
@@ -1599,7 +1599,7 @@ Concurrent/rotated refresh returns 409 (seen transiently after change-password r
 **STATUS: RESOLVED 2026-06-11** (PR #3, commit `341423e`). Added a 405 handler to the shared
 `GlobalExceptionHandler` (+ leave-service's local advice that shadowed it); a wrong HTTP method now
 surfaces as 405, not a generic 500. Broader 4xx (415/406) hardening left as a reopen-if-needed note.
-**Raised:** 2026-06-09. Full write-up: `docs/Engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md`.
+**Raised:** 2026-06-09. Full write-up: `docs/engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md`.
 
 ---
 
@@ -1607,7 +1607,7 @@ surfaces as 405, not a generic 500. Broader 4xx (415/406) hardening left as a re
 
 **Raised:** 2026-06-09 · **Priority:** Medium — compliance/payment correctness (pre-existing; not introduced by W5).
 Placeholder/pending-activation rows (NULL statutory IDs after V10) must be excluded from payroll runs and
-statutory filings. Full write-up: `docs/Engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`.
+statutory filings. Full write-up: `docs/engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`.
 
 ---
 
@@ -1619,7 +1619,7 @@ Run R1 scope (pipeline core only: requisitions, postings, applicants, interviews
 
 ### RECRUITMENT-BACKLOG-001 — Paid-tier gating for the ATS (no prefix/tier gating mechanism exists)
 
-**Raised:** 2026-07-17 · **Priority:** Medium — commercial, not correctness. ADR 0002 §2.8 sells the ATS
+**Raised:** 2026-07-17 · **Priority:** Medium — commercial, not correctness. ADR 0004 §2.8 sells the ATS
 as "Professional tier and above", but there is **no mechanism today that can gate a whole service prefix
 by plan tier**. `TenantLicenceFilter` (gateway) enforces subscription STATUS only (ACTIVE/SUSPENDED/…),
 carrying no tier or feature dimension. `FeatureFlag` (tenant-service, `feature_flags` table +
@@ -1645,11 +1645,11 @@ Offer-category pipeline stage; R2 wires the offer/acceptance/e-sign flow.
 
 ### RECRUITMENT-BACKLOG-004 — Public careers page + candidate self-submission + CV parsing/scoring
 
-**Raised:** 2026-07-17 · **Priority:** Deferred — gated on ADR 0002 decisions 2–6 (LLM vs local
+**Raised:** 2026-07-17 · **Priority:** Deferred — gated on ADR 0004 decisions 2–6 (LLM vs local
 extraction given data-residency positioning; candidate-data retention ceiling; frontend placement;
 commercial packaging; whether to re-order Release 02). This is the sold add-on, but it has no product
 without the ATS core (this run) underneath it, and KDPA obligations (advisory-only scoring, consent,
-retention, candidate DSAR) must be decided first. See ADR 0002 Part 2.
+retention, candidate DSAR) must be decided first. See ADR 0004 Part 2.
 
 ### RECRUITMENT-BACKLOG-005 — WhatsApp candidate messaging
 

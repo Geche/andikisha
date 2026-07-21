@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-07-17
-**Context:** ADR 0002 (`docs/0002-demo-feedback-recruitment-lifecycle-careers-page.md`) and demo feedback from an HR manager.
+**Context:** ADR 0004 (`docs/decisions/0004-demo-feedback-recruitment-lifecycle-careers-page.md`) and demo feedback from an HR manager.
 
 > Naming note: this record is date-prefixed per repo convention. The `0003-` ADR-style name used in
 > Run L1 was a one-off deviation, noted there.
@@ -10,7 +10,7 @@
 ## Original plan
 
 The release plan gated **all** Release 02 work behind Release 01 production sign-off, and sequenced
-**Expense Service** first within Release 02. ADR 0002 restates the gate explicitly: "Release 02 work
+**Expense Service** first within Release 02. ADR 0004 restates the gate explicitly: "Release 02 work
 does not start until Release 01 passes UAT. The demo feedback does not override the gate."
 
 ## Decision
@@ -20,12 +20,12 @@ service (service 18: HTTP 8094 / gRPC 9094 / Postgres host port 5446).
 
 **Grounds:**
 1. **Direct customer demand.** An HR manager demo produced an explicit request for Recruitment plus a
-   public careers page (ADR 0002). This is validated market pull, not speculative roadmap.
+   public careers page (ADR 0004). This is validated market pull, not speculative roadmap.
 2. **Run L1 built the thing Recruitment converts into.** The lifecycle workflow module
    (`LifecycleWorkflowTemplate` → `LifecycleWorkflowInstance`, shipped and tested in Run L1) is the
    onboarding target of a hire-to-onboard conversion. Recruitment feeds it.
 3. **Commercial differentiation depends on the ATS core existing.** The planned careers page + CV
-   scoring is sold as a paid add-on (ADR 0002 §2.8). That add-on has no product without the internal
+   scoring is sold as a paid add-on (ADR 0004 §2.8). That add-on has no product without the internal
    ATS (requisitions, postings, pipeline) underneath it.
 
 ## Scope pulled forward — pipeline core ONLY
@@ -40,7 +40,7 @@ under `/my/*`.
 - **Offers, e-signature, and hire-to-onboard conversion** (`CreateEmployeeFromCandidate`) → **Run R2**,
   gated on the Release 01 item they depend on: **Document Service e-signature**, which does not exist
   yet (verified: only the Certificate-of-Service *signatory letterhead* block exists, not e-signature).
-- **Public careers page, candidate self-submission, CV parsing/scoring** → gated on ADR 0002 decisions
+- **Public careers page, candidate self-submission, CV parsing/scoring** → gated on ADR 0004 decisions
   2–6 (LLM vs local extraction, retention ceiling, frontend placement, packaging, re-ordering).
 - **Job-board distribution** (BrighterMonday / Fuzu / LinkedIn) → Integration Hub concern; filed, not built.
 - **WhatsApp candidate messaging** → Notification Service Release 01 upgrade; out of scope.
