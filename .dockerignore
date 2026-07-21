@@ -10,16 +10,16 @@ node_modules
 **/node_modules
 
 # Build outputs
+#
+# NOTE: do NOT exclude build/ — Dockerfile.service copies the Spring fat JAR
+# from services/<service>/build/libs/, so excluding it breaks every backend
+# image build. The context-size win here comes from node_modules, not build/.
 .next
 **/.next
-build
-**/build
 dist
 **/dist
 out
 **/out
-target
-**/target
 
 # VCS and tooling
 .git
