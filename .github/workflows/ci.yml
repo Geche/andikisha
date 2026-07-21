@@ -120,6 +120,7 @@ jobs:
           - integration-hub-service
           - analytics-service
           - audit-service
+          - recruitment-service
 
     steps:
       - name: Checkout
