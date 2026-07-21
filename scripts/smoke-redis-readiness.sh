@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Post-deploy smoke check for the Redis-readiness fix
-# (docs/Engineering/backend/2026-06-07-redis-readiness-resolution.md).
+# (docs/engineering/backend/2026-06-07-redis-readiness-resolution.md).
 #
 # Asserts, after a rollout:
 #   1. tenant-service /actuator/health is 200 (Redis reachable + authenticated)

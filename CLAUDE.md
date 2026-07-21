@@ -228,4 +228,4 @@ The SmartHR template at `template/smarthr-nextjs/` and `template/smarthr-html/` 
 2. No template-only dependency in `frontend/tenant-portal/package.json`. Forbidden list: `bootstrap`, `react-bootstrap`, `antd`, `primereact`, `@fortawesome/*`, `react-feather`, `react-icons`, and others in `.claude/skills/template-reference/04-forbidden-dependencies.md`.
 3. No Bootstrap classes and no SCSS in `frontend/tenant-portal/`.
 
-Full rules: `docs/design/06-template-usage.md`. Enforcement skill: `.claude/skills/template-reference/SKILL.md`.
+Full rules: `docs/design/system/template-usage.md`. Enforcement skill: `.claude/skills/template-reference/SKILL.md`.

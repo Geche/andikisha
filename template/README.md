@@ -50,7 +50,7 @@ When building production UI for `frontend/tenant-portal/` or `frontend/platform-
 
 - **Quick reference for which template screen to study for which AndikishaHR feature**: `.claude/skills/template-reference/screen-mapping.md`
 - **Full list of forbidden dependencies**: `.claude/skills/template-reference/forbidden-dependencies.md`
-- **Long-form usage guide and rationale**: `docs/design/template-usage.md`
+- **Long-form usage guide and rationale**: `docs/design/system/template-usage.md`
 - **Claude Code skill that auto-enforces these rules**: `.claude/skills/template-reference/SKILL.md`
 
 ## What this directory is not

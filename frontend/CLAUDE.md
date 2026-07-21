@@ -155,7 +155,7 @@ Roboto Mono in tabular contexts. Errors say what happened and what to do.
 ## Current state vs target (status as of 2026-06-08)
 
 The token-consolidation migration
-(`docs/Engineering/frontend/2026-06-05-token-consolidation-plan.md`, Steps 1–5)
+(`docs/design/system/2026-06-05-token-consolidation-plan.md`, Steps 1–5)
 has landed: the shared `@theme` in `packages/ui` is the single source of truth,
 all three apps consume it (`landing` is now Tailwind v4), the `green/amber
 25–900` ramps, warm neutrals, and semantic/role tokens are in place, Roboto Mono
@@ -163,7 +163,7 @@ is wired via `next/font` (`font-mono`), and the green focus halo + Button
 primary-hover direction are implemented.
 
 The remaining gaps are **component-DNA and token-hygiene**, tracked in
-`docs/Engineering/frontend/2026-06-05-gap-audit-correction.md` (authoritative —
+`docs/audits/2026-06-05-gap-audit-correction.md` (authoritative —
 that doc holds the single reconciled backlog; `-001` is retired):
 
 - **4px green accent bar** on named card/section headers, and a **`Card`

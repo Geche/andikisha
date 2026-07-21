@@ -96,4 +96,4 @@ Surface the question rather than guess.
 
 ## Full reference document
 
-For long-form discussion of how to use the template, including the maintenance policy and the rationale for each rule, see `docs/design/template-usage.md`.
+For long-form discussion of how to use the template, including the maintenance policy and the rationale for each rule, see `docs/design/system/template-usage.md`.

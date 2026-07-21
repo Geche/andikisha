@@ -132,9 +132,9 @@ cache purge as part of the rate-update deploy.
 | TENANT-BACKLOG-008 | Settings IA reorganization — **Run 03** (taxonomy needs design) | `docs/backlog/BACKLOG.md` |
 | LEAVE-BACKLOG-001 | Approve does not persist reviewer notes | `docs/backlog/BACKLOG.md` |
 | FE-BACKLOG-007 | BaseModal silent-empty-modal trap (require/default the surface wrapper) | `docs/backlog/BACKLOG.md` |
-| (405-masked-as-500) | Catch-all advice masks 405 as 500 across services — cross-cutting | `docs/Engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md` |
-| (/auth/refresh 409) | Refresh-token rotation returns 409 on concurrent refresh | `docs/Engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md` |
-| (payroll eligibility) | Pending-activation/placeholder rows must be excluded from filings/payroll | `docs/Engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md` |
+| (405-masked-as-500) | Catch-all advice masks 405 as 500 across services — cross-cutting | `docs/engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md` |
+| (/auth/refresh 409) | Refresh-token rotation returns 409 on concurrent refresh | `docs/engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md` |
+| (payroll eligibility) | Pending-activation/placeholder rows must be excluded from filings/payroll | `docs/engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md` |
 
 EMP-BACKLOG-002 (nullable NHIF/national_id) was **resolved** this run (W5).
 
@@ -143,10 +143,10 @@ EMP-BACKLOG-002 (nullable NHIF/national_id) was **resolved** this run (W5).
 ## 7. Decision / engineering docs written this run
 
 - `docs/decisions/2026-06-08-licence-read-through.md` — W0/D1 read-through + asymmetric fail policy.
-- `docs/Engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md`
-- `docs/Engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md`
-- `docs/Engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`
-- `docs/Engineering/frontend/2026-06-05-gap-audit-correction.md` — updated.
+- `docs/engineering/backend/2026-06-09-method-not-allowed-masked-500-backlog.md`
+- `docs/engineering/backend/2026-06-09-refresh-token-409-rotation-backlog.md`
+- `docs/engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`
+- `docs/audits/2026-06-05-gap-audit-correction.md` — updated.
 
 > **Honest gap:** only the licence read-through has a standalone *decision* doc. The other approved
 > decisions (D2–D5; R2-3 public-endpoint shape; R2-7 record-only) live in commit messages + the Gate
