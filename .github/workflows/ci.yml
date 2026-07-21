@@ -252,12 +252,16 @@ jobs:
             echo "DOKPLOY_WEBHOOK_URL secret not set — skipping redeploy trigger"
             exit 0
           fi
-          # Normalize to https — Dokploy sits behind a reverse proxy that
-          # 301-redirects http->https, which curl loops on for POST. Force
-          # https so the deploy handler is hit directly.
-          URL="${DOKPLOY_WEBHOOK_URL/#http:\/\//https://}"
+          # Send the webhook URL exactly as Dokploy issues it. The previous
+          # http->https rewrite here was based on a wrong assumption: Dokploy
+          # is served directly on :3000 with no TLS and no redirect, so forcing
+          # https failed the handshake on every merge and nothing ever deployed.
+          #
+          # TODO: deviation - see docs/decisions/2026-07-21-dokploy-webhook-cleartext.md
+          # This posts the deploy token over plain HTTP. Accepted short-term to
+          # unblock deploys; fix is to give Dokploy a domain + real certificate.
           echo "Triggering Dokploy redeploy via webhook..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --post301 --post302 -X POST "$URL" \
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --post301 --post302 -X POST "$DOKPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d '{"ref":"refs/heads/master"}')
           echo "HTTP status: $HTTP_STATUS"
