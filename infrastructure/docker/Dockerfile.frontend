@@ -49,11 +49,6 @@ RUN pnpm --filter "${FRONTEND_NAME}" run build
 # Ensure public directory exists — some apps don't have one
 RUN mkdir -p /app/frontend/${FRONTEND_NAME}/public
 
-# Bake the server entry-point path so the runner stage needs no build args.
-RUN echo "#!/bin/sh" > /start.sh && \
-    echo "exec node /app/server.js" >> /start.sh && \
-    chmod +x /start.sh
-
 # ── Stage 3: Runtime ───────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -62,20 +57,25 @@ ARG FRONTEND_NAME
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 nextjs
 
-# The standalone output already bundles required node_modules.
+# The standalone output already bundles required node_modules. In a pnpm
+# workspace Next traces to the repo root, so the bundle preserves the
+# frontend/${FRONTEND_NAME}/ path: server.js lands at
+# /app/frontend/${FRONTEND_NAME}/server.js, not /app/server.js.
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/${FRONTEND_NAME}/.next/standalone ./
 
-# Static assets and public dir must be co-located with server.js at /app.
+# .next/static is not part of the standalone bundle and must be copied
+# alongside server.js — the server resolves assets relative to its own dir.
 COPY --from=builder --chown=nextjs:nodejs \
     /app/frontend/${FRONTEND_NAME}/.next/static \
-    ./.next/static
+    ./frontend/${FRONTEND_NAME}/.next/static
 
 COPY --from=builder --chown=nextjs:nodejs \
     /app/frontend/${FRONTEND_NAME}/public \
-    ./public
+    ./frontend/${FRONTEND_NAME}/public
 
-# Startup script generated at build time with the correct server path.
-COPY --from=builder /start.sh /start.sh
+# Run from the app dir so server.js and its assets resolve; hoisted
+# node_modules at /app stay reachable via normal upward resolution.
+WORKDIR /app/frontend/${FRONTEND_NAME}
 
 USER nextjs
 
@@ -86,4 +86,4 @@ ENV HOSTNAME=0.0.0.0
 
 EXPOSE 3000
 
-ENTRYPOINT ["/start.sh"]
+ENTRYPOINT ["node", "server.js"]

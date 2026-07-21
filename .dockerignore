@@ -1,0 +1,45 @@
+# Keep host build artefacts out of the Docker build context.
+#
+# Without this, `COPY frontend/packages/ ...` in Dockerfile.frontend copies the
+# host's node_modules — a pnpm symlink farm pointing into the host store — over
+# the tree installed inside the image, breaking module resolution. CI never hit
+# this because a fresh checkout has no node_modules; local builds always did.
+
+# Dependencies (reinstalled inside the image)
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+**/.next
+build
+**/build
+dist
+**/dist
+out
+**/out
+target
+**/target
+
+# VCS and tooling
+.git
+.gitignore
+.github
+.idea
+.vscode
+.remember
+.claude
+
+# Local env and secrets — must never enter an image layer
+.env
+.env.*
+!.env.example
+
+# Read-only template reference (see CLAUDE.md); never shipped
+template
+
+# Misc
+*.log
+.DS_Store
+coverage
+**/coverage
