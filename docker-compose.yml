@@ -128,7 +128,7 @@ services:
       interval: 15s
       timeout: 30s
       retries: 10
-      start_period: 90s
+      start_period: 150s
     stop_grace_period: 30s
     deploy:
       resources:
@@ -170,11 +170,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   tenant-service:
     <<: *java-defaults
@@ -195,11 +195,11 @@ services:
       auth-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   employee-service:
     <<: *java-defaults
@@ -216,11 +216,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   payroll-service:
     <<: *java-defaults
@@ -243,11 +243,11 @@ services:
       employee-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   compliance-service:
     <<: *java-defaults
@@ -268,11 +268,11 @@ services:
       payroll-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   leave-service:
     <<: *java-defaults
@@ -291,11 +291,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   time-attendance-service:
     <<: *java-defaults
@@ -312,11 +312,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   document-service:
     <<: *java-defaults
@@ -341,11 +341,11 @@ services:
       payroll-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   notification-service:
     <<: *java-defaults
@@ -369,11 +369,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8089/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   integration-hub-service:
     <<: *java-defaults
@@ -399,11 +399,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   analytics-service:
     <<: *java-defaults
@@ -422,11 +422,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8091/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   audit-service:
     <<: *java-defaults
@@ -444,11 +444,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8092/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   recruitment-service:
     <<: *java-defaults
@@ -466,11 +466,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8094/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8094/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
   api-gateway:
     <<: *java-defaults
@@ -519,11 +519,11 @@ services:
       - "traefik.http.routers.api-gateway.tls.certresolver=letsencrypt"
       - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health/readiness"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 90s
+      start_period: 150s
 
 # ─── Frontends ────────────────────────────────────────────────────────────────
 
