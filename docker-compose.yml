@@ -193,7 +193,7 @@ services:
       rabbitmq:
         condition: service_healthy
       auth-service:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health/readiness"]
       interval: 30s
@@ -241,7 +241,7 @@ services:
       rabbitmq:
         condition: service_healthy
       employee-service:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health/readiness"]
       interval: 30s
@@ -266,7 +266,7 @@ services:
       rabbitmq:
         condition: service_healthy
       payroll-service:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health/readiness"]
       interval: 30s
@@ -339,7 +339,7 @@ services:
       rabbitmq:
         condition: service_healthy
       payroll-service:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health/readiness"]
       interval: 30s
@@ -499,11 +499,11 @@ services:
       redis:
         condition: service_healthy
       auth-service:
-        condition: service_healthy
+        condition: service_started
       tenant-service:
-        condition: service_healthy
+        condition: service_started
       employee-service:
-        condition: service_healthy
+        condition: service_started
     networks:
       - internal
       - dokploy-network
