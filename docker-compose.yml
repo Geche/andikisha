@@ -164,6 +164,10 @@ services:
       GRPC_PORT: "9081"
       DB_NAME: andikisha_auth
       JWT_SECRET: ${JWT_SECRET}
+      # Required by SuperAdminAuthService (app.provision-secret). Was never
+      # passed into the container, so the placeholder failed to resolve and
+      # crashed startup. Value comes from the Dokploy Environment tab.
+      PROVISION_SECRET: ${PROVISION_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
