@@ -115,17 +115,27 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    # Healthcheck is deliberately tolerant. `rabbitmq-diagnostics ping` spawns
+    # its own Erlang VM, which is slow and memory-hungry during a deploy when
+    # every other container is restarting at once. With the previous 5s timeout
+    # / 20s start_period, rabbitmq was transiently marked unhealthy on every
+    # deploy — and because most services gate on `rabbitmq: service_healthy`,
+    # the whole `docker compose up` aborted. Longer timeout/retries/start_period
+    # let it ride out the churn. It is healthy in steady state; this only needs
+    # to survive the deploy window.
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 30s
+      retries: 10
+      start_period: 90s
     stop_grace_period: 30s
     deploy:
       resources:
         limits:
-          memory: 256m
+          # 256m left no headroom for the diagnostics Erlang VM on top of the
+          # running node; bumped to 512m so the healthcheck stops OOM-flapping.
+          memory: 512m
 
   zipkin:
     <<: *service-defaults
