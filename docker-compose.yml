@@ -440,6 +440,28 @@ services:
       retries: 5
       start_period: 90s
 
+  recruitment-service:
+    <<: *java-defaults
+    image: ghcr.io/${GHCR_OWNER}/andikisha/recruitment-service:${RELEASE_TAG:-latest}
+    container_name: andikisha-recruitment-service
+    # recruitment-service (Run R1) exposes a REST API only — no gRPC server,
+    # so GRPC_PORT is intentionally omitted, matching audit-service.
+    environment:
+      <<: [*spring-env, *db-env]
+      SERVER_PORT: "8094"
+      DB_NAME: andikisha_recruitment
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8094/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
   api-gateway:
     <<: *java-defaults
     image: ghcr.io/${GHCR_OWNER}/andikisha/api-gateway:${RELEASE_TAG:-latest}
@@ -460,6 +482,7 @@ services:
       INTEGRATION_SERVICE_URL: http://integration-hub-service:8090
       ANALYTICS_SERVICE_URL: http://analytics-service:8091
       AUDIT_SERVICE_URL: http://audit-service:8092
+      RECRUITMENT_SERVICE_URL: http://recruitment-service:8094
     depends_on:
       rabbitmq:
         condition: service_healthy
