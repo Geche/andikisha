@@ -329,6 +329,13 @@ services:
       DB_NAME: andikisha_document
       PAYROLL_SERVICE_HOST: payroll-service
       PAYROLL_GRPC_PORT: "9084"
+      # document-service has three gRPC clients (payroll, employee, tenant).
+      # Only payroll's host was set, so the employee/tenant channel URIs
+      # resolved to the literal ${...} and crashed the app on startup.
+      EMPLOYEE_SERVICE_HOST: employee-service
+      EMPLOYEE_GRPC_PORT: "9082"
+      TENANT_SERVICE_HOST: tenant-service
+      TENANT_GRPC_PORT: "9083"
       # Persist generated payslip/P9 PDFs on a writable, appuser-owned volume (#39).
       STORAGE_BASE_PATH: /app/document-storage
     volumes:
