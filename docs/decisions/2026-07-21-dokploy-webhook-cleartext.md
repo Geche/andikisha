@@ -1,8 +1,12 @@
 # Dokploy deploy webhook is sent over plain HTTP
 
 **Date:** 2026-07-21
-**Status:** Accepted, short-term
-**Applies to:** `.github/workflows/ci.yml` — `Trigger Dokploy Deploy`
+**Status:** SUPERSEDED (2026-07-23) — the CI `Trigger Dokploy Deploy` job was
+removed entirely. It never worked (301 with an empty Location, or exit-3 on a
+malformed secret) and was redundant with Dokploy's own GitHub On-Push
+auto-deploy. Removing it eliminates the cleartext-token transmission this
+record was about. The `DOKPLOY_WEBHOOK_URL` secret can be deleted.
+**Applies to:** `.github/workflows/ci.yml` — `Trigger Dokploy Deploy` (removed)
 
 ## Context
 
