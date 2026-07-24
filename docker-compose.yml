@@ -549,6 +549,9 @@ services:
       # were unset, so login/data would fail. JWT_SECRET must match auth-service.
       API_GATEWAY_URL: http://api-gateway:8080
       JWT_SECRET: ${JWT_SECRET}
+      # Set COOKIE_SECURE=false in Dokploy Env to log in over the plain-HTTP
+      # sslip.io test host; unset (or true) once on a real HTTPS domain.
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
     healthcheck:
       # 127.0.0.1, not localhost: Next.js binds IPv4 (0.0.0.0), but localhost
       # can resolve to IPv6 ::1 in-container, giving a false "unhealthy".
@@ -579,6 +582,9 @@ services:
       # BFF/middleware reach the gateway server-side and verify JWTs.
       API_GATEWAY_URL: http://api-gateway:8080
       JWT_SECRET: ${JWT_SECRET}
+      # Set COOKIE_SECURE=false in Dokploy Env to log in over the plain-HTTP
+      # sslip.io test host; unset (or true) once on a real HTTPS domain.
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
     healthcheck:
       # 127.0.0.1, not localhost: Next.js binds IPv4 (0.0.0.0), but localhost
       # can resolve to IPv6 ::1 in-container, giving a false "unhealthy".

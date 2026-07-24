@@ -142,7 +142,9 @@ export async function POST(request: NextRequest) {
   const jar = await cookies();
   jar.set(COOKIE_NAME, data.accessToken, {
     httpOnly: true,
-    secure: isProduction,
+    // COOKIE_SECURE=false relaxes the Secure flag for plain-HTTP test hosts
+    // (e.g. sslip.io). Unset keeps the safe production default. Remove on HTTPS.
+    secure: process.env.COOKIE_SECURE === "false" ? false : isProduction,
     sameSite: "strict",
     maxAge: expiresIn,
     path: "/",
