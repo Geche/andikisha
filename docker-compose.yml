@@ -545,6 +545,10 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+      # The BFF/middleware call the gateway server-side and verify JWTs; both
+      # were unset, so login/data would fail. JWT_SECRET must match auth-service.
+      API_GATEWAY_URL: http://api-gateway:8080
+      JWT_SECRET: ${JWT_SECRET}
     healthcheck:
       # 127.0.0.1, not localhost: Next.js binds IPv4 (0.0.0.0), but localhost
       # can resolve to IPv6 ::1 in-container, giving a false "unhealthy".
@@ -572,6 +576,9 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${API_DOMAIN}
+      # BFF/middleware reach the gateway server-side and verify JWTs.
+      API_GATEWAY_URL: http://api-gateway:8080
+      JWT_SECRET: ${JWT_SECRET}
     healthcheck:
       # 127.0.0.1, not localhost: Next.js binds IPv4 (0.0.0.0), but localhost
       # can resolve to IPv6 ::1 in-container, giving a false "unhealthy".
