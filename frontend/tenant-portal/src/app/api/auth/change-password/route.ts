@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
 
           jar.set(COOKIE_NAME, loginData.accessToken, {
             httpOnly: true,
-            secure: isProduction,
+            // COOKIE_SECURE=false relaxes Secure for plain-HTTP test hosts (sslip.io);
+            // unset keeps the production default. Remove on HTTPS.
+            secure: process.env.COOKIE_SECURE === "false" ? false : isProduction,
             sameSite: "strict",
             maxAge: expiresIn,
             path: "/",
