@@ -1786,6 +1786,7 @@ task-assignment alerts (D4); the in-app pipeline board and `/my/dashboard` card 
 
 ### SEC-BACKLOG-004 — /api/v1/auth/super-admin/** has no internal-only gateway protection
 
+**Status:** RESOLVED 2026-07-27 — added `InternalOnlyFilter` + a dedicated `super-admin-provision-internal-only` gateway route so the provision endpoint is unreachable through the gateway (rejects unless `X-Internal-Request`, which the global filter always strips). Login stays public; internal direct provisioning unchanged. The gateway may now safely receive a public domain.
 **Raised:** 2026-07-27 · **Priority:** HIGH — must be resolved BEFORE the api-gateway is given any public domain (e.g. `api.andikishahr.com`).
 **Found during:** production SUPER_ADMIN provisioning.
 

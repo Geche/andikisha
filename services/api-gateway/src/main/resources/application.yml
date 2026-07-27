@@ -42,6 +42,24 @@ spring:
                 fallbackUri: forward:/fallback/tenant-service
 
         # ── Phase 1: Foundation ─────────────────────────────────────────────
+        # SUPER_ADMIN bootstrap provisioning is internal-only (SEC-BACKLOG-004).
+        # MUST precede the generic auth-service route below — Spring Cloud Gateway
+        # matches routes in declaration order, and this is the more specific path.
+        # InternalOnlyFilter rejects unless X-Internal-Request: true, which the
+        # global JwtAuthenticationFilter (order -100) always strips from inbound
+        # requests — so this endpoint is unreachable through the gateway. Legitimate
+        # provisioning is a direct internal call to auth-service, never via the gateway.
+        - id: super-admin-provision-internal-only
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/super-admin/provision
+          filters:
+            - InternalOnlyFilter
+            - name: CircuitBreaker
+              args:
+                name: authCircuitBreaker
+                fallbackUri: forward:/fallback/auth-service
+
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:
