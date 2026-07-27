@@ -1781,3 +1781,35 @@ notification type — every notification is a domain-specific listener with hard
 no template engine. A lifecycle workflow that wants to alert an assignee ("You have an onboarding task
 due") needs a new event + listener + type string + (ideally) a template mechanism. Run L1 ships without
 task-assignment alerts (D4); the in-app pipeline board and `/my/dashboard` card are the v1 surfaces.
+
+---
+
+### SEC-BACKLOG-004 — /api/v1/auth/super-admin/** has no internal-only gateway protection
+
+**Raised:** 2026-07-27 · **Priority:** HIGH — must be resolved BEFORE the api-gateway is given any public domain (e.g. `api.andikishahr.com`).
+**Found during:** production SUPER_ADMIN provisioning.
+
+**Problem:**
+The gateway route `/api/v1/auth/**` (which includes `super-admin/provision` and `super-admin/login`) carries only a CircuitBreaker + the global `RemoveRequestHeader=X-Internal-Request` + rate limiter. It does **not** apply `SuperAdminAuthFilter` or require `X-Internal-Request`. That protection guards `/api/v1/super-admin/**` (tenant-service management routes) only. In auth-service, `super-admin/provision` is `permitAll` and gated solely by the body `provisionSecret`; `super-admin/login` is `permitAll` (correct for a login).
+
+**Exposure today:** none — the gateway has no public domain and publishes no host port, so the endpoint is reachable only from inside the Docker network (verified: `IP:8080` refused; portal domains 404 the path). The release plan's claim of a "gateway header check" on provisioning is **incorrect** (see DOC-BACKLOG-002).
+
+**Risk when a public gateway domain is added:** `/api/v1/auth/super-admin/provision` becomes internet-reachable, guarded only by the shared `provisionSecret`. Mitigated by the one-time idempotency guard (409 once a SUPER_ADMIN exists — already spent in prod), but the pattern is fragile and would bite any future SYSTEM-scoped bootstrap endpoint.
+
+**Fix:** apply internal-only protection to `/api/v1/auth/super-admin/provision` (require `X-Internal-Request`, which the gateway already strips from client requests via the default filter — same class as the X-Employee-ID injection defence), or otherwise ensure the gateway never routes that path from an external origin. Do this before the `andikishahr.com` + HTTPS cutover if the gateway is to be publicly exposed.
+
+---
+
+### DOC-BACKLOG-002 — Release plan mis-describes SUPER_ADMIN provisioning contract & protection
+
+**Raised:** 2026-07-27 · **Priority:** Medium. **Found during:** production provisioning.
+
+The release plan states the provisioning endpoint takes `{ email, password, tenantId: "SYSTEM" }`, blocked from external access at the gateway via a header check. Both are wrong versus the deployed code:
+- **Contract:** `POST /api/v1/auth/super-admin/provision` takes `{ email, password, provisionSecret }`. `tenantId` is hardcoded to `"SYSTEM"` internally; there is no `tenantId` field.
+- **Protection:** `permitAll` + body `provisionSecret` + one-time idempotency guard. No gateway header check on this route (see SEC-BACKLOG-004).
+
+Correct the release-plan doc so future operators don't rely on a protection mechanism that isn't there.
+
+Minor related notes (no separate item needed):
+- SUPER_ADMIN login (`SuperAdminAuthService.login`) does **not** enforce `must_change_password`; the provisioned row has it `true` but the super-admin login path ignores it (unlike the tenant middleware). Decide whether super-admin should be forced to rotate the bootstrap password.
+- `COOKIE_SECURE=false` is a temporary test affordance for the plain-HTTP sslip.io host (PR #102). It MUST be removed from the Dokploy Environment tab at the `andikishahr.com` + HTTPS cutover so the portal auth cookies are `Secure` again.
