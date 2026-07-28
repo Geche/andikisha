@@ -14,7 +14,11 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import com.andikisha.common.security.InternalAuthToken;
+
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Date;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,14 +32,18 @@ class JwtAuthenticationFilterTest {
 
     private static final String TEST_SECRET =
             "dGVzdC1zZWNyZXQta2V5LWZvci11bml0LXRlc3RzLW9ubHktMzItYnl0ZXMtbG9uZw==";
+    private static final String INTERNAL_SECRET = "test-internal-signing-secret-32-bytes-long";
 
     private JwtAuthenticationFilter filter;
     private SecretKey key;
+    private InternalAuthToken internalAuth;
 
     @BeforeEach
     void setUp() {
-        filter = new JwtAuthenticationFilter(TEST_SECRET);
+        filter = new JwtAuthenticationFilter(TEST_SECRET, INTERNAL_SECRET);
         key = Keys.hmacShaKeyFor(decodeSecret(TEST_SECRET));
+        internalAuth = new InternalAuthToken(
+                INTERNAL_SECRET.getBytes(StandardCharsets.UTF_8), 30);
     }
 
     // ── Missing / malformed Authorization header ───────────────────────────────
@@ -185,6 +193,46 @@ class JwtAuthenticationFilterTest {
         };
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+    }
+
+    // ── M1/M2: X-Internal-Auth signing over the injected identity ─────────────
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("Gateway adds a verifiable X-Internal-Auth over the injected identity; a client-supplied one is replaced")
+    void validToken_addsVerifiableInternalAuthHeader_andReplacesClientSupplied() {
+        String token = Jwts.builder()
+                .subject("user-abc")
+                .claim("tenantId", "tenant-xyz")
+                .claim("role", "MANAGER")
+                .claim("email", "alice@acme.com")
+                .claim("employeeId", "emp-1")
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(key)
+                .compact();
+
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/v1/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .header("X-Internal-Auth", "forged-by-client")
+                        .build());
+
+        AtomicReference<ServerWebExchange> captured = new AtomicReference<>();
+        GatewayFilterChain chain = downstream -> {
+            captured.set(downstream);
+            return Mono.empty();
+        };
+
+        StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+        String header = captured.get().getRequest().getHeaders().getFirst("X-Internal-Auth");
+        assertThat(header).isNotNull().isNotEqualTo("forged-by-client");
+        long now = Instant.now().getEpochSecond();
+        // verifies against the exact gateway-injected identity...
+        assertThat(internalAuth.verify(header, now,
+                "user-abc", "tenant-xyz", "MANAGER", "alice@acme.com", "emp-1")).isTrue();
+        // ...but not against a tampered (privilege-escalated) role
+        assertThat(internalAuth.verify(header, now,
+                "user-abc", "tenant-xyz", "SUPER_ADMIN", "alice@acme.com", "emp-1")).isFalse();
     }
 
     // ── CB-04: X-Internal-Request header stripping ────────────────────────────
