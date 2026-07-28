@@ -6,7 +6,7 @@ import com.andikisha.notification.application.service.NotificationService;
 import com.andikisha.notification.infrastructure.config.SecurityConfig;
 import com.andikisha.notification.infrastructure.config.WebMvcConfig;
 import com.andikisha.notification.presentation.controller.NotificationController;
-import com.andikisha.notification.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

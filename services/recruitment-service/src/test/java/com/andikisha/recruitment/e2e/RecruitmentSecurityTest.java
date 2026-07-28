@@ -8,7 +8,7 @@ import com.andikisha.recruitment.infrastructure.config.SecurityConfig;
 import com.andikisha.recruitment.infrastructure.config.WebMvcConfig;
 import com.andikisha.recruitment.presentation.controller.InterviewController;
 import com.andikisha.recruitment.presentation.controller.PipelineTemplateController;
-import com.andikisha.recruitment.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
