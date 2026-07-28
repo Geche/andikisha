@@ -10,6 +10,8 @@ import com.andikisha.auth.domain.model.Role;
 import com.andikisha.auth.domain.model.SuperAdminSession;
 import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.SuperAdminSessionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
 import com.andikisha.common.exception.BusinessRuleException;
@@ -29,6 +31,8 @@ import java.util.regex.Pattern;
 @Service
 @Transactional(readOnly = true)
 public class SuperAdminAuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(SuperAdminAuthService.class);
 
     private static final String SYSTEM_TENANT = "SYSTEM";
     // Constant-work comparison hash for failed super-admin logins, so response time cannot enumerate
@@ -98,23 +102,20 @@ public class SuperAdminAuthService {
                 .filter(User::isActive)
                 .orElse(null);
 
-        // Uniform rejection: unknown/inactive and locked both return the same INVALID_CREDENTIALS and
-        // incur the same BCrypt cost, so neither the response (audit M3) nor the timing (audit M4)
-        // reveals account state. The lock still applies server-side — it is just not disclosed.
+        // Uniform rejection (audit M3/M4): unknown/inactive returns the same INVALID_CREDENTIALS and
+        // incurs the same BCrypt cost, so neither the response nor the timing reveals account state.
         if (admin == null) {
             passwordEncoder.matches(request.password(), DUMMY_HASH);
             throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
         }
 
-        admin.clearLockIfExpired();
-        if (admin.isLocked()) {
-            passwordEncoder.matches(request.password(), DUMMY_HASH);
-            throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
-        }
-
         if (!passwordEncoder.matches(request.password(), admin.getPasswordHash())) {
-            admin.recordFailedLogin();
-            userRepository.save(admin);
+            // The single SUPER_ADMIN account is deliberately NOT self-locked (audit M6): a hard
+            // time-lock on the platform's only operator is a self-inflicted platform-admin DoS that
+            // anyone knowing the email could trigger. Online brute-force is instead contained by the
+            // edge rate limit + the mandatory strong-password policy; failures are logged for
+            // out-of-band detection rather than locking the account.
+            log.warn("Failed SUPER_ADMIN login attempt for {}", admin.getEmail());
             throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
         }
 

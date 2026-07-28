@@ -17,6 +17,14 @@ import java.util.UUID;
 @Table(name = "users")
 public class User extends BaseEntity {
 
+    // Account-lockout backoff (audit M6): short, escalating windows instead of a flat 30-min hard
+    // lock. 5th failure locks ~30s; each further failure doubles up to a 5-min cap; a successful
+    // login resets the counter. Keeps the DoS window low while the edge rate limit caps brute-force
+    // volume. See docs/decisions/2026-07-28-login-rate-limit-redesign.md.
+    private static final int LOCK_THRESHOLD = 5;
+    private static final long BASE_LOCK_SECONDS = 30;
+    private static final long MAX_LOCK_SECONDS = 300;
+
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -77,8 +85,10 @@ public class User extends BaseEntity {
 
     public void recordFailedLogin() {
         this.failedLoginAttempts++;
-        if (this.failedLoginAttempts >= 5) {
-            this.lockedUntil = LocalDateTime.now().plusMinutes(30);
+        if (this.failedLoginAttempts >= LOCK_THRESHOLD) {
+            int steps = Math.min(this.failedLoginAttempts - LOCK_THRESHOLD, 20); // guard shift overflow
+            long lockSeconds = Math.min(BASE_LOCK_SECONDS << steps, MAX_LOCK_SECONDS);
+            this.lockedUntil = LocalDateTime.now().plusSeconds(lockSeconds);
         }
     }
 
@@ -89,7 +99,8 @@ public class User extends BaseEntity {
     public void clearLockIfExpired() {
         if (lockedUntil != null && LocalDateTime.now().isAfter(lockedUntil)) {
             this.lockedUntil = null;
-            this.failedLoginAttempts = 0;
+            // Keep failedLoginAttempts so repeated lock cycles escalate the backoff (audit M6).
+            // Only a successful login resets the counter (recordSuccessfulLogin).
         }
     }
 

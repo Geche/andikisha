@@ -165,27 +165,29 @@ class SuperAdminAuthServiceTest {
 
     @Test
     @org.junit.jupiter.api.DisplayName("SuperAdmin lock is enforced but not disclosed to the caller")
-    void login_fiveFailedAttempts_locksButReturnsUniformInvalidCredentials() {
+    void login_repeatedFailures_doNotLockTheSuperAdmin() {
+        // M6: the single SUPER_ADMIN is NOT self-locked — a hard lock on the only platform operator
+        // is a platform-admin DoS anyone knowing the email could trigger. Repeated failures still
+        // return the uniform INVALID_CREDENTIALS (M3), and a subsequent CORRECT password still
+        // authenticates, proving the account was never locked out.
         User superAdmin = buildSuperAdmin();
         when(userRepository.findByEmailAndTenantIdAndRole(EMAIL, SYSTEM, Role.SUPER_ADMIN))
                 .thenReturn(Optional.of(superAdmin));
-        when(passwordEncoder.matches(any(), any())).thenReturn(false);
+        when(passwordEncoder.matches("wrongpassword", HASHED)).thenReturn(false);
 
-        // 5 failed attempts — mutates state on the real User object
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             assertThatThrownBy(() -> service.login(
                     new SuperAdminLoginRequest(EMAIL, "wrongpassword")))
-                    .isInstanceOf(BusinessRuleException.class);
+                    .isInstanceOf(BusinessRuleException.class)
+                    .hasMessageContaining("Invalid credentials");
         }
 
-        // 6th attempt — the account is now locked, but the response must be indistinguishable from a
-        // wrong password (audit M3): the same INVALID_CREDENTIALS, never a distinct ACCOUNT_LOCKED
-        // oracle. The lock still applies server-side (no check against the real hash).
-        lenient().when(passwordEncoder.matches(any(), any())).thenReturn(true);
-        assertThatThrownBy(() -> service.login(
-                new SuperAdminLoginRequest(EMAIL, "correctpassword")))
-                .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Invalid credentials");
+        when(passwordEncoder.matches(STRONG_PASSWORD, HASHED)).thenReturn(true);
+        when(jwtTokenProvider.generateSuperAdminToken(anyString(), anyString(), anyLong()))
+                .thenReturn(ACCESS_TOKEN).thenReturn(REFRESH_TOKEN);
+
+        assertThat(service.login(new SuperAdminLoginRequest(EMAIL, STRONG_PASSWORD)).accessToken())
+                .isEqualTo(ACCESS_TOKEN);
     }
 
     // ── impersonate ───────────────────────────────────────────────────────────
