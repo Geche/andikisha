@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @Import({
         com.andikisha.tenant.infrastructure.config.SecurityConfig.class,
-        com.andikisha.tenant.presentation.filter.TrustedHeaderAuthFilter.class,
+        com.andikisha.common.security.TrustedHeaderAuthFilter.class,
         com.andikisha.common.exception.GlobalExceptionHandler.class
 })
 class TenantControllerTest {

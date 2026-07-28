@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(LeaveController.class)
 @Import({
         com.andikisha.leave.infrastructure.config.SecurityConfig.class,
-        com.andikisha.leave.presentation.filter.TrustedHeaderAuthFilter.class,
+        com.andikisha.common.security.TrustedHeaderAuthFilter.class,
         GlobalExceptionHandler.class,
         WebMvcConfig.class
 })

@@ -8,7 +8,7 @@ import com.andikisha.payroll.domain.exception.PayrollRunNotFoundException;
 import com.andikisha.payroll.infrastructure.config.SecurityConfig;
 import com.andikisha.payroll.infrastructure.config.WebMvcConfig;
 import com.andikisha.payroll.presentation.controller.PayrollController;
-import com.andikisha.payroll.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

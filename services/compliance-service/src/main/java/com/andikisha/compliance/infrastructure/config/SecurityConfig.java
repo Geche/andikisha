@@ -1,6 +1,6 @@
 package com.andikisha.compliance.infrastructure.config;
 
-import com.andikisha.compliance.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Configuration;

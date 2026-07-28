@@ -5,7 +5,7 @@ import com.andikisha.attendance.application.dto.response.MonthlySummaryResponse;
 import com.andikisha.attendance.application.service.AttendanceService;
 import com.andikisha.attendance.infrastructure.config.SecurityConfig;
 import com.andikisha.attendance.infrastructure.config.WebMvcConfig;
-import com.andikisha.attendance.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.attendance.presentation.controller.AttendanceController;

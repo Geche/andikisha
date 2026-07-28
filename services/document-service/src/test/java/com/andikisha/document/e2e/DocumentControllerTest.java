@@ -8,7 +8,7 @@ import com.andikisha.document.application.service.DocumentService;
 import com.andikisha.document.infrastructure.config.SecurityConfig;
 import com.andikisha.document.infrastructure.config.WebMvcConfig;
 import com.andikisha.document.presentation.controller.DocumentController;
-import com.andikisha.document.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
