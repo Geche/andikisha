@@ -3,7 +3,6 @@ package com.andikisha.auth.e2e;
 import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.service.AuthService;
-import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.auth.domain.exception.InvalidCredentialsException;
 import com.andikisha.auth.domain.exception.TokenExpiredException;
 import com.andikisha.auth.infrastructure.config.SecurityConfig;
@@ -148,20 +147,10 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.error").value("INVALID_CREDENTIALS"));
     }
 
-    @Test
-    void login_withLockedAccount_returns429() throws Exception {
-        when(authService.login(any()))
-                .thenThrow(new AccountLockedException("Account temporarily locked"));
-
-        mockMvc.perform(post(BASE + "/login")
-                        .header("X-Tenant-ID", TENANT_ID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email": "jane@example.com", "password": "SecurePass1"}
-                                """))
-                .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.error").value("ACCOUNT_LOCKED"));
-    }
+    // A locked account no longer returns a distinct 429/ACCOUNT_LOCKED response — that was a
+    // user-enumeration oracle (audit M3). login() now throws InvalidCredentialsException for a
+    // locked account, mapped to the same 401 as a wrong password (covered above); the
+    // don't-disclose-the-lock behaviour is verified in AuthServiceTest.
 
     // ------------------------------------------------------------------
     // POST /refresh

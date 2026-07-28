@@ -11,7 +11,6 @@ import com.andikisha.auth.domain.model.User;
 import com.andikisha.auth.domain.repository.SuperAdminSessionRepository;
 import com.andikisha.auth.domain.repository.UserRepository;
 import com.andikisha.auth.infrastructure.jwt.JwtTokenProvider;
-import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.common.exception.BusinessRuleException;
 import com.andikisha.common.exception.DuplicateResourceException;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -159,11 +159,13 @@ class SuperAdminAuthServiceTest {
                 service.login(new SuperAdminLoginRequest("nobody@x.com", STRONG_PASSWORD)))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Invalid credentials");
+        // M4: BCrypt must run even for an unknown super-admin email, to equalise response timing.
+        verify(passwordEncoder).matches(eq(STRONG_PASSWORD), anyString());
     }
 
     @Test
-    @org.junit.jupiter.api.DisplayName("SuperAdmin account locks after 5 failed login attempts")
-    void login_fiveFailedAttempts_accountLocked() {
+    @org.junit.jupiter.api.DisplayName("SuperAdmin lock is enforced but not disclosed to the caller")
+    void login_fiveFailedAttempts_locksButReturnsUniformInvalidCredentials() {
         User superAdmin = buildSuperAdmin();
         when(userRepository.findByEmailAndTenantIdAndRole(EMAIL, SYSTEM, Role.SUPER_ADMIN))
                 .thenReturn(Optional.of(superAdmin));
@@ -176,12 +178,14 @@ class SuperAdminAuthServiceTest {
                     .isInstanceOf(BusinessRuleException.class);
         }
 
-        // 6th attempt — lock check fires before password check, so this stub is lenient
+        // 6th attempt — the account is now locked, but the response must be indistinguishable from a
+        // wrong password (audit M3): the same INVALID_CREDENTIALS, never a distinct ACCOUNT_LOCKED
+        // oracle. The lock still applies server-side (no check against the real hash).
         lenient().when(passwordEncoder.matches(any(), any())).thenReturn(true);
         assertThatThrownBy(() -> service.login(
                 new SuperAdminLoginRequest(EMAIL, "correctpassword")))
-                .isInstanceOf(AccountLockedException.class)
-                .hasMessageContaining("locked");
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Invalid credentials");
     }
 
     // ── impersonate ───────────────────────────────────────────────────────────

@@ -14,7 +14,6 @@ import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.mapper.UserMapper;
 import com.andikisha.auth.application.port.AuthEventPublisher;
-import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.auth.domain.exception.InvalidCredentialsException;
 import com.andikisha.auth.domain.exception.TokenExpiredException;
 import com.andikisha.auth.domain.model.RefreshToken;
@@ -46,6 +45,13 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 public class AuthService {
+
+    // A fixed, valid BCrypt digest (cost 12) used to run a constant-work password comparison on the
+    // failed-login paths (unknown / inactive / locked account), so login response time cannot be used
+    // to enumerate accounts (audit M4). The value is irrelevant — it only needs to be a valid BCrypt
+    // hash at the same cost factor so matches() performs the full work instead of returning fast.
+    private static final String DUMMY_HASH =
+            "$2a$12$hFFBN0jkiqREjHGgdHHhRe8G1rOfutJ1K6zGbQm4KhG5vdjtIahSW";
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -261,16 +267,21 @@ public class AuthService {
 
         User user = userRepository.findByEmailAndTenantId(
                         request.email().toLowerCase().trim(), tenantId)
-                .orElseThrow(InvalidCredentialsException::new);
+                .orElse(null);
 
-        if (!user.isActive()) {
+        // Uniform rejection: every failure path returns the same 401 InvalidCredentials AND incurs
+        // the same BCrypt cost, so neither the response (audit M3) nor the response time (audit M4)
+        // reveals whether the email maps to a real, active, unlocked account. On a locked account
+        // the lock still applies server-side — we simply do not disclose it.
+        if (user == null || !user.isActive()) {
+            passwordEncoder.matches(request.password(), DUMMY_HASH);
             throw new InvalidCredentialsException();
         }
 
         user.clearLockIfExpired();
         if (user.isLocked()) {
-            throw new AccountLockedException(
-                    "Account temporarily locked due to too many failed attempts. Please try again later.");
+            passwordEncoder.matches(request.password(), DUMMY_HASH);
+            throw new InvalidCredentialsException();
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
