@@ -145,9 +145,11 @@ public class LeaveController {
     @Operation(summary = "Get leave requests for a specific employee")
     public Page<LeaveRequestResponse> employeeRequests(
             @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-Employee-ID", required = false) String callerEmployeeId,
             @PathVariable UUID employeeId,
             Pageable pageable) {
-        return leaveService.listEmployeeRequests(employeeId, pageable);
+        return leaveService.listEmployeeRequests(employeeId, role, callerEmployeeId, pageable);
     }
 
     @GetMapping("/employees/{employeeId}/balances")

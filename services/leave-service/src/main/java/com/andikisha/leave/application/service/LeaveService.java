@@ -332,11 +332,51 @@ public class LeaveService {
                 tenantId, java.util.UUID.fromString(callerEmployeeId), pageable).map(mapper::toResponse);
     }
 
-    public Page<LeaveRequestResponse> listEmployeeRequests(UUID employeeId, Pageable pageable) {
+    public Page<LeaveRequestResponse> listEmployeeRequests(UUID employeeId, String callerRole,
+                                                           String callerEmployeeId, Pageable pageable) {
         String tenantId = TenantContext.requireTenantId();
+        enforceEmployeeScopeAccess(employeeId, callerRole, callerEmployeeId, tenantId);
         return requestRepository.findByTenantIdAndEmployeeIdOrderByCreatedAtDesc(
                         tenantId, employeeId, pageable)
                 .map(mapper::toResponse);
+    }
+
+    /**
+     * {@code GET /employees/{employeeId}/requests} lists one employee's whole leave history, so the
+     * caller must be authorised to see THAT employee: HR_OFFICER/HR_MANAGER/ADMIN (ALL) may query
+     * anyone, a LINE_MANAGER (DEPARTMENT) only their department members, an EMPLOYEE (OWN) only
+     * themselves. Without this guard, granting EMPLOYEE access to the endpoint is an IDOR — any
+     * employee could read any colleague's leave history (type, dates, reasons) by employee id.
+     * Mirrors {@link #enforceReadAccess} but validates the requested {@code employeeId} rather than
+     * an already-loaded request. See docs/security/security-audit-2026-07-28.md H5.
+     */
+    private void enforceEmployeeScopeAccess(UUID targetEmployeeId, String callerRole,
+                                            String callerEmployeeId, String tenantId) {
+        ResolvedScope scope = scopeResolver.resolve(callerRole, tenantId, callerEmployeeId);
+
+        if (scope.type() == ScopeType.ALL) {
+            return;
+        }
+
+        if (scope.type() == ScopeType.DEPARTMENT) {
+            boolean inDepartment = employeeGrpcClient
+                    .getEmployeesByDepartment(tenantId, scope.departmentId().toString())
+                    .stream()
+                    .anyMatch(e -> e.getId().equals(targetEmployeeId.toString()));
+            if (inDepartment) {
+                return;
+            }
+            throw new AccessDeniedException(
+                    "Access denied: that employee is outside your department");
+        }
+
+        // OWN scope — caller may only read their own leave history
+        if (callerEmployeeId != null
+                && callerEmployeeId.equals(targetEmployeeId.toString())) {
+            return;
+        }
+        throw new AccessDeniedException(
+                "Access denied: you may only view your own leave requests");
     }
 
     public LeaveRequestResponse getRequest(UUID leaveRequestId, String callerRole,
