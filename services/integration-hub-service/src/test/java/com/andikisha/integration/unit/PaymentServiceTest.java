@@ -191,6 +191,21 @@ class PaymentServiceTest {
         verify(valueOps, never()).setIfAbsent(anyString(), anyString(), any());
     }
 
+    @Test
+    void handleMpesaCallback_whenProcessingFails_releasesIdempotencyKeyForRetry() {
+        // The idempotency key is set (for concurrent dedupe) before the DB commit; if processing
+        // throws and the @Transactional rolls back, the key must be released so a Safaricom retry can
+        // re-process — otherwise the key permanently dedupes the retry and the payment strands.
+        when(valueOps.setIfAbsent(eq(IDEM_KEY), anyString(), any())).thenReturn(true);
+        PaymentTransaction tx = buildTransaction(PaymentMethod.MPESA); // SUBMITTED, non-terminal
+        when(transactionRepository.findByConversationId(CONV_ID)).thenReturn(Optional.of(tx));
+        when(transactionRepository.save(any())).thenThrow(new RuntimeException("DB unavailable"));
+
+        assertThatThrownBy(() -> service.handleMpesaCallback(CONV_ID, true, "QGH7YK3BXY", null, null))
+                .isInstanceOf(RuntimeException.class);
+        verify(redisTemplate).delete(IDEM_KEY);
+    }
+
     // -------------------------------------------------------------------------
     // listTransactions
     // -------------------------------------------------------------------------

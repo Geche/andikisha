@@ -201,30 +201,39 @@ public class PaymentService {
             return;
         }
 
-        if (success) {
-            if (receiptNumber == null) {
-                log.warn("M-Pesa callback success but no receipt for conversation {} — marking failed",
-                        conversationId);
-                tx.markFailed("NO_RECEIPT", "Success callback received without receipt number");
-                eventPublisher.publishPaymentFailed(tx);
+        // The idempotency key above is set before this transaction commits (so concurrent duplicate
+        // callbacks are deduped while this one is in flight). If processing throws, the @Transactional
+        // rolls back the state change — so release the key too, otherwise it would permanently dedupe
+        // the Safaricom retry and strand the payment (verification residual).
+        try {
+            if (success) {
+                if (receiptNumber == null) {
+                    log.warn("M-Pesa callback success but no receipt for conversation {} — marking failed",
+                            conversationId);
+                    tx.markFailed("NO_RECEIPT", "Success callback received without receipt number");
+                    eventPublisher.publishPaymentFailed(tx);
+                } else {
+                    tx.markCompleted(receiptNumber);
+                    eventPublisher.publishPaymentCompleted(tx);
+                    log.info("M-Pesa payment completed for {} receipt {}",
+                            tx.getEmployeeName(), receiptNumber);
+                }
             } else {
-                tx.markCompleted(receiptNumber);
-                eventPublisher.publishPaymentCompleted(tx);
-                log.info("M-Pesa payment completed for {} receipt {}",
-                        tx.getEmployeeName(), receiptNumber);
+                tx.markFailed(errorCode, errorMessage);
+                eventPublisher.publishPaymentFailed(tx);
+                log.error("M-Pesa payment failed for {}: {} {}",
+                        tx.getEmployeeName(), errorCode, errorMessage);
             }
-        } else {
-            tx.markFailed(errorCode, errorMessage);
-            eventPublisher.publishPaymentFailed(tx);
-            log.error("M-Pesa payment failed for {}: {} {}",
-                    tx.getEmployeeName(), errorCode, errorMessage);
-        }
 
-        transactionRepository.save(tx);
+            transactionRepository.save(tx);
 
-        if (tx.getStatus() == TransactionStatus.COMPLETED
-                || tx.getStatus() == TransactionStatus.FAILED) {
-            maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
+            if (tx.getStatus() == TransactionStatus.COMPLETED
+                    || tx.getStatus() == TransactionStatus.FAILED) {
+                maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
+            }
+        } catch (RuntimeException e) {
+            redisTemplate.delete(idempotencyKey);
+            throw e;
         }
     }
 
