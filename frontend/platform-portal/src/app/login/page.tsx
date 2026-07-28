@@ -11,9 +11,25 @@ type LoginError =
 
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
-  const decoded = decodeURIComponent(raw);
-  // Must be a same-origin path starting with / but not /login itself.
-  return decoded.startsWith("/") && !decoded.startsWith("/login") ? decoded : null;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return null; // malformed percent-encoding
+  }
+  // Must be a same-origin absolute PATH. Reject protocol-relative values ("//evil.com", and
+  // "/\evil.com" which browsers normalise to "//evil.com") — those pass a bare startsWith("/")
+  // check but resolve cross-origin, so router.replace() would hard-navigate a freshly-authenticated
+  // admin off-site (open redirect, audit M7). Also reject /login to avoid a redirect loop.
+  if (
+    !decoded.startsWith("/") ||
+    decoded.startsWith("//") ||
+    decoded.startsWith("/\\") ||
+    decoded.startsWith("/login")
+  ) {
+    return null;
+  }
+  return decoded;
 }
 
 export default function PlatformLoginPage() {
