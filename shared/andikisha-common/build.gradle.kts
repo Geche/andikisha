@@ -5,6 +5,7 @@ plugins {
 val springBootVersion: String by rootProject.extra
 val mapstructVersion: String by rootProject.extra
 val lombokVersion: String by rootProject.extra
+val grpcVersion: String by rootProject.extra
 
 dependencies {
     // Import Spring Boot BOM so managed versions apply without the plugin
@@ -40,11 +41,17 @@ dependencies {
     // MapStruct — exposed so services can use it directly
     api("org.mapstruct:mapstruct:$mapstructVersion")
 
+    // gRPC internal-auth interceptors — compiled against grpc-api; gRPC services provide it at
+    // runtime (via andikisha-proto). compileOnly so it is NOT forced onto non-gRPC consumers.
+    compileOnly("io.grpc:grpc-api:$grpcVersion")
+
     // Lombok — compile-only
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("org.assertj:assertj-core")
+    testImplementation("io.grpc:grpc-api:$grpcVersion")
+    testImplementation("org.mockito:mockito-core")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
