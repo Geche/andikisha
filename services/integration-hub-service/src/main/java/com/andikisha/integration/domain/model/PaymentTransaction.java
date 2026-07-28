@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -14,7 +15,10 @@ import java.util.UUID;
 
 @Getter
 @Entity
-@Table(name = "payment_transactions")
+@Table(name = "payment_transactions",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_payment_txn_tenant_run_payslip",
+                columnNames = {"tenant_id", "payroll_run_id", "pay_slip_id"}))
 public class PaymentTransaction extends BaseEntity {
 
     @Column(name = "payroll_run_id", nullable = false)

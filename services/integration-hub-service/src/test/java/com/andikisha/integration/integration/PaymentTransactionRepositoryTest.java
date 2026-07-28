@@ -16,7 +16,11 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @Import(JpaTestConfig.class)
@@ -96,6 +100,33 @@ class PaymentTransactionRepositoryTest {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    @Test
+    void uniqueConstraint_rejectsSecondPaymentForSameRunAndPayslip() {
+        UUID paySlipId = UUID.randomUUID();
+        repository.saveAndFlush(buildTxForPayslip(TENANT_A, paySlipId));
+
+        PaymentTransaction duplicate = buildTxForPayslip(TENANT_A, paySlipId);
+        assertThatThrownBy(() -> repository.saveAndFlush(duplicate))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void uniqueConstraint_allowsSameRunAndPayslipAcrossDifferentTenants() {
+        UUID paySlipId = UUID.randomUUID();
+        repository.saveAndFlush(buildTxForPayslip(TENANT_A, paySlipId));
+
+        // The constraint is tenant-scoped — the same run/payslip ids under a different tenant is fine.
+        assertThatCode(() -> repository.saveAndFlush(buildTxForPayslip(TENANT_B, paySlipId)))
+                .doesNotThrowAnyException();
+    }
+
+    private PaymentTransaction buildTxForPayslip(String tenantId, UUID paySlipId) {
+        return PaymentTransaction.create(
+                tenantId, RUN_ID, paySlipId, UUID.randomUUID(),
+                "Test Employee", PaymentMethod.MPESA, "+254700000001", null, null,
+                new BigDecimal("50000.00"), "KES");
+    }
 
     private PaymentTransaction buildTx(String tenantId, PaymentMethod method) {
         return PaymentTransaction.create(

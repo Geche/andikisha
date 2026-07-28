@@ -15,6 +15,11 @@ public interface PaymentTransactionRepository
 
     Optional<PaymentTransaction> findByIdAndTenantId(UUID id, String tenantId);
 
+    // One payment per payslip per run — backs the idempotent create + the V5 UNIQUE constraint
+    // (tenant_id, payroll_run_id, pay_slip_id) so event reprocessing cannot double-disburse a run.
+    Optional<PaymentTransaction> findByTenantIdAndPayrollRunIdAndPaySlipId(
+            String tenantId, UUID payrollRunId, UUID paySlipId);
+
     List<PaymentTransaction> findByTenantIdAndPayrollRunId(
             String tenantId, UUID payrollRunId);
 
