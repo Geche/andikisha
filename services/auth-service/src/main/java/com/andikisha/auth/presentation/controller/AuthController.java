@@ -17,9 +17,11 @@ import com.andikisha.auth.application.dto.response.TokenResponse;
 import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.service.AuthService;
 import com.andikisha.auth.domain.model.Role;
+import com.andikisha.auth.presentation.support.ClientIp;
 import com.andikisha.common.tenant.TenantContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,8 +57,9 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login with email and password")
-    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+    public TokenResponse login(@Valid @RequestBody LoginRequest request,
+                               HttpServletRequest httpRequest) {
+        return authService.login(request, ClientIp.resolve(httpRequest));
     }
 
     @PostMapping("/refresh")

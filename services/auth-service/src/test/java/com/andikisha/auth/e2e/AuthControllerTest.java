@@ -121,7 +121,7 @@ class AuthControllerTest {
 
     @Test
     void login_withValidCredentials_returns200() throws Exception {
-        when(authService.login(any())).thenReturn(tokenResponse());
+        when(authService.login(any(), any())).thenReturn(tokenResponse());
 
         mockMvc.perform(post(BASE + "/login")
                         .header("X-Tenant-ID", TENANT_ID)
@@ -135,7 +135,7 @@ class AuthControllerTest {
 
     @Test
     void login_withWrongCredentials_returns401() throws Exception {
-        when(authService.login(any())).thenThrow(new InvalidCredentialsException());
+        when(authService.login(any(), any())).thenThrow(new InvalidCredentialsException());
 
         mockMvc.perform(post(BASE + "/login")
                         .header("X-Tenant-ID", TENANT_ID)
@@ -265,7 +265,7 @@ class AuthControllerTest {
 
     @Test
     void anyEndpoint_missingTenantHeader_returns400() throws Exception {
-        when(authService.login(any())).thenReturn(tokenResponse());
+        when(authService.login(any(), any())).thenReturn(tokenResponse());
 
         mockMvc.perform(post(BASE + "/login")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -23,7 +23,12 @@ public class TenantPlanRateLimiter extends RedisRateLimiter {
     private static final Map<String, int[]> PLAN_LIMITS = Map.of(
             "STARTER",      new int[]{1,  10},
             "PROFESSIONAL", new int[]{5,  30},
-            "ENTERPRISE",   new int[]{17, 100}
+            "ENTERPRISE",   new int[]{17, 100},
+            // Unauthenticated auth endpoints (login / super-admin login / forgot-password), keyed on
+            // the real socket IP by authKeyResolver. Deliberately strict — a small burst then ~1/s —
+            // to blunt brute-force / password-spray at the edge (audit M5). The per-account
+            // LoginAttemptGuard in auth-service is the fine-grained complement.
+            "AUTH",         new int[]{1,  5}
     );
 
     public TenantPlanRateLimiter() {

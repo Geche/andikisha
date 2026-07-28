@@ -63,6 +63,22 @@ public class RateLimiterConfig {
         return new TenantPlanRateLimiter();
     }
 
+    /**
+     * Key resolver for the unauthenticated auth endpoints. Keys on the real socket IP with an
+     * {@code AUTH:} prefix so {@link TenantPlanRateLimiter} applies the strict AUTH bucket. Uses
+     * the TCP peer address (not X-Forwarded-For), so it cannot be spoofed by a client header —
+     * the load-bearing property for brute-force protection (audit M5).
+     */
+    @Bean
+    public KeyResolver authKeyResolver() {
+        return exchange -> {
+            String ip = exchange.getRequest().getRemoteAddress() != null
+                    ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+                    : "unknown";
+            return Mono.just("AUTH:" + ip);
+        };
+    }
+
     private static byte[] decodeSecret(String secret) {
         String normalised = secret.replace('-', '+').replace('_', '/');
         return java.util.Base64.getDecoder().decode(normalised);

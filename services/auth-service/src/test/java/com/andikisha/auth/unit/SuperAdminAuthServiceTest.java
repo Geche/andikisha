@@ -42,6 +42,7 @@ class SuperAdminAuthServiceTest {
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private SuperAdminSessionRepository sessionRepository;
+    @Mock private com.andikisha.auth.application.service.LoginAttemptGuard loginAttemptGuard;
 
     private SuperAdminAuthService service;
 
@@ -56,7 +57,7 @@ class SuperAdminAuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SuperAdminAuthService(userRepository, jwtTokenProvider, passwordEncoder, sessionRepository, PROVISION_SECRET);
+        service = new SuperAdminAuthService(userRepository, jwtTokenProvider, passwordEncoder, sessionRepository, PROVISION_SECRET, loginAttemptGuard);
     }
 
     private User buildSuperAdmin() {
@@ -129,8 +130,7 @@ class SuperAdminAuthServiceTest {
                 .thenReturn(ACCESS_TOKEN)
                 .thenReturn(REFRESH_TOKEN);
 
-        SuperAdminTokenResponse response = service.login(
-                new SuperAdminLoginRequest(EMAIL, STRONG_PASSWORD));
+        SuperAdminTokenResponse response = service.login(new SuperAdminLoginRequest(EMAIL, STRONG_PASSWORD), "1.2.3.4");
 
         assertThat(response.accessToken()).isEqualTo(ACCESS_TOKEN);
         assertThat(response.role()).isEqualTo("SUPER_ADMIN");
@@ -145,7 +145,7 @@ class SuperAdminAuthServiceTest {
         when(passwordEncoder.matches("wrong", HASHED)).thenReturn(false);
 
         assertThatThrownBy(() ->
-                service.login(new SuperAdminLoginRequest(EMAIL, "wrong")))
+                service.login(new SuperAdminLoginRequest(EMAIL, "wrong"), "1.2.3.4"))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Invalid credentials");
     }
@@ -156,7 +156,7 @@ class SuperAdminAuthServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                service.login(new SuperAdminLoginRequest("nobody@x.com", STRONG_PASSWORD)))
+                service.login(new SuperAdminLoginRequest("nobody@x.com", STRONG_PASSWORD), "1.2.3.4"))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Invalid credentials");
         // M4: BCrypt must run even for an unknown super-admin email, to equalise response timing.
@@ -173,8 +173,7 @@ class SuperAdminAuthServiceTest {
 
         // 5 failed attempts — mutates state on the real User object
         for (int i = 0; i < 5; i++) {
-            assertThatThrownBy(() -> service.login(
-                    new SuperAdminLoginRequest(EMAIL, "wrongpassword")))
+            assertThatThrownBy(() -> service.login(new SuperAdminLoginRequest(EMAIL, "wrongpassword"), "1.2.3.4"))
                     .isInstanceOf(BusinessRuleException.class);
         }
 
@@ -182,8 +181,7 @@ class SuperAdminAuthServiceTest {
         // wrong password (audit M3): the same INVALID_CREDENTIALS, never a distinct ACCOUNT_LOCKED
         // oracle. The lock still applies server-side (no check against the real hash).
         lenient().when(passwordEncoder.matches(any(), any())).thenReturn(true);
-        assertThatThrownBy(() -> service.login(
-                new SuperAdminLoginRequest(EMAIL, "correctpassword")))
+        assertThatThrownBy(() -> service.login(new SuperAdminLoginRequest(EMAIL, "correctpassword"), "1.2.3.4"))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Invalid credentials");
     }

@@ -60,6 +60,24 @@ spring:
                 name: authCircuitBreaker
                 fallbackUri: forward:/fallback/auth-service
 
+        # Strict per-IP rate limit on the unauthenticated auth endpoints (audit M5). Must precede
+        # the general auth-service route. Keyed on the real socket IP (authKeyResolver → AUTH bucket
+        # in TenantPlanRateLimiter), which — unlike the BFF's X-Forwarded-For limiter — cannot be
+        # spoofed by a client header. Complements the per-account LoginAttemptGuard in auth-service.
+        - id: auth-sensitive-ratelimit
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/login,/api/v1/auth/super-admin/login,/api/v1/auth/forgot-password
+          filters:
+            - name: RequestRateLimiter
+              args:
+                rate-limiter: "#{@planAwareRateLimiter}"
+                key-resolver: "#{@authKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: authCircuitBreaker
+                fallbackUri: forward:/fallback/auth-service
+
         - id: auth-service
           uri: ${AUTH_SERVICE_URL:http://localhost:8081}
           predicates:

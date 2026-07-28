@@ -106,6 +106,27 @@ class RateLimiterConfigTest {
                 .verifyComplete();
     }
 
+    @Test
+    void authKeyResolver_keysOnSocketIpWithAuthPrefix() {
+        // AUTH prefix routes into TenantPlanRateLimiter's strict AUTH bucket; IP is the socket
+        // address, not a client header, so it cannot be spoofed (audit M5).
+        KeyResolver authResolver = new RateLimiterConfig(TEST_SECRET).authKeyResolver();
+        var exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/v1/auth/login").build());
+
+        StepVerifier.create(authResolver.resolve(exchange))
+                .expectNextMatches(k -> k.startsWith("AUTH:"))
+                .verifyComplete();
+    }
+
+    @Test
+    void tenantPlanRateLimiter_hasStrictAuthBucket() {
+        var config = new TenantPlanRateLimiter().getConfig().get("AUTH");
+        org.assertj.core.api.Assertions.assertThat(config).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(config.getReplenishRate()).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(config.getBurstCapacity()).isEqualTo(5);
+    }
+
     private static byte[] decodeSecret(String secret) {
         String normalised = secret.replace('-', '+').replace('_', '/');
         return java.util.Base64.getDecoder().decode(normalised);

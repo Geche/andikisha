@@ -6,8 +6,10 @@ import com.andikisha.auth.application.dto.response.ImpersonationResponse;
 import com.andikisha.auth.application.dto.response.SuperAdminProvisionResponse;
 import com.andikisha.auth.application.dto.response.SuperAdminTokenResponse;
 import com.andikisha.auth.application.service.SuperAdminAuthService;
+import com.andikisha.auth.presentation.support.ClientIp;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,8 +42,9 @@ public class SuperAdminAuthController {
 
     @PostMapping("/super-admin/login")
     @Operation(summary = "SUPER_ADMIN login — issues SYSTEM-scoped JWT")
-    public SuperAdminTokenResponse login(@Valid @RequestBody SuperAdminLoginRequest request) {
-        return superAdminAuthService.login(request);
+    public SuperAdminTokenResponse login(@Valid @RequestBody SuperAdminLoginRequest request,
+                                         HttpServletRequest httpRequest) {
+        return superAdminAuthService.login(request, ClientIp.resolve(httpRequest));
     }
 
     @PostMapping("/tenants/{tenantId}/impersonate")

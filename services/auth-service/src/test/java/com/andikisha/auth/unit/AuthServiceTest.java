@@ -67,6 +67,7 @@ class AuthServiceTest {
     @Mock private StringRedisTemplate redisTemplate;
     @Mock private ValueOperations<String, String> valueOps;
     @Mock private EmployeeGrpcClient employeeGrpcClient;
+    @Mock private com.andikisha.auth.application.service.LoginAttemptGuard loginAttemptGuard;
 
     @InjectMocks private AuthService authService;
 
@@ -183,7 +184,7 @@ class AuthServiceTest {
             stubTokenGeneration();
             when(userMapper.toResponse(any())).thenReturn(buildUserResponse("EMPLOYEE"));
 
-            TokenResponse result = authService.login(request);
+            TokenResponse result = authService.login(request, "1.2.3.4");
 
             assertThat(result.accessToken()).isEqualTo("access-token");
             verify(refreshTokenRepository).revokeAllByUserIdAndTenantId(any(), eq(TENANT_ID));
@@ -198,7 +199,7 @@ class AuthServiceTest {
             when(passwordEncoder.matches("WrongPassword", "hashed")).thenReturn(false);
             when(userRepository.save(any())).thenReturn(user);
 
-            assertThatThrownBy(() -> authService.login(request))
+            assertThatThrownBy(() -> authService.login(request, "1.2.3.4"))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
 
@@ -206,7 +207,7 @@ class AuthServiceTest {
         void withNonExistentEmail_throwsInvalidCredentials() {
             when(userRepository.findByEmailAndTenantId("nobody@test.com", TENANT_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> authService.login(new LoginRequest("nobody@test.com", "pass")))
+            assertThatThrownBy(() -> authService.login(new LoginRequest("nobody@test.com", "pass"), "1.2.3.4"))
                     .isInstanceOf(InvalidCredentialsException.class);
         }
 
@@ -216,7 +217,7 @@ class AuthServiceTest {
             // whether an account exists (the body/status oracle is already closed).
             when(userRepository.findByEmailAndTenantId("nobody@test.com", TENANT_ID)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> authService.login(new LoginRequest("nobody@test.com", "pass")))
+            assertThatThrownBy(() -> authService.login(new LoginRequest("nobody@test.com", "pass"), "1.2.3.4"))
                     .isInstanceOf(InvalidCredentialsException.class);
             verify(passwordEncoder).matches(eq("pass"), anyString());
         }
@@ -232,7 +233,7 @@ class AuthServiceTest {
 
             when(userRepository.findByEmailAndTenantId("jane@test.com", TENANT_ID)).thenReturn(Optional.of(user));
 
-            assertThatThrownBy(() -> authService.login(request))
+            assertThatThrownBy(() -> authService.login(request, "1.2.3.4"))
                     .isInstanceOf(InvalidCredentialsException.class);
             // M4: still incur the BCrypt cost on the locked branch, and never against the real hash.
             verify(passwordEncoder).matches(eq("Password123"), anyString());
@@ -247,8 +248,21 @@ class AuthServiceTest {
 
             when(userRepository.findByEmailAndTenantId("jane@test.com", TENANT_ID)).thenReturn(Optional.of(user));
 
-            assertThatThrownBy(() -> authService.login(request))
+            assertThatThrownBy(() -> authService.login(request, "1.2.3.4"))
                     .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        @Test
+        void withThrottledSourceIp_rejectsWithoutQueryingUser() {
+            // M5/M6: once the IP has exhausted its failed-attempt budget for this account, reject
+            // before touching the DB or the lockout counter.
+            when(loginAttemptGuard.isBlocked("login:" + TENANT_ID, "jane@test.com", "9.9.9.9"))
+                    .thenReturn(true);
+
+            assertThatThrownBy(() -> authService.login(
+                    new LoginRequest("jane@test.com", "Password123"), "9.9.9.9"))
+                    .isInstanceOf(InvalidCredentialsException.class);
+            verify(userRepository, never()).findByEmailAndTenantId(any(), any());
         }
     }
 

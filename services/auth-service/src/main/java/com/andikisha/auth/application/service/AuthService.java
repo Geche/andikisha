@@ -62,6 +62,7 @@ public class AuthService {
     private final AuthEventPublisher eventPublisher;
     private final StringRedisTemplate redisTemplate;
     private final EmployeeGrpcClient employeeGrpcClient;
+    private final LoginAttemptGuard loginAttemptGuard;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -71,7 +72,8 @@ public class AuthService {
                        UserMapper userMapper,
                        AuthEventPublisher eventPublisher,
                        StringRedisTemplate redisTemplate,
-                       EmployeeGrpcClient employeeGrpcClient) {
+                       EmployeeGrpcClient employeeGrpcClient,
+                       LoginAttemptGuard loginAttemptGuard) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.rolePermissionRepository = rolePermissionRepository;
@@ -81,6 +83,7 @@ public class AuthService {
         this.eventPublisher = eventPublisher;
         this.redisTemplate = redisTemplate;
         this.employeeGrpcClient = employeeGrpcClient;
+        this.loginAttemptGuard = loginAttemptGuard;
     }
 
     @Transactional
@@ -262,34 +265,47 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenResponse login(LoginRequest request) {
+    public TokenResponse login(LoginRequest request, String clientIp) {
         String tenantId = TenantContext.requireTenantId();
+        String email = request.email().toLowerCase().trim();
+        String scope = "login:" + tenantId;
 
-        User user = userRepository.findByEmailAndTenantId(
-                        request.email().toLowerCase().trim(), tenantId)
-                .orElse(null);
+        // Brute-force throttle (audit M5/M6): once this source IP has exhausted its failed-attempt
+        // budget for this account within the window, reject early — before the per-account lockout
+        // counter can be driven up and before a password spray can proceed. Uniform 401 + BCrypt cost
+        // keeps it indistinguishable (M3/M4).
+        if (loginAttemptGuard.isBlocked(scope, email, clientIp)) {
+            passwordEncoder.matches(request.password(), DUMMY_HASH);
+            throw new InvalidCredentialsException();
+        }
+
+        User user = userRepository.findByEmailAndTenantId(email, tenantId).orElse(null);
 
         // Uniform rejection: every failure path returns the same 401 InvalidCredentials AND incurs
         // the same BCrypt cost, so neither the response (audit M3) nor the response time (audit M4)
         // reveals whether the email maps to a real, active, unlocked account. On a locked account
         // the lock still applies server-side — we simply do not disclose it.
         if (user == null || !user.isActive()) {
+            loginAttemptGuard.recordFailure(scope, email, clientIp);
             passwordEncoder.matches(request.password(), DUMMY_HASH);
             throw new InvalidCredentialsException();
         }
 
         user.clearLockIfExpired();
         if (user.isLocked()) {
+            loginAttemptGuard.recordFailure(scope, email, clientIp);
             passwordEncoder.matches(request.password(), DUMMY_HASH);
             throw new InvalidCredentialsException();
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            loginAttemptGuard.recordFailure(scope, email, clientIp);
             user.recordFailedLogin();
             userRepository.save(user);
             throw new InvalidCredentialsException();
         }
 
+        loginAttemptGuard.reset(scope, email, clientIp);
         user.recordSuccessfulLogin();
         userRepository.save(user);
 

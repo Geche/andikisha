@@ -47,17 +47,20 @@ public class SuperAdminAuthService {
     private final PasswordEncoder passwordEncoder;
     private final SuperAdminSessionRepository sessionRepository;
     private final String provisionSecret;
+    private final LoginAttemptGuard loginAttemptGuard;
 
     public SuperAdminAuthService(UserRepository userRepository,
                                  JwtTokenProvider jwtTokenProvider,
                                  PasswordEncoder passwordEncoder,
                                  SuperAdminSessionRepository sessionRepository,
-                                 @Value("${app.provision-secret}") String provisionSecret) {
+                                 @Value("${app.provision-secret}") String provisionSecret,
+                                 LoginAttemptGuard loginAttemptGuard) {
         this.userRepository = userRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.sessionRepository = sessionRepository;
         this.provisionSecret = provisionSecret;
+        this.loginAttemptGuard = loginAttemptGuard;
     }
 
     @Transactional
@@ -91,10 +94,19 @@ public class SuperAdminAuthService {
     }
 
     @Transactional
-    public SuperAdminTokenResponse login(SuperAdminLoginRequest request) {
+    public SuperAdminTokenResponse login(SuperAdminLoginRequest request, String clientIp) {
+        String email = request.email().toLowerCase().trim();
+        String scope = "superadmin";
+
+        // Brute-force throttle (audit M5/M6): the single SUPER_ADMIN account is a platform-admin DoS
+        // target, so cap failed attempts per source IP before the lockout counter can be driven up.
+        if (loginAttemptGuard.isBlocked(scope, email, clientIp)) {
+            passwordEncoder.matches(request.password(), DUMMY_HASH);
+            throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
+        }
+
         User admin = userRepository
-                .findByEmailAndTenantIdAndRole(
-                        request.email().toLowerCase().trim(), SYSTEM_TENANT, Role.SUPER_ADMIN)
+                .findByEmailAndTenantIdAndRole(email, SYSTEM_TENANT, Role.SUPER_ADMIN)
                 .filter(User::isActive)
                 .orElse(null);
 
@@ -102,21 +114,26 @@ public class SuperAdminAuthService {
         // incur the same BCrypt cost, so neither the response (audit M3) nor the timing (audit M4)
         // reveals account state. The lock still applies server-side — it is just not disclosed.
         if (admin == null) {
+            loginAttemptGuard.recordFailure(scope, email, clientIp);
             passwordEncoder.matches(request.password(), DUMMY_HASH);
             throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
         }
 
         admin.clearLockIfExpired();
         if (admin.isLocked()) {
+            loginAttemptGuard.recordFailure(scope, email, clientIp);
             passwordEncoder.matches(request.password(), DUMMY_HASH);
             throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
         }
 
         if (!passwordEncoder.matches(request.password(), admin.getPasswordHash())) {
+            loginAttemptGuard.recordFailure(scope, email, clientIp);
             admin.recordFailedLogin();
             userRepository.save(admin);
             throw new BusinessRuleException("INVALID_CREDENTIALS", "Invalid credentials");
         }
+
+        loginAttemptGuard.reset(scope, email, clientIp);
 
         admin.recordSuccessfulLogin();
         userRepository.save(admin);
