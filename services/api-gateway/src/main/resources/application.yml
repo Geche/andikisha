@@ -362,6 +362,12 @@ grpc:
 app:
   jwt:
     secret: ${JWT_SECRET}
+  internal-auth:
+    # HMAC secret the gateway uses to sign X-Internal-Auth over the identity it injects (audit
+    # M1/M2), distinct from JWT_SECRET. Unset = signing disabled (safe rollout: services verify in
+    # log-only mode until this is set everywhere and enforcement is enabled). Set to a 32+ char
+    # random value shared with every service. openssl rand -hex 32
+    secret: ${INTERNAL_SIGNING_SECRET:}
   cors:
     allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003}
   swagger:

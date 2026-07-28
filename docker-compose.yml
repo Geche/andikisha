@@ -51,6 +51,10 @@ x-spring-env: &spring-env
   REDIS_PORT: "6379"
   REDIS_PASSWORD: ${REDIS_PASS}
   ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+  # Shared HMAC secret for gateway-signed X-Internal-Auth (audit M1/M2). Gateway signs, services
+  # verify. Unset = signing/enforcement off (safe rollout). Set the same value everywhere; the
+  # gateway and services all read it via this anchor. openssl rand -hex 32
+  INTERNAL_SIGNING_SECRET: ${INTERNAL_SIGNING_SECRET:-}
 
 x-db-env: &db-env
   DB_HOST: postgres
