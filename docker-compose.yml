@@ -55,6 +55,10 @@ x-spring-env: &spring-env
   # verify. Unset = signing/enforcement off (safe rollout). Set the same value everywhere; the
   # gateway and services all read it via this anchor. openssl rand -hex 32
   INTERNAL_SIGNING_SECRET: ${INTERNAL_SIGNING_SECRET:-}
+  # Trusted-header verification mode in the services: log (default, verify + warn but serve) or
+  # enforce (reject on missing/invalid attestation) or off. Keep at log until the secret is set and
+  # the logs are clean, then flip to enforce service-by-service.
+  INTERNAL_AUTH_MODE: ${INTERNAL_AUTH_MODE:-log}
 
 x-db-env: &db-env
   DB_HOST: postgres

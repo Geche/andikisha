@@ -1,7 +1,7 @@
 package com.andikisha.integration.e2e;
 
 import com.andikisha.integration.presentation.filter.MpesaSourceIpFilter;
-import com.andikisha.integration.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +24,7 @@ public class WebMvcTestSecurityConfig {
     @Bean
     @Primary
     public TrustedHeaderAuthFilter trustedHeaderAuthFilter() {
-        return new TrustedHeaderAuthFilter() {
+        return new TrustedHeaderAuthFilter("", "off") {
             @Override
             protected void doFilterInternal(HttpServletRequest request,
                                             HttpServletResponse response,

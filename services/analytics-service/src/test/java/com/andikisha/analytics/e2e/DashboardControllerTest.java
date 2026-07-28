@@ -5,7 +5,7 @@ import com.andikisha.analytics.application.service.AnalyticsService;
 import com.andikisha.analytics.infrastructure.config.SecurityConfig;
 import com.andikisha.analytics.infrastructure.config.WebMvcConfig;
 import com.andikisha.analytics.presentation.controller.DashboardController;
-import com.andikisha.analytics.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import com.andikisha.common.tenant.TenantContext;
 import com.fasterxml.jackson.databind.ObjectMapper;

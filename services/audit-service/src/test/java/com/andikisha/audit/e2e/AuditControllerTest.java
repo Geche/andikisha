@@ -7,7 +7,7 @@ import com.andikisha.audit.infrastructure.config.SecurityConfig;
 import com.andikisha.audit.infrastructure.config.WebMvcConfig;
 import com.andikisha.audit.presentation.advice.AuditExceptionHandler;
 import com.andikisha.audit.presentation.controller.AuditController;
-import com.andikisha.audit.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import com.andikisha.common.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

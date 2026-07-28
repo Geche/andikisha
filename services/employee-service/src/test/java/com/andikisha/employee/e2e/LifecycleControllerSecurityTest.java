@@ -6,7 +6,7 @@ import com.andikisha.employee.infrastructure.config.SecurityConfig;
 import com.andikisha.employee.infrastructure.config.WebMvcConfig;
 import com.andikisha.employee.presentation.advice.EmployeeExceptionHandler;
 import com.andikisha.employee.presentation.controller.LifecycleController;
-import com.andikisha.employee.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

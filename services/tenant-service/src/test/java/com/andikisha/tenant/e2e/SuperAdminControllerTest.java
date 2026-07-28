@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(com.andikisha.tenant.presentation.controller.SuperAdminController.class)
 @Import({
         com.andikisha.tenant.infrastructure.config.SecurityConfig.class,
-        com.andikisha.tenant.presentation.filter.TrustedHeaderAuthFilter.class,
+        com.andikisha.common.security.TrustedHeaderAuthFilter.class,
         com.andikisha.common.exception.GlobalExceptionHandler.class,
         com.andikisha.tenant.presentation.advice.TenantExceptionHandler.class
 })

@@ -5,7 +5,7 @@ import com.andikisha.compliance.application.dto.response.ComplianceSummaryRespon
 import com.andikisha.compliance.domain.exception.InvalidCountryCodeException;
 import com.andikisha.compliance.infrastructure.config.SecurityConfig;
 import com.andikisha.compliance.infrastructure.config.WebMvcConfig;
-import com.andikisha.compliance.presentation.filter.TrustedHeaderAuthFilter;
+import com.andikisha.common.security.TrustedHeaderAuthFilter;
 import com.andikisha.compliance.application.dto.response.StatutoryRateResponse;
 import com.andikisha.compliance.application.dto.response.TaxBracketResponse;
 import com.andikisha.compliance.application.service.ComplianceService;
