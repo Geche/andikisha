@@ -1,0 +1,26 @@
+# Traefik dynamic configuration — auth-endpoint rate limiting (security audit M5).
+#
+# Defines a rate-limit middleware for the login / forgot-password endpoints. Traefik is the edge
+# proxy on the Dokploy VPS (it terminates TLS on :80/:443), so with no sourceCriterion it keys on
+# the request's remote address = the REAL client IP. Unlike the BFF's in-memory X-Forwarded-For
+# limiter, this cannot be spoofed by a client header and is shared across portal instances.
+#
+# Load this via a Traefik file provider (see docs/deployment/traefik-auth-ratelimit.md), or use the
+# equivalent Docker labels documented there. Attach the middleware only to a PATH-SCOPED router for
+# the auth endpoints — never to the whole portal, or normal page/asset loads get throttled too.
+http:
+  middlewares:
+    auth-ratelimit:
+      rateLimit:
+        # ~10 requests/minute per client IP, burst 20. Caps brute-force / password-spray at the edge
+        # while leaving headroom for a human mistyping a password. The per-account 30-min lockout
+        # (auth-service) and the redesigned per-account throttle remain the finer controls.
+        average: 10
+        period: 1m
+        burst: 20
+        # No sourceCriterion → remote address (real client IP at this edge).
+        # If a CDN/L7 LB is EVER placed in front of Traefik, uncomment and set depth to the number
+        # of trusted proxy hops so the client IP is taken from the right X-Forwarded-For position:
+        # sourceCriterion:
+        #   ipStrategy:
+        #     depth: 1
