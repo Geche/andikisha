@@ -17,19 +17,24 @@ function safeReturnTo(raw: string | null): string | null {
   } catch {
     return null; // malformed percent-encoding
   }
+  // The WHATWG URL parser strips ASCII tab (0x09) and newline (0x0A/0x0D) from input BEFORE
+  // resolving, so "/\t/evil.com" becomes "//evil.com" — protocol-relative → cross-origin. Evaluate
+  // the guard on the SAME stripped form the browser will actually navigate to, and drop any other
+  // control chars, so control-char variants of the protocol-relative bypass cannot slip through.
+  const normalised = decoded.replace(/[\u0000-\u001F\u007F]/g, "");
   // Must be a same-origin absolute PATH. Reject protocol-relative values ("//evil.com", and
   // "/\evil.com" which browsers normalise to "//evil.com") — those pass a bare startsWith("/")
   // check but resolve cross-origin, so router.replace() would hard-navigate a freshly-authenticated
   // admin off-site (open redirect, audit M7). Also reject /login to avoid a redirect loop.
   if (
-    !decoded.startsWith("/") ||
-    decoded.startsWith("//") ||
-    decoded.startsWith("/\\") ||
-    decoded.startsWith("/login")
+    !normalised.startsWith("/") ||
+    normalised.startsWith("//") ||
+    normalised.startsWith("/\\") ||
+    normalised.startsWith("/login")
   ) {
     return null;
   }
-  return decoded;
+  return normalised;
 }
 
 export default function PlatformLoginPage() {
