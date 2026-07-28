@@ -70,6 +70,25 @@ public class PaymentProcessor {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "PaymentTransaction", transactionId));
 
+            // Anti-double-send guard (audit H3): only a not-yet-in-flight transaction may be
+            // dispatched — PENDING (fresh) or FAILED/TIMEOUT (a retry via retryFailed). Claim it
+            // to PROCESSING and flush BEFORE any external send. The run-scoped Redis lock is
+            // released as soon as processBatchPayments' async loop returns, so a second disburse
+            // click or an event reprocess would otherwise re-send in-flight payments; here it finds
+            // a non-dispatchable row and returns. The @Version optimistic lock makes the claim
+            // atomic — if two dispatches race, the second saveAndFlush throws and aborts before send.
+            TransactionStatus status = tx.getStatus();
+            boolean dispatchable = status == TransactionStatus.PENDING
+                    || status == TransactionStatus.FAILED
+                    || status == TransactionStatus.TIMEOUT;
+            if (!dispatchable) {
+                log.warn("Skipping payment {} — status {} is already in-flight or settled",
+                        transactionId, status);
+                return;
+            }
+            tx.markProcessing();
+            transactionRepository.saveAndFlush(tx);
+
             switch (tx.getPaymentMethod()) {
                 case MPESA -> processMpesaPayment(tx);
                 case BANK_TRANSFER -> processBankPayment(tx);

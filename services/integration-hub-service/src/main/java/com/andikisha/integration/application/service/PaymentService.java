@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -55,6 +56,11 @@ public class PaymentService {
                                                      String employeeName,
                                                      String phoneNumber,
                                                      BigDecimal amount, String currency) {
+        Optional<PaymentTransaction> existing = findExistingTransaction(
+                tenantId, payrollRunId, paySlipId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
         PaymentTransaction tx = PaymentTransaction.create(
                 tenantId, payrollRunId, paySlipId, employeeId, employeeName,
                 PaymentMethod.MPESA, phoneNumber, null, null,
@@ -68,11 +74,34 @@ public class PaymentService {
                                                     String employeeName,
                                                     String bankName, String accountNumber,
                                                     BigDecimal amount, String currency) {
+        Optional<PaymentTransaction> existing = findExistingTransaction(
+                tenantId, payrollRunId, paySlipId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
         PaymentTransaction tx = PaymentTransaction.create(
                 tenantId, payrollRunId, paySlipId, employeeId, employeeName,
                 PaymentMethod.BANK_TRANSFER, null, bankName, accountNumber,
                 amount, currency);
         return transactionRepository.save(tx);
+    }
+
+    /**
+     * Idempotent create guard (audit H4): re-processing PayrollApprovedEvent — a manual replay, a
+     * DLQ re-drive, or a second approval — must not create a second payment row for a payslip, which
+     * would disburse the whole run again. One payment exists per (tenant, run, payslip); the V5
+     * UNIQUE constraint is the hard guarantee, this lookup keeps the normal re-run path from tripping
+     * it.
+     */
+    private Optional<PaymentTransaction> findExistingTransaction(String tenantId, UUID payrollRunId,
+                                                                 UUID paySlipId) {
+        Optional<PaymentTransaction> existing = transactionRepository
+                .findByTenantIdAndPayrollRunIdAndPaySlipId(tenantId, payrollRunId, paySlipId);
+        if (existing.isPresent()) {
+            log.info("Payment transaction already exists for run {} payslip {} — skipping create",
+                    payrollRunId, paySlipId);
+        }
+        return existing;
     }
 
     // Not @Transactional — each processPayment runs in its own transaction via PaymentProcessor
@@ -140,21 +169,35 @@ public class PaymentService {
     public void handleMpesaCallback(String conversationId, boolean success,
                                     String receiptNumber, String errorCode,
                                     String errorMessage) {
-        // Idempotency guard — Safaricom can deliver duplicate callbacks
-        String idempotencyKey = IDEMPOTENCY_PREFIX + conversationId;
-        Boolean isNew = redisTemplate.opsForValue()
-                .setIfAbsent(idempotencyKey, "1", IDEMPOTENCY_TTL);
-        if (!Boolean.TRUE.equals(isNew)) {
-            log.info("Duplicate M-Pesa callback for conversation {} — ignored", conversationId);
-            return;
-        }
-
         PaymentTransaction tx = transactionRepository
                 .findByConversationId(conversationId)
                 .orElse(null);
 
         if (tx == null) {
+            // Do NOT set the idempotency key here: a callback that raced ahead of the markSubmitted
+            // commit finds no transaction, and keying it would permanently dedupe the genuine
+            // callback that arrives once the row is visible, stranding the payment (audit L3).
             log.warn("Callback received for unknown conversation: {}", conversationId);
+            return;
+        }
+
+        // State guard (audit H2): only a non-terminal payment may transition. A settled
+        // (COMPLETED/FAILED/REVERSED) transaction must never be overwritten by a late, duplicate, or
+        // forged callback — that is what let an unauthenticated callback forge a payment status or
+        // flip a real payment to FAILED for re-disbursement.
+        if (isTerminal(tx.getStatus())) {
+            log.info("M-Pesa callback for conversation {} ignored — transaction already {}",
+                    conversationId, tx.getStatus());
+            return;
+        }
+
+        // Idempotency guard — Safaricom can deliver duplicate callbacks. Keyed only now that we have
+        // a real, non-terminal transaction (see the unknown-conversation note above).
+        String idempotencyKey = IDEMPOTENCY_PREFIX + conversationId;
+        Boolean isNew = redisTemplate.opsForValue()
+                .setIfAbsent(idempotencyKey, "1", IDEMPOTENCY_TTL);
+        if (!Boolean.TRUE.equals(isNew)) {
+            log.info("Duplicate M-Pesa callback for conversation {} — ignored", conversationId);
             return;
         }
 
@@ -183,6 +226,12 @@ public class PaymentService {
                 || tx.getStatus() == TransactionStatus.FAILED) {
             maybePublishRunCompleted(tx.getTenantId(), tx.getPayrollRunId());
         }
+    }
+
+    private static boolean isTerminal(TransactionStatus status) {
+        return status == TransactionStatus.COMPLETED
+                || status == TransactionStatus.FAILED
+                || status == TransactionStatus.REVERSED;
     }
 
     private void maybePublishRunCompleted(String tenantId, java.util.UUID payrollRunId) {

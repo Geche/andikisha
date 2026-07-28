@@ -148,24 +148,47 @@ class PaymentServiceTest {
     }
 
     @Test
-    void handleMpesaCallback_duplicateCallback_isIgnoredAndNotReprocessed() {
+    void handleMpesaCallback_transactionAlreadyTerminal_isIgnored() {
+        // H2 state guard: a settled (COMPLETED/FAILED/REVERSED) payment must not be re-transitioned
+        // by a late or forged callback. The guard short-circuits before the idempotency key is set.
+        PaymentTransaction tx = buildTransaction(PaymentMethod.MPESA); // SUBMITTED
+        tx.markCompleted("EARLIER-RECEIPT");                            // now terminal
+        when(transactionRepository.findByConversationId(CONV_ID)).thenReturn(Optional.of(tx));
+
+        service.handleMpesaCallback(CONV_ID, false, null, "2001", "Insufficient funds");
+
+        assertThat(tx.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
+        verify(transactionRepository, never()).save(any());
+        verify(eventPublisher, never()).publishPaymentFailed(any());
+        verify(valueOps, never()).setIfAbsent(anyString(), anyString(), any());
+    }
+
+    @Test
+    void handleMpesaCallback_duplicateCallbackForInFlightTx_isIgnored() {
+        // Redis idempotency dedupes a concurrent duplicate on a still-in-flight (SUBMITTED) tx.
+        PaymentTransaction tx = buildTransaction(PaymentMethod.MPESA); // SUBMITTED (non-terminal)
+        when(transactionRepository.findByConversationId(CONV_ID)).thenReturn(Optional.of(tx));
         when(valueOps.setIfAbsent(eq(IDEM_KEY), anyString(), any())).thenReturn(false);
 
         service.handleMpesaCallback(CONV_ID, true, "QGH7YK3BXY", null, null);
 
-        verify(transactionRepository, never()).findByConversationId(any());
+        assertThat(tx.getStatus()).isEqualTo(TransactionStatus.SUBMITTED);
         verify(transactionRepository, never()).save(any());
+        verify(eventPublisher, never()).publishPaymentCompleted(any());
     }
 
     @Test
-    void handleMpesaCallback_unknownConversationId_logsAndReturnsGracefully() {
-        when(valueOps.setIfAbsent(eq(IDEM_KEY), anyString(), any())).thenReturn(true);
+    void handleMpesaCallback_unknownConversationId_returnsWithoutSettingIdempotencyKey() {
         when(transactionRepository.findByConversationId(CONV_ID)).thenReturn(Optional.empty());
 
         service.handleMpesaCallback(CONV_ID, true, "QGH7YK3BXY", null, null);
 
         verify(transactionRepository, never()).save(any());
         verify(eventPublisher, never()).publishPaymentCompleted(any());
+        // L3: the key must NOT be set for an unknown (possibly not-yet-committed) conversation,
+        // otherwise the genuine callback that arrives after markSubmitted commits would be deduped
+        // away and the payment stranded in SUBMITTED forever.
+        verify(valueOps, never()).setIfAbsent(anyString(), anyString(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -187,6 +210,41 @@ class PaymentServiceTest {
         } finally {
             com.andikisha.common.tenant.TenantContext.clear();
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // createMpesaTransaction — idempotency (audit H4)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void createMpesaTransaction_whenAlreadyExistsForRunAndPayslip_returnsExistingWithoutInsert() {
+        UUID paySlipId = UUID.randomUUID();
+        PaymentTransaction existing = buildTransaction(PaymentMethod.MPESA);
+        when(transactionRepository.findByTenantIdAndPayrollRunIdAndPaySlipId(
+                TENANT_ID, RUN_ID, paySlipId)).thenReturn(Optional.of(existing));
+
+        PaymentTransaction result = service.createMpesaTransaction(
+                TENANT_ID, RUN_ID, paySlipId, UUID.randomUUID(), "Jane",
+                "+254700000001", new BigDecimal("50000.00"), "KES");
+
+        assertThat(result).isSameAs(existing);
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void createMpesaTransaction_whenNoneExists_insertsNewPendingTransaction() {
+        UUID paySlipId = UUID.randomUUID();
+        when(transactionRepository.findByTenantIdAndPayrollRunIdAndPaySlipId(
+                TENANT_ID, RUN_ID, paySlipId)).thenReturn(Optional.empty());
+        when(transactionRepository.save(any(PaymentTransaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        PaymentTransaction result = service.createMpesaTransaction(
+                TENANT_ID, RUN_ID, paySlipId, UUID.randomUUID(), "Jane",
+                "+254700000001", new BigDecimal("50000.00"), "KES");
+
+        assertThat(result.getStatus()).isEqualTo(TransactionStatus.PENDING);
+        verify(transactionRepository).save(any(PaymentTransaction.class));
     }
 
     // -------------------------------------------------------------------------

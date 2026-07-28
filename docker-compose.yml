@@ -399,6 +399,9 @@ services:
       MPESA_ENV: ${MPESA_ENV:-sandbox}
       MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
       MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      # Secret path segment on the B2C callback URL (audit H2). Set in the Dokploy Environment tab
+      # when M-Pesa goes live; unset fails closed (callbacks rejected). Not needed while sandbox.
+      MPESA_CALLBACK_SECRET: ${MPESA_CALLBACK_SECRET:-}
       BANK_TRANSFER_ENABLED: "false"
       CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY}
       MPESA_CALLBACK_IP_VALIDATION_DISABLED: "true"

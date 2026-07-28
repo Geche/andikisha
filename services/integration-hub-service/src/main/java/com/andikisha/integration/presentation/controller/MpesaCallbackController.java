@@ -3,11 +3,17 @@ package com.andikisha.integration.presentation.controller;
 import com.andikisha.integration.application.service.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 
 @RestController
@@ -15,14 +21,33 @@ import java.util.Map;
 public class MpesaCallbackController {
 
     private static final Logger log = LoggerFactory.getLogger(MpesaCallbackController.class);
+    private static final Map<String, String> ACCEPTED = Map.of("ResultCode", "0", "ResultDesc", "Accepted");
+    private static final Map<String, String> FORBIDDEN = Map.of("ResultCode", "1", "ResultDesc", "Forbidden");
+
     private final PaymentService paymentService;
 
-    public MpesaCallbackController(PaymentService paymentService) {
+    /**
+     * Shared secret embedded in the callback URL path (audit H2). Safaricom B2C result/timeout
+     * callbacks are unsigned, so the endpoint is unauthenticated by necessity; a high-entropy secret
+     * path segment — validated constant-time — is the authenticity control that keeps an attacker who
+     * reaches the pod from forging payment confirmations. The registered Safaricom ResultURL/
+     * QueueTimeOutURL must carry this secret. Blank (unset) fails closed: every callback is rejected.
+     */
+    private final String callbackSecret;
+
+    public MpesaCallbackController(PaymentService paymentService,
+                                   @Value("${app.mpesa.callback.secret:}") String callbackSecret) {
         this.paymentService = paymentService;
+        this.callbackSecret = callbackSecret;
     }
 
-    @PostMapping("/b2c/result")
-    public Map<String, String> handleResult(@RequestBody Map<String, Object> payload) {
+    @PostMapping("/b2c/result/{secret}")
+    public ResponseEntity<Map<String, String>> handleResult(@PathVariable String secret,
+                                                            @RequestBody Map<String, Object> payload) {
+        if (!secretValid(secret)) {
+            log.warn("Rejected M-Pesa B2C result callback — invalid callback secret");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN);
+        }
         log.info("M-Pesa B2C result callback received");
 
         String conversationId = null;
@@ -45,13 +70,28 @@ public class MpesaCallbackController {
                     conversationId, payload, e.getMessage(), e);
         }
 
-        return Map.of("ResultCode", "0", "ResultDesc", "Accepted");
+        return ResponseEntity.ok(ACCEPTED);
     }
 
-    @PostMapping("/b2c/timeout")
-    public Map<String, String> handleTimeout(@RequestBody Map<String, Object> payload) {
+    @PostMapping("/b2c/timeout/{secret}")
+    public ResponseEntity<Map<String, String>> handleTimeout(@PathVariable String secret,
+                                                             @RequestBody Map<String, Object> payload) {
+        if (!secretValid(secret)) {
+            log.warn("Rejected M-Pesa B2C timeout callback — invalid callback secret");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN);
+        }
         log.warn("M-Pesa B2C timeout callback received: {}", payload);
-        return Map.of("ResultCode", "0", "ResultDesc", "Accepted");
+        return ResponseEntity.ok(ACCEPTED);
+    }
+
+    /** Constant-time comparison; blank configured secret fails closed. */
+    private boolean secretValid(String provided) {
+        if (callbackSecret == null || callbackSecret.isBlank() || provided == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                provided.getBytes(StandardCharsets.UTF_8),
+                callbackSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     @SuppressWarnings("unchecked")
