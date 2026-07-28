@@ -1,6 +1,5 @@
 package com.andikisha.auth.presentation.advice;
 
-import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.auth.domain.exception.InvalidCredentialsException;
 import com.andikisha.auth.domain.exception.TokenExpiredException;
 import com.andikisha.auth.domain.exception.UserAlreadyActivatedException;
@@ -26,12 +25,6 @@ public class AuthExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTokenExpired(TokenExpiredException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponse("TOKEN_EXPIRED", ex.getMessage()));
-    }
-
-    @ExceptionHandler(AccountLockedException.class)
-    public ResponseEntity<ErrorResponse> handleAccountLocked(AccountLockedException ex) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(new ErrorResponse("ACCOUNT_LOCKED", ex.getMessage()));
     }
 
     /**

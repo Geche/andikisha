@@ -9,7 +9,6 @@ import com.andikisha.auth.application.dto.response.UserResponse;
 import com.andikisha.auth.application.mapper.UserMapper;
 import com.andikisha.auth.application.port.AuthEventPublisher;
 import com.andikisha.auth.application.service.AuthService;
-import com.andikisha.auth.domain.exception.AccountLockedException;
 import com.andikisha.auth.domain.exception.InvalidCredentialsException;
 import com.andikisha.auth.domain.exception.TokenExpiredException;
 import com.andikisha.auth.domain.model.RefreshToken;
@@ -212,16 +211,32 @@ class AuthServiceTest {
         }
 
         @Test
-        void withLockedAccount_throwsAccountLockedException() {
+        void withNonExistentEmail_stillPerformsPasswordComparison_toEqualiseTiming() {
+            // M4: BCrypt must run even when the email is unknown, so response time does not reveal
+            // whether an account exists (the body/status oracle is already closed).
+            when(userRepository.findByEmailAndTenantId("nobody@test.com", TENANT_ID)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> authService.login(new LoginRequest("nobody@test.com", "pass")))
+                    .isInstanceOf(InvalidCredentialsException.class);
+            verify(passwordEncoder).matches(eq("pass"), anyString());
+        }
+
+        @Test
+        void withLockedAccount_throwsInvalidCredentials_notAccountLocked() {
+            // M3: a locked account must return the SAME 401 as a wrong password. A distinct
+            // ACCOUNT_LOCKED response only ever appears for real accounts and is a user-enumeration
+            // oracle. The lock still applies server-side (no password check runs against the hash).
             var request = new LoginRequest("jane@test.com", "Password123");
             User user = buildUser(Role.EMPLOYEE);
-            // Trigger lockout by recording 5 failed attempts
-            for (int i = 0; i < 5; i++) user.recordFailedLogin();
+            for (int i = 0; i < 5; i++) user.recordFailedLogin(); // locked
 
             when(userRepository.findByEmailAndTenantId("jane@test.com", TENANT_ID)).thenReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.login(request))
-                    .isInstanceOf(AccountLockedException.class);
+                    .isInstanceOf(InvalidCredentialsException.class);
+            // M4: still incur the BCrypt cost on the locked branch, and never against the real hash.
+            verify(passwordEncoder).matches(eq("Password123"), anyString());
+            verify(passwordEncoder, never()).matches("Password123", "hashed");
         }
 
         @Test
