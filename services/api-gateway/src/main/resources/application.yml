@@ -418,8 +418,15 @@ resilience4j:
 management:
   endpoints:
     web:
+      # Actuator shares the internet-facing app port (no management.server.port) and the JWT
+      # enforcement is a Gateway GlobalFilter that never runs for /actuator/** — so anything
+      # exposed here is reachable unauthenticated. Keep it to health/info (needed by Docker
+      # readiness probes). Do NOT add `gateway` (discloses the internal route table + registers
+      # add/refresh/delete-route ops → recon + route-swap SSRF/DoS) or `metrics` (ops-data leak)
+      # without first binding actuator to an internal-only management.server.port.
+      # See docs/security/security-audit-2026-07-28.md H1.
       exposure:
-        include: health,info,metrics,gateway
+        include: health,info
   endpoint:
     health:
       show-details: when-authorized
@@ -429,7 +436,7 @@ management:
         readiness:
           include: readinessState
     gateway:
-      enabled: true
+      enabled: false
   tracing:
     sampling:
       probability: 1.0
