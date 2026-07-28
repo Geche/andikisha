@@ -642,6 +642,47 @@ class LeaveServiceTest {
         verify(mapper, never()).toResponse(any(LeaveRequest.class));
     }
 
+    // ------------------------------------------------------------------
+    // listEmployeeRequests — GET /employees/{employeeId}/requests (IDOR guard, audit H5)
+    // ------------------------------------------------------------------
+
+    @Test
+    void listEmployeeRequests_employeeQueryingAnotherEmployee_ownScope_throwsAccessDenied() {
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.own());
+        UUID victim = UUID.randomUUID();
+
+        assertThatThrownBy(() -> leaveService.listEmployeeRequests(
+                victim, "EMPLOYEE", EMPLOYEE_ID.toString(), PageRequest.of(0, 20)))
+                .isInstanceOf(AccessDeniedException.class);
+        verify(requestRepository, never())
+                .findByTenantIdAndEmployeeIdOrderByCreatedAtDesc(any(), any(), any());
+    }
+
+    @Test
+    void listEmployeeRequests_employeeQueryingOwn_ownScope_returnsData() {
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.own());
+        when(requestRepository.findByTenantIdAndEmployeeIdOrderByCreatedAtDesc(
+                eq(TENANT_ID), eq(EMPLOYEE_ID), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        var result = leaveService.listEmployeeRequests(
+                EMPLOYEE_ID, "EMPLOYEE", EMPLOYEE_ID.toString(), PageRequest.of(0, 20));
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void listEmployeeRequests_hrManagerAllScope_canQueryAnyEmployee() {
+        when(scopeResolver.resolve(any(), any(), any())).thenReturn(ResolvedScope.all());
+        UUID anyEmployee = UUID.randomUUID();
+        when(requestRepository.findByTenantIdAndEmployeeIdOrderByCreatedAtDesc(
+                eq(TENANT_ID), eq(anyEmployee), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        var result = leaveService.listEmployeeRequests(
+                anyEmployee, "HR_MANAGER", null, PageRequest.of(0, 20));
+        assertThat(result).isEmpty();
+    }
+
     private LeaveRequest sampleRequest() {
         return LeaveRequest.create(
                 TENANT_ID, EMPLOYEE_ID, "Jane Doe", LeaveType.ANNUAL,
