@@ -607,7 +607,7 @@ from the Approve modal so the UI doesn't collect data it discards.
 
 ### LEAVE-BACKLOG-002 — Leave balances deduct calendar days, but annual leave is 21 *working* days (statutory)
 
-**STATUS: OPEN — needs a policy decision before implementation.**
+**STATUS: OPEN — decision doc drafted (`docs/decisions/2026-07-29-leave-day-counting-basis.md`, Proposed); awaiting a call on its §4 open questions before implementation.**
 
 **Raised:** 2026-07-29, during PAYROLL-BACKLOG-001 (unpaid-leave deduction basis). Related: [[PAYROLL-BACKLOG-001]].
 
