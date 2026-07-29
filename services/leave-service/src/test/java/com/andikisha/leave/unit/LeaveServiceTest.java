@@ -288,11 +288,14 @@ class LeaveServiceTest {
 
     @Test
     void submit_recomputesDaysFromDateRange_ignoringInflatedOrDeflatedClientValue() {
-        // 5 inclusive calendar days (day 10 .. day 14), but client claims half a day
+        // Mon..Fri = 5 working days for ANNUAL, but client claims half a day. Anchored to the next
+        // Monday so the working-day count is deterministic (LEAVE-BACKLOG-002).
+        LocalDate monday = LocalDate.now()
+                .with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.MONDAY));
         var dto = new SubmitLeaveRequest(
                 "ANNUAL",
-                LocalDate.now().plusDays(10),
-                LocalDate.now().plusDays(14),
+                monday,
+                monday.plusDays(4),
                 BigDecimal.valueOf(0.5),
                 "Trip");
 
@@ -317,6 +320,42 @@ class LeaveServiceTest {
         var captor = org.mockito.ArgumentCaptor.forClass(LeaveRequest.class);
         verify(requestRepository).save(captor.capture());
         assertThat(captor.getValue().getDays()).isEqualByComparingTo("5");
+    }
+
+    @Test
+    void submit_annualLeaveSpanningWeekend_storesWorkingDaysOnly() {
+        // LEAVE-BACKLOG-002: Fri..Mon is 4 calendar days but only 2 working days for ANNUAL.
+        // Anchored to the next Friday so the count is deterministic.
+        LocalDate friday = LocalDate.now()
+                .with(java.time.temporal.TemporalAdjusters.next(java.time.DayOfWeek.FRIDAY));
+        var dto = new SubmitLeaveRequest(
+                "ANNUAL",
+                friday,
+                friday.plusDays(3), // the following Monday
+                null,
+                "Long weekend");
+
+        LeavePolicy policy = LeavePolicy.create(TENANT_ID, LeaveType.ANNUAL, 21, 5, true, false);
+        LeaveBalance balance = LeaveBalance.create(
+                TENANT_ID, EMPLOYEE_ID, LeaveType.ANNUAL, 2026,
+                BigDecimal.valueOf(21), BigDecimal.ZERO);
+
+        when(policyRepository.findByTenantIdAndLeaveType(TENANT_ID, LeaveType.ANNUAL))
+                .thenReturn(Optional.of(policy));
+        when(balanceRepository.findByTenantIdAndEmployeeIdAndLeaveTypeAndYear(any(), any(), any(), anyInt()))
+                .thenReturn(Optional.of(balance));
+        when(requestRepository.sumDaysByStatus(any(), any(), any(), any(), any(), any()))
+                .thenReturn(BigDecimal.ZERO);
+        when(requestRepository.findOverlappingByEmployee(any(), any(), any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(requestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(LeaveRequest.class))).thenReturn(mock(LeaveRequestResponse.class));
+
+        leaveService.submit(EMPLOYEE_ID, "Jane Doe", dto);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(LeaveRequest.class);
+        verify(requestRepository).save(captor.capture());
+        assertThat(captor.getValue().getDays()).isEqualByComparingTo("2");
     }
 
     @Test

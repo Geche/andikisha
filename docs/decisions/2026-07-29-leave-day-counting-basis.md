@@ -1,6 +1,11 @@
 # Design: leave day-counting basis — working days vs calendar days (LEAVE-BACKLOG-002)
 
-**Status:** Proposed — needs a decision on the open questions in §4 before implementation.
+**Status:** Accepted (2026-07-29) — recommended defaults approved. **Phase 1 (weekend exclusion)
+implemented** in this change; Phase 2 (public holidays) remains deferred with the shared
+`CalendarService`. Decisions on §4: Q1 defer holidays to Phase 2; Q2 SICK = working days;
+Q3 whole-day only; Q4 prospective (no retroactive recompute — new day counts apply to requests
+created after deploy; existing stored counts are untouched); Q5 `max_consecutive_days` matches the
+type's basis.
 **Date:** 2026-07-29
 **Related:** [[LEAVE-BACKLOG-002]] (the finding), [[PAYROLL-BACKLOG-001]] (shipped the sibling
 calendar-basis fix for the unpaid-leave *pay* deduction and defers the shared `public_holidays`/

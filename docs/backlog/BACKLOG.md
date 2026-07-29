@@ -607,7 +607,7 @@ from the Approve modal so the UI doesn't collect data it discards.
 
 ### LEAVE-BACKLOG-002 — Leave balances deduct calendar days, but annual leave is 21 *working* days (statutory)
 
-**STATUS: OPEN — decision doc drafted (`docs/decisions/2026-07-29-leave-day-counting-basis.md`, Proposed); awaiting a call on its §4 open questions before implementation.**
+**STATUS: PARTIAL** — 2026-07-29: decision Accepted (`docs/decisions/2026-07-29-leave-day-counting-basis.md`) and **Phase 1 shipped** — `LeaveDayCalculator` excludes weekends for working-day types (annual/sick/compassionate/study); block grants + unpaid stay calendar-based. Applied prospectively (new requests only; stored counts untouched). **Phase 2 remaining:** public-holiday exclusion via the shared `public_holidays`/`CalendarService` deferred by [[PAYROLL-BACKLOG-001]], plus the frontend "working days" copy.
 
 **Raised:** 2026-07-29, during PAYROLL-BACKLOG-001 (unpaid-leave deduction basis). Related: [[PAYROLL-BACKLOG-001]].
 
