@@ -30,6 +30,8 @@ both places (they drift).
 
 ### EMP-BACKLOG-002 — Relax NOT NULL constraints on employees.nhif_number and employees.national_id
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: V10 migration drops NOT NULL on the optional statutory IDs; BulkUploadService stores NULL via nullIfBlank().
+
 **Raised:** 2026-06-01
 **Priority:** Medium — V1 workaround in place; no functional regression, but semantic inconsistency.
 
@@ -123,6 +125,8 @@ This was discovered during Step 2 visual verification: `EmployeeGrpcClient` in l
 ---
 
 ### EMP-BACKLOG-003 — No update endpoint for positions (asymmetric with departments)
+
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: PositionController PUT /{id} (ADMIN/HR_MANAGER) + PositionService.update() + a frontend edit affordance on settings/positions.
 
 **Raised:** 2026-06-09 (UX-flow-remediation-01, R2-5)
 **Priority:** Low–Medium — UX asymmetry; no data risk.
@@ -274,6 +278,8 @@ This upgrades both constraints from `NOT VALID` to fully enforced, closing the g
 
 ### AUTH-BACKLOG-002 — No voluntary password change page for ADMIN role
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: An /admin/change-password page re-exports the role-aware /my/change-password form — self-service path for ADMIN exists (route differs from the proposed /settings/password).
+
 **Raised:** 2026-05-19  
 **Priority:** Medium — ADMIN users currently have no self-service path to change their password except by logging out and using forgot-password.
 
@@ -306,6 +312,8 @@ Make the sub-label context-aware:
 
 ### PLATFORM-BACKLOG-001 — Tenant creation UI in platform-portal
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: (platform)/tenants/new/page.tsx is a full provisioning form → POST /api/v1/super-admin/tenants, with a one-time temp-password modal.
+
 **Raised:** 2026-05-18  
 **Priority:** High — blocks real demos and first paying customers. Currently a new tenant can only be provisioned via direct API call.
 
@@ -332,6 +340,8 @@ On submit:
 
 ### PLATFORM-BACKLOG-002 — Licence-history "changed by" shows a truncated UUID
 
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: only SYSTEM→"System" + a full-id hover title were added; a real actor UUID is still truncated with no name/email resolution — core defect remains.
+
 **Raised:** 2026-06-12 (UI-BACKLOG-003 audit — platform-facing, scoped out of that tenant-facing item).
 **Priority:** Low — platform-portal (SUPER_ADMIN) only; not tenant-facing.
 
@@ -347,6 +357,12 @@ super-admin display-name source analogous to AUTH-006's `display_name`.
 ---
 
 ### PLATFORM-BACKLOG-003 — Dashboard health grid fabricates a 13-service list on empty/error response
+
+**STATUS: RESOLVED** — verified 2026-07-29. `ServiceHealthGrid` in
+`(platform)/dashboard/page.tsx` now renders three distinct states and never the fabricated roster:
+`isLoading` → skeleton rows; `isError || services.length === 0` → an explicit "couldn't load service
+health" alert; success → the live `services` list. The fix shipped in the W4 loading-state run as
+planned below; only this backlog entry was left open.
 
 **Raised:** 2026-06-16 (Loading-state remediation, W0 health-grid investigation).
 **Priority:** Medium — correctness/honesty on a SUPER_ADMIN operational surface; misleads during a real outage.
@@ -378,6 +394,11 @@ tracked separately in `docs/engineering/backend/2026-06-16-system-health-up-unkn
 ---
 
 ### PLATFORM-BACKLOG-004 — Platform-portal profile menu never rendered (SUPER_ADMIN `/api/auth/me` 401)
+
+**STATUS: RESOLVED** — verified 2026-07-29. The Option-A fix shipped: platform-portal
+`/api/auth/me` now derives the identity from the verified `platform_token` JWT (returns
+`{userId, email, roles}`, `SUPER_ADMIN`-guarded), so `useCurrentUser` resolves and
+`(platform)/layout.tsx` renders `ProfileMenu`. Only this backlog entry was left open.
 
 **Raised:** 2026-06-17 (found from a missing top-right avatar + a `/api/auth/me` 401 in the console).
 **Priority:** Medium — operator-facing; the profile menu (and logout via it) was unreachable on every
@@ -460,6 +481,8 @@ tenant create request's KRA PIN), mirroring `CreateEmployeeRequest.kraPin`.
 
 ### TENANT-BACKLOG-005 — User deactivation (no endpoint)
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: PATCH /api/v1/auth/users/{userId}/active → setUserActive; login/refresh reject inactive; deactivate/reactivate UI in tenant-portal users page.
+
 **Raised:** 2026-06-10 (UX-flow-remediation-01, R2-10)
 **Priority:** Medium — needed for offboarding / revoking access without deleting history.
 
@@ -477,6 +500,8 @@ deactivate action on the User Management screen.
 ---
 
 ### TENANT-BACKLOG-006 — Standalone user invite (separate from employee-tied provisioning)
+
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: POST /api/v1/auth/users/invite → AuthService.inviteUser (standalone, no employee record) + an invite modal in the users page.
 
 **Raised:** 2026-06-10 (UX-flow-remediation-01, R2-10)
 **Priority:** Medium — onboarding admins/officers who are not employee records.
@@ -516,6 +541,8 @@ quick add.
 ---
 
 ### TENANT-BACKLOG-008 — Settings IA reorganization
+
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: Access/Workspace/Settings IA implemented per docs/decisions/2026-06-14-run-03-ia-reorganization.md; AdminNav groups accordingly.
 
 **Raised:** 2026-06-10 (UX-flow-remediation-01, browser pass) — **Run 03 candidate**
 **Priority:** Low/Medium — IA polish, not a defect.
@@ -563,6 +590,8 @@ IA benefit. Decide if/when the URL drift becomes worth the redirect maintenance.
 
 ### LEAVE-BACKLOG-001 — Approve does not persist reviewer notes
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: Approve accepts an optional ApproveLeaveRequest body; notes flow to LeaveRequest.review_notes.
+
 **Raised:** 2026-06-10 (UX-flow-remediation-01, Bug 1 fix)
 **Priority:** Low — minor; reject reasons ARE persisted, approve notes are not.
 
@@ -601,6 +630,8 @@ leave `reviewerName`, falling back to email when absent. *(See STATUS above — 
 
 ### AUTH-BACKLOG-007 — EmployeeUpdated → display_name rename sync
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: EmployeeUpdatedListener consumes EmployeeUpdatedEvent → AuthService.syncDisplayNameFromEmployee refreshes display_name.
+
 **Raised:** 2026-06-12 (deferred from AUTH-006).
 **Priority:** Low — rare event; cosmetic staleness only.
 
@@ -614,6 +645,8 @@ actually matters, or as part of the user-lifecycle/identity workstream.
 ---
 
 ### UI-BACKLOG-003 — Audit "who-performed-this-action" UUID display surfaces
+
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: The leave reviewer resolves actor UUID → displayName/email via /api/v1/auth/users (scoped-down resolution per the entry).
 
 **STATUS: SCOPED-DOWN-RESOLVED 2026-06-12.** The audit was run; the original premise (a systematic
 UUID-display problem across many tenant surfaces) **did not hold** — most candidate surfaces don't exist
@@ -838,6 +871,8 @@ the 2026-06-13 hygiene PR to avoid expanding it; do as its own small docs PR.
 
 ### FE-BACKLOG-012 — `/my/*` pages (dashboard, leave, payslips, attendance) don't gracefully handle no-employee users
 
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: attendance and payslips render no-employee empty states; /my leave and /my dashboard still assume employee context.
+
 **Raised:** 2026-06-14 (Run 03 R3-2c downstream-assumption audit). **Priority:** Low–Medium.
 
 R3-1 relaxed the `/my/*` gate to any authenticated user (so the admin "My profile" link works for
@@ -870,6 +905,8 @@ guard stays as the authority; this is presentation only.
 
 ### FE-BACKLOG-013 — Department/Position edit modal form quality
 
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: the dept/position modals gained required-field error text, but still use raw label/input with no helper text, no error styling, no shared @andikisha/ui form primitives.
+
 **Raised:** 2026-06-14 (post-merge review, Image 7). **Priority:** Low — polish.
 
 The department and position edit modals render correctly (post the FE-008 BaseModal fix and the R3-1
@@ -879,6 +916,8 @@ future frontend refinement run — align with the design-system form-field patte
 (`frontend/packages/ui` inputs, helper/error text, labels).
 
 ### FE-BACKLOG-014 — "Change password" links to a non-existent `/my/change-password` page
+
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: Both /my/change-password and /admin/change-password pages exist; ProfileView links are role-aware.
 
 **Raised:** 2026-06-14 (found during the R3-1 profile-chip routing fix). **Priority:** Medium — broken link on a profile both employees and admins reach.
 
@@ -1120,6 +1159,8 @@ role exists but its capabilities are unreachable.
 
 ### AUTHZ-BACKLOG-001 — Audit @PreAuthorize role-grant *intent* across all 9 services
 
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: the grant-intent-matrix decision doc exists but is DRAFT with blank decision cells and covers 6 contested endpoints, not the full all-9-services map — not signed off.
+
 **Raised:** 2026-06-14 during Run 03 R3-0 (role-vocabulary canonicalization). **Priority:** Medium–High — privilege-boundary correctness.
 
 R3-0 reconciled the role *vocabulary* (`HR` → `HR_OFFICER`, single `Role.OPERATIONAL` source, reserved roles dropped from the assignable surface — see `docs/decisions/2026-06-14-run-03-role-canonicalization.md`). It was explicitly scoped as a **rename, not a privilege-policy decision** (Gate 1 option (a)). The strict rewrite restored the originally-intended grants but left three *intent* ambiguities unresolved, which this item must settle:
@@ -1133,6 +1174,8 @@ R3-0 reconciled the role *vocabulary* (`HR` → `HR_OFFICER`, single `Role.OPERA
 ---
 
 ### SEC-BACKLOG-001 — Audit @PreAuthorize SpEL expressions across all services for User-vs-Employee UUID mismatches
+
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: credentials=employeeId was swept across payroll/attendance/leave (and the shared TrustedHeaderAuthFilter), but employee-service EmployeeController still uses #id.equals(authentication.name) and the tracking decision doc is DRAFT.
 
 **Found:** 2026-05-15 during dashboard data-loading investigation  
 **Milestone:** B1 (multi-role JWT + UserContext)
@@ -1205,6 +1248,8 @@ Alternative: Redis token denylist — higher operational cost, same result.
 ---
 
 ### SEC-BACKLOG-002 — useRoleGuard fails open when user is null
+
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: useRoleGuard now fails closed — returns "loading"/default-deny while user is null (the prescribed fix).
 
 **Raised:** 2026-05-20  
 **Priority:** Medium — the specific security bug is fixed (Phase 2 mustChangePassword gate routes around it), but the underlying fail-open pattern remains.  
@@ -1282,6 +1327,8 @@ Change the endpoint to use true PATCH semantics: `null` in `UpdateSalaryRequest`
 
 ### API-BACKLOG-001 — Add `/me` convenience endpoints for all employee-scoped resources
 
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: employees/me and leave /me/balances exist; payroll /me/payslips, leave /me/requests, attendance /me/records, and documents /me are still missing.
+
 **Found:** 2026-05-15 during employee dashboard data-loading investigation  
 **Milestone:** B2 or dedicated API consistency pass
 
@@ -1352,6 +1399,8 @@ Replace the constant with a `CalendarService.getWorkingDaysInPeriod(LocalDate fr
 
 ### PAYROLL-BACKLOG-002 — Audit all services for missing @EnableJpaAuditing
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: payroll-service AppConfig now has @EnableJpaAuditing; all other JPA services carry it; audit-service is exempt (AuditEntry does not extend BaseEntity).
+
 **Raised:** 2026-05-16  
 **Context:** payroll-service was discovered missing `@EnableJpaAuditing` during the 2026-05-16 smoke test. `BaseEntity` uses `@CreatedDate` and `@LastModifiedDate` via `AuditingEntityListener`, but without `@EnableJpaAuditing` in the Spring context these fields are never populated. In payroll-service, this silently broke all payroll run creation with a `NOT NULL` constraint violation on `created_at`. The same bug class may exist in other services.
 
@@ -1393,6 +1442,8 @@ An integration test module (or test class in payroll-service + integration-hub-s
 
 ### COMPLIANCE-BACKLOG-001 — Move statutory rate constants from code to compliance-service rate tables
 
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: compliance-service has the statutory_rates table + entity/repo/seed, but payroll KenyanTaxCalculator still hardcodes the rates and there is no payroll→compliance fetch by effective date.
+
 **Raised:** 2026-05-15  
 **Context:** PAYE bands, NSSF tier limits, SHIF rate, Housing Levy rate, NITA levy, and personal relief are all hardcoded as `private static final` constants in `KenyanTaxCalculator`. KRA amends these annually (Finance Act). Updating them requires a code deployment.
 
@@ -1429,6 +1480,8 @@ manual testing.
 ## Audit / Observability
 
 ### AUDIT-BACKLOG-001 — Employee change history endpoint and field-level diff UI
+
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: bank-detail change history is now written, but personal-detail changes write no history and there is no GET /api/v1/employees/{id}/history endpoint or diff UI — headline deliverable absent.
 
 **Raised:** 2026-05-17  
 **Found during:** Employee edit flow audit  
@@ -1486,6 +1539,8 @@ Immediate special payroll run triggered by the termination event, rather than wa
 
 ### DOCUMENT-BACKLOG-001 — Certificate of Service generation on employee termination
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: EmployeeTerminatedEventListener (@RabbitListener) calls CertificateOfServiceGenerator.generateAsync on termination; DocumentType.CERTIFICATE_OF_SERVICE exists.
+
 **Raised:** 2026-05-17  
 **Found during:** Employee deactivate flow audit  
 **Priority:** High — Kenya Employment Act compliance
@@ -1540,6 +1595,8 @@ Migrate each custom table to `<DataTable>` incrementally — when each is next t
 
 ### INFRA-BACKLOG-002 — Remove orphaned employee-portal and admin-portal directories
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: frontend/employee-portal and frontend/admin-portal no longer exist on disk; pnpm-workspace uses a frontend/* glob.
+
 **Raised:** 2026-05-18  
 **Priority:** Low — no impact on builds, CI, or deployments
 
@@ -1563,6 +1620,8 @@ full diagnoses + fixes live in the linked docs (single source of truth for the d
 
 ### INFRA-BACKLOG-003 — Redis connectivity 503s: readiness restart-loop + tenant-data outage
 
+**STATUS: RESOLVED** — 2026-07-29 backlog sweep: Redis is excluded from the readiness group; TenantLicenceFilter is now read-through fail-open (read) / fail-closed (write) — no restart-loop or tenant-data outage.
+
 **Raised:** 2026-06-07 · **Priority:** High — deployment-blocking.
 On Redis unavailability the service readiness flaps and tenant-data requests 503. Full write-up:
 `docs/engineering/backend/2026-06-07-redis-readiness-503-backlog.md`.
@@ -1570,6 +1629,8 @@ On Redis unavailability the service readiness flaps and tenant-data requests 503
 ---
 
 ### INFRA-BACKLOG-004 — Audit `@DataJpaTest` slices for the JPA-auditing gap
+
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: JpaTestConfig was added to 5 slices (analytics, compliance, integration-hub, tenant, recruitment); 8 @DataJpaTest slices remain bare and the systemic decision is unmade.
 
 **Raised:** 2026-06-08 · **Priority:** Medium — latent broken tests, not a production defect.
 `@DataJpaTest` slices don't load `@EnableJpaAuditing`, so auditing-dependent persistence can fail in those
@@ -1658,6 +1719,8 @@ bi-directional WhatsApp upgrade (unbuilt; verified no WhatsApp code in any servi
 updates via WhatsApp fit the local market but ride on that upgrade.
 
 ### RECRUITMENT-BACKLOG-006 — k8s manifests + Dokploy/Swarm deploy blocks for recruitment-service
+
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: docker-compose.yml now defines recruitment-service, but the k8s deployment/service manifests and docker-stack block are still absent.
 
 **Raised:** 2026-07-17 · **Priority:** Medium — deploy-time. Run R1 W1 wires docker-compose (dev) only.
 A partial k8s stub exists (`infrastructure/k8s/services/recruitment-service/` — a live `pdb.yaml` +
@@ -1802,6 +1865,8 @@ The gateway route `/api/v1/auth/**` (which includes `super-admin/provision` and 
 ---
 
 ### DOC-BACKLOG-002 — Release plan mis-describes SUPER_ADMIN provisioning contract & protection
+
+**STATUS: PARTIAL** — 2026-07-29 backlog sweep: the code contract is confirmed correct (SuperAdminProvisionRequest{email,password,provisionSecret}, no tenantId), but the mis-describing release-plan doc is not in the repo (likely external), so the doc-correction cannot be verified.
 
 **Raised:** 2026-07-27 · **Priority:** Medium. **Found during:** production provisioning.
 
