@@ -348,6 +348,12 @@ super-admin display-name source analogous to AUTH-006's `display_name`.
 
 ### PLATFORM-BACKLOG-003 — Dashboard health grid fabricates a 13-service list on empty/error response
 
+**STATUS: RESOLVED** — verified 2026-07-29. `ServiceHealthGrid` in
+`(platform)/dashboard/page.tsx` now renders three distinct states and never the fabricated roster:
+`isLoading` → skeleton rows; `isError || services.length === 0` → an explicit "couldn't load service
+health" alert; success → the live `services` list. The fix shipped in the W4 loading-state run as
+planned below; only this backlog entry was left open.
+
 **Raised:** 2026-06-16 (Loading-state remediation, W0 health-grid investigation).
 **Priority:** Medium — correctness/honesty on a SUPER_ADMIN operational surface; misleads during a real outage.
 
@@ -378,6 +384,11 @@ tracked separately in `docs/engineering/backend/2026-06-16-system-health-up-unkn
 ---
 
 ### PLATFORM-BACKLOG-004 — Platform-portal profile menu never rendered (SUPER_ADMIN `/api/auth/me` 401)
+
+**STATUS: RESOLVED** — verified 2026-07-29. The Option-A fix shipped: platform-portal
+`/api/auth/me` now derives the identity from the verified `platform_token` JWT (returns
+`{userId, email, roles}`, `SUPER_ADMIN`-guarded), so `useCurrentUser` resolves and
+`(platform)/layout.tsx` renders `ProfileMenu`. Only this backlog entry was left open.
 
 **Raised:** 2026-06-17 (found from a missing top-right avatar + a `/api/auth/me` 401 in the console).
 **Priority:** Medium — operator-facing; the profile menu (and logout via it) was unreachable on every
