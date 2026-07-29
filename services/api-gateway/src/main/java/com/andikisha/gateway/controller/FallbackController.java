@@ -13,11 +13,6 @@ import java.util.Map;
 @RequestMapping("/fallback")
 public class FallbackController {
 
-    private static final RequestMethod[] ALL_METHODS = {
-            RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
-            RequestMethod.PATCH, RequestMethod.DELETE
-    };
-
     @RequestMapping(value = "/default", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
@@ -25,84 +20,84 @@ public class FallbackController {
         return serviceUnavailable("downstream-service");
     }
 
-    @RequestMapping(value = "/auth", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/auth-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> authFallback() {
         return serviceUnavailable("auth-service");
     }
 
-    @RequestMapping(value = "/employee", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/employee-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> employeeFallback() {
         return serviceUnavailable("employee-service");
     }
 
-    @RequestMapping(value = "/tenant", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/tenant-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> tenantFallback() {
         return serviceUnavailable("tenant-service");
     }
 
-    @RequestMapping(value = "/payroll", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/payroll-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> payrollFallback() {
         return serviceUnavailable("payroll-service");
     }
 
-    @RequestMapping(value = "/compliance", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/compliance-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> complianceFallback() {
         return serviceUnavailable("compliance-service");
     }
 
-    @RequestMapping(value = "/attendance", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/time-attendance-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> attendanceFallback() {
         return serviceUnavailable("attendance-service");
     }
 
-    @RequestMapping(value = "/leave", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/leave-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> leaveFallback() {
         return serviceUnavailable("leave-service");
     }
 
-    @RequestMapping(value = "/document", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/document-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> documentFallback() {
         return serviceUnavailable("document-service");
     }
 
-    @RequestMapping(value = "/notification", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/notification-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> notificationFallback() {
         return serviceUnavailable("notification-service");
     }
 
-    @RequestMapping(value = "/integration", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/integration-hub-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> integrationFallback() {
         return serviceUnavailable("integration-hub-service");
     }
 
-    @RequestMapping(value = "/analytics", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/analytics-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> analyticsFallback() {
         return serviceUnavailable("analytics-service");
     }
 
-    @RequestMapping(value = "/audit", method = {RequestMethod.GET, RequestMethod.POST,
+    @RequestMapping(value = "/audit-service", method = {RequestMethod.GET, RequestMethod.POST,
             RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE})
     @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
     public Mono<Map<String, String>> auditFallback() {

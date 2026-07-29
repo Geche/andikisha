@@ -1742,6 +1742,8 @@ from a role addition to a scope-resolver change.
 
 ### GATEWAY-BACKLOG-001 — Circuit-breaker fallbacks never match (routes forward to `/fallback/<x>-service`, controller maps `/fallback/<x>`)
 
+**STATUS: RESOLVED** — 2026-07-29: FallbackController mappings repointed to the exact route fallbackUri targets (/fallback/<full-service-name>, incl. time-attendance-service + integration-hub-service); dead ALL_METHODS field removed; a parameterized test now asserts every route fallback target returns 503.
+
 **Raised:** 2026-07-17 (found during Run R1 W1). **Priority:** Medium — degraded error UX under an open
 circuit; not a security or data issue.
 
