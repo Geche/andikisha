@@ -1385,6 +1385,12 @@ Until then, an admin who needs payslips must have their employee record created 
 
 ### PAYROLL-BACKLOG-001 — Replace hardcoded 22 working days with calendar-aware calculation
 
+**STATUS: RESOLVED** — 2026-07-29: fixed the monthly case with a **calendar-day basis** (Option B). Investigation found the real defect was not the hardcoded value but a **basis mismatch**: the unpaid-leave daily rate divided by 22 *working* days, but `unpaidDaysThisPeriod` is a *calendar*-day count (leave-service counts inclusive calendar days, weekends included), so any unpaid leave spanning a weekend over-deducted (~40% on a Mon–Sun stretch). `computeUnpaidLeaveDeduction` now divides by `YearMonth.of(y,m).lengthOfMonth()` (28–31), matching the numerator. The `STANDARD_WORKING_DAYS_PER_MONTH = 22` constant is removed. One method change, no new table, no cross-service change.
+
+**Deferred (still open, no current consumer):** the `CalendarService` + `public_holidays` table + weekend/holiday exclusion + multi-period (weekly/bi-weekly/casual-daily) work below. The payroll period is monthly (`YYYY-MM`); revisit when multi-period payroll is actually introduced. A *working-day* basis (Option A) was rejected for now because it would require reworking leave-service day counting.
+
+**Related finding (untriaged):** leave-*balance* deductions (`LeaveService` `balance.deduct(request.getDays())`) also use the calendar-day `lr.days`, so a statutory *working-day* entitlement (annual 21 **working** days) may be over-deducted for weekend-spanning leave. Needs its own decision — file if confirmed a bug rather than intended policy.
+
 **Raised:** 2026-05-15  
 **Context:** `PayrollService.STANDARD_WORKING_DAYS_PER_MONTH = 22` is used to compute unpaid-leave daily deductions. 22 is a reasonable approximation for a 5-day-week, 4.33-week month but is wrong for: weekly payroll periods, bi-weekly periods, months with public holidays, and daily-rated casual workers.
 
