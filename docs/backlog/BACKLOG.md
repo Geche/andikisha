@@ -605,6 +605,34 @@ from the Approve modal so the UI doesn't collect data it discards.
 
 ---
 
+### LEAVE-BACKLOG-002 — Leave balances deduct calendar days, but annual leave is 21 *working* days (statutory)
+
+**STATUS: OPEN — needs a policy decision before implementation.**
+
+**Raised:** 2026-07-29, during PAYROLL-BACKLOG-001 (unpaid-leave deduction basis). Related: [[PAYROLL-BACKLOG-001]].
+
+**Problem:**
+Leave day counts are computed as **inclusive calendar days** — `LeaveService`:
+```java
+BigDecimal days = ChronoUnit.DAYS.between(startDate, endDate) + 1;  // weekends included
+```
+and the same value drives balance deduction (`balance.deduct(request.getDays())`) and restore-on-cancel. There is **no weekend or public-holiday handling anywhere in leave-service** (grep: no `DayOfWeek`/`SATURDAY`/`SUNDAY`).
+
+But `LeavePolicy.validateMinimumDays` enforces the statutory minimums *"per the Kenyan Employment Act Cap 226"* — and under s.28 of that Act **annual leave is 21 *working* days**. So an employee whose leave range spans weekends is **over-charged**: e.g. leave Fri→Mon (2 working days off) deducts **4** days; a two-week block (Mon→Fri of week 2) deducts **12** calendar days for **10** working days off. The statutory 21 working-day entitlement is silently consumed as calendar days.
+
+**Leave-type nuance (why this isn't a one-line fix):**
+The basis is *type-dependent*, so a blanket switch to working days would be wrong for the block grants:
+- **ANNUAL** — 21 **working** days (Act s.28). Should exclude weekends (and arguably gazetted public holidays).
+- **MATERNITY (90) / PATERNITY (14)** — statutory whole-block grants, conventionally **calendar** days. Current behaviour is correct.
+- **SICK / COMPASSIONATE / STUDY / UNPAID** — policy-dependent; needs a per-type decision.
+
+**Scope / why deferred:**
+A correct fix needs a leave-type-aware working-day counter touching the `days` computation, deduction, restore, `max_consecutive_days` validation, and balance reporting — plus, to exclude public holidays, the **same `public_holidays` table deferred in PAYROLL-BACKLOG-001**. Historical approved requests would not be recomputed. This is a payroll/compliance-correctness change that warrants a decision doc (which types are working-day vs calendar-day; holidays in or out) before code.
+
+**Recommendation:** file the decision, implement alongside the `public_holidays`/`CalendarService` work when multi-period payroll lands, so weekend + holiday exclusion share one calendar source.
+
+---
+
 ### AUTH-BACKLOG-006 — No user display-name field (UI shows email everywhere)
 
 **STATUS: RESOLVED 2026-06-12** (PR #4). Added a stored `users.display_name`, resolved from the linked
@@ -1384,6 +1412,12 @@ Until then, an admin who needs payslips must have their employee record created 
 ## Payroll
 
 ### PAYROLL-BACKLOG-001 — Replace hardcoded 22 working days with calendar-aware calculation
+
+**STATUS: RESOLVED** — 2026-07-29: fixed the monthly case with a **calendar-day basis** (Option B). Investigation found the real defect was not the hardcoded value but a **basis mismatch**: the unpaid-leave daily rate divided by 22 *working* days, but `unpaidDaysThisPeriod` is a *calendar*-day count (leave-service counts inclusive calendar days, weekends included), so any unpaid leave spanning a weekend over-deducted (~40% on a Mon–Sun stretch). `computeUnpaidLeaveDeduction` now divides by `YearMonth.of(y,m).lengthOfMonth()` (28–31), matching the numerator. The `STANDARD_WORKING_DAYS_PER_MONTH = 22` constant is removed. One method change, no new table, no cross-service change.
+
+**Deferred (still open, no current consumer):** the `CalendarService` + `public_holidays` table + weekend/holiday exclusion + multi-period (weekly/bi-weekly/casual-daily) work below. The payroll period is monthly (`YYYY-MM`); revisit when multi-period payroll is actually introduced. A *working-day* basis (Option A) was rejected for now because it would require reworking leave-service day counting.
+
+**Related finding:** leave-*balance* deductions (`LeaveService` `balance.deduct(request.getDays())`) also use the calendar-day `lr.days`, so the statutory *working-day* annual entitlement (21 **working** days, Act s.28) is over-deducted for weekend-spanning leave. Confirmed a real bug for ANNUAL (not for the maternity/paternity block grants) — filed as [[LEAVE-BACKLOG-002]], pending a policy decision.
 
 **Raised:** 2026-05-15  
 **Context:** `PayrollService.STANDARD_WORKING_DAYS_PER_MONTH = 22` is used to compute unpaid-leave daily deductions. 22 is a reasonable approximation for a 5-day-week, 4.33-week month but is wrong for: weekly payroll periods, bi-weekly periods, months with public holidays, and daily-rated casual workers.

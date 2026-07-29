@@ -50,12 +50,6 @@ public class PayrollService {
 
     private static final Logger log = LoggerFactory.getLogger(PayrollService.class);
 
-    // TODO(PAYROLL-BACKLOG-001): 22 days is a fixed approximation. Multi-period payroll
-    // (weekly, bi-weekly, daily-rated casual workers) requires per-period working day counts
-    // derived from an actual calendar. Replace with a CalendarService lookup when
-    // multi-period payroll is introduced.
-    private static final int STANDARD_WORKING_DAYS_PER_MONTH = 22;
-
     private final PayrollRunRepository payrollRunRepository;
     private final PaySlipRepository paySlipRepository;
     private final KenyanTaxCalculator taxCalculator;
@@ -160,6 +154,9 @@ public class PayrollService {
         // Parse period year and month for leave lookup (period format: YYYY-MM)
         int periodYear = Integer.parseInt(period.substring(0, 4));
         int periodMonth = Integer.parseInt(period.substring(5, 7));
+        // Calendar days in the payroll month — the divisor for the unpaid-leave daily rate
+        // (PAYROLL-BACKLOG-001), matching the calendar-day unpaid count from leave-service.
+        int daysInMonth = java.time.YearMonth.of(periodYear, periodMonth).lengthOfMonth();
 
         // Collect all employee IDs for batch calls
         List<String> employeeIds = employees.stream().map(EmployeeResponse::getId).toList();
@@ -236,9 +233,10 @@ public class PayrollService {
                     // Pass basicPay separately: NSSF is on pensionable pay, not gross
                     DeductionResult deductions = taxCalculator.calculate(grossPay, basicPay, helbDeduction);
 
-                    // Unpaid leave deduction: daily rate × unpaid days used this period
+                    // Unpaid leave deduction: daily rate × unpaid days used this period.
+                    // Daily rate divides by calendar days in the payroll month (PAYROLL-BACKLOG-001).
                     BigDecimal unpaidLeaveDeduction = computeUnpaidLeaveDeduction(
-                            basicPay, data.unpaidDaysThisPeriod());
+                            basicPay, data.unpaidDaysThisPeriod(), daysInMonth);
                     BigDecimal rawNetPay = deductions.netPay().subtract(unpaidLeaveDeduction);
                     BigDecimal netPay = rawNetPay.max(BigDecimal.ZERO);
                     // If unpaid leave pushes netPay below zero, cap total deductions to gross
@@ -475,15 +473,19 @@ public class PayrollService {
     }
 
     /**
-     * Deducts unpaid leave at a daily rate of basicPay / 22 working days.
-     * Only days taken in the current pay period are deducted; the caller
-     * passes the per-period count fetched via gRPC to avoid YTD double-deduction.
+     * Deducts unpaid leave at a daily rate of basicPay / calendar days in the payroll month
+     * (PAYROLL-BACKLOG-001). {@code unpaidDaysThisPeriod} is a calendar-day count (leave-service
+     * counts inclusive calendar days, weekends included), so the divisor must be calendar days too —
+     * dividing by a fixed 22 working days over-deducted any leave that spanned a weekend.
+     * Only days taken in the current pay period are deducted; the caller passes the per-period count
+     * fetched via gRPC to avoid YTD double-deduction.
      */
-    private BigDecimal computeUnpaidLeaveDeduction(BigDecimal basicPay, BigDecimal unpaidDaysThisPeriod) {
+    private BigDecimal computeUnpaidLeaveDeduction(BigDecimal basicPay, BigDecimal unpaidDaysThisPeriod,
+                                                   int daysInMonth) {
         if (unpaidDaysThisPeriod.compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
 
         BigDecimal dailyRate = basicPay.divide(
-                BigDecimal.valueOf(STANDARD_WORKING_DAYS_PER_MONTH), 4, RoundingMode.HALF_UP);
+                BigDecimal.valueOf(daysInMonth), 4, RoundingMode.HALF_UP);
         return dailyRate.multiply(unpaidDaysThisPeriod).setScale(2, RoundingMode.HALF_UP);
     }
 

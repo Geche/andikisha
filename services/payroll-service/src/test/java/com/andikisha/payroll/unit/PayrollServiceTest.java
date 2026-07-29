@@ -347,28 +347,49 @@ class PayrollServiceTest {
 
     // -------------------------------------------------------------------------
     // computeUnpaidLeaveDeduction (private — tested via ReflectionTestUtils)
-    // The method now takes the per-period unpaid day count directly (GRPC-003 fix).
+    // The method takes the per-period unpaid day count (GRPC-003) and the number of calendar
+    // days in the payroll month (PAYROLL-BACKLOG-001). The daily rate is basicPay / daysInMonth,
+    // so it matches the calendar-day unpaid count leave-service produces (weekends included) —
+    // no more over-deduction from dividing by a fixed 22 working days.
     // -------------------------------------------------------------------------
 
     @Test
     void computeUnpaidLeaveDeduction_noUnpaidLeave_returnsZero() {
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), BigDecimal.ZERO);
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), BigDecimal.ZERO, 30);
         assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
-    void computeUnpaidLeaveDeduction_unpaidDaysUsed_deductsCorrectly() {
-        // basicPay=100_000, unpaid=11 days, daily rate=100_000/22=4_545.4545, deduction=50_000.00
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(100_000), BigDecimal.valueOf(11));
-        assertThat(result).isEqualByComparingTo(new BigDecimal("50000.00"));
+    void computeUnpaidLeaveDeduction_usesCalendarDaysInMonth_notFixed22() {
+        // PAYROLL-BACKLOG-001: 7 calendar days unpaid (a Mon–Sun stretch) in a 30-day month.
+        // daily rate = 30_000 / 30 = 1_000.00 → deduction = 7_000.00.
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(30_000), BigDecimal.valueOf(7), 30);
+        assertThat(result).isEqualByComparingTo(new BigDecimal("7000.00"));
+
+        // Regression guard: the old fixed-22 divisor over-deducted this same case to 9_545.45.
+        BigDecimal oldFixed22 = BigDecimal.valueOf(30_000)
+                .divide(BigDecimal.valueOf(22), 4, java.math.RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(7))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        assertThat(result).isLessThan(oldFixed22);
+    }
+
+    @Test
+    void computeUnpaidLeaveDeduction_shorterMonth_higherDailyRate() {
+        // Same salary and days, a 28-day month (February) yields a higher daily rate than a 31-day month.
+        BigDecimal feb = invokeDeduction(BigDecimal.valueOf(30_000), BigDecimal.valueOf(5), 28);
+        BigDecimal jan = invokeDeduction(BigDecimal.valueOf(30_000), BigDecimal.valueOf(5), 31);
+        assertThat(feb).isGreaterThan(jan);
+        // 30_000 / 28 = 1_071.4286 → × 5 = 5_357.14
+        assertThat(feb).isEqualByComparingTo(new BigDecimal("5357.14"));
     }
 
     @Test
     void computeUnpaidLeaveDeduction_multipleUnpaidEntries_sumsAllUsed() {
-        // 5 + 3 = 8 days (caller already aggregated); daily rate = 50_000/22
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(50_000), BigDecimal.valueOf(8));
+        // 5 + 3 = 8 days (caller already aggregated); daily rate = 50_000 / 31 in a 31-day month.
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(50_000), BigDecimal.valueOf(8), 31);
         BigDecimal expected = BigDecimal.valueOf(50_000)
-                .divide(BigDecimal.valueOf(22), 4, java.math.RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(31), 4, java.math.RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(8))
                 .setScale(2, java.math.RoundingMode.HALF_UP);
         assertThat(result).isEqualByComparingTo(expected);
@@ -376,20 +397,20 @@ class PayrollServiceTest {
 
     @Test
     void computeUnpaidLeaveDeduction_zeroUnpaidUsed_returnsZero() {
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(80_000), BigDecimal.ZERO);
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(80_000), BigDecimal.ZERO, 31);
         assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void computeUnpaidLeaveDeduction_emptyBalances_returnsZero() {
         // Zero days passed — equivalent to an employee with no unpaid leave this period
-        BigDecimal result = invokeDeduction(BigDecimal.valueOf(60_000), BigDecimal.ZERO);
+        BigDecimal result = invokeDeduction(BigDecimal.valueOf(60_000), BigDecimal.ZERO, 30);
         assertThat(result).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
-    private BigDecimal invokeDeduction(BigDecimal basicPay, BigDecimal unpaidDaysThisPeriod) {
+    private BigDecimal invokeDeduction(BigDecimal basicPay, BigDecimal unpaidDaysThisPeriod, int daysInMonth) {
         return (BigDecimal) ReflectionTestUtils.invokeMethod(
-                service, "computeUnpaidLeaveDeduction", basicPay, unpaidDaysThisPeriod);
+                service, "computeUnpaidLeaveDeduction", basicPay, unpaidDaysThisPeriod, daysInMonth);
     }
 
     // -------------------------------------------------------------------------
