@@ -138,8 +138,11 @@ public class PaymentProcessor {
                 log.info("M-Pesa B2C submitted for {} amount KES {}",
                         tx.getEmployeeName(), tx.getAmount());
 
-                // Sandbox: no callback will arrive — complete immediately so the run progresses
-                if (config == null) {
+                // Sandbox: no callback will arrive — complete immediately so the run progresses.
+                // Gate on the sandbox flag, not config presence: a tenant may have an active
+                // MPESA_B2C config while M-Pesa is disabled (sandbox), and would otherwise hang in
+                // SUBMITTED with no callback ever arriving.
+                if (mpesaSandbox) {
                     tx.markCompleted(response.conversationId());
                     transactionRepository.save(tx);
                     eventPublisher.publishPaymentCompleted(tx);

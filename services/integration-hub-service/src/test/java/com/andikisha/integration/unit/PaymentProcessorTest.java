@@ -111,6 +111,33 @@ class PaymentProcessorTest {
         verify(mpesaClient).sendB2C(any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
+    @Test
+    void processPayment_sandboxWithActiveConfig_completesImmediately() {
+        // Residual bug: in sandbox mode (M-Pesa disabled) a tenant WITH an active MPESA_B2C config
+        // must still auto-complete — no real callback arrives in sandbox — instead of hanging in
+        // SUBMITTED. The completion shortcut must gate on the sandbox flag, not config == null.
+        PaymentProcessor sandbox = new PaymentProcessor(transactionRepository, configRepository,
+                mpesaClient, bankTransferClient, eventPublisher, transactionManager, false); // mpesaEnabled=false
+        PaymentTransaction tx = pendingMpesaTx();
+        UUID id = (UUID) ReflectionTestUtils.getField(tx, "id");
+        when(transactionRepository.findByIdAndTenantId(id, TENANT_ID)).thenReturn(Optional.of(tx));
+        IntegrationConfig config = mock(IntegrationConfig.class);
+        when(configRepository.findByTenantIdAndIntegrationTypeAndActiveTrue(
+                TENANT_ID, IntegrationType.MPESA_B2C)).thenReturn(Optional.of(config));
+        when(mpesaClient.sendB2C(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new MpesaClient.MpesaResponse(true, "AG_SANDBOX", "orig", "0", "ok"));
+
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            sandbox.processPayment(id, TENANT_ID);
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        assertThat(tx.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
+        verify(eventPublisher).publishPaymentCompleted(tx);
+    }
+
     private PaymentTransaction pendingMpesaTx() {
         PaymentTransaction tx = PaymentTransaction.create(
                 TENANT_ID, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
