@@ -574,10 +574,23 @@ services:
     networks:
       - internal
       - dokploy-network
-    # Routing is managed by Dokploy's Domains tab (Method 1, recommended),
-    # which injects Traefik labels at deploy time. Manual labels here conflicted
-    # (empty ${TENANT_DOMAIN} → invalid Host rule, and forced HTTPS/letsencrypt
-    # which breaks the plain-HTTP sslip.io test domains).
+    # Host routing is managed by Dokploy's Domains tab (injects Traefik labels at
+    # deploy time). These manual labels add ONLY a higher-priority, path-scoped
+    # rate-limit router for the login endpoints (audit M5) — at the edge Traefik
+    # sees the real client IP. All other paths still fall through to Dokploy's
+    # router. Domains are hardcoded (not ${TENANT_DOMAIN}) to avoid the empty-var
+    # invalid-Host-rule problem. See docs/deployment/traefik-auth-ratelimit.md.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.auth-ratelimit.ratelimit.average=10"
+      - "traefik.http.middlewares.auth-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.auth-ratelimit.ratelimit.burst=20"
+      - "traefik.http.services.tenant-login.loadbalancer.server.port=3000"
+      - "traefik.http.routers.tenant-login.rule=Host(`app.andikishahr.com`) && (PathPrefix(`/api/auth/login`) || PathPrefix(`/api/auth/forgot-password`))"
+      - "traefik.http.routers.tenant-login.entrypoints=websecure"
+      - "traefik.http.routers.tenant-login.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tenant-login.priority=1000"
+      - "traefik.http.routers.tenant-login.middlewares=auth-ratelimit@docker"
     deploy:
       resources:
         limits:
@@ -607,7 +620,16 @@ services:
     networks:
       - internal
       - dokploy-network
-    # Routing managed by Dokploy's Domains tab (see tenant-portal note).
+    # Path-scoped login rate-limit router (audit M5); reuses the auth-ratelimit
+    # middleware defined on tenant-portal. See tenant-portal note.
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.platform-login.loadbalancer.server.port=3000"
+      - "traefik.http.routers.platform-login.rule=Host(`platform.andikishahr.com`) && PathPrefix(`/api/auth/login`)"
+      - "traefik.http.routers.platform-login.entrypoints=websecure"
+      - "traefik.http.routers.platform-login.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.platform-login.priority=1000"
+      - "traefik.http.routers.platform-login.middlewares=auth-ratelimit@docker"
     deploy:
       resources:
         limits:
