@@ -309,9 +309,13 @@ class EmployeeControllerTest {
                         null, null, null, null, // personalEmail, emergencyContactName, emergencyContactPhone, avatarUrl
                         java.time.LocalDateTime.now()
                 ));
+        // SEC-BACKLOG-001: X-User-ID (the USER id) deliberately differs from the employee id. Self-access
+        // must succeed on the X-Employee-ID match alone — proving the compare is against the employee
+        // identity (authentication.credentials), not authentication.name (the user id).
         mockMvc.perform(get("/api/v1/employees/{id}", employeeId)
-                        .header("X-User-ID", employeeId)
+                        .header("X-User-ID", "user-99999999")
                         .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", employeeId)
                         .header("X-Tenant-ID", "tenant-abc"))
                 .andExpect(status().isOk());
     }
@@ -319,11 +323,13 @@ class EmployeeControllerTest {
     @Test
     @org.junit.jupiter.api.DisplayName("EMPLOYEE accessing another employee record returns 403")
     void getEmployee_employeeAccessingOtherRecord_returns403() throws Exception {
-        String myId    = "00000000-0000-0000-0000-000000000001";
-        String otherId = "00000000-0000-0000-0000-000000000002";
+        String myEmployeeId = "00000000-0000-0000-0000-000000000001";
+        String otherId      = "00000000-0000-0000-0000-000000000002";
+        // Caller is a valid employee (X-Employee-ID present) but requests a different employee's id.
         mockMvc.perform(get("/api/v1/employees/{id}", otherId)
-                        .header("X-User-ID", myId)
+                        .header("X-User-ID", "user-99999999")
                         .header("X-User-Role", "EMPLOYEE")
+                        .header("X-Employee-ID", myEmployeeId)
                         .header("X-Tenant-ID", "tenant-abc"))
                 .andExpect(status().isForbidden());
     }

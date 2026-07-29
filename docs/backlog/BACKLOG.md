@@ -1175,7 +1175,7 @@ R3-0 reconciled the role *vocabulary* (`HR` → `HR_OFFICER`, single `Role.OPERA
 
 ### SEC-BACKLOG-001 — Audit @PreAuthorize SpEL expressions across all services for User-vs-Employee UUID mismatches
 
-**STATUS: PARTIAL** — 2026-07-29 backlog sweep: credentials=employeeId was swept across payroll/attendance/leave (and the shared TrustedHeaderAuthFilter), but employee-service EmployeeController still uses #id.equals(authentication.name) and the tracking decision doc is DRAFT.
+**STATUS: RESOLVED** — 2026-07-29: fix (a) is complete. The shared `TrustedHeaderAuthFilter` stores `X-Employee-ID` in `authentication.credentials` for all services, and every ownership SpEL now compares against it. The last outstanding instance — `employee-service` `EmployeeController.getById` `#id.equals(authentication.name)` — was repointed to `authentication.credentials` (PR: `fix/sec-employee-self-access-spel`), with a self-access test that sends a *distinct* X-User-ID so it proves the compare is against the employee id, not the user id. A codebase grep confirms no remaining `equals(authentication.name)` ownership check.
 
 **Found:** 2026-05-15 during dashboard data-loading investigation  
 **Milestone:** B1 (multi-role JWT + UserContext)

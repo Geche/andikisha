@@ -82,8 +82,11 @@ public class EmployeeController {
         return queryService.findAll(role, employeeId, departmentId, status, search, pageable);
     }
 
+    // SEC-BACKLOG-001: self-access compares the path (employee) id against the caller's EMPLOYEE id.
+    // TrustedHeaderAuthFilter puts X-Employee-ID in authentication.credentials; authentication.name is
+    // the USER id, which never equals the employee id — the old form silently denied every self-view.
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER') or #id.toString().equals(authentication.name)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR_MANAGER', 'HR_OFFICER') or #id.toString().equals(authentication.credentials)")
     @Operation(summary = "Get employee by ID")
     public EmployeeDetailResponse getById(@PathVariable UUID id) {
         return queryService.findById(id);
