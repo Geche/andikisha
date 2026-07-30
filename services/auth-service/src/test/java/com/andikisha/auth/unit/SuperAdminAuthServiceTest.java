@@ -217,4 +217,14 @@ class SuperAdminAuthServiceTest {
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Only SUPER_ADMIN users can impersonate");
     }
+
+    @Test
+    void impersonate_malformedPrincipal_throwsBusinessRuleException_notUnhandled() {
+        // AUTH-BACKLOG-008 hardening: a principal that is not a valid UUID must be a clean,
+        // mapped denial (same as a non-super-admin), never an unhandled exception → 500.
+        assertThatThrownBy(() ->
+                service.impersonate("not-a-uuid", "target-tenant"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Only SUPER_ADMIN users can impersonate");
+    }
 }

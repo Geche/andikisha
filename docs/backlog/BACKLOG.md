@@ -1675,6 +1675,8 @@ slices. Full write-up: `docs/engineering/backend/2026-06-08-datajpatest-auditing
 
 ### AUTH-BACKLOG-008 — Super-admin tenant impersonation returns 500 INTERNAL_ERROR
 
+**STATUS: RESOLVED** — 2026-07-30: not reproducible in current code, and hardened against the likely historical cause. By inspection the impersonate path is correct: the super-admin token subject is the user UUID (`JwtTokenProvider.generateSuperAdminToken`), the JWT filter sets `authentication.getName()` to that subject, and `SuperAdminAuthService.impersonate` mints a stateless JWT — it touches **no Redis** (so the write-up's Redis theory doesn't apply). Two masking factors from June are gone: the generic handler now logs the stack (`log.error("Unhandled exception", ex)`), and `IllegalArgumentException` now maps to **400**, not 500. Hardening added: a non-UUID principal now yields the same mapped `FORBIDDEN` denial (422) as a non-super-admin instead of an unhandled `IllegalArgumentException`, so this endpoint can never emit a bare 500 again. Covered by `SuperAdminAuthServiceTest` (happy path, not-found, malformed principal). **Runtime re-verify** on the patched instance recommended to formally close (the write-up's own step 1), but no code defect remains.
+
 **Raised:** 2026-06-08 · **Priority:** High / support-critical.
 SUPER_ADMIN cannot impersonate a tenant (impersonation endpoint 500s). Full write-up:
 `docs/engineering/backend/2026-06-08-superadmin-impersonation-500-backlog.md`.
