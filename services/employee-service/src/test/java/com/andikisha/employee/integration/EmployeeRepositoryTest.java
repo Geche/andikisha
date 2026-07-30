@@ -108,6 +108,32 @@ class EmployeeRepositoryTest {
     }
 
     @Test
+    void findByTenantIdAndStatusInAndPendingActivationFalse_excludesPendingActivation() {
+        // PAYROLL-BACKLOG-005: pending-activation employees (bulk-created, incomplete statutory
+        // details) must NOT be payroll/filing-eligible. A normal probation hire (pending=false) must.
+        Employee active = buildEmployee(TENANT_A, "EMP-0001", "11111111", "+254700000001");
+        active.confirmProbation(); // ACTIVE, pending=false
+        employeeRepository.save(active);
+
+        Employee normalProbation = buildEmployee(TENANT_A, "EMP-0002", "22222222", "+254700000002");
+        employeeRepository.save(normalProbation); // ON_PROBATION, pending=false
+
+        Employee pending = buildEmployee(TENANT_A, "EMP-0003", "33333333", "+254700000003");
+        pending.setPendingActivation(true); // ON_PROBATION, pending=true
+        employeeRepository.save(pending);
+
+        var eligible = employeeRepository.findByTenantIdAndStatusInAndPendingActivationFalse(
+                TENANT_A, java.util.List.of(
+                        EmploymentStatus.ACTIVE,
+                        EmploymentStatus.ON_PROBATION,
+                        EmploymentStatus.ON_LEAVE));
+
+        assertThat(eligible)
+                .extracting(Employee::getEmployeeNumber)
+                .containsExactlyInAnyOrder("EMP-0001", "EMP-0002");
+    }
+
+    @Test
     void existsByTenantIdAndNationalId_returnsTrueOnlyForSameTenant() {
         employeeRepository.save(buildEmployee(TENANT_A, "EMP-0001", "55555555", "+254700000005"));
 

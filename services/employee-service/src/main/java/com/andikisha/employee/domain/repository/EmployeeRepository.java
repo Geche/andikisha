@@ -33,6 +33,11 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     List<Employee> findByTenantIdAndStatusIn(String tenantId, List<EmploymentStatus> statuses);
 
+    // Payroll/filing eligibility (PAYROLL-BACKLOG-005): exclude pending-activation employees —
+    // bulk-created rows with incomplete statutory identifiers that are not yet activated.
+    List<Employee> findByTenantIdAndStatusInAndPendingActivationFalse(
+            String tenantId, List<EmploymentStatus> statuses);
+
     List<Employee> findAllByTenantIdAndIdIn(String tenantId, List<UUID> ids);
 
     boolean existsByTenantIdAndNationalId(String tenantId, String nationalId);

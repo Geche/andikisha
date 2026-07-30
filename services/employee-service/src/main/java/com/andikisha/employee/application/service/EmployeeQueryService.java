@@ -105,7 +105,10 @@ public class EmployeeQueryService {
         // ON_LEAVE is payroll-eligible: employees on approved paid leave continue to receive salary
         // (with unpaid-leave deductions applied by the payroll engine if applicable).
         // SUSPENDED and TERMINATED are excluded. CANCELLED is not a valid status.
-        return repository.findByTenantIdAndStatusIn(
+        // Pending-activation employees (PAYROLL-BACKLOG-005) are excluded: bulk-created rows with
+        // NULL statutory IDs (KRA PIN/SHIF/NSSF) and no phone that would file blank returns and fail
+        // M-Pesa disbursement. They become eligible once activated (pending_activation = false).
+        return repository.findByTenantIdAndStatusInAndPendingActivationFalse(
                         tenantId, List.of(
                                 EmploymentStatus.ACTIVE,
                                 EmploymentStatus.ON_PROBATION,
