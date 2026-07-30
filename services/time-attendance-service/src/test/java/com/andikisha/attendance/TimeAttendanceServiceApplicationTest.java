@@ -36,6 +36,11 @@ class TimeAttendanceServiceApplicationTest {
     @MockitoBean
     RabbitTemplate rabbitTemplate;
 
+    // GrpcClientAutoConfiguration is excluded above, so the @GrpcClient Channel that
+    // EmployeeGrpcClient needs cannot be auto-wired. Mock the whole client (as leave-service does).
+    @MockitoBean
+    com.andikisha.attendance.infrastructure.grpc.EmployeeGrpcClient employeeGrpcClient;
+
     @Test
     void contextLoads() {
     }

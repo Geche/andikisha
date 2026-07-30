@@ -1160,6 +1160,8 @@ Also wire `audit-service` `TenantAuditListener` to handle `TenantCancelledEvent`
 
 ### AUTHZ-BACKLOG-005 — LINE_MANAGER cannot see their team's attendance (needs BOTH layers)
 
+**STATUS: RESOLVED** — 2026-07-30: both layers plus the scope tier. `LINE_MANAGER` added to the two read `@PreAuthorize`s, AND a DEPARTMENT tier in `AttendanceService.enforceAttendanceOwnership` — a new `EmployeeGrpcClient` (mirroring leave-service) resolves the caller's and target's `departmentId` from employee-service and allows the read only when they match. Not tenant-wide (unlike ADMIN/HR/payroll) and not own-only. Unit-tested: same-department read allowed, different-department denied. `getDailyAttendance` (tenant-wide, ADMIN/HR only) intentionally unchanged.
+
 **Raised:** 2026-07-17 (reviving the orphaned `a8148c4b` authz sweep) · **Priority:** Medium — a
 LINE_MANAGER's core job is team oversight, and attendance is invisible to them.
 
