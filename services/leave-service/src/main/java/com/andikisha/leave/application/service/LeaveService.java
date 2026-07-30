@@ -15,6 +15,7 @@ import com.andikisha.leave.domain.model.LeaveBalance;
 import com.andikisha.leave.domain.model.LeavePolicy;
 import com.andikisha.leave.domain.model.LeaveRequest;
 import com.andikisha.leave.domain.model.LeaveRequestStatus;
+import com.andikisha.leave.domain.model.LeaveDayCalculator;
 import com.andikisha.leave.domain.model.LeaveType;
 import com.andikisha.leave.domain.repository.LeaveBalanceRepository;
 import com.andikisha.leave.domain.repository.LeavePolicyRepository;
@@ -79,8 +80,9 @@ public class LeaveService {
         // client-supplied request.days() is untrusted: it drives the max-consecutive and
         // balance checks and is what gets deducted, so a tampered low value would let an
         // employee take a long leave that barely dents their balance (and a high value
-        // would over-deduct it). Days are inclusive calendar days, matching how balances
-        // are seeded and accrued — the system has no working-day/holiday calendar.
+        // would over-deduct it). The basis is per leave type: working days (weekends excluded)
+        // for annual/sick/compassionate/study, inclusive calendar days for the block grants and
+        // unpaid — see LeaveDayCalculator (LEAVE-BACKLOG-002).
         if (request.startDate().isAfter(request.endDate())) {
             throw new BusinessRuleException("INVALID_DATE_RANGE",
                     "Start date cannot be after end date");
@@ -95,9 +97,10 @@ public class LeaveService {
                     "Start date cannot be in the past for " + leaveType + " leave");
         }
 
-        BigDecimal days = BigDecimal.valueOf(
-                java.time.temporal.ChronoUnit.DAYS.between(
-                        request.startDate(), request.endDate()) + 1);
+        // Working-day types (annual/sick/compassionate/study) exclude weekends; block-grant/calendar
+        // types (maternity/paternity/unpaid) count inclusive calendar days (LEAVE-BACKLOG-002).
+        BigDecimal days = LeaveDayCalculator.countDays(
+                leaveType, request.startDate(), request.endDate());
         if (request.days() != null && request.days().compareTo(days) != 0) {
             log.warn("Client-supplied leave days ({}) did not match server-computed days ({}) "
                             + "for {} {}..{}; using server value",
