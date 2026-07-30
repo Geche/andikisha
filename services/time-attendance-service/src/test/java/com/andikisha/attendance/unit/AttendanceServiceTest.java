@@ -51,12 +51,14 @@ class AttendanceServiceTest {
     @Mock WorkScheduleRepository scheduleRepository;
     @Mock AttendanceMapper mapper;
     @Mock AttendanceEventPublisher eventPublisher;
+    @Mock com.andikisha.attendance.infrastructure.grpc.EmployeeGrpcClient employeeClient;
 
     private AttendanceService service;
 
     @BeforeEach
     void setUp() {
-        service = new AttendanceService(recordRepository, scheduleRepository, mapper, eventPublisher);
+        service = new AttendanceService(recordRepository, scheduleRepository, mapper, eventPublisher,
+                employeeClient);
         TenantContext.setTenantId(TENANT_ID);
     }
 
@@ -348,6 +350,48 @@ class AttendanceServiceTest {
                 List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")));
 
         assertThatThrownBy(() -> service.getMonthlySummary(otherEmployee, "2024-04", employee))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getMonthlySummary_lineManager_sameDepartment_canRead() {
+        // AUTHZ-BACKLOG-005: a LINE_MANAGER is DEPARTMENT-scoped — may read a team member in the same dept.
+        UUID teamMember = UUID.randomUUID();
+        String dept = UUID.randomUUID().toString();
+        when(employeeClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString())).thenReturn(
+                java.util.Optional.of(com.andikisha.proto.employee.EmployeeResponse.newBuilder()
+                        .setDepartmentId(dept).build()));
+        when(employeeClient.getEmployee(TENANT_ID, teamMember.toString())).thenReturn(
+                java.util.Optional.of(com.andikisha.proto.employee.EmployeeResponse.newBuilder()
+                        .setDepartmentId(dept).build()));
+        when(recordRepository.sumRegularHours(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(recordRepository.sumWeekdayOvertime(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(recordRepository.sumWeekendOvertime(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+        when(recordRepository.sumHolidayHours(any(), any(), any(), any())).thenReturn(BigDecimal.ZERO);
+
+        Authentication lineManager = new UsernamePasswordAuthenticationToken(
+                "mgr-user", EMPLOYEE_ID.toString(),
+                List.of(new SimpleGrantedAuthority("ROLE_LINE_MANAGER")));
+
+        assertThat(service.getMonthlySummary(teamMember, "2024-04", lineManager)).isNotNull();
+    }
+
+    @Test
+    void getMonthlySummary_lineManager_differentDepartment_denied() {
+        // A LINE_MANAGER must NOT read attendance for an employee outside their department.
+        UUID otherDeptEmployee = UUID.randomUUID();
+        when(employeeClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString())).thenReturn(
+                java.util.Optional.of(com.andikisha.proto.employee.EmployeeResponse.newBuilder()
+                        .setDepartmentId("dept-A").build()));
+        when(employeeClient.getEmployee(TENANT_ID, otherDeptEmployee.toString())).thenReturn(
+                java.util.Optional.of(com.andikisha.proto.employee.EmployeeResponse.newBuilder()
+                        .setDepartmentId("dept-B").build()));
+
+        Authentication lineManager = new UsernamePasswordAuthenticationToken(
+                "mgr-user", EMPLOYEE_ID.toString(),
+                List.of(new SimpleGrantedAuthority("ROLE_LINE_MANAGER")));
+
+        assertThatThrownBy(() -> service.getMonthlySummary(otherDeptEmployee, "2024-04", lineManager))
                 .isInstanceOf(AccessDeniedException.class);
     }
 

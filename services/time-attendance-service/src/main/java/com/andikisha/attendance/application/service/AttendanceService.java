@@ -44,15 +44,18 @@ public class AttendanceService {
     private final WorkScheduleRepository scheduleRepository;
     private final AttendanceMapper mapper;
     private final AttendanceEventPublisher eventPublisher;
+    private final com.andikisha.attendance.infrastructure.grpc.EmployeeGrpcClient employeeClient;
 
     public AttendanceService(AttendanceRecordRepository recordRepository,
                              WorkScheduleRepository scheduleRepository,
                              AttendanceMapper mapper,
-                             AttendanceEventPublisher eventPublisher) {
+                             AttendanceEventPublisher eventPublisher,
+                             com.andikisha.attendance.infrastructure.grpc.EmployeeGrpcClient employeeClient) {
         this.recordRepository = recordRepository;
         this.scheduleRepository = scheduleRepository;
         this.mapper = mapper;
         this.eventPublisher = eventPublisher;
+        this.employeeClient = employeeClient;
     }
 
     @Transactional
@@ -228,12 +231,15 @@ public class AttendanceService {
     private static final SimpleGrantedAuthority ROLE_HR_OFFICER       = new SimpleGrantedAuthority("ROLE_HR_OFFICER");
     private static final SimpleGrantedAuthority ROLE_PAYROLL_MANAGER  = new SimpleGrantedAuthority("ROLE_PAYROLL_MANAGER");
     private static final SimpleGrantedAuthority ROLE_PAYROLL_OFFICER  = new SimpleGrantedAuthority("ROLE_PAYROLL_OFFICER");
+    private static final SimpleGrantedAuthority ROLE_LINE_MANAGER     = new SimpleGrantedAuthority("ROLE_LINE_MANAGER");
 
     /**
      * Employees may only read their own attendance records.
      * ADMIN, HR_MANAGER, HR_OFFICER, and the payroll roles (PAYROLL_MANAGER / PAYROLL_OFFICER)
      * may read any employee's records within the tenant — payroll computes pay from attendance
      * (overtime, absence deductions), so they need cross-employee reads (B-5 / D3).
+     * A LINE_MANAGER is DEPARTMENT-scoped (AUTHZ-BACKLOG-005): they may read a team member whose
+     * department matches theirs, resolved via employee-service (mirrors leave-service's scope model).
      * A null authentication indicates a trusted internal/gRPC caller — access is allowed.
      */
     private void enforceAttendanceOwnership(UUID targetEmployeeId, Authentication authentication) {
@@ -254,8 +260,35 @@ public class AttendanceService {
         // (SEC-BACKLOG-001 — authentication.getName() is the user UUID, not the employee UUID).
         // Fall back to the name for backwards compatibility.
         String callerEmployeeId = authentication.getCredentials() instanceof String s ? s : authentication.getName();
-        if (!targetEmployeeId.toString().equals(callerEmployeeId)) {
-            throw new AccessDeniedException("Access denied: you may only view your own attendance records");
+        if (targetEmployeeId.toString().equals(callerEmployeeId)) {
+            return; // own records
         }
+
+        // LINE_MANAGER: DEPARTMENT scope (AUTHZ-BACKLOG-005). Allow only when the caller and the
+        // target share a department, resolved via employee-service.
+        if (authentication.getAuthorities().contains(ROLE_LINE_MANAGER)
+                && sameDepartment(callerEmployeeId, targetEmployeeId.toString())) {
+            return;
+        }
+
+        throw new AccessDeniedException("Access denied: you may only view your own attendance records");
+    }
+
+    private boolean sameDepartment(String callerEmployeeId, String targetEmployeeId) {
+        if (callerEmployeeId == null) {
+            return false;
+        }
+        String tenantId = TenantContext.requireTenantId();
+        String callerDept = employeeClient.getEmployee(tenantId, callerEmployeeId)
+                .map(com.andikisha.proto.employee.EmployeeResponse::getDepartmentId)
+                .filter(d -> !d.isBlank())
+                .orElse(null);
+        if (callerDept == null) {
+            return false; // caller not attached to a department — no team to manage
+        }
+        String targetDept = employeeClient.getEmployee(tenantId, targetEmployeeId)
+                .map(com.andikisha.proto.employee.EmployeeResponse::getDepartmentId)
+                .orElse(null);
+        return callerDept.equals(targetDept);
     }
 }
