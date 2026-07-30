@@ -345,6 +345,70 @@ class PayrollServiceTest {
         verify(leaveClient, never()).getLeaveBalances(anyString(), anyString(), anyInt());
     }
 
+    @Test
+    void missingStatutoryDetails_flagsBlankIdentifiers() {
+        // PAYROLL-BACKLOG-005 residual: KRA PIN / SHIF (nhif) / NSSF / phone are all required to file.
+        EmployeeResponse incomplete = EmployeeResponse.newBuilder()
+                .setKraPin("").setNhifNumber("SHIF1").setNssfNumber("NSSF1").setPhoneNumber("+254700000001")
+                .build();
+        assertThat(PayrollService.missingStatutoryDetails(incomplete)).contains("KRA PIN");
+
+        EmployeeResponse complete = EmployeeResponse.newBuilder()
+                .setKraPin("A123456789B").setNhifNumber("SHIF1").setNssfNumber("NSSF1")
+                .setPhoneNumber("+254700000001").build();
+        assertThat(PayrollService.missingStatutoryDetails(complete)).isNull();
+    }
+
+    @Test
+    void calculatePayroll_excludesEmployeeMissingStatutoryId_andRecordsWarning() {
+        UUID runId = UUID.randomUUID();
+        // Two employees; the second is missing its KRA PIN → excluded from the run + warning recorded.
+        EmployeeResponse complete = EmployeeResponse.newBuilder()
+                .setId(UUID.randomUUID().toString()).setTenantId(TENANT_ID)
+                .setEmployeeNumber("EMP-0001").setFirstName("Ada").setLastName("Ok")
+                .setPhoneNumber("+254700000001").setKraPin("A1").setNhifNumber("S1").setNssfNumber("N1")
+                .setBasicSalary("100000").setCurrency("KES").build();
+        EmployeeResponse incomplete = EmployeeResponse.newBuilder()
+                .setId(UUID.randomUUID().toString()).setTenantId(TENANT_ID)
+                .setEmployeeNumber("EMP-0002").setFirstName("Ben").setLastName("No")
+                .setPhoneNumber("+254700000002").setKraPin("").setNhifNumber("S2").setNssfNumber("N2")
+                .setBasicSalary("100000").setCurrency("KES").build();
+        List<EmployeeResponse> employees = List.of(complete, incomplete);
+
+        List<SalaryStructureResponse> salaryBatch = employees.stream()
+                .map(e -> SalaryStructureResponse.newBuilder().setEmployeeId(e.getId())
+                        .setBasicSalary("100000").setHousingAllowance("0").setTransportAllowance("0")
+                        .setMedicalAllowance("0").setOtherAllowances("0").setCurrency("KES").build())
+                .toList();
+        List<EmployeeLeaveBalances> leaveBatch = employees.stream()
+                .map(e -> EmployeeLeaveBalances.newBuilder().setEmployeeId(e.getId()).build()).toList();
+
+        PayrollRun run = PayrollRun.create(TENANT_ID, PERIOD, PayFrequency.MONTHLY, "hr");
+        when(payrollRunRepository.findByIdAndTenantId(runId, TENANT_ID)).thenReturn(Optional.of(run));
+        when(payrollRunRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(employeeClient.getActiveEmployees(TENANT_ID)).thenReturn(employees);
+        when(employeeClient.getSalaryStructuresBatch(anyString(), anyList())).thenReturn(salaryBatch);
+        when(leaveClient.getLeaveBalancesBatch(anyString(), anyList(), anyInt())).thenReturn(leaveBatch);
+        when(leaveClient.getUnpaidLeaveDaysForPeriod(anyString(), anyList(), anyInt(), anyInt()))
+                .thenReturn(Collections.emptyMap());
+        DeductionResult deductions = new DeductionResult(
+                BigDecimal.valueOf(100_000), BigDecimal.valueOf(100_000),
+                BigDecimal.valueOf(27_600), BigDecimal.valueOf(2_400),
+                BigDecimal.valueOf(412), BigDecimal.valueOf(25_200),
+                BigDecimal.valueOf(2_160), BigDecimal.valueOf(2_160),
+                BigDecimal.valueOf(2_750), BigDecimal.valueOf(1_500),
+                BigDecimal.valueOf(1_500), BigDecimal.valueOf(50),
+                BigDecimal.valueOf(31_610), BigDecimal.valueOf(68_390));
+        when(taxCalculator.calculate(any(), any(), any())).thenReturn(deductions);
+        when(mapper.toResponse(any(PayrollRun.class))).thenReturn(minimalRunResponse());
+
+        service.calculatePayroll(runId);
+
+        // Only the complete employee gets a payslip; the incomplete one is excluded with a warning.
+        assertThat(run.getPaySlips()).hasSize(1);
+        assertThat(run.getNotes()).contains("incomplete statutory");
+    }
+
     // -------------------------------------------------------------------------
     // computeUnpaidLeaveDeduction (private — tested via ReflectionTestUtils)
     // The method takes the per-period unpaid day count (GRPC-003) and the number of calendar
@@ -458,6 +522,6 @@ class PayrollServiceTest {
                 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, "KES", "hr-admin", null, null, null,
-                LocalDateTime.now());
+                LocalDateTime.now(), null);
     }
 }

@@ -195,6 +195,14 @@ public class PayrollRun extends BaseEntity {
                 : note;
     }
 
+    /**
+     * Records an operator-facing warning on the run (e.g. employees excluded for incomplete statutory
+     * details, PAYROLL-BACKLOG-005). Surfaced via the run's {@code notes}; capped by the column length.
+     */
+    public void recordWarning(String warning) {
+        appendNote(warning);
+    }
+
     private BigDecimal sumField(List<PaySlip> slips,
                                 java.util.function.Function<PaySlip, BigDecimal> getter) {
         return slips.stream()

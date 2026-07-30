@@ -178,10 +178,20 @@ public class PayrollService {
                 .getUnpaidLeaveDaysForPeriod(tenantId, employeeIds, periodYear, periodMonth);
 
         List<EmployeeSalaryData> salaryData = new ArrayList<>();
+        // Employees excluded for incomplete statutory identifiers (PAYROLL-BACKLOG-005 residual):
+        // filing PAYE/SHIF/NSSF with a blank member id produces an incomplete return, and a NULL phone
+        // fails M-Pesa disbursement. Skip them and surface a warning so the operator can complete the
+        // record and re-run — rather than silently dropping them.
+        List<String> incompleteStatutory = new ArrayList<>();
         for (EmployeeResponse employee : employees) {
             SalaryStructureResponse salary = salaryMap.get(employee.getId());
             if (salary == null) {
                 log.warn("No salary structure found for employee {}, skipping", employee.getId());
+                continue;
+            }
+            String missing = missingStatutoryDetails(employee);
+            if (missing != null) {
+                incompleteStatutory.add(employee.getEmployeeNumber() + " (missing " + missing + ")");
                 continue;
             }
             List<LeaveBalanceResponse> leaveBalances = leaveMap.getOrDefault(employee.getId(), List.of());
@@ -191,8 +201,9 @@ public class PayrollService {
 
         int skipped = employees.size() - salaryData.size();
         if (skipped > 0) {
-            log.warn("PAYROLL ALERT [tenant={}, run={}]: {}/{} employees skipped due to salary fetch failures — " +
-                    "their pay slips will NOT be included in this run. Investigate before approving.",
+            log.warn("PAYROLL ALERT [tenant={}, run={}]: {}/{} employees skipped (missing salary or " +
+                    "incomplete statutory details) — their pay slips will NOT be included in this run. " +
+                    "Investigate before approving.",
                     tenantId, payrollRunId, skipped, employees.size());
         }
 
@@ -275,6 +286,15 @@ public class PayrollService {
                             .build();
 
                     run.addPaySlip(paySlip);
+                }
+
+                if (!incompleteStatutory.isEmpty()) {
+                    String detail = String.join("; ", incompleteStatutory);
+                    if (detail.length() > 300) {
+                        detail = detail.substring(0, 297) + "...";
+                    }
+                    run.recordWarning(incompleteStatutory.size()
+                            + " employee(s) excluded — incomplete statutory details: " + detail);
                 }
 
                 run.finishCalculation();
@@ -487,6 +507,24 @@ public class PayrollService {
         BigDecimal dailyRate = basicPay.divide(
                 BigDecimal.valueOf(daysInMonth), 4, RoundingMode.HALF_UP);
         return dailyRate.multiply(unpaidDaysThisPeriod).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Returns a comma-separated list of the statutory identifiers this employee is missing, or null
+     * when complete (PAYROLL-BACKLOG-005). All four are required to file a valid return and disburse:
+     * KRA PIN (PAYE), SHIF (the {@code nhif_number} field, legacy name), NSSF number, and phone (M-Pesa).
+     */
+    public static String missingStatutoryDetails(EmployeeResponse e) {
+        List<String> missing = new ArrayList<>();
+        if (isBlank(e.getKraPin()))      missing.add("KRA PIN");
+        if (isBlank(e.getNhifNumber()))  missing.add("SHIF");
+        if (isBlank(e.getNssfNumber()))  missing.add("NSSF");
+        if (isBlank(e.getPhoneNumber())) missing.add("phone");
+        return missing.isEmpty() ? null : String.join(", ", missing);
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private record EmployeeSalaryData(EmployeeResponse employee, SalaryStructureResponse salary,
