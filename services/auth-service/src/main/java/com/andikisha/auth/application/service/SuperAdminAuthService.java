@@ -138,8 +138,17 @@ public class SuperAdminAuthService {
                     "Cannot impersonate the system tenant");
         }
 
-        User admin = userRepository.findById(
-                        java.util.UUID.fromString(requestingUserId))
+        // AUTH-BACKLOG-008: a malformed (non-UUID) principal must be a clean authorization
+        // denial, not an unhandled IllegalArgumentException that surfaces as a masked 500.
+        java.util.UUID adminId;
+        try {
+            adminId = java.util.UUID.fromString(requestingUserId);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessRuleException("FORBIDDEN",
+                    "Only SUPER_ADMIN users can impersonate tenants");
+        }
+
+        User admin = userRepository.findById(adminId)
                 .filter(u -> u.getRole() == Role.SUPER_ADMIN)
                 .orElseThrow(() -> new BusinessRuleException("FORBIDDEN",
                         "Only SUPER_ADMIN users can impersonate tenants"));
