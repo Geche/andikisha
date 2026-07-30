@@ -1702,6 +1702,8 @@ surfaces as 405, not a generic 500. Broader 4xx (415/406) hardening left as a re
 
 ### PAYROLL-BACKLOG-005 — Pending-activation employees are payroll/filing-eligible despite incomplete statutory IDs
 
+**STATUS: RESOLVED** — 2026-07-30: `EmployeeQueryService.findAllActive()` (the gRPC `ListActiveByTenant` source for payroll runs and statutory filings) now excludes `pending_activation = true` rows via `findByTenantIdAndStatusInAndPendingActivationFalse`. Normal probation hires (`pending_activation = false`) stay eligible; only not-yet-activated bulk rows are excluded, and they re-enter once `BulkUploadService.activate` clears the flag. Verified by a Testcontainers repository test. **Residual (not this fix):** an *activated* employee could still carry NULL statutory IDs (activation provisions a login but does not re-validate KRA PIN/SHIF/NSSF/phone) — the write-up's completeness-predicate option (2) would close that narrower window; deferred as a smaller follow-up.
+
 **Raised:** 2026-06-09 · **Priority:** Medium — compliance/payment correctness (pre-existing; not introduced by W5).
 Placeholder/pending-activation rows (NULL statutory IDs after V10) must be excluded from payroll runs and
 statutory filings. Full write-up: `docs/engineering/backend/2026-06-09-pending-activation-payroll-eligibility-backlog.md`.
