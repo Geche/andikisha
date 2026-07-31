@@ -60,6 +60,7 @@ import static org.mockito.Mockito.when;
 class PayrollDisbursementFlowTest {
 
     private static final String TENANT_ID = "it-tenant";
+    private static final String FAIL_PHONE_PREFIX = "+254799";
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
@@ -95,6 +96,9 @@ class PayrollDisbursementFlowTest {
         r.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
 
         r.add("app.mpesa.enabled", () -> "false"); // sandbox — SandboxMpesaClient auto-completes
+        // Scenario 2: any payslip phone starting with this prefix fails in the sandbox. Scenario 1's
+        // phones (+254700…) never match, so the happy path is unaffected.
+        r.add("app.mpesa.sandbox.fail-phone-prefix", () -> FAIL_PHONE_PREFIX);
         r.add("app.credential-encryption-key", () -> "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
         r.add("grpc.server.port", () -> "0");
     }
@@ -165,17 +169,64 @@ class PayrollDisbursementFlowTest {
 
         // The terminal PaymentsCompletedEvent is published on integration.events and round-trips
         // through the JSON converter + a real listener (exercises the deserialization path).
-        PaymentsCompletedEvent completed;
-        try {
-            completed = completedEventCapture.events.poll(15, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new AssertionError("interrupted awaiting PaymentsCompletedEvent", e);
-        }
+        PaymentsCompletedEvent completed = awaitCompletedEvent(runId, Duration.ofSeconds(15));
         assertThat(completed).as("terminal PaymentsCompletedEvent").isNotNull();
-        assertThat(completed.getPayrollRunId()).isEqualTo(runId.toString());
         assertThat(completed.getCountSuccessful()).isEqualTo(2);
         assertThat(completed.getCountFailed()).isEqualTo(0);
+    }
+
+    @Test
+    void payrollApproved_oneFailingPayslip_runCompletesWithSplitCounts() {
+        // Scenario 2 — partial failure: one payslip's phone matches the sandbox fail prefix, so its
+        // disbursement FAILS while the other COMPLETES. The run must still reach a terminal
+        // PaymentsCompletedEvent, with counts split 1 success / 1 failure.
+        UUID runId = UUID.randomUUID();
+        List<PayslipDisbursementInfo> payslips = List.of(
+                new PayslipDisbursementInfo(UUID.randomUUID().toString(), UUID.randomUUID().toString(),
+                        "Ada Ok", "EMP-0101", new BigDecimal("50000.00"), "KES", "+254700000010"),
+                new PayslipDisbursementInfo(UUID.randomUUID().toString(), UUID.randomUUID().toString(),
+                        "Ben No", "EMP-0102", new BigDecimal("60000.00"), "KES", FAIL_PHONE_PREFIX + "000010"));
+        when(payrollClient.getPayslipsForRun(eq(TENANT_ID), eq(runId))).thenReturn(payslips);
+
+        PayrollApprovedEvent event = new PayrollApprovedEvent(
+                TENANT_ID, runId.toString(), "2024-02", 2,
+                new BigDecimal("140000"), new BigDecimal("110000"), new BigDecimal("20000"),
+                new BigDecimal("5000"), new BigDecimal("3850"), new BigDecimal("1650"), "hr-admin");
+
+        rabbitTemplate.convertAndSend("payroll.events", "payroll.approved", event);
+
+        // Both transactions reach a terminal state: exactly one COMPLETED and one FAILED.
+        await(Duration.ofSeconds(20), () -> {
+            var txns = transactionRepository.findByTenantIdAndPayrollRunId(TENANT_ID, runId);
+            if (txns.size() != 2) {
+                return false;
+            }
+            long completed = txns.stream().filter(t -> t.getStatus() == TransactionStatus.COMPLETED).count();
+            long failed = txns.stream().filter(t -> t.getStatus() == TransactionStatus.FAILED).count();
+            return completed == 1 && failed == 1;
+        });
+
+        PaymentsCompletedEvent completed = awaitCompletedEvent(runId, Duration.ofSeconds(15));
+        assertThat(completed).as("terminal PaymentsCompletedEvent for partial-failure run").isNotNull();
+        assertThat(completed.getCountSuccessful()).isEqualTo(1);
+        assertThat(completed.getCountFailed()).isEqualTo(1);
+    }
+
+    /** Waits for the terminal event of a specific run, ignoring events from other scenarios' runs. */
+    private PaymentsCompletedEvent awaitCompletedEvent(UUID runId, Duration timeout) {
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                PaymentsCompletedEvent e = completedEventCapture.events.poll(500, TimeUnit.MILLISECONDS);
+                if (e != null && e.getPayrollRunId().equals(runId.toString())) {
+                    return e;
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError("interrupted awaiting PaymentsCompletedEvent", ie);
+            }
+        }
+        return null;
     }
 
     private static void await(Duration timeout, BooleanSupplier condition) {
