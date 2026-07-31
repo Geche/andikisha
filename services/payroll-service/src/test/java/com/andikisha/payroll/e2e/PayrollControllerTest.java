@@ -262,6 +262,6 @@ class PayrollControllerTest {
                 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, "KES", "hr-admin", null, null, null,
-                LocalDateTime.now());
+                LocalDateTime.now(), null);
     }
 }

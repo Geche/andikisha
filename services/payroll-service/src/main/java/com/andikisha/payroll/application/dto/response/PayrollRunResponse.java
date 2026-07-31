@@ -23,5 +23,6 @@ public record PayrollRunResponse(
         String approvedBy,
         LocalDateTime approvedAt,
         LocalDateTime completedAt,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String notes
 ) {}
