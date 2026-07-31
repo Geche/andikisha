@@ -1452,6 +1452,8 @@ employee-service (confirmed OK — has it on `EmployeeServiceApplication.java`),
 
 ### PAYROLL-BACKLOG-003 — Testcontainers integration tests for the full payroll → disbursement flow
 
+**STATUS: PARTIAL** — 2026-07-31: harness scaffolded and **Scenario 1 (full happy-path) landed**. Architecture decided (Option B — per-service tests against a shared real broker; `docs/decisions/2026-07-31-payroll-disbursement-integration-harness.md`). `PayrollDisbursementFlowTest` (integration-hub) boots real RabbitMQ + Postgres + Redis, publishes a `PayrollApprovedEvent`, and asserts both transactions reach COMPLETED and a terminal `PaymentsCompletedEvent` is published with correct counts — exercising the after-commit publish and the JSON deserialization path. **Remaining scenarios** (each its own PR): (2) partial failure, (3) retry idempotency, (4) concurrent-completion fires-once + the payroll-side completion/idempotency.
+
 **Raised:** 2026-05-16  
 **Context:** During the 2026-05-16 end-to-end verification of the payroll disbursement loop, four bugs were discovered that unit tests had not caught:
 
