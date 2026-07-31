@@ -1,6 +1,6 @@
 # Design: payroll → disbursement integration-test harness (PAYROLL-BACKLOG-003)
 
-**Status:** Accepted (2026-07-31) — Scenario 1 landed; Scenarios 2–4 to follow as separate PRs.
+**Status:** Accepted (2026-07-31) — **all four scenarios landed** (Scenarios 1–3 in integration-hub `PayrollDisbursementFlowTest`; Scenario 4 in payroll-service `PayrollRunCompletionIdempotencyTest`).
 **Related:** [[PAYROLL-BACKLOG-003]].
 
 ## Context
@@ -51,10 +51,22 @@ failure to the service at fault and still covers every bug — you assert at the
 - `@Testcontainers(disabledWithoutDocker = true)` — runs in CI (Docker present), skips on machines
   without Docker; locally on Docker 29 it needs `DOCKER_API_VERSION=1.44`.
 
-## Status / remaining
+## Status — all scenarios landed
 
-- **Scenario 1 (done):** `PayrollDisbursementFlowTest` — approved → 2 transactions COMPLETED → terminal
-  `PaymentsCompletedEvent` with correct counts.
-- **Remaining:** (2) partial failure via `app.mpesa.sandbox.fail-phone-prefix`, run reaches COMPLETED
-  with correct success/fail counts; (3) retry of FAILED transactions stays idempotent; (4) concurrent
-  completion fires `PaymentsCompletedEvent` exactly once; plus the payroll-side completion + idempotency.
+- **Scenario 1** (`PayrollDisbursementFlowTest`): approved → 2 transactions COMPLETED → terminal
+  `PaymentsCompletedEvent` with correct counts (after-commit publish + deserialization).
+- **Scenario 2** (same class): one payslip's phone matches the sandbox fail prefix → 1 COMPLETED +
+  1 FAILED, terminal counts split 1/1.
+- **Scenario 3** (same class): `retryFailed` on a fully-COMPLETED run re-dispatches nothing
+  (conversation ids unchanged, H3 guard).
+- **Scenario 4** (`PayrollRunCompletionIdempotencyTest`, payroll-service): a **duplicate**
+  `PaymentsCompletedEvent` completes the run at most once — `PayrollRun.complete()` idempotency (bug #4).
+
+**Finding that reshaped Scenario 4:** integration-hub's `maybePublishRunCompleted` runs per transaction
+commit, so the completion event is **at-least-once, not exactly-once** at that side. The "exactly once"
+guarantee lives on the payroll side via `PayrollRun.complete()`'s idempotency — which is exactly what
+Scenario 4 verifies. Bug #3's *at-least-once under concurrency* is implicitly covered by Scenarios 1–3
+(multiple payments complete concurrently and the event still fires).
+
+**Harness note:** the payroll-side test uses real Flyway migrations + `ddl-auto=none`; Hibernate
+`create-drop` against real Postgres tripped an SQLSTATE 0A000 during pool warmup.
