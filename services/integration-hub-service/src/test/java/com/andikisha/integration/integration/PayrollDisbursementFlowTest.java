@@ -2,6 +2,7 @@ package com.andikisha.integration.integration;
 
 import com.andikisha.events.payroll.PaymentsCompletedEvent;
 import com.andikisha.events.payroll.PayrollApprovedEvent;
+import com.andikisha.integration.domain.model.PaymentTransaction;
 import com.andikisha.integration.domain.model.TransactionStatus;
 import com.andikisha.integration.domain.repository.PaymentTransactionRepository;
 import com.andikisha.integration.infrastructure.payroll.PayrollServiceClient;
@@ -31,7 +32,9 @@ import org.testcontainers.utility.DockerImageName;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -141,6 +144,9 @@ class PayrollDisbursementFlowTest {
     PaymentTransactionRepository transactionRepository;
 
     @Autowired
+    com.andikisha.integration.application.service.PaymentService paymentService;
+
+    @Autowired
     CompletedEventCapture completedEventCapture;
 
     @Test
@@ -210,6 +216,53 @@ class PayrollDisbursementFlowTest {
         assertThat(completed).as("terminal PaymentsCompletedEvent for partial-failure run").isNotNull();
         assertThat(completed.getCountSuccessful()).isEqualTo(1);
         assertThat(completed.getCountFailed()).isEqualTo(1);
+    }
+
+    @Test
+    void retryOnFullyCompletedRun_doesNotReDispatch() {
+        // Scenario 3 — retry/double-send idempotency: re-triggering disbursement (e.g. a second
+        // "disburse" click, here a retryFailed call) on a run whose payments already COMPLETED must NOT
+        // re-dispatch them. retryFailed only touches FAILED transactions, and the H3 anti-double-send
+        // guard makes a settled transaction non-dispatchable. (Note: the completion event itself is
+        // NOT single-fire at integration-hub — maybePublishRunCompleted runs per transaction commit, so
+        // it can publish more than once; payroll's PayrollRun.complete() idempotency dedups that. So we
+        // assert on transaction state, not event count.)
+        UUID runId = UUID.randomUUID();
+        List<PayslipDisbursementInfo> payslips = List.of(
+                new PayslipDisbursementInfo(UUID.randomUUID().toString(), UUID.randomUUID().toString(),
+                        "Cy Done", "EMP-0201", new BigDecimal("50000.00"), "KES", "+254700000020"),
+                new PayslipDisbursementInfo(UUID.randomUUID().toString(), UUID.randomUUID().toString(),
+                        "Di Done", "EMP-0202", new BigDecimal("60000.00"), "KES", "+254700000021"));
+        when(payrollClient.getPayslipsForRun(eq(TENANT_ID), eq(runId))).thenReturn(payslips);
+
+        PayrollApprovedEvent event = new PayrollApprovedEvent(
+                TENANT_ID, runId.toString(), "2024-03", 2,
+                new BigDecimal("140000"), new BigDecimal("110000"), new BigDecimal("20000"),
+                new BigDecimal("5000"), new BigDecimal("3850"), new BigDecimal("1650"), "hr-admin");
+        rabbitTemplate.convertAndSend("payroll.events", "payroll.approved", event);
+
+        await(Duration.ofSeconds(20), () -> {
+            var txns = transactionRepository.findByTenantIdAndPayrollRunId(TENANT_ID, runId);
+            return txns.size() == 2
+                    && txns.stream().allMatch(t -> t.getStatus() == TransactionStatus.COMPLETED);
+        });
+        assertThat(awaitCompletedEvent(runId, Duration.ofSeconds(15)))
+                .as("initial completion event").isNotNull();
+
+        // Capture the conversation ids assigned at first dispatch — a re-dispatch would mint new ones.
+        Map<UUID, String> conversationBefore = transactionRepository
+                .findByTenantIdAndPayrollRunId(TENANT_ID, runId).stream()
+                .collect(Collectors.toMap(PaymentTransaction::getId, PaymentTransaction::getConversationId));
+
+        // Re-trigger disbursement — a safe no-op (no FAILED transactions; settled ones are non-dispatchable).
+        paymentService.retryFailed(TENANT_ID, runId);
+
+        var after = transactionRepository.findByTenantIdAndPayrollRunId(TENANT_ID, runId);
+        assertThat(after).hasSize(2);
+        assertThat(after).allMatch(t -> t.getStatus() == TransactionStatus.COMPLETED);
+        // No transaction was re-dispatched: conversation ids are unchanged.
+        assertThat(after).allSatisfy(t ->
+                assertThat(t.getConversationId()).isEqualTo(conversationBefore.get(t.getId())));
     }
 
     /** Waits for the terminal event of a specific run, ignoring events from other scenarios' runs. */
