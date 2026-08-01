@@ -17,6 +17,7 @@ import {
 import type { BadgeStatus, BarDatum } from "@andikisha/ui";
 import { apiClient } from "@/lib/api-client";
 import { WorkspaceSetupChecklist } from "@/components/workspace-setup/WorkspaceSetupChecklist";
+import { SetMeUpAsEmployeeCard } from "@/components/self-setup/SetMeUpAsEmployeeCard";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface PagedResponse<T> {
@@ -258,6 +259,10 @@ export default function DashboardPage() {
             Could not load dashboard data. Check your connection to the backend services.
           </InlineAlert>
         )}
+
+        {/* AUTH-BACKLOG-001: prompt admins with no employee record to set themselves up. Hides
+            itself once /api/auth/me shows a linked employeeId. */}
+        <SetMeUpAsEmployeeCard />
 
         {/* KPI strip */}
         <KpiGroup cols={4}>
