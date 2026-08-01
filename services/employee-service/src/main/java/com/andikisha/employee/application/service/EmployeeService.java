@@ -8,11 +8,13 @@ import com.andikisha.employee.application.dto.request.UpdateEmployeeRequest;
 import com.andikisha.employee.application.dto.request.UpdateProfileRequest;
 import com.andikisha.employee.application.dto.request.UpdateSalaryRequest;
 import com.andikisha.employee.application.dto.response.EmployeeDetailResponse;
+import com.andikisha.employee.application.dto.response.SelfSetupResponse;
 import com.andikisha.employee.application.mapper.EmployeeMapper;
 import com.andikisha.employee.application.port.EmployeeEventPublisher;
 import com.andikisha.employee.domain.exception.DepartmentNotFoundException;
 import com.andikisha.employee.domain.exception.EmployeeNotFoundException;
 import com.andikisha.employee.domain.exception.PositionNotFoundException;
+import com.andikisha.employee.domain.exception.SelfSetupConflictException;
 import com.andikisha.employee.domain.model.Department;
 import com.andikisha.employee.domain.model.Employee;
 import com.andikisha.employee.domain.model.EmployeeHistory;
@@ -27,6 +29,9 @@ import com.andikisha.employee.domain.repository.EmployeeHistoryRepository;
 import com.andikisha.employee.domain.repository.EmployeeRepository;
 import com.andikisha.employee.domain.repository.LifecycleWorkflowInstanceRepository;
 import com.andikisha.employee.domain.repository.PositionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -35,11 +40,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
 public class EmployeeService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmployeeService.class);
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
@@ -137,6 +145,62 @@ public class EmployeeService {
         publishAfterCommit(() -> eventPublisher.publishEmployeeCreated(created));
 
         return mapper.toDetailResponse(employee);
+    }
+
+    /**
+     * Admin employee self-setup (AUTH-BACKLOG-001): create a minimal, statutory-incomplete employee
+     * record for the calling user. Email and tenant come from the gateway-signed headers. The record
+     * is set ACTIVE via the pure domain transition (so a founder never lands in a probation-ending
+     * workflow) and pending_activation (excluded from payroll runs and filings until they complete
+     * their details). The existing EmployeeCreatedEvent drives the auth-user link by matching email.
+     */
+    @Transactional
+    public SelfSetupResponse selfSetup(String tenantId, String actorUserId, String email,
+                                       String firstName, String lastName, String phoneNumber) {
+        String normalizedEmail = email.toLowerCase(Locale.ROOT).trim();
+
+        // Fast, friendly pre-check; the partial unique index (V12) is the real guarantee against a race.
+        if (employeeRepository.existsByTenantIdAndEmailAndArchivedAtIsNull(tenantId, normalizedEmail)) {
+            throw new SelfSetupConflictException("EMAIL_IN_USE",
+                    "An employee record already exists for your email. Ask your HR administrator to link it.");
+        }
+
+        String employeeNumber = numberGenerator.generate(tenantId);
+        Employee employee = Employee.create(
+                tenantId, employeeNumber, firstName, lastName,
+                null, phoneNumber, normalizedEmail, null, null, null,
+                EmploymentType.PERMANENT, null, null, null, LocalDate.now());
+        employee.confirmProbation(); // ON_PROBATION -> ACTIVE: pure domain transition (no history, no event)
+        employee.setPendingActivation(true);
+
+        Employee saved;
+        try {
+            // Flush inside the tx so a concurrent double-submit surfaces the unique-index violation here.
+            saved = employeeRepository.saveAndFlush(employee);
+        } catch (DataIntegrityViolationException ex) {
+            if (isEmailUniqueViolation(ex)) {
+                throw new SelfSetupConflictException("EMAIL_IN_USE",
+                        "An employee record already exists for your email. Ask your HR administrator to link it.");
+            }
+            throw ex;
+        }
+
+        historyRepository.save(EmployeeHistory.record(
+                tenantId, saved.getId(), "CREATED", null, null, null, actorUserId));
+
+        final Employee created = saved;
+        publishAfterCommit(() -> eventPublisher.publishEmployeeCreated(created));
+
+        log.info("Employee self-provisioned: actorUserId={} tenantId={} employeeId={}",
+                actorUserId, tenantId, saved.getId());
+
+        return new SelfSetupResponse(saved.getId().toString(), saved.getEmployeeNumber(), true);
+    }
+
+    private static boolean isEmailUniqueViolation(DataIntegrityViolationException ex) {
+        String message = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+        return message != null && message.contains("idx_employees_tenant_email_unique");
     }
 
     @Transactional

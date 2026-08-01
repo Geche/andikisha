@@ -1,12 +1,16 @@
 package com.andikisha.employee.presentation.controller;
 
 import com.andikisha.employee.application.dto.request.CreateEmployeeRequest;
+import com.andikisha.employee.application.dto.request.SelfSetupRequest;
 import com.andikisha.employee.application.dto.request.TerminateEmployeeRequest;
 import com.andikisha.employee.application.dto.request.UpdateEmployeeRequest;
 import com.andikisha.employee.application.dto.request.UpdateProfileRequest;
 import com.andikisha.employee.application.dto.request.UpdateSalaryRequest;
 import com.andikisha.employee.application.dto.response.EmployeeDetailResponse;
 import com.andikisha.employee.application.dto.response.EmployeeSummaryResponse;
+import com.andikisha.employee.application.dto.response.SelfSetupResponse;
+import com.andikisha.employee.domain.exception.SelfSetupConflictException;
+import org.springframework.security.access.AccessDeniedException;
 import com.andikisha.employee.application.service.EmployeeQueryService;
 import com.andikisha.employee.application.service.EmployeeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,6 +71,29 @@ public class EmployeeController {
     @Operation(summary = "Get the calling employee's own record (self-service)")
     public EmployeeDetailResponse getMe(@RequestHeader("X-User-Email") String email) {
         return queryService.findByEmail(email);
+    }
+
+    @PostMapping("/self")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Set the calling user up as an employee (admin self-service, AUTH-BACKLOG-001)")
+    public SelfSetupResponse selfSetup(
+            @RequestHeader("X-Tenant-ID") String tenantId,
+            @RequestHeader("X-User-ID") String userId,
+            @RequestHeader("X-User-Email") String email,
+            @RequestHeader(value = "X-User-Role", required = false) String role,
+            @RequestHeader(value = "X-Employee-ID", required = false) String employeeId,
+            @Valid @RequestBody SelfSetupRequest request) {
+        // Already linked — the caller carries an employee identity, so the record exists.
+        if (employeeId != null && !employeeId.isBlank()) {
+            throw new SelfSetupConflictException("ALREADY_LINKED", "You already have an employee record.");
+        }
+        // No tenant to attach to. SUPER_ADMIN operates on the platform, not a tenant workspace.
+        if ("SUPER_ADMIN".equalsIgnoreCase(role) || "SYSTEM".equalsIgnoreCase(tenantId)) {
+            throw new AccessDeniedException("Self-setup is not available for this account.");
+        }
+        return employeeService.selfSetup(
+                tenantId, userId, email, request.firstName(), request.lastName(), request.phoneNumber());
     }
 
     @GetMapping

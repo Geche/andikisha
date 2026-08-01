@@ -40,6 +40,10 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
 
     List<Employee> findAllByTenantIdAndIdIn(String tenantId, List<UUID> ids);
 
+    // Self-setup pre-check (AUTH-BACKLOG-001): the fast, friendly path before the partial unique index.
+    // Matches the index predicate — an archived (terminated) employee's email must not block a new record.
+    boolean existsByTenantIdAndEmailAndArchivedAtIsNull(String tenantId, String email);
+
     boolean existsByTenantIdAndNationalId(String tenantId, String nationalId);
 
     boolean existsByTenantIdAndPhoneNumber(String tenantId, String phoneNumber);

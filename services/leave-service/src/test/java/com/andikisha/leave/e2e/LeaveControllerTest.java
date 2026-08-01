@@ -118,6 +118,26 @@ class LeaveControllerTest {
     }
 
     @Test
+    void adminWithLinkedEmployeeCanSubmitOwnLeave_pinsCurrentAuthzBehaviour() throws Exception {
+        // Admin employee self-service (AUTH-BACKLOG-001) relies on this endpoint accepting a linked
+        // ADMIN: it is @PreAuthorize("isAuthenticated()") with NO role/permission/ownership check
+        // (AUTHZ-BACKLOG-006). This pins that behaviour — if someone tightens leave-submit authorisation,
+        // this test must FAIL loudly rather than admin self-service silently breaking.
+        when(leaveService.submit(any(), any(), any())).thenReturn(minimalRequestResponse("PENDING"));
+
+        mockMvc.perform(post("/api/v1/leave/requests")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Role", "ADMIN")
+                        .header("X-Employee-ID", EMPLOYEE_ID.toString()) // the admin's own linked employee id
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"leaveType":"ANNUAL","startDate":"2026-05-01","endDate":"2026-05-05"}
+                                """))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     void submit_invalidLeaveType_returns422() throws Exception {
         when(leaveService.submit(any(), any(), any()))
                 .thenThrow(new BusinessRuleException("INVALID_LEAVE_TYPE", "Unknown leave type: VACATION"));

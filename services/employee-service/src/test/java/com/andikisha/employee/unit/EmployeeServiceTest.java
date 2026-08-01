@@ -90,6 +90,75 @@ class EmployeeServiceTest {
         verify(historyRepository).save(any());
     }
 
+    // ── self-setup (AUTH-BACKLOG-001) ───────────────────────────────────────────
+
+    @Test
+    void selfSetup_createsMinimalActivePendingActivationRecord() {
+        when(employeeRepository.existsByTenantIdAndEmailAndArchivedAtIsNull(TENANT_ID, "admin@acme.co.ke"))
+                .thenReturn(false);
+        when(numberGenerator.generate(TENANT_ID)).thenReturn("EMP-0007");
+        when(employeeRepository.saveAndFlush(any(com.andikisha.employee.domain.model.Employee.class)))
+                .thenAnswer(inv -> {
+                    com.andikisha.employee.domain.model.Employee e = inv.getArgument(0);
+                    org.springframework.test.util.ReflectionTestUtils.setField(e, "id", java.util.UUID.randomUUID());
+                    return e;
+                });
+        when(historyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var result = employeeService.selfSetup(
+                TENANT_ID, "user-1", "Admin@Acme.co.ke", "Ada", "Ok", "+254700000001");
+
+        assertThat(result.pendingActivation()).isTrue();
+        assertThat(result.employeeNumber()).isEqualTo("EMP-0007");
+
+        var captor = org.mockito.ArgumentCaptor.forClass(com.andikisha.employee.domain.model.Employee.class);
+        verify(employeeRepository).saveAndFlush(captor.capture());
+        var saved = captor.getValue();
+        assertThat(saved.getStatus())
+                .isEqualTo(com.andikisha.employee.domain.model.EmploymentStatus.ACTIVE); // confirmProbation applied
+        assertThat(saved.isPendingActivation()).isTrue();
+        assertThat(saved.getEmail()).isEqualTo("admin@acme.co.ke"); // lowercased from the header
+        assertThat(saved.getFirstName()).isEqualTo("Ada");
+        assertThat(saved.getNationalId()).isNull();
+        assertThat(saved.getKraPin()).isNull();
+        assertThat(saved.getNssfNumber()).isNull();
+        assertThat(saved.getSalaryStructure()).isNull();
+        assertThat(saved.getDepartment()).isNull();
+        verify(eventPublisher).publishEmployeeCreated(any(com.andikisha.employee.domain.model.Employee.class));
+    }
+
+    @Test
+    void selfSetup_whenMatchingEmailExists_throwsEmailInUse() {
+        when(employeeRepository.existsByTenantIdAndEmailAndArchivedAtIsNull(TENANT_ID, "admin@acme.co.ke"))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> employeeService.selfSetup(
+                TENANT_ID, "user-1", "admin@acme.co.ke", "Ada", "Ok", null))
+                .isInstanceOf(com.andikisha.employee.domain.exception.SelfSetupConflictException.class)
+                .extracting(e -> ((com.andikisha.employee.domain.exception.SelfSetupConflictException) e).getCode())
+                .isEqualTo("EMAIL_IN_USE");
+        verify(employeeRepository, org.mockito.Mockito.never()).saveAndFlush(any());
+    }
+
+    @Test
+    void selfSetup_uniqueIndexRace_mapsViolationToEmailInUse() {
+        // The concurrency loser: pre-check passes (no committed row yet), then the V12 unique index
+        // rejects the insert. The real DB block was validated against Postgres in the W1 migration;
+        // here we pin that the service maps that violation to EMAIL_IN_USE rather than a 500.
+        when(employeeRepository.existsByTenantIdAndEmailAndArchivedAtIsNull(TENANT_ID, "admin@acme.co.ke"))
+                .thenReturn(false);
+        when(numberGenerator.generate(TENANT_ID)).thenReturn("EMP-0007");
+        when(employeeRepository.saveAndFlush(any(com.andikisha.employee.domain.model.Employee.class)))
+                .thenThrow(new org.springframework.dao.DataIntegrityViolationException(
+                        "duplicate key value violates unique constraint \"idx_employees_tenant_email_unique\""));
+
+        assertThatThrownBy(() -> employeeService.selfSetup(
+                TENANT_ID, "user-1", "admin@acme.co.ke", "Ada", "Ok", null))
+                .isInstanceOf(com.andikisha.employee.domain.exception.SelfSetupConflictException.class)
+                .extracting(e -> ((com.andikisha.employee.domain.exception.SelfSetupConflictException) e).getCode())
+                .isEqualTo("EMAIL_IN_USE");
+    }
+
     @Test
     void create_withDuplicateNationalId_throwsDuplicateException() {
         var request = new CreateEmployeeRequest(

@@ -59,6 +59,94 @@ class EmployeeControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ── self-setup (AUTH-BACKLOG-001) ───────────────────────────────────────────
+
+    @Test
+    void selfSetup_validRequest_returns201() throws Exception {
+        when(employeeService.selfSetup(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new com.andikisha.employee.application.dto.response.SelfSetupResponse(
+                        EMPLOYEE_ID.toString(), "EMP-0001", true));
+
+        mockMvc.perform(post("/api/v1/employees/self")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Email", "admin@acme.co.ke")
+                        .header("X-User-Role", "ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Ada\",\"lastName\":\"Ok\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.employeeId").value(EMPLOYEE_ID.toString()))
+                .andExpect(jsonPath("$.pendingActivation").value(true));
+    }
+
+    @Test
+    void selfSetup_whenAlreadyLinked_returns409() throws Exception {
+        mockMvc.perform(post("/api/v1/employees/self")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Email", "admin@acme.co.ke")
+                        .header("X-User-Role", "ADMIN")
+                        .header("X-Employee-ID", EMPLOYEE_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Ada\",\"lastName\":\"Ok\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("ALREADY_LINKED"));
+    }
+
+    @Test
+    void selfSetup_superAdmin_returns403() throws Exception {
+        mockMvc.perform(post("/api/v1/employees/self")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Email", "root@andikisha.com")
+                        .header("X-User-Role", "SUPER_ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void selfSetup_systemTenant_returns403() throws Exception {
+        mockMvc.perform(post("/api/v1/employees/self")
+                        .header("X-Tenant-ID", "SYSTEM")
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Email", "root@andikisha.com")
+                        .header("X-User-Role", "ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Root\",\"lastName\":\"Admin\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void selfSetup_bodyCarriesEmail_returns400() throws Exception {
+        // Identity comes from the gateway headers; a body that smuggles email is rejected.
+        mockMvc.perform(post("/api/v1/employees/self")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Email", "admin@acme.co.ke")
+                        .header("X-User-Role", "ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Ada\",\"lastName\":\"Ok\",\"email\":\"other@evil.co\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void selfSetup_matchingEmailExists_returns409EmailInUse() throws Exception {
+        when(employeeService.selfSetup(any(), any(), any(), any(), any(), any()))
+                .thenThrow(new com.andikisha.employee.domain.exception.SelfSetupConflictException(
+                        "EMAIL_IN_USE", "An employee record already exists for your email."));
+
+        mockMvc.perform(post("/api/v1/employees/self")
+                        .header("X-Tenant-ID", TENANT_ID)
+                        .header("X-User-ID", USER_ID)
+                        .header("X-User-Email", "admin@acme.co.ke")
+                        .header("X-User-Role", "ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\":\"Ada\",\"lastName\":\"Ok\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("EMAIL_IN_USE"));
+    }
+
     @Test
     void getById_whenNotFound_returns404() throws Exception {
         when(queryService.findById(EMPLOYEE_ID))

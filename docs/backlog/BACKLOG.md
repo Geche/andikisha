@@ -1187,6 +1187,42 @@ design decision is the real work.
 **Related:** same class of gap as `FE-BACKLOG-018` (LINE_MANAGER had no leave-approval surface) — the
 role exists but its capabilities are unreachable.
 
+---
+
+<!-- ── AESS (admin employee self-service, AUTH-BACKLOG-001) findings, filed 2026-08-01 ── -->
+
+### AUTHZ-BACKLOG-006 — Leave submission has no permission or ownership check
+
+**Raised:** 2026-08-01 (AESS run) · **Priority:** Medium.
+`POST /api/v1/leave/requests` is `@PreAuthorize("isAuthenticated()")` — no permission, no role check. **Not an IDOR:** the employee id is the gateway-signed `X-Employee-ID` header (the caller's own; falls back to `X-User-ID`), which the gateway strips-and-reinjects from the JWT, so a caller can only submit their *own* leave — but any authenticated user can, regardless of a `leave:submit:own` permission grant. Admin employee self-service **depends on this absence of a control** (a linked ADMIN self-serves through it). Pinned by `LeaveControllerTest.adminWithLinkedEmployeeCanSubmitOwnLeave_pinsCurrentAuthzBehaviour` — if this is tightened, that test fails first. Decide whether to add the `leave:submit:own` gate (and grant it to the roles that should self-serve) or leave it open by design. Permission-name inconsistency (`leave:submit:own` vs `leave:create:own`) to resolve at the same time.
+
+### AUTHZ-BACKLOG-007 — Single-role user model vs pervasive multi-role assumptions
+
+**Raised:** 2026-08-01 (AESS run) · **Priority:** High — needs a decision record before anything is planned against the affected docs.
+`User` carries a **single** `Role` field and the JWT a single `role` claim. But the portal menu spec, the permission matrix, "EMPLOYEE as a baseline role for anyone on payroll", union-of-permissions resolution, and the documented "Switch view" toggle all assume a **multi-role** user. The documented model and the implemented model diverge. AESS works *around* this (a self-set-up admin stays `ADMIN` and self-serves because the endpoints accept ADMIN, not because they gain EMPLOYEE), but the divergence is load-bearing for B1/B2 and the surface spec. Produce a decision record: adopt multi-role (roles set + union permissions) or formally retire the multi-role assumptions from the docs.
+
+### FE-BACKLOG-022 — Linked ADMIN sees tenant-wide data on `/my/*` (role-scoped list endpoints)
+
+**Raised:** 2026-08-01 (AESS run) · **Priority:** High — **hard gate on the AESS surface follow-up spec.**
+Because a self-set-up admin stays `role = ADMIN`, role-based scope resolution treats them as **privileged (ALL scope)**, not OWN. Static read of the `/my/*` pages: `/my/profile` (`GET /employees/me`) and `/my/attendance` (`GET /attendance/employees/{employeeId}`) are own-scoped ✅, but **`/my/leave`'s request list calls `GET /api/v1/leave/requests`, which is role-scoped** — a linked ADMIN would see **tenant-wide leave** on a page labelled "my". The AESS nudge copy was deliberately kept minimal (no invitation to `/my/*`) to avoid walking admins into this. The surface spec must ensure every `/my/*` page calls explicit-`employeeId` (own) endpoints before inviting admins in.
+
+### PRODUCT-BACKLOG-002 — No seat/licence enforcement on employee create
+
+**Raised:** 2026-08-01 (AESS run) · **Priority:** Low/Medium.
+Employee creation (`EmployeeService.create`, and now `selfSetup`) applies **no seat or licence-limit check**, while the billing surface displays seat usage against the plan. A tenant can exceed its purchased seat count with no enforcement, and self-setup adds one more uncounted path. Decide whether create should enforce the seat limit (and how pending-activation rows count), or whether seats are advisory-only — and make the billing copy match.
+
+### FE-BACKLOG-023 — Null-department employee records are a new case
+
+**Raised:** 2026-08-01 (AESS run) · **Priority:** Medium — **verify in the AESS W6 browser pass.**
+Bulk upload always sets a department; self-setup creates records with `department_id = null`. Confirm the employee list, department filters/rosters, and analytics headcount tiles render correctly with a null-department row present (and decide whether pending-activation rows are excluded from headcount the way they are already excluded from payroll — see PAYROLL-BACKLOG-005 — to avoid a headcount-vs-payroll-headcount mismatch in a compliance product). The W6 verification script (item 7) checks this; record the result here.
+
+### AUDIT-BACKLOG-002 — Employee-creation audit records a null actor
+
+**Raised:** 2026-08-01 (AESS run) · **Priority:** High — DPA 2019 / KRA obligations.
+`audit-service`'s `EmployeeAuditListener` records every employee creation as `EMPLOYEE / CREATE` with a **null actor**, because `EmployeeCreatedEvent` carries no actor field. An HR/payroll product records *that* an employee record was created but not *by whom* — including self-provisioning, where the actor is exactly what an auditor filters for. Fix is additive: add `actorUserId` to `EmployeeCreatedEvent`, populate from `X-User-ID` (every create path has it — `selfSetup` already logs it at INFO), and map it in `EmployeeAuditListener`. A distinct `EMPLOYEE_SELF_PROVISIONED` action can layer on afterwards if wanted.
+
+---
+
 ### AUTHZ-BACKLOG-001 — Audit @PreAuthorize role-grant *intent* across all 9 services
 
 **STATUS: PARTIAL** — 2026-07-29 backlog sweep: the grant-intent-matrix decision doc exists but is DRAFT with blank decision cells and covers 6 contested endpoints, not the full all-9-services map — not signed off.

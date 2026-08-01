@@ -466,6 +466,25 @@ class AuthServiceTest {
         }
     }
 
+    @Test
+    void provisionEmployeeUser_existingAdminWithNoEmployee_linksEmployeeId() {
+        // AUTH-BACKLOG-001 link chain: when an admin self-provisions an employee record, the
+        // EmployeeCreatedEvent → provisionEmployeeUser finds the existing ADMIN user (matching email,
+        // null employeeId) and links the new employeeId to it — no new auth user, no role change.
+        User admin = buildUser(Role.ADMIN); // employeeId is null
+        org.springframework.test.util.ReflectionTestUtils.setField(admin, "id", USER_ID);
+        when(userRepository.existsByEmailAndTenantId("jane@test.com", TENANT_ID)).thenReturn(true);
+        when(userRepository.findByEmailAndTenantId("jane@test.com", TENANT_ID)).thenReturn(Optional.of(admin));
+        when(employeeGrpcClient.getEmployee(TENANT_ID, EMPLOYEE_ID.toString())).thenReturn(Optional.empty());
+
+        authService.provisionEmployeeUser(
+                TENANT_ID, "jane@test.com", "+254722123456", "temp-pw", EMPLOYEE_ID.toString());
+
+        assertThat(admin.getEmployeeId()).isEqualTo(EMPLOYEE_ID);
+        assertThat(admin.getRole()).isEqualTo(Role.ADMIN); // role unchanged — single-role model
+        verify(userRepository).save(admin);
+    }
+
     @Nested
     class SyncDisplayNameFromEmployee {
 
