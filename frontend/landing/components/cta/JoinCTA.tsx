@@ -20,7 +20,7 @@ export default function JoinCTA() {
               className="font-display font-black text-ink-900 leading-[1.06] tracking-[-0.02em] mb-5"
               style={{ fontSize: "clamp(28px, 3.2vw, 42px)" }}
             >
-              Join 240+ businesses growing with AndikishaHR.
+              Be an AndikishaHR founding customer.
             </h2>
             <p className="text-[17px] text-ink-600 leading-[1.7] mb-8">
               Start your 30-day free trial. No credit card required. Founding customer pricing

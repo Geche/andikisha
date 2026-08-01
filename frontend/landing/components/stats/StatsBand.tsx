@@ -8,11 +8,13 @@ export interface Stat {
   label: string;
 }
 
+// Honest, day-one capability metrics — verifiable product truths, not
+// traction claims. Every value is a fact about what the software does.
 export const DEFAULT_STATS: Stat[] = [
-  { num: "240", suffix: "+", label: "Businesses on the platform" },
-  { num: "1.2", suffix: "B", label: "KES processed monthly" },
-  { num: "100", suffix: "%", label: "On-time statutory filings" },
-  { num: "<20", suffix: "m", label: "Average payroll run" },
+  { num: "100", suffix: "%", label: "Statutory deductions automated" },
+  { num: "<20", suffix: "m", label: "Minutes to run payroll" },
+  { num: "2",   suffix: "",  label: "Payout rails in one batch" },
+  { num: "0",   suffix: "",  label: "Manual tax calculations" },
 ];
 
 export default function StatsBand({ stats = DEFAULT_STATS }: { stats?: Stat[] }) {
