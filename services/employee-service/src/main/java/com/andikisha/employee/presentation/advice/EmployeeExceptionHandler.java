@@ -4,6 +4,7 @@ import com.andikisha.common.dto.ErrorResponse;
 import com.andikisha.employee.domain.exception.DepartmentNotFoundException;
 import com.andikisha.employee.domain.exception.EmployeeNotFoundException;
 import com.andikisha.employee.domain.exception.PositionNotFoundException;
+import com.andikisha.employee.domain.exception.SelfSetupConflictException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,5 +34,11 @@ public class EmployeeExceptionHandler {
     public ResponseEntity<ErrorResponse> handleFileTooLarge(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(new ErrorResponse("FILE_TOO_LARGE", "Avatar must be 2 MB or smaller."));
+    }
+
+    @ExceptionHandler(SelfSetupConflictException.class)
+    public ResponseEntity<ErrorResponse> handleSelfSetupConflict(SelfSetupConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
     }
 }
