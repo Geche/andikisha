@@ -77,7 +77,7 @@ export default function Navbar() {
                 />
               </Link>
 
-              <nav className="hidden lg:flex items-stretch self-stretch gap-7" aria-label="Main">
+              <nav className="hidden lg:flex items-stretch self-stretch gap-1" aria-label="Main">
                 {NAV_LINKS.map(({ label, href }) => {
                   const isActive = pathname === href || pathname.startsWith(`${href}/`);
                   return (
@@ -86,16 +86,16 @@ export default function Navbar() {
                       href={href}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "relative flex items-center text-[14px] rounded-sm transition-colors duration-150 ease-out motion-reduce:transition-none focus-ring",
-                        // 2px gold underline — item width, flush to the item's bottom edge, fades via opacity
+                        "relative flex items-center px-3 text-[14px] rounded-sm transition-colors duration-150 ease-out motion-reduce:transition-none focus-ring",
+                        // 4px gold underline — item width, flush to the nav bar's bottom edge, fades via opacity
                         "after:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-1 after:bg-amber-500",
                         "after:transition-opacity after:duration-150 after:ease-out motion-reduce:after:transition-none",
                         isActive
                           ? "font-medium after:opacity-100"
                           : "font-normal after:opacity-0 hover:after:opacity-100",
                         transparent
-                          ? isActive ? "text-white" : "text-white/75 hover:text-white"
-                          : isActive ? "text-ink-900" : "text-ink-600 hover:text-ink-900"
+                          ? isActive ? "text-white bg-white/10" : "text-white/75 hover:text-white hover:bg-white/5"
+                          : isActive ? "text-ink-900 bg-green-50" : "text-ink-600 hover:text-ink-900 hover:bg-green-25"
                       )}
                     >
                       {label}
