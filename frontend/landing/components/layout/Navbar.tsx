@@ -77,7 +77,7 @@ export default function Navbar() {
                 />
               </Link>
 
-              <nav className="hidden lg:flex items-center gap-7" aria-label="Main">
+              <nav className="hidden lg:flex items-stretch self-stretch gap-7" aria-label="Main">
                 {NAV_LINKS.map(({ label, href }) => {
                   const isActive = pathname === href || pathname.startsWith(`${href}/`);
                   return (
@@ -86,7 +86,7 @@ export default function Navbar() {
                       href={href}
                       aria-current={isActive ? "page" : undefined}
                       className={cn(
-                        "relative text-[14px] rounded-sm transition-colors duration-150 ease-out motion-reduce:transition-none focus-ring",
+                        "relative flex items-center text-[14px] rounded-sm transition-colors duration-150 ease-out motion-reduce:transition-none focus-ring",
                         // 2px gold underline — item width, flush to the item's bottom edge, fades via opacity
                         "after:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-amber-500",
                         "after:transition-opacity after:duration-150 after:ease-out motion-reduce:after:transition-none",
