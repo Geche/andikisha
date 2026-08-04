@@ -35,16 +35,26 @@ export async function POST(request: Request) {
     const { Resend } = await import("resend");
     const resend = new Resend(apiKey);
 
-    // Notify the team of the new subscriber
-    await resend.emails.send({
+    // Notify the team of the new subscriber. Resend returns { error } instead
+    // of throwing; the notification is the record of the signup, so a rejected
+    // send must fail loudly rather than report success on a dropped subscription.
+    const { error: notifyError } = await resend.emails.send({
       from: process.env.RESEND_FROM ?? "website@andikishahr.com",
       to: process.env.CONTACT_TO ?? "hello@andikishahr.com",
       subject: `[Newsletter] New subscriber: ${sanitizeHeader(email)}`,
       text: `New compliance newsletter signup: ${email}`,
     });
+    if (notifyError) {
+      console.error("[newsletter] Resend rejected the signup notification for %s: %o", sanitizeHeader(email), notifyError);
+      return NextResponse.json(
+        { ok: false, error: "We couldn't complete your subscription. Please try again." },
+        { status: 500 }
+      );
+    }
 
-    // Send a welcome confirmation to the subscriber
-    await resend.emails.send({
+    // Welcome confirmation to the subscriber — best-effort; a bounced welcome
+    // must not fail an already-recorded subscription.
+    const { error: welcomeError } = await resend.emails.send({
       from: process.env.RESEND_FROM ?? "website@andikishahr.com",
       to: email,
       subject: "You're subscribed to AndikishaHR compliance updates",
@@ -63,6 +73,9 @@ export async function POST(request: Request) {
         "hello@andikishahr.com",
       ].join("\n"),
     });
+    if (welcomeError) {
+      console.error("[newsletter] welcome email to %s failed (subscription still recorded): %o", sanitizeHeader(email), welcomeError);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

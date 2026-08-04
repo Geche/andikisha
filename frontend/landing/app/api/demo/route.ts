@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     const { Resend } = await import("resend");
     const resend = new Resend(apiKey);
 
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM ?? "website@andikishahr.com",
       to: process.env.CONTACT_TO ?? "hello@andikishahr.com",
       replyTo: body.email,
@@ -87,6 +87,18 @@ export async function POST(request: Request) {
         body.message ? `Notes:\n${body.message}` : "",
       ].join("\n"),
     });
+
+    // Resend returns { error } instead of throwing on API failures (unverified
+    // sender domain, bad key, rejected recipient). Without this check a failed
+    // send still returns ok:true — the lead is silently dropped behind a
+    // "received" message.
+    if (error) {
+      console.error("[demo] Resend rejected the request from %s: %o", sanitizeHeader(body.email), error);
+      return NextResponse.json(
+        { ok: false, error: "We couldn't submit your request. Please email hello@andikishahr.com." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
