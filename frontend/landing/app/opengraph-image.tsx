@@ -5,7 +5,7 @@ export const alt = "AndikishaHR — HR & Payroll for Kenyan Businesses";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const CHIPS = ["500+ Companies", "KRA Compliant", "M-Pesa Integrated", "Data in East Africa"];
+const CHIPS = ["Payslips on any phone", "KRA Compliant", "M-Pesa Integrated", "Data in East Africa"];
 
 // token-exempt: this is a build-time OG image rendered by Satori (next/og),
 // which resolves only literal inline styles — CSS custom properties / Tailwind
@@ -48,9 +48,11 @@ export default function Image() {
           </div>
         </div>
 
-        {/* Headline */}
+        {/* Headline — Satori needs explicit display:flex on any div with >1 child */}
         <div
           style={{
+            display: "flex",
+            flexDirection: "column",
             fontSize: "68px",
             fontWeight: 800,
             color: "#ffffff",
@@ -59,10 +61,10 @@ export default function Image() {
             letterSpacing: "-1.5px",
           }}
         >
-          Run payroll in{" "}
-          <span style={{ color: "#e8a020" }}>30 minutes.</span>
-          <br />
-          Stay compliant. Every month.
+          <div style={{ display: "flex" }}>
+            Run payroll in&nbsp;<span style={{ color: "#e8a020" }}>20 minutes.</span>
+          </div>
+          <div style={{ display: "flex" }}>Stay compliant. Every month.</div>
         </div>
 
         {/* Sub */}

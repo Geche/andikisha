@@ -12,6 +12,7 @@ import TrustSection          from "@/components/trust/TrustSection";
 import JoinCTA               from "@/components/cta/JoinCTA";
 import NewsletterSection     from "@/components/layout/NewsletterSection";
 import FaqList               from "@/components/faq/FaqList";
+import Reveal                 from "@/components/ui/Reveal";
 
 export const metadata: Metadata = {
   title: "AndikishaHR — Kenyan HR and payroll, calculated correctly",
@@ -23,20 +24,20 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <LogosRow />
-      <FeaturePayrollRun />
-      <FeatureDisbursement />
-      <FeatureComplianceGrid />
+      <Reveal><LogosRow /></Reveal>
+      <Reveal><FeaturePayrollRun /></Reveal>
+      <Reveal><FeatureDisbursement /></Reveal>
+      <Reveal><FeatureComplianceGrid /></Reveal>
       <div id="calculator">
-        <PayrollCalculator />
+        <Reveal><PayrollCalculator /></Reveal>
       </div>
-      <ProductWalkthrough />
-      <ComplianceTimeline />
+      <Reveal><ProductWalkthrough /></Reveal>
+      <Reveal><ComplianceTimeline /></Reveal>
       <StatsBand />
-      <TrustSection />
-      <JoinCTA />
-      <NewsletterSection />
-      <FaqList />
+      <Reveal><TrustSection /></Reveal>
+      <Reveal><JoinCTA /></Reveal>
+      <Reveal><NewsletterSection /></Reveal>
+      <Reveal><FaqList /></Reveal>
     </>
   );
 }

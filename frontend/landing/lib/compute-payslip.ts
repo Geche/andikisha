@@ -35,14 +35,18 @@ export interface StatutoryRates {
   shifRate: number;
   housingRate: number;
   effectiveDate: string;
+  /** True when these are the offline fallback rates, not live from Compliance. */
+  provisional: boolean;
 }
 
 /** Raw shape returned by GET /api/v1/public/compliance/{country}/rates. */
-interface RawSummary {
+export interface RawSummary {
   effectiveDate: string;
   taxBrackets: { bandNumber: number; lowerBound: number; upperBound?: number | null; rate: number }[];
   statutoryRates: { rateType: string; rateValue: number; limitAmount?: number | null; secondaryLimit?: number | null }[];
   taxReliefs: { reliefType: string; monthlyAmount?: number | null; rate?: number | null; maxAmount?: number | null }[];
+  /** Set by the API route when it serves the offline fallback table. */
+  provisional?: boolean;
 }
 
 export function toRates(s: RawSummary): StatutoryRates {
@@ -64,6 +68,7 @@ export function toRates(s: RawSummary): StatutoryRates {
     shifRate: byType("SHIF")?.rateValue ?? 0,
     housingRate: byType("HOUSING_LEVY_EMPLOYEE")?.rateValue ?? 0,
     effectiveDate: s.effectiveDate,
+    provisional: s.provisional ?? false,
   };
 }
 

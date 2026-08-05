@@ -153,11 +153,18 @@ export default function PayrollCalculator() {
 
           {/* Right — output */}
           <div className="bg-white rounded-2xl border border-ink-200 p-6 lg:p-8">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-400 mb-6">Payslip breakdown</p>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-400">Payslip breakdown</p>
+              {result && rates?.provisional && (
+                <span className="text-[11px] font-semibold text-amber-dark bg-amber-light rounded-full px-2.5 py-1">
+                  Standard rates
+                </span>
+              )}
+            </div>
 
             {ratesError ? (
               <p className="text-[14px] text-ink-600 py-8 text-center">
-                Couldn&apos;t load the latest statutory rates. Please refresh to try again.
+                Couldn&apos;t load the statutory rates. Please refresh to try again.
               </p>
             ) : !result || !rates ? (
               <p className="text-[14px] text-ink-400 py-8 text-center">Loading current KRA rates…</p>
@@ -173,9 +180,16 @@ export default function PayrollCalculator() {
                 {result.helb > 0 && <OutputRow label="HELB" value={result.helb} deduction />}
                 <OutputRow label="Net pay" value={result.netPay} bold />
 
-                <p className="text-[12px] text-ink-400 mt-5 leading-relaxed">
-                  Live KRA rates from our Compliance engine (effective {rates.effectiveDate}) — the same rates that run payroll.
-                </p>
+                {rates.provisional ? (
+                  <p className="text-[12px] text-ink-400 mt-5 leading-relaxed">
+                    Live rates are momentarily unavailable — showing standard published KES statutory rates.
+                    Sign in for the exact figures our compliance engine runs.
+                  </p>
+                ) : (
+                  <p className="text-[12px] text-ink-400 mt-5 leading-relaxed">
+                    Live KRA rates from our Compliance engine (effective {rates.effectiveDate}) — the same rates that run payroll.
+                  </p>
+                )}
               </>
             )}
           </div>

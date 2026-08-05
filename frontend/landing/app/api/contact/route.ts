@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const { Resend } = await import("resend");
     const resend = new Resend(apiKey);
 
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: process.env.RESEND_FROM ?? "website@andikishahr.com",
       to: process.env.CONTACT_TO ?? "hello@andikishahr.com",
       replyTo: body.email,
@@ -78,6 +78,16 @@ export async function POST(request: Request) {
         body.message,
       ].join("\n"),
     });
+
+    // Resend returns { error } rather than throwing on API failures — without
+    // this check a rejected send still reports success and the message is lost.
+    if (error) {
+      console.error("[contact] Resend rejected the message from %s: %o", sanitizeHeader(body.email), error);
+      return NextResponse.json(
+        { ok: false, error: "We couldn't send your message. Please email hello@andikishahr.com." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
